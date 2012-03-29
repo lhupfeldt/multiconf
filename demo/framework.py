@@ -2,7 +2,10 @@
 # This code is free for anybody to use
 
 import sys
-sys.path.append('..')
+import os.path
+from os.path import join as jp
+here = os.path.dirname(__file__)
+sys.path.append(jp(here, '..'))
 
 from multiconf import ConfigRoot, ConfigItem
 
