@@ -110,5 +110,6 @@ class EnvsTest(unittest.TestCase):
         for env in valid_envs.all():
             ok (envs[env]) == True
 
+
 if __name__ == '__main__':
     unittest.main()

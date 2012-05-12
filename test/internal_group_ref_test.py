@@ -20,21 +20,14 @@ g_dev = EnvGroup('g_dev', dev2st, dev2ct)
 valid_envs = [g_dev, prod]
 
 def conf(env):
-    print '---- Creating ConfigRoot -----'
     with ConfigRoot(env, valid_envs) as dc:
-        print '---- ConfigRoot block starting -----'
-        dc.prod.ms_suffixes = [1, 2, 3, 4]
-        dc.g_dev.ms_suffixes = [1]
+        dc.ms_suffixes(prod=[1, 2, 3, 4], g_dev=[1])
+        print dc.ms_suffixes
 
-        for ms_suffix in dc.ms_suffixes:
-            print 'ms_suffix', ms_suffix
-            print '---- Creating ConfigItem -----'
+        for ms_suffix in dc.ms_suffixes.value():
             with ConfigItem(True, suffix=ms_suffix) as c:
-                print '---- ConfigItem block starting -----'
-                assert c.suffix == ms_suffix
-                print '---- ConfigItem block finished-----'
+                assert c.suffix().value() == ms_suffix
 
-        print '---- ConfigRoot block finished -----'
         return dc
 
 
@@ -52,4 +45,5 @@ def test(env, exp_ms_suffixes, exp_suffix):
     print '---- Printed -----'
 
 test(dev2ct, [1], 1)
+print
 test(prod, [1, 2, 3, 4], 1)

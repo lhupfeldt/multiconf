@@ -6,37 +6,29 @@ from valid_envs import g_dev, prod
 
 def conf(env):
     with weblogic_config(env, [g_dev, prod]) as dc:
-        dc.prod.base_port = 7000
-        dc.devi.base_port = 7100
-        dc.devs.base_port = 7200
+        dc.base_port(prod=7000, devi=7100, devs=7200)
 
-        dc.prod.ms_suffixes = [1, 2, 3, 4]
-        dc.g_dev.ms_suffixes = [1]
+        dc.ms_suffixes(prod=[1, 2, 3, 4], g_dev=[1])
 
-        with admin_server(port=dc.base_port+1) as c:
-            c.prod.host = 'admin.prod.xleap'
-            c.devi.host = 'admin.dev2ct.xleap'
-            c.devs.host = 'admin.dev2st.xleap'
+        with admin_server(port=dc.base_port.value()+1) as c:
+            c.host(prod='admin.prod.xleap', devi='admin.dev2ct.xleap', devs='admin.dev2st.xleap')
 
-        for ms_suffix in dc.ms_suffixes:
-            port = dc.base_port + 10 + ms_suffix
+        for ms_suffix in dc.ms_suffixes.value():
+            port = dc.base_port.value() + 10 + ms_suffix
             with managed_server(port=port, suffix=ms_suffix) as c:
-                c.prod.host = 'ms%d.prod.xleap' % c.suffix
-                c.g_dev.host = 'ms%d.dev2.xleap' % c.suffix
+                c.host(prod='ms%d.prod.xleap' % ms_suffix, g_dev='ms%d.dev2.xleap' % ms_suffix)
 
         # Add a special managed server, and override group value
         with managed_server(host='ms.'+env.name+'.xleap', port=port+1, suffix=17) as c:
-            c.prod.someprop = 1
-            c.g_dev.someprop = 2
-            c.devi.someprop = 3
+            c.someprop(prod=1, g_dev=2)
 
         # Add a managed server with no explicit env specific properties
         managed_server(host='ms.'+env.name+'.xleap', port=port+2, suffix=18)
             
         with datasource(xx=18) as c:
-            c.prod.xx = 19
+            c.xx(prod=19)
 
         with datasource(xx=16) as c:
-            c.prod.xx = 17
+            c.xx(prod=17)
 
         return dc

@@ -21,23 +21,23 @@ valid_envs = [g_dev, prod]
 
 def config(env):
     with ConfigRoot(env, valid_envs) as conf:
-        conf.prod.a = "hello"
-        conf.g_dev.a = "hi"
+        conf.a(prod="hello", g_dev="hi")
         print 'conf.a:', conf.a
-    
+
         with ConfigItem(repeat=True) as c:
-            c.prod.a = "hello nested"
-            c.g_dev.a = "hi nested"
+            c.a(prod="hello nested", g_dev="hi nested")
 
         return conf
 
 def test(env):
     conf = config(env)
-    
+
     print "----", env, "----"
-    print 'conf.a', conf.a
-    print 'conf.ConfigItems[0].a', conf.ConfigItems[0].a
+    print 'conf.a', repr(conf.a)
+    print 'conf.ConfigItems[0].a', repr(conf.ConfigItems[0].a)
     print
+
+    print "Full config:\n", conf
 
 test(prod)
 test(dev2ct)

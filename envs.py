@@ -7,6 +7,8 @@ class EnvException(Exception):
     pass
 
 
+_envs = {}
+
 class Env(object):
     def __init__(self, name):        
         if not isinstance(name, type("")):
@@ -18,6 +20,8 @@ class Env(object):
             
         self._name = name
         self.members = []
+
+        _envs[name] = self
 
     @property
     def name(self):
@@ -45,6 +49,7 @@ class Env(object):
         if other == self:
             return True            
 
+_groups = {}
 
 class EnvGroup(Env, Container):
     def __init__(self, name, *members):
@@ -81,6 +86,8 @@ class EnvGroup(Env, Container):
 
         # All good
         self.members = members
+        
+        _groups[name] = self
 
     def irepr(self, indent_level):
         indent1 = '  ' * indent_level
@@ -133,3 +140,15 @@ class EnvGroup(Env, Container):
                     return True            
             
         return False
+
+
+def env_or_group(name):
+    _env = _envs.get(name)
+    if _env:
+        return _env
+
+    _env_group = _groups.get(name)
+    if _env_group:
+        return _env_group
+
+    raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(name))
