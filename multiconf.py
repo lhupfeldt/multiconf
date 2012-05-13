@@ -119,6 +119,11 @@ class AttributeCollector(object):
     def env_values(self):
         return self._env_values
 
+    def override(self, other):
+        assert other._frozen
+        self._env_values.update(other._env_values)
+        
+        
 
 class _ConfigBase(object):
     nested = []
@@ -323,3 +328,50 @@ class ConfigItem(_ConfigBase):
             raise ConfigException(msg)
 
         self._contained_in._attributes[my_key] = self
+
+
+class ConfigBuilder(_ConfigBase):
+    def __init__(self, repeat, **attr):
+        assert isinstance(repeat, type(True))
+        super(ConfigBuilder, self).__init__(**attr)
+        self._repeat = repeat
+
+        # Set back reference to containing Item and root item
+        self._contained_in = self.__class__.nested[-1]
+        self._root_conf = self._contained_in._root_conf
+
+    def __enter__(self):
+        self._nesting_level = len(self.__class__.nested)
+        self._finalized = False
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            return None
+
+        try:
+            self.exit_validation()
+        except ConfigException as ex:
+            if self._debug_exc:
+                raise
+            # Strip stack
+            raise ex
+
+        self._finalized = True
+
+        self.build()
+
+    def build(self):
+        """Override this in derived classes. This is where child ConfigItems are declared"""
+        raise ConfigException("'build' must be overridded")
+
+    def override(self, config_item):
+        """Assign attributes from builder to child Item"""
+        for key, value in self._attributes.iteritems():
+            config_item_attr = config_item._attributes.get(key)
+            if config_item_attr:
+                config_item_attr.override(value)
+                continue
+            config_item._attributes[key] = value
+        
+

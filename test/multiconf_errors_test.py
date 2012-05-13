@@ -11,7 +11,7 @@ sys.path.append(jp(here, '../..'))
 
 import unittest
 from oktest import ok, test, fail, todo, dummy
-from test_utils import lazy, config_error, lineno
+from utils import lazy, config_error, lineno
 
 from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException
 from multiconf.envs import Env, EnvGroup
@@ -33,10 +33,7 @@ g_prod = EnvGroup('g_prod', pp, prod)
 valid_envs = EnvGroup('g_all', g_dev, g_prod)
 
 def ce(line_num, *lines):
-    filename = __file__
-    if not filename.endswith('.py'):
-        filename = filename[:-1]
-    return config_error(filename, line_num, *lines)
+    return config_error(__file__, line_num, *lines)
 
 class ErrorsTest(unittest.TestCase):
     @test("valid_envs arg as EnvGroup")

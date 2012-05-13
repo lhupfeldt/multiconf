@@ -10,6 +10,10 @@ def lazy(*args):
     return lambda: args[0](*args[1:])
 
 def config_error(file_name, line_num, *lines):
+    if not file_name.endswith('.py'):
+        # file_name  may end in .pyc!
+        file_name = file_name[:-1]
+
     emsg = ""
     for line in lines:
         emsg += 'File "{file_name}", line {line_num}'.format(file_name=file_name, line_num=line_num) + '\n'
