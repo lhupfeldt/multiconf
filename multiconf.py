@@ -88,9 +88,12 @@ class AttributeCollector(object):
                 if self._attribute_name in defaults:
                     self._env_values[env] = defaults[self._attribute_name]
                     continue
-                group_msg = ", which is a member of " + eg if isinstance(eg, EnvGroup) else ""
+                group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
                 msg = "Attribute: " + repr(self._attribute_name) + " did not receive a value for env " + repr(env)
                 errors = _error_msg(errors, msg + group_msg)
+
+        if self._attribute_name in defaults:
+            del defaults[self._attribute_name]
 
         if errors:
             raise ConfigException("There were " + repr(errors) + " errors when defining attribute " + repr(self._attribute_name))
@@ -177,6 +180,9 @@ class _ConfigBase(object):
             # Strip stack
             raise ex
 
+        # Collect remaining default values
+        for name in list(self._defaults):
+            AttributeCollector(name, self)()
         self._finalized = True
 
     def __setattr__(self, name, value):
