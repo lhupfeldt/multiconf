@@ -38,9 +38,9 @@ class EnvsTest(unittest.TestCase):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 bb1 = Env('bb')
-                bb2 = EnvGroup('bb', bb)
+                bb2 = EnvGroup('bb2', bb1)
                 errorline = lineno() + 1
-                bb3 = EnvGroup('bb', bb)
+                bb3 = EnvGroup('bb2', bb1)
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
