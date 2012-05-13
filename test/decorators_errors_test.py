@@ -13,7 +13,7 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, required
+from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, required, required_if
 from multiconf.envs import Env, EnvGroup
 
 dev2ct = Env('dev2CT')
@@ -66,6 +66,25 @@ class DecoratorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "No value given for required attributes: ['abcd', 'ijkl']"
+
+
+    @test("required_if attributes missing")
+    def _a(self):
+        try:
+            class root(ConfigRoot):
+                pass
+
+            @required_if('abcd', 'efgh, ijkl')
+            class item(ConfigItem):
+                pass
+                
+            with root(prod, [prod]) as cr:
+                with item(True) as ii:
+                    ii.abcd(prod=1)
+                
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"
 
 
 if __name__ == '__main__':

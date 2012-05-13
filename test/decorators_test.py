@@ -13,7 +13,7 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, required
+from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, required, required_if
 from multiconf.envs import Env, EnvGroup
 
 dev2ct = Env('dev2CT')
@@ -61,6 +61,35 @@ class DecoratorsTest(unittest.TestCase):
             
         ok (cr.item.a) == 1
         ok (cr.item.b) == 2
+
+
+    @test("required_if attributes - condition true and condition unset")
+    def _a(self):
+        @required_if('a', 'b, c')
+        class root(ConfigRoot):
+            pass
+                
+        with root(prod, [prod, dev2ct]) as cr:
+            cr.a(prod=1)
+            cr.b(prod=2)
+            cr.c(prod=3)
+
+        ok (cr.a) == 1
+        ok (cr.b) == 2
+        ok (cr.c) == 3
+
+    @test("required_if attributes - condition false")
+    def _a(self):
+        @required_if('a', 'b, c')
+        class root(ConfigRoot):
+            pass
+                
+        with root(prod, [prod]) as cr:
+            cr.a(prod=0)
+            cr.b(prod=1)
+
+        ok (cr.a) == 0
+        ok (cr.b) == 1
 
 if __name__ == '__main__':
     unittest.main()

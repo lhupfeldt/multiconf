@@ -16,7 +16,19 @@ def required(attr_names):
     return deco
 
 
+def required_if(attr_name, attr_names):
+    def deco(cls):
+        cls._deco_required_if_attributes = attr_name, [attr.strip() for attr in attr_names.split(',')]
+        return cls
+
+    return deco
+
+
 class ConfigException(Exception):
+    pass
+
+
+class _EnvNoAttribute(Exception):
     pass
 
 
@@ -81,13 +93,39 @@ class AttributeCollector(object):
                 errors = _error_msg(errors, ex.message)
 
         # Validate that the attribute is defined for all envs / assign default value
+        required_if_key = self._container.__class__._deco_required_if_attributes[0]
+        if required_if_key:
+            try:
+                required_if_attributes = self._container.__class__._deco_required_if_attributes[1]
+                required_if = self._container._attributes[required_if_key]
+            except KeyError:
+                required_if = False
+
         for eg in self._container._root_conf._valid_envs:
             for env in eg.envs():
                 if env in self._env_values:
+                    # The attribute is set with an env specific value
                     continue
+
                 if self._attribute_name in defaults:
+                    # The attribute is set with an default value, update env value
                     self._env_values[env] = defaults[self._attribute_name]
                     continue
+
+                # Check for required_if, the required_if atributes are optional if required_if is false or not specified for the env
+                if required_if_key:
+                    if self._attribute_name == required_if_key:
+                        # A required_if key is optional
+                        continue
+
+                    required_if_env_value = False
+                    try:
+                        required_if_env_value = required_if.env_value(env)
+                    except _EnvNoAttribute:
+                        pass
+                    if not required_if_env_value and self._attribute_name in required_if_attributes:
+                        continue
+
                 group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
                 msg = "Attribute: " + repr(self._attribute_name) + " did not receive a value for env " + repr(env)
                 errors = _error_msg(errors, msg + group_msg)
@@ -110,10 +148,13 @@ class AttributeCollector(object):
     def __repr__(self):
         return self.__class__.__name__ + ': ' + repr(self._attribute_name) + ':' + ('frozen' if self._frozen else 'not-frozen') + ", values: " + repr(self._env_values)
 
-    def value(self):
+    def env_value(self, env):
         if not self._frozen:
             raise ConfigException("Attribute " + repr(self._attribute_name) + " is not frozen.")
-        return self._container.getattr_env(self._attribute_name, self._container._root_conf._selected_env)
+        return self._container.getattr_env(self._attribute_name, env)
+
+    def value(self):
+        return self.env_value(self._container._root_conf._selected_env)
 
     @property
     def env_values(self):
@@ -122,14 +163,15 @@ class AttributeCollector(object):
     def override(self, other):
         assert other._frozen
         self._env_values.update(other._env_values)
-        
-        
+
+
 
 class _ConfigBase(object):
     nested = []
 
     # Decoration attributes
     _deco_required_attributes = []
+    _deco_required_if_attributes = (None, ())
 
     def __init__(self, **attr):
         self._debug_exc = True
@@ -162,7 +204,7 @@ class _ConfigBase(object):
         self._finalized = False
         return self
 
-    def _exit_validate_required(self):
+    def exit_validate_required(self):
         missing = []
         for req in self.__class__._deco_required_attributes:
             if not req in self._attributes:
@@ -170,9 +212,29 @@ class _ConfigBase(object):
         if missing:
             raise ConfigException("No value given for required attributes: " + repr(missing))
 
+    def exit_validate_required_if(self):
+        required_if_key = self.__class__._deco_required_if_attributes[0]
+        if not required_if_key:
+            return
+
+        try:
+            required_if = self._attributes[required_if_key].value()
+            if not required_if:
+                return
+        except KeyError:
+            return
+
+        missing = []
+        for req in self.__class__._deco_required_if_attributes[1]:
+            if not req in self._attributes:
+                missing.append(req)
+        if missing:
+            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + "==" +  repr(required_if) + ", missing: " + repr(missing))
+
     def exit_validation(self):
         """Override this method if you need special checks"""
-        self._exit_validate_required()
+        self.exit_validate_required()
+        self.exit_validate_required_if()
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.__class__.nested.pop()
@@ -217,7 +279,7 @@ class _ConfigBase(object):
             return attr_coll.env_values[env]
         except KeyError:
             self._check_valid_env(env, self._root_conf._valid_envs)
-            raise InternalError()
+            raise _EnvNoAttribute("Attribute undefined for env " + repr(env))
 
     def getattr_env(self, name, env):
         try:
@@ -376,5 +438,5 @@ class ConfigBuilder(_ConfigBase):
                 config_item_attr.override(value)
                 continue
             config_item._attributes[key] = value
-        
+
 
