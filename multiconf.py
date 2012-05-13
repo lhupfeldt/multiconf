@@ -128,6 +128,9 @@ class AttributeCollector(object):
 class _ConfigBase(object):
     nested = []
 
+    # Decoration attributes
+    _deco_required_attributes = []
+
     def __init__(self, **attr):
         self._debug_exc = True
 
@@ -138,9 +141,6 @@ class _ConfigBase(object):
         # Dict of dicts: attributes['a'] = dict(Env('prod')=1, EnvGroup('dev')=0)
         self._attributes = {}
         self._defaults = attr
-
-        # Decoration attributes
-        self._deco_required_attributes = []
 
         self._name = self.__class__.__name__
         self._finalized = True
@@ -163,9 +163,12 @@ class _ConfigBase(object):
         return self
 
     def _exit_validate_required(self):
-        for req in self._deco_required_attributes:
+        missing = []
+        for req in self.__class__._deco_required_attributes:
             if not req in self._attributes:
-                raise ConfigException("No value given for required attribute " + repr(req))
+                missing.append(req)
+        if missing:
+            raise ConfigException("No value given for required attributes: " + repr(missing))
 
     def exit_validation(self):
         """Override this method if you need special checks"""
