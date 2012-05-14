@@ -51,7 +51,7 @@ class DecoratorsTest(unittest.TestCase):
             ok (ex.message) == "No value given for required attributes: ['someattr1', 'someattr2']"
 
     @test("required attributes missing - configitem")
-    def _a(self):
+    def _b(self):
         try:
             class root(ConfigRoot):
                 pass
@@ -70,7 +70,7 @@ class DecoratorsTest(unittest.TestCase):
 
 
     @test("required_if attributes missing")
-    def _a(self):
+    def _c(self):
         try:
             class root(ConfigRoot):
                 pass
@@ -88,7 +88,7 @@ class DecoratorsTest(unittest.TestCase):
             ok (ex.message) == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"
 
     @test("optional attribute accessed for env where not specified")
-    def _a(self):
+    def _d(self):
         @optional('a')
         class root(ConfigRoot):
             pass
@@ -97,7 +97,7 @@ class DecoratorsTest(unittest.TestCase):
             with root(prod, [prod, dev2ct]) as cr:
                 cr.a(dev2ct=18)
 
-            cr.a
+            print cr.a
             fail ("Expected exception")
         except NoAttributeException  as ex:
             ok (ex.message) == "Attribute 'a' undefined for env Env('prod')"
