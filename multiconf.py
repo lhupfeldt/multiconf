@@ -398,7 +398,7 @@ class ConfigItem(_ConfigBase):
             try:
                 try:
                     obj_key = self._defaults['id']
-                except KeyError:                    
+                except KeyError:
                     obj_key = self._defaults['name']
             except KeyError:
                 obj_key = id(self)
@@ -413,6 +413,14 @@ class ConfigItem(_ConfigBase):
             raise ConfigException(msg)
 
         self._contained_in._attributes[my_key] = self
+
+    @property
+    def contained_in():
+        return self._contained_in
+
+    @property
+    def root_conf():
+        return self._root_conf
 
 
 class ConfigBuilder(_ConfigBase):
