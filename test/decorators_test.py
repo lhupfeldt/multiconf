@@ -13,15 +13,18 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, required, required_if
+from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, required, required_if, optional
 from multiconf.envs import Env, EnvGroup
 
-dev2ct = Env('dev2CT')
-dev2st = Env('dev2ST')
+def ce(line_num, *lines):
+    return config_error(__file__, line_num, *lines)
+
+dev2ct = Env('dev2ct')
+dev2st = Env('dev2st')
 g_dev2 = EnvGroup('g_dev2', dev2ct, dev2st)
 
-dev3ct = Env('dev3CT')
-dev3st = Env('dev3ST')
+dev3ct = Env('dev3ct')
+dev3st = Env('dev3st')
 g_dev3 = EnvGroup('g_dev3', dev3ct, dev3st)
 
 g_dev = EnvGroup('g_dev', g_dev2, g_dev3)
@@ -108,6 +111,20 @@ class DecoratorsTest(unittest.TestCase):
 
         ok (cr.a) == 0
         ok (cr.b) == 1
+
+    @test("optional attribute")
+    def _a(self):
+        @optional('a')
+        class root(ConfigRoot):
+            pass
+
+        with root(prod, [prod, dev2ct]) as cr:
+            cr.a(dev2ct=18)
+        ok ("no-exception") == "no-exception"
+
+        with root(prod, [prod, dev2ct]) as cr:
+            cr.a(prod=17)
+        ok (cr.a) == 17
 
 if __name__ == '__main__':
     unittest.main()

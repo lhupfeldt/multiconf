@@ -13,15 +13,16 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, required, required_if
+from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
+from multiconf.multiconf import required, required_if, optional
 from multiconf.envs import Env, EnvGroup
 
-dev2ct = Env('dev2CT')
-dev2st = Env('dev2ST')
+dev2ct = Env('dev2ct')
+dev2st = Env('dev2st')
 g_dev2 = EnvGroup('g_dev2', dev2ct, dev2st)
 
-dev3ct = Env('dev3CT')
-dev3st = Env('dev3ST')
+dev3ct = Env('dev3ct')
+dev3st = Env('dev3st')
 g_dev3 = EnvGroup('g_dev3', dev3ct, dev3st)
 
 g_dev = EnvGroup('g_dev', g_dev2, g_dev3)
@@ -85,6 +86,21 @@ class DecoratorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"
+
+    @test("optional attribute accessed for env where not specified")
+    def _a(self):
+        @optional('a')
+        class root(ConfigRoot):
+            pass
+
+        try:
+            with root(prod, [prod, dev2ct]) as cr:
+                cr.a(dev2ct=18)
+
+            cr.a
+            fail ("Expected exception")
+        except NoAttributeException  as ex:
+            ok (ex.message) == "Attribute 'a' undefined for env Env('prod')"
 
 
 if __name__ == '__main__':

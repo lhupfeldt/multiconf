@@ -149,6 +149,16 @@ class ErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Repeated non repeatable conf item: 'ConfigItem'"
+    
+    @test("access undefined attribute")
+    def _k(self):
+        cr = ConfigRoot(prod, [prod])
+
+        try:
+            print cr.b
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "ConfigRoot {\n} has no attribute 'b'"
 
 if __name__ == '__main__':
     unittest.main()

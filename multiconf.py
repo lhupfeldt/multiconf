@@ -24,11 +24,15 @@ def required_if(attr_name, attr_names):
     return deco
 
 
+def optional(attr_name):
+    return required_if(attr_name, attr_name)
+
+
 class ConfigException(Exception):
     pass
 
 
-class _EnvNoAttribute(Exception):
+class NoAttributeException(Exception):
     pass
 
 
@@ -121,7 +125,7 @@ class AttributeCollector(object):
                     required_if_env_value = False
                     try:
                         required_if_env_value = required_if.env_value(env)
-                    except _EnvNoAttribute:
+                    except NoAttributeException:
                         pass
                     if not required_if_env_value and self._attribute_name in required_if_attributes:
                         continue
@@ -223,6 +227,8 @@ class _ConfigBase(object):
                 return
         except KeyError:
             return
+        except NoAttributeException:
+            return
 
         missing = []
         for req in self.__class__._deco_required_if_attributes[1]:
@@ -253,6 +259,11 @@ class _ConfigBase(object):
                 raise
             # Strip stack
             raise ex
+        except NoAttributeException as ex:
+            if self._debug_exc:
+                raise
+            # Strip stack
+            raise ex
 
         self._finalized = True
 
@@ -272,7 +283,7 @@ class _ConfigBase(object):
                 return
         raise ConfigException("The env " + repr(env) + " must be in the (nested) list of valid_envs " + repr(valid_envs))
 
-    def _env_specific_value(self, attr_coll, env):
+    def _env_specific_value(self, attr_name, attr_coll, env):
         if isinstance(attr_coll, ConfigItem) or isinstance(attr_coll, list):
             return attr_coll
 
@@ -280,7 +291,7 @@ class _ConfigBase(object):
             return attr_coll.env_values[env]
         except KeyError:
             self._check_valid_env(env, self._root_conf._valid_envs)
-            raise _EnvNoAttribute("Attribute undefined for env " + repr(env))
+            raise NoAttributeException("Attribute " + repr(attr_name) + " undefined for env " + repr(env))
 
     def getattr_env(self, name, env):
         try:
@@ -292,7 +303,7 @@ class _ConfigBase(object):
                 error_message = ", but found attribute " + repr(repeatable_name)
             raise ConfigException(repr(self) + " has no attribute " + repr(name) + error_message)
 
-        return self._env_specific_value(attr_coll, env)
+        return self._env_specific_value(name, attr_coll, env)
 
     def __getattr__(self, name):
         if name[0] == '_':
@@ -320,7 +331,7 @@ class _ConfigBase(object):
 
     def iteritems(self):
         for key, value in self._attributes.iteritems():
-            yield key, self._env_specific_value(value, self._root_conf._selected_env)
+            yield key, self._env_specific_value(key, value, self._root_conf._selected_env)
 
     def items(self):
         return list(self.iteritems())
