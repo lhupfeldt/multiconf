@@ -38,7 +38,7 @@ class DecoratorsTest(unittest.TestCase):
         @required('anattr, anotherattr')
         class root(ConfigRoot):
             pass
-                
+
         with root(prod, [prod]) as cr:
             cr.anattr(prod=1)
             cr.anotherattr(prod=2)
@@ -53,12 +53,30 @@ class DecoratorsTest(unittest.TestCase):
         @required('a, b')
         class item(ConfigItem):
             pass
-                
+
         with root(prod, [prod]) as cr:
             with item(False) as ii:
                 ii.a(prod=1)
                 ii.b(prod=2)
-            
+
+        ok (cr.item.a) == 1
+        ok (cr.item.b) == 2
+
+
+    @test("required attributes - accept override of single property")
+    def _a(self):
+        class root(ConfigRoot):
+            pass
+
+        @required('a, b')
+        class item(ConfigItem):
+            def __init__(self, a, b):
+                super(item, self).__init__(repeat=False, a=a, b=b)
+
+        with root(prod, [prod]) as cr:
+            with item(a=1, b=1) as ii:
+                ii.b(prod=2)
+
         ok (cr.item.a) == 1
         ok (cr.item.b) == 2
 
@@ -68,7 +86,7 @@ class DecoratorsTest(unittest.TestCase):
         @required_if('a', 'b, c')
         class root(ConfigRoot):
             pass
-                
+
         with root(prod, [prod, dev2ct]) as cr:
             cr.a(prod=1)
             cr.b(prod=2)
@@ -83,7 +101,7 @@ class DecoratorsTest(unittest.TestCase):
         @required_if('a', 'b, c')
         class root(ConfigRoot):
             pass
-                
+
         with root(prod, [prod]) as cr:
             cr.a(prod=0)
             cr.b(prod=1)

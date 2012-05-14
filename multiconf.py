@@ -242,6 +242,10 @@ class _ConfigBase(object):
         if exc_type:
             return None
 
+        # Collect remaining default values
+        for name in list(self._defaults):
+            AttributeCollector(name, self)()
+
         try:
             self.exit_validation()
         except ConfigException as ex:
@@ -250,9 +254,6 @@ class _ConfigBase(object):
             # Strip stack
             raise ex
 
-        # Collect remaining default values
-        for name in list(self._defaults):
-            AttributeCollector(name, self)()
         self._finalized = True
 
     def __setattr__(self, name, value):

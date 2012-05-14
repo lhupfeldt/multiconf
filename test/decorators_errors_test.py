@@ -42,7 +42,7 @@ class DecoratorsTest(unittest.TestCase):
             @required('someattr1, someattr2')
             class root(ConfigRoot):
                 pass
-                
+
             with root(prod, [prod]) as cr:
                 pass
             fail ("Expected exception")
@@ -58,11 +58,11 @@ class DecoratorsTest(unittest.TestCase):
             @required('abcd, efgh, ijkl')
             class item(ConfigItem):
                 pass
-                
+
             with root(prod, [prod]) as cr:
                 with item(True) as ii:
                     ii.efgh(prod=7)
-                
+
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "No value given for required attributes: ['abcd', 'ijkl']"
@@ -77,11 +77,11 @@ class DecoratorsTest(unittest.TestCase):
             @required_if('abcd', 'efgh, ijkl')
             class item(ConfigItem):
                 pass
-                
+
             with root(prod, [prod]) as cr:
                 with item(True) as ii:
                     ii.abcd(prod=1)
-                
+
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"

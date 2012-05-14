@@ -15,9 +15,9 @@ def conf(env):
 
         with managed_servers(num_servers=4) as c:
             c.num_servers(g_dev=1)
-            
+
         # Add a special managed server, and add a property
-        port = dc.base_port.value() + 110        
+        port = dc.base_port.value() + 110
         with managed_server(host='ms.'+env.name+'.xleap', port=port+1, suffix=17) as c:
             c.someprop(prod=1, g_dev=2)
 
@@ -28,7 +28,7 @@ def conf(env):
 
         # Add a managed server with no explicit env specific properties
         managed_server(host='ms.'+env.name+'.xleap', port=port+2, suffix=18)
-            
+
         with datasource(xx=18) as c:
             c.xx(prod=19)
 

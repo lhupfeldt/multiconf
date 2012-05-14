@@ -124,7 +124,7 @@ class ErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "'ConfigItems' is defined both as simple value and a contained item: ConfigItem {\n}"
-    
+
     @test("simple property overrides contained item")
     def _j(self):
         try:
