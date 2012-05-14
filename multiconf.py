@@ -2,7 +2,7 @@
 # This code is free for anybody to use
 
 import sys
-from collections import Sequence, namedtuple
+from collections import Sequence, namedtuple, OrderedDict
 import inspect
 from attrdict import AttrDict
 from envs import Env, EnvGroup, env_or_group, EnvException
@@ -284,7 +284,7 @@ class _ConfigBase(object):
         raise ConfigException("The env " + repr(env) + " must be in the (nested) list of valid_envs " + repr(valid_envs))
 
     def _env_specific_value(self, attr_name, attr_coll, env):
-        if isinstance(attr_coll, ConfigItem) or isinstance(attr_coll, list):
+        if isinstance(attr_coll, ConfigItem) or isinstance(attr_coll, OrderedDict):
             return attr_coll
 
         try:
@@ -384,17 +384,25 @@ class ConfigItem(_ConfigBase):
 
         # Insert self in containing Item's attributes
         if self._repeat:
+            # To s or not to s?
             my_key = self._name + 's'
 
             # Validate that an attribute value of parent is not overridden by nested item (self)
             if my_key in self._contained_in._attributes:
-                if not isinstance(self._contained_in._attributes[my_key], list):
+                if not isinstance(self._contained_in._attributes[my_key], OrderedDict):
                     msg = repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self)
                     raise ConfigException(msg)
                 # TODO?: type check of list items (instanceof(ConfigItem). Same type?
 
-            # To s or not to s?
-            self._contained_in._attributes.setdefault(my_key, []).append(self)
+            # Insert in Ordered dict by 'id' or 'name', 'id' is preferred if given
+            try:
+                try:
+                    obj_key = self._defaults['id']
+                except KeyError:                    
+                    obj_key = self._defaults['name']
+            except KeyError:
+                obj_key = id(self)
+            self._contained_in._attributes.setdefault(my_key, OrderedDict())[obj_key] = self
             return
 
         my_key = self._name

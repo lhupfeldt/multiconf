@@ -19,15 +19,17 @@ dev2st = Env('dev2ST')
 valid_envs = [dev2ct, dev2st, prod]
 
 def config(env):
+    """Test config"""
     with ConfigRoot(env, valid_envs) as conf:
     
-        with ConfigItem(repeat=True, b='hello') as c:
+        with ConfigItem(id=0, repeat=True, b='hello') as c:
             hello = "Hello"
+            c.id(prod=3)
             c.a(prod=hello, dev2CT="hi", dev2ST="hay")
             with ConfigItem(repeat=False, c=1) as c:
                 c.c(prod=2)
     
-        with ConfigItem(repeat=True, d='hello') as c:
+        with ConfigItem(id=1, repeat=True, d='hello') as c:
             hello = "World"
             c.a(prod=hello, dev2CT="hi", dev2ST="hay")
             with ConfigItem(repeat=False, e=1) as c:
@@ -36,6 +38,7 @@ def config(env):
         return conf
 
 def test(env):
+    """Create config and print some values"""
     conf = config(env)
     
     print "----", env, "----"

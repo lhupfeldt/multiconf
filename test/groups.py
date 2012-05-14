@@ -24,7 +24,7 @@ def config(env):
         conf.a(prod="hello", g_dev="hi")
         print 'conf.a:', conf.a
 
-        with ConfigItem(repeat=True) as c:
+        with ConfigItem(id=0, repeat=True) as c:
             c.a(prod="hello nested", g_dev="hi nested")
 
         return conf

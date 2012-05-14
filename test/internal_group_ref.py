@@ -25,7 +25,7 @@ def conf(env):
         print dc.ms_suffixes
 
         for ms_suffix in dc.ms_suffixes.value():
-            with ConfigItem(True, suffix=ms_suffix) as c:
+            with ConfigItem(True, id=ms_suffix-1, suffix=ms_suffix) as c:
                 assert c.suffix().value() == ms_suffix
 
         return dc
