@@ -13,7 +13,8 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, required, required_if, optional
+from multiconf import ConfigRoot, ConfigItem, ConfigException
+from multiconf.decorators import *
 from multiconf.envs import Env, EnvGroup
 
 def ce(line_num, *lines):

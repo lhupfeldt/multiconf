@@ -9,8 +9,8 @@ from os.path import join as jp
 here = os.path.dirname(__file__)
 sys.path.append(jp(here, '../..'))
 
-from multiconf.multiconf import ConfigRoot, ConfigItem
-from multiconf.multiconf import Env, EnvGroup
+from multiconf import ConfigRoot, ConfigItem
+from multiconf.envs import Env, EnvGroup
 
 prod = Env('prod')
 dev2ct = Env('dev2CT')

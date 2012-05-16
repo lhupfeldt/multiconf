@@ -13,8 +13,8 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf.multiconf import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
-from multiconf.multiconf import required, required_if, optional
+from multiconf import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
+from multiconf.decorators import required, required_if, optional
 from multiconf.envs import Env, EnvGroup
 
 dev2ct = Env('dev2ct')

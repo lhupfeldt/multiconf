@@ -13,7 +13,7 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf.multiconf import ConfigRoot, ConfigItem
+from multiconf import ConfigRoot, ConfigItem
 from multiconf.envs import Env
 
 prod = Env('prod')

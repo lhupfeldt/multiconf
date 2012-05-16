@@ -8,26 +8,6 @@ from attrdict import AttrDict
 from envs import Env, EnvGroup, env_or_group, EnvException
 
 
-def required(attr_names):
-    def deco(cls):
-        cls._deco_required_attributes = [attr.strip() for attr in attr_names.split(',')]
-        return cls
-
-    return deco
-
-
-def required_if(attr_name, attr_names):
-    def deco(cls):
-        cls._deco_required_if_attributes = attr_name, [attr.strip() for attr in attr_names.split(',')]
-        return cls
-
-    return deco
-
-
-def optional(attr_name):
-    return required_if(attr_name, attr_name)
-
-
 class ConfigException(Exception):
     pass
 
