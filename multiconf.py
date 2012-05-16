@@ -312,6 +312,12 @@ class _ConfigBase(object):
         if not self._root_conf:
             raise ConfigException(self._name + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
 
+        if name == 'contained_in':
+            return self._contained_in
+
+        if name == 'root_conf':
+            return self._root_conf
+
         if not self._finalized:
             try:
                 # Return existing collector if any
@@ -352,6 +358,7 @@ class ConfigRoot(_ConfigBase):
         self._valid_envs = valid_envs
         super(ConfigRoot, self).__init__(**attr)
         self._root_conf = self
+        self._contained_in = None
 
     def _insert(self, other):
         other_class = ConfigItem
@@ -414,14 +421,6 @@ class ConfigItem(_ConfigBase):
 
         self._contained_in._attributes[my_key] = self
 
-    @property
-    def contained_in():
-        return self._contained_in
-
-    @property
-    def root_conf():
-        return self._root_conf
-
 
 class ConfigBuilder(_ConfigBase):
     def __init__(self, repeat, **attr):
@@ -442,9 +441,18 @@ class ConfigBuilder(_ConfigBase):
         if exc_type:
             return None
 
+        # Collect remaining default values
+        for name in list(self._defaults):
+            AttributeCollector(name, self)()
+
         try:
             self.exit_validation()
         except ConfigException as ex:
+            if self._debug_exc:
+                raise
+            # Strip stack
+            raise ex
+        except NoAttributeException as ex:
             if self._debug_exc:
                 raise
             # Strip stack

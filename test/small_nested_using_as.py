@@ -22,14 +22,14 @@ def config(env):
     """Test config"""
     with ConfigRoot(env, valid_envs) as conf:
     
-        with ConfigItem(id=0, repeat=True, b='hello') as c:
+        with ConfigItem(repeat=True, id=0, b='hello') as c:
             hello = "Hello"
             c.id(prod=3)
             c.a(prod=hello, dev2CT="hi", dev2ST="hay")
             with ConfigItem(repeat=False, c=1) as c:
                 c.c(prod=2)
     
-        with ConfigItem(id=1, repeat=True, d='hello') as c:
+        with ConfigItem(repeat=True, id=1, d='hello') as c:
             hello = "World"
             c.a(prod=hello, dev2CT="hi", dev2ST="hay")
             with ConfigItem(repeat=False, e=1) as c:
