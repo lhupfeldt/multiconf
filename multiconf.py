@@ -92,7 +92,7 @@ class AttributeCollector(object):
                     continue
 
                 if self._attribute_name in defaults:
-                    # The attribute is set with an default value, update env value
+                    # The attribute is set with a default value, update env value
                     self._env_values[env] = defaults[self._attribute_name]
                     continue
 
@@ -155,7 +155,8 @@ class _ConfigBase(object):
 
     # Decoration attributes
     _deco_named_as = None
-    _deco_repeat = False
+    _deco_repeatable = False
+    _deco_nested_repeatables = []
     _deco_required_attributes = []
     _deco_required_if_attributes = (None, ())
 
@@ -167,14 +168,17 @@ class _ConfigBase(object):
         self._nesting_level = 0
 
         # Dict of dicts: attributes['a'] = dict(Env('prod')=1, EnvGroup('dev')=0)
-        self._attributes = {}
-        self._defaults = attr
+        self._attributes = OrderedDict()
+        for key in self.__class__._deco_nested_repeatables:
+            self._attributes[key] = OrderedDict()
+
+        self._defaults = attr        
         self._finalized = True
 
     def named_as(self):
         if self.__class__._deco_named_as:
             return self.__class__._deco_named_as
-        if self.__class__._deco_repeat:
+        if self.__class__._deco_repeatable:
             return self.__class__.__name__ + 's'
         return self.__class__.__name__
 
@@ -183,7 +187,8 @@ class _ConfigBase(object):
         indent1 = '  ' * indent_level
         indent2 =  indent1 + '     '
         # + ':' + self.__class__.__name__
-        return self.named_as() + ' {\n' + \
+        not_finalized_msg = "" if self._finalized else " not finalized, defaults: " + repr(self._defaults) + '\n'
+        return self.named_as() + not_finalized_msg + ' {\n' + \
             ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.iteritems()]) + \
             indent1 + '}'
 
@@ -194,7 +199,7 @@ class _ConfigBase(object):
         self._finalized = False
         return self
 
-    def exit_validate_required(self):
+    def finalize_validate_required(self):
         missing = []
         for req in self.__class__._deco_required_attributes:
             if not req in self._attributes:
@@ -202,7 +207,7 @@ class _ConfigBase(object):
         if missing:
             raise ConfigException("No value given for required attributes: " + repr(missing))
 
-    def exit_validate_required_if(self):
+    def finalize_validate_required_if(self):
         required_if_key = self.__class__._deco_required_if_attributes[0]
         if not required_if_key:
             return
@@ -223,21 +228,18 @@ class _ConfigBase(object):
         if missing:
             raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + "==" +  repr(required_if) + ", missing: " + repr(missing))
 
-    def exit_validation(self):
+    def finalize_validation(self):
         """Override this method if you need special checks"""
-        self.exit_validate_required()
-        self.exit_validate_required_if()
+        self.finalize_validate_required()
+        self.finalize_validate_required_if()
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type:
-            return None
-
+    def finalize(self):
         # Collect remaining default values
         for name in list(self._defaults):
             AttributeCollector(name, self)()
 
         try:
-            self.exit_validation()
+            self.finalize_validation()
         except ConfigException as ex:
             if self._debug_exc:
                 raise
@@ -246,10 +248,24 @@ class _ConfigBase(object):
         except NoAttributeException as ex:
             if self._debug_exc:
                 raise
-            # Strip stack
             raise ex
 
         self._finalized = True
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            return None
+
+        try:
+            self.finalize()
+        except ConfigException as ex:
+            if self._debug_exc:
+                raise
+            raise ex
+        except NoAttributeException as ex:
+            if self._debug_exc:
+                raise
+            raise ex
 
     def __setattr__(self, name, value):
         if name[0] == '_':
@@ -292,11 +308,13 @@ class _ConfigBase(object):
     def __getattr__(self, name):
         if not self._finalized:
             try:
-                # Return existing collector if any
+                # Return existing collector/dict of nested items if any
                 coll = self._attributes[name]
-                if type(coll) == AttributeCollector:
+                if type(coll) in (AttributeCollector, OrderedDict):
                     return coll
-                return AttributeCollector(name, self)
+                if isinstance(coll, _ConfigItem):
+                    return AttributeCollector(name, self)
+                raise Exception("Internal error, unexpected type: " + repr(type(coll)) + ':' + repr(coll))
             except KeyError:
                 return AttributeCollector(name, self)
 
@@ -372,9 +390,15 @@ class ConfigItem(_ConfigItem):
         # Insert self in containing Item's attributes
         my_key = self.named_as()
 
-        if self.__class__._deco_repeat:
-            # Validate that an attribute value of parent is not overridden by nested item (self)
+        if self.__class__._deco_repeatable:
+            # Validate that the containing item has specified this item as repeatable
+            if not my_key in self._contained_in.__class__._deco_nested_repeatables:
+                msg = repr(my_key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + repr(self._contained_in.named_as())
+                raise ConfigException(msg)
+                # TODO?: type check of list items (instanceof(ConfigItem). Same type?
+
             if my_key in self._contained_in._attributes:
+                # Validate that an attribute value of parent is not overridden by nested item (self),
                 if not isinstance(self._contained_in._attributes[my_key], OrderedDict):
                     msg = repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self)
                     raise ConfigException(msg)
@@ -388,14 +412,18 @@ class ConfigItem(_ConfigItem):
                     obj_key = self._defaults['name']
             except KeyError:
                 obj_key = id(self)
-            self._contained_in._attributes.setdefault(my_key, OrderedDict())[obj_key] = self
+
+            # TODO, exists check: self._contained_in._attributes[my_key][obj_key]
+            self._contained_in._attributes[my_key][obj_key] = self
             return
 
         if my_key in self._contained_in._attributes:
             if isinstance(self._contained_in._attributes[my_key], ConfigItem):
                 raise ConfigException("Repeated non repeatable conf item: " + repr(my_key))
-            msg = repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self)
-            raise ConfigException(msg)
+            if isinstance(self._contained_in._attributes[my_key], OrderedDict):
+                msg = repr(my_key) + ': ' + repr(self) + ' is defined as non-repeatable, but the containing object has repatable items with the same name: ' + repr(self._contained_in)
+                raise ConfigException(msg)
+            raise ConfigException(repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self))
 
         self._contained_in._attributes[my_key] = self
 

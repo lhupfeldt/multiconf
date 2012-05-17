@@ -9,7 +9,7 @@ class ConfigDefinitionException(Exception):
         super(ConfigDefinitionException, self).__init__(msg)
 
 
-def isidentifier(s):
+def _isidentifier(s):
     if s in keyword.kwlist:
         return False
     return re.match(r'^[a-z_][a-z0-9_]*$', s, re.I) is not None
@@ -18,7 +18,7 @@ def isidentifier(s):
 def _check_valid_identifiers(names):
     invalid = []
     for name in names:
-        if not isidentifier(name):
+        if not _isidentifier(name):
             invalid.append(name)
     if not invalid:
         return    
@@ -38,7 +38,17 @@ def named_as(insert_as_name):
 
 def repeat():
     def deco(cls):
-        cls._deco_repeat = True
+        cls._deco_repeatable = True
+        return cls
+
+    return deco
+
+
+def nested_repeatables(attr_names):
+    def deco(cls):
+        attributes = [attr.strip() for attr in attr_names.split(',')]
+        _check_valid_identifiers(attributes)
+        cls._deco_nested_repeatables = attributes
         return cls
 
     return deco

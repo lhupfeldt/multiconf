@@ -11,6 +11,7 @@ from multiconf import ConfigRoot, ConfigItem, ConfigBuilder
 from multiconf.decorators import *
 
 
+@nested_repeatables('managed_servers, datasources')
 class weblogic_config(ConfigRoot):
     def __init__(self, selected_env, valid_envs, **attr):
         super(weblogic_config, self).__init__(selected_env, valid_envs, **attr)

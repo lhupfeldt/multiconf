@@ -20,13 +20,17 @@ g_dev = EnvGroup('g_dev', dev2st, dev2ct)
 
 valid_envs = [g_dev, prod]
 
+@nested_repeatables('ritems')
+class project(ConfigRoot):
+    pass
+
 @named_as('ritems')
 @repeat()
 class RepeatableItem(ConfigItem):
     pass
 
 def config(env):
-    with ConfigRoot(env, valid_envs) as conf:
+    with project(env, valid_envs) as conf:
         conf.a(prod="hello", g_dev="hi")
         print 'conf.a:', conf.a
 

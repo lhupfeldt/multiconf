@@ -122,7 +122,7 @@ class ErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             ok (ex.message) == "'ConfigItem' is defined both as simple value and a contained item: ConfigItem {\n}"
 
-    @test("nested repeatable item overrides simple property")
+    @test("nested repeatable item overrides simple property - not contained in repeatable")
     def _i(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
@@ -130,7 +130,27 @@ class ErrorsTest(unittest.TestCase):
                 RepeatableItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "'RepeatableItems' is defined both as simple value and a contained item: RepeatableItems {\n}"
+            ok (ex.message) == "'RepeatableItems': RepeatableItems {\n} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"
+
+    #@test("nested repeatable item overrides simple property - contained in repeatable")
+    #@todo
+    #def _i2(self):
+    #    try:
+    #        @nested_repeatables('children')
+    #        class root(ConfigRoot):
+    #            pass
+    #
+    #        @named_as('children')
+    #        class rchild(RepeatableItem):
+    #            pass
+    #
+    #        with root(prod, [prod]) as cr:
+    #            # TODO
+    #            #cr.children(prod="hello")
+    #            rchild()
+    #        fail ("Expected exception")
+    #    except ConfigException as ex:
+    #        ok (ex.message) == "'children' is defined both as simple value and a contained item: children {\n}"
 
     @test("simple property overrides contained item")
     def _j(self):

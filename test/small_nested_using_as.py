@@ -11,7 +11,7 @@ sys.path.append(jp(here, '../..'))
 
 from multiconf import ConfigRoot, ConfigItem
 from multiconf.envs import Env
-from multiconf.decorators import repeat
+from multiconf.decorators import *
 
 prod = Env('prod')
 dev2ct = Env('dev2CT')
@@ -19,13 +19,17 @@ dev2st = Env('dev2ST')
 
 valid_envs = [dev2ct, dev2st, prod]
 
+@nested_repeatables('RepeatableItems')
+class project(ConfigRoot):
+    pass
+
 @repeat()
 class RepeatableItem(ConfigItem):
     pass
 
 def config(env):
     """Test config"""
-    with ConfigRoot(env, valid_envs) as conf:
+    with project(env, valid_envs) as conf:
     
         with RepeatableItem(id=0, b='hello') as c:
             hello = "Hello"
