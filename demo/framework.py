@@ -5,9 +5,10 @@ import sys
 import os.path
 from os.path import join as jp
 here = os.path.dirname(__file__)
-sys.path.append(jp(here, '..'))
+sys.path.append(jp(here, '../..'))
 
-from multiconf import ConfigRoot, ConfigItem, ConfigBuilder, required
+from multiconf import ConfigRoot, ConfigItem, ConfigBuilder
+from multiconf.decorators import required
 
 class weblogic_config(ConfigRoot):
     def __init__(self, selected_env, valid_envs, **attr):
@@ -24,7 +25,7 @@ class managed_server(ConfigItem):
 @required('num_servers')
 class managed_servers(ConfigBuilder):
     def __init__(self, **attr):
-        super(managed_servers, self).__init__(repeat=True, server_type='managed', **attr)
+        super(managed_servers, self).__init__(repeat=True, **attr)
 
     def build(self):
         for server_num in xrange(1, self.num_servers+1):

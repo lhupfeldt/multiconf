@@ -1,4 +1,4 @@
-from envs import Env, EnvGroup
+from multiconf.envs import Env, EnvGroup
 
 preprod = Env('preprod')
 prod = Env('prod')

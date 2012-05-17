@@ -5,6 +5,7 @@
 import argparse
 import config
 import multiconf
+import multiconf.envs
 
 def generate(env):
     print '---- Loading Config: ' + repr(env) + ' -----'
@@ -24,7 +25,7 @@ def main():
     parser.add_argument('--env', required=True, help="The environment for which to load the config")
     args = parser.parse_args()
     
-    generate(multiconf.Env(args.env))
+    generate(multiconf.envs.Env(args.env))
 
 
 if __name__ == '__main__':
