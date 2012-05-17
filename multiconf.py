@@ -294,18 +294,6 @@ class _ConfigBase(object):
         return self._env_specific_value(name, attr_coll, env)
 
     def __getattr__(self, name):
-        if name[0] == '_':
-            return super(_ConfigBase, self).__getattr__(name)
-
-        if not self._root_conf:
-            raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
-
-        if name == 'contained_in':
-            return self._contained_in
-
-        if name == 'root_conf':
-            return self._root_conf
-
         if not self._finalized:
             try:
                 # Return existing collector if any
@@ -329,6 +317,14 @@ class _ConfigBase(object):
 
     def items(self):
         return list(self.iteritems())
+
+    @property
+    def contained_in(self):
+        return self._contained_in
+
+    @property
+    def root_conf(self):
+        return self._root_conf
 
 
 class ConfigRoot(_ConfigBase):
@@ -373,6 +369,9 @@ class ConfigItem(_ConfigBase):
         self._repeat = repeat
 
         # Automatic Nested Insert in parent
+        if not self.__class__.nested:
+            raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
+
         # Set back reference to containing Item and root item
         self._contained_in = self.__class__.nested[-1]
         self._root_conf = self._contained_in._root_conf
