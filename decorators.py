@@ -34,6 +34,14 @@ def named_as(insert_as_name):
         return cls
 
     return deco
+
+
+def repeat():
+    def deco(cls):
+        cls._deco_repeat = True
+        return cls
+
+    return deco
         
 
 def required(attr_names):

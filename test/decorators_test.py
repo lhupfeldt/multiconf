@@ -59,7 +59,7 @@ class DecoratorsTest(unittest.TestCase):
             pass
 
         with root(prod, [prod]) as cr:
-            with item(False) as ii:
+            with item() as ii:
                 ii.a(prod=1)
                 ii.b(prod=2)
 
@@ -75,7 +75,7 @@ class DecoratorsTest(unittest.TestCase):
         @required('a, b')
         class item(ConfigItem):
             def __init__(self, a, b):
-                super(item, self).__init__(repeat=False, a=a, b=b)
+                super(item, self).__init__(a=a, b=b)
 
         with root(prod, [prod]) as cr:
             with item(a=1, b=1) as ii:

@@ -15,6 +15,7 @@ from utils import lazy, config_error, lineno
 
 from multiconf import ConfigRoot, ConfigItem, ConfigException
 from multiconf.envs import Env, EnvGroup
+from multiconf.decorators import *
 
 dev2ct = Env('dev2CT')
 dev2st = Env('dev2ST')
@@ -35,6 +36,12 @@ valid_envs = EnvGroup('g_all', g_dev, g_prod)
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
+
+@repeat()
+class RepeatableItem(ConfigItem):
+    pass
+
+    
 class ErrorsTest(unittest.TestCase):
     @test("valid_envs arg as EnvGroup")
     def _a(self):
@@ -110,7 +117,7 @@ class ErrorsTest(unittest.TestCase):
         try:
             with ConfigRoot(prod, [prod]) as cr:
                 cr.ConfigItem(prod="hello")
-                ConfigItem(repeat=False)
+                ConfigItem()
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "'ConfigItem' is defined both as simple value and a contained item: ConfigItem {\n}"
@@ -119,18 +126,18 @@ class ErrorsTest(unittest.TestCase):
     def _i(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
-                cr.ConfigItems(prod="hello")
-                ConfigItem(repeat=True)
+                cr.RepeatableItems(prod="hello")
+                RepeatableItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "'ConfigItems' is defined both as simple value and a contained item: ConfigItems {\n}"
+            ok (ex.message) == "'RepeatableItems' is defined both as simple value and a contained item: RepeatableItems {\n}"
 
     @test("simple property overrides contained item")
     def _j(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod]) as cr:
-                    ConfigItem(repeat=False)
+                    ConfigItem()
                     errorline = lineno() + 1
                     cr.ConfigItem(prod="hello")
                 fail ("Expected exception")
@@ -143,9 +150,9 @@ class ErrorsTest(unittest.TestCase):
     def _k(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
-                ConfigItem(repeat=False)
+                ConfigItem()
                 errorline = lineno() + 1
-                ConfigItem(repeat=False)
+                ConfigItem()
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Repeated non repeatable conf item: 'ConfigItem'"

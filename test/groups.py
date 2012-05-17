@@ -11,6 +11,7 @@ sys.path.append(jp(here, '../..'))
 
 from multiconf import ConfigRoot, ConfigItem
 from multiconf.envs import Env, EnvGroup
+from multiconf.decorators import *
 
 prod = Env('prod')
 dev2ct = Env('dev2CT')
@@ -19,12 +20,17 @@ g_dev = EnvGroup('g_dev', dev2st, dev2ct)
 
 valid_envs = [g_dev, prod]
 
+@named_as('ritems')
+@repeat()
+class RepeatableItem(ConfigItem):
+    pass
+
 def config(env):
     with ConfigRoot(env, valid_envs) as conf:
         conf.a(prod="hello", g_dev="hi")
         print 'conf.a:', conf.a
 
-        with ConfigItem(id=0, repeat=True) as c:
+        with RepeatableItem(id=0) as c:
             c.a(prod="hello nested", g_dev="hi nested")
 
         return conf
@@ -34,7 +40,7 @@ def test(env):
 
     print "----", env, "----"
     print 'conf.a', repr(conf.a)
-    print 'conf.ConfigItems[0].a', repr(conf.ConfigItems[0].a)
+    print 'conf.ritems[0].a', repr(conf.ritems[0].a)
     print
 
     print "Full config:\n", conf

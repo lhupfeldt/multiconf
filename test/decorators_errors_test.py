@@ -61,7 +61,7 @@ class DecoratorsTest(unittest.TestCase):
                 pass
 
             with root(prod, [prod]) as cr:
-                with item(True) as ii:
+                with item() as ii:
                     ii.efgh(prod=7)
 
             fail ("Expected exception")
@@ -80,7 +80,7 @@ class DecoratorsTest(unittest.TestCase):
                 pass
 
             with root(prod, [prod]) as cr:
-                with item(True) as ii:
+                with item() as ii:
                     ii.abcd(prod=1)
 
             fail ("Expected exception")

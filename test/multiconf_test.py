@@ -26,10 +26,10 @@ class MulticonfTest(unittest.TestCase):
             ok (conf.root_conf) == conf
             ok (conf.contained_in) == None
         
-            with ConfigItem(repeat=True) as c1:
+            with ConfigItem() as c1:
                 ok (c1.root_conf) == conf
                 ok (c1.contained_in) == conf
 
-                with ConfigItem(repeat=False) as c2:
+                with ConfigItem() as c2:
                     ok (c2.root_conf) == conf
                     ok (c2.contained_in) == c1

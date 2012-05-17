@@ -155,6 +155,7 @@ class _ConfigBase(object):
 
     # Decoration attributes
     _deco_named_as = None
+    _deco_repeat = False
     _deco_required_attributes = []
     _deco_required_if_attributes = (None, ())
 
@@ -164,7 +165,6 @@ class _ConfigBase(object):
         # Object linking
         self._root_conf = None
         self._nesting_level = 0
-        self._repeat = False
 
         # Dict of dicts: attributes['a'] = dict(Env('prod')=1, EnvGroup('dev')=0)
         self._attributes = {}
@@ -174,7 +174,7 @@ class _ConfigBase(object):
     def named_as(self):
         if self.__class__._deco_named_as:
             return self.__class__._deco_named_as
-        if self._repeat:
+        if self.__class__._deco_repeat:
             return self.__class__.__name__ + 's'
         return self.__class__.__name__
 
@@ -358,10 +358,8 @@ class ConfigRoot(_ConfigItem):
 
 
 class ConfigItem(_ConfigItem):
-    def __init__(self, repeat, **attr):
-        assert isinstance(repeat, type(True))
+    def __init__(self, **attr):
         super(ConfigItem, self).__init__(**attr)
-        self._repeat = repeat
 
         # Automatic Nested Insert in parent
         if not self.__class__.nested:
@@ -374,7 +372,7 @@ class ConfigItem(_ConfigItem):
         # Insert self in containing Item's attributes
         my_key = self.named_as()
 
-        if self._repeat:
+        if self.__class__._deco_repeat:
             # Validate that an attribute value of parent is not overridden by nested item (self)
             if my_key in self._contained_in._attributes:
                 if not isinstance(self._contained_in._attributes[my_key], OrderedDict):
@@ -403,10 +401,8 @@ class ConfigItem(_ConfigItem):
 
 
 class ConfigBuilder(_ConfigBase):
-    def __init__(self, repeat, **attr):
-        assert isinstance(repeat, type(True))
+    def __init__(self, **attr):
         super(ConfigBuilder, self).__init__(**attr)
-        self._repeat = repeat
 
         # Set back reference to containing Item and root item
         self._contained_in = self.__class__.nested[-1]
