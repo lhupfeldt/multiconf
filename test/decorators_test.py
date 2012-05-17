@@ -50,7 +50,7 @@ class DecoratorsTest(unittest.TestCase):
         ok (cr.anotherattr) == 2
 
     @test("required attributes - configitem")
-    def _a(self):
+    def _b(self):
         class root(ConfigRoot):
             pass
 
@@ -68,7 +68,7 @@ class DecoratorsTest(unittest.TestCase):
 
 
     @test("required attributes - accept override of single property")
-    def _a(self):
+    def _c(self):
         class root(ConfigRoot):
             pass
 
@@ -86,7 +86,7 @@ class DecoratorsTest(unittest.TestCase):
 
 
     @test("required_if attributes - condition true and condition unset")
-    def _a(self):
+    def _d(self):
         @required_if('a', 'b, c')
         class root(ConfigRoot):
             pass
@@ -101,7 +101,7 @@ class DecoratorsTest(unittest.TestCase):
         ok (cr.c) == 3
 
     @test("required_if attributes - condition false")
-    def _a(self):
+    def _e(self):
         @required_if('a', 'b, c')
         class root(ConfigRoot):
             pass
@@ -114,7 +114,7 @@ class DecoratorsTest(unittest.TestCase):
         ok (cr.b) == 1
 
     @test("optional attribute")
-    def _a(self):
+    def _f(self):
         @optional('a')
         class root(ConfigRoot):
             pass
