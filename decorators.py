@@ -25,6 +25,15 @@ def _check_valid_identifiers(names):
     if len(invalid) == 1:
         raise ConfigDefinitionException(repr(invalid[0]) + " is not a valid identifier")
     raise ConfigDefinitionException(repr(invalid) + " are not valid identifiers")
+
+
+def named_as(insert_as_name):
+    def deco(cls):
+        _check_valid_identifiers((insert_as_name,))
+        cls._deco_named_as = insert_as_name
+        return cls
+
+    return deco
         
 
 def required(attr_names):

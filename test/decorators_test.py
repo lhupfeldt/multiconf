@@ -127,5 +127,14 @@ class DecoratorsTest(unittest.TestCase):
             cr.a(prod=17)
         ok (cr.a) == 17
 
+    @test("named_as")
+    def _f(self):
+        @named_as('project')
+        class root(ConfigRoot):
+            pass
+
+        proj = root(prod, [prod, dev2ct], name='abc')            
+        ok (repr(proj)) == "project {\n}"
+
 if __name__ == '__main__':
     unittest.main()

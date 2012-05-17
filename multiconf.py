@@ -154,6 +154,7 @@ class _ConfigBase(object):
     nested = []
 
     # Decoration attributes
+    _deco_named_as = None
     _deco_required_attributes = []
     _deco_required_if_attributes = (None, ())
 
@@ -163,19 +164,26 @@ class _ConfigBase(object):
         # Object linking
         self._root_conf = None
         self._nesting_level = 0
+        self._repeat = False
 
         # Dict of dicts: attributes['a'] = dict(Env('prod')=1, EnvGroup('dev')=0)
         self._attributes = {}
         self._defaults = attr
-
-        self._name = self.__class__.__name__
         self._finalized = True
+
+    def named_as(self):
+        if self.__class__._deco_named_as:
+            return self.__class__._deco_named_as
+        if self._repeat:
+            return self.__class__.__name__ + 's'
+        return self.__class__.__name__
 
     def irepr(self, indent_level):
         """Indented repr"""
         indent1 = '  ' * indent_level
         indent2 =  indent1 + '     '
-        return self._name + ' {\n' + \
+        # + ':' + self.__class__.__name__
+        return self.named_as() + ' {\n' + \
             ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.iteritems()]) + \
             indent1 + '}'
 
@@ -290,7 +298,7 @@ class _ConfigBase(object):
             return super(_ConfigBase, self).__getattr__(name)
 
         if not self._root_conf:
-            raise ConfigException(self._name + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
+            raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
 
         if name == 'contained_in':
             return self._contained_in
@@ -370,10 +378,9 @@ class ConfigItem(_ConfigBase):
         self._root_conf = self._contained_in._root_conf
 
         # Insert self in containing Item's attributes
-        if self._repeat:
-            # To s or not to s?
-            my_key = self._name + 's'
+        my_key = self.named_as()
 
+        if self._repeat:
             # Validate that an attribute value of parent is not overridden by nested item (self)
             if my_key in self._contained_in._attributes:
                 if not isinstance(self._contained_in._attributes[my_key], OrderedDict):
@@ -392,7 +399,6 @@ class ConfigItem(_ConfigBase):
             self._contained_in._attributes.setdefault(my_key, OrderedDict())[obj_key] = self
             return
 
-        my_key = self._name
         if my_key in self._contained_in._attributes:
             if isinstance(self._contained_in._attributes[my_key], ConfigItem):
                 raise ConfigException("Repeated non repeatable conf item: " + repr(my_key))
