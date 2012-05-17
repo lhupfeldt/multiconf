@@ -14,7 +14,7 @@ from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
 from multiconf import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
-from multiconf.decorators import required, required_if, optional
+from multiconf.decorators import required, required_if, optional, ConfigDefinitionException
 from multiconf.envs import Env, EnvGroup
 
 dev2ct = Env('dev2ct')
@@ -101,6 +101,26 @@ class DecoratorsTest(unittest.TestCase):
             fail ("Expected exception")
         except NoAttributeException  as ex:
             ok (ex.message) == "Attribute 'a' undefined for env Env('prod')"
+
+    @test("decorator arg not a valid identifier - required")
+    def _e(self): 
+        try:
+            @required('a, a-b, b, 99')
+            class root(ConfigRoot):
+                pass
+            fail ("Expected exception")
+        except ConfigDefinitionException  as ex:
+            ok (ex.message) == "['a-b', '99'] are not valid identifiers"
+
+    @test("decorator arg not a valid identifier - required_if")
+    def _e(self): 
+        try:
+            @required_if('-a', 'a, a-b, b, 99')
+            class root(ConfigRoot):
+                pass
+            fail ("Expected exception")
+        except ConfigDefinitionException  as ex:
+            ok (ex.message) == "['-a', 'a-b', '99'] are not valid identifiers"
 
 
 if __name__ == '__main__':
