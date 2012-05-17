@@ -191,8 +191,6 @@ class _ConfigBase(object):
         return self.irepr(self._nesting_level)
 
     def __enter__(self):
-        self._nesting_level = len(self.__class__.nested)
-        self.__class__.nested.append(self)
         self._finalized = False
         return self
 
@@ -231,8 +229,6 @@ class _ConfigBase(object):
         self.exit_validate_required_if()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.__class__.nested.pop()
-
         if exc_type:
             return None
 
@@ -327,7 +323,19 @@ class _ConfigBase(object):
         return self._root_conf
 
 
-class ConfigRoot(_ConfigBase):
+class _ConfigItem(_ConfigBase):
+    def __enter__(self):
+        super(_ConfigItem, self).__enter__()
+        self._nesting_level = len(self.__class__.nested)
+        self.__class__.nested.append(self)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.__class__.nested.pop()
+        super(_ConfigItem, self).__exit__(exc_type, exc_value, traceback)
+
+
+class ConfigRoot(_ConfigItem):
     def __init__(self, selected_env, valid_envs, **attr):
         if not isinstance(valid_envs, Sequence) or isinstance(valid_envs, str):
             raise ConfigException(self.__class__.__name__ + ": valid_envs arg must be a 'Sequence'; found type " + repr(valid_envs.__class__.__name__))
@@ -344,25 +352,12 @@ class ConfigRoot(_ConfigBase):
         self._root_conf = self
         self._contained_in = None
 
-    def _insert(self, other):
-        other_class = ConfigItem
-        if not isinstance(other, other_class):
-            raise ConfigException("Only a " + repr(other_class.__name__) + " may be inserted in a " + repr(self.__class__.__name__))
-
-    def __lshift__(self, other):
-        self._insert(other)
-        return other
-
-    def __ilshift__(self, other):
-        self._insert(other)
-        return self
-
     @property
     def selected_env(self):
         return self._selected_env
 
 
-class ConfigItem(_ConfigBase):
+class ConfigItem(_ConfigItem):
     def __init__(self, repeat, **attr):
         assert isinstance(repeat, type(True))
         super(ConfigItem, self).__init__(**attr)
@@ -417,34 +412,8 @@ class ConfigBuilder(_ConfigBase):
         self._contained_in = self.__class__.nested[-1]
         self._root_conf = self._contained_in._root_conf
 
-    def __enter__(self):
-        self._nesting_level = len(self.__class__.nested)
-        self._finalized = False
-        return self
-
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type:
-            return None
-
-        # Collect remaining default values
-        for name in list(self._defaults):
-            AttributeCollector(name, self)()
-
-        try:
-            self.exit_validation()
-        except ConfigException as ex:
-            if self._debug_exc:
-                raise
-            # Strip stack
-            raise ex
-        except NoAttributeException as ex:
-            if self._debug_exc:
-                raise
-            # Strip stack
-            raise ex
-
-        self._finalized = True
-
+        super(ConfigBuilder, self).__exit__(exc_type, exc_value, traceback)
         self.build()
 
     def build(self):
