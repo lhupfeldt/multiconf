@@ -342,6 +342,21 @@ class _ConfigBase(object):
 
 
 class _ConfigItem(_ConfigBase):
+
+    def _validate(self):
+        self.validate()
+        for child_name,child_value in self.iteritems():
+            if isinstance(child_value, OrderedDict):
+                for dict_entry in child_value.values():
+                    dict_entry._validate()
+            
+            if isinstance(child_value, _ConfigItem):
+                child_value._validate()
+            
+    def validate(self):
+        """Can be overridden to provide post-frozen validation"""
+        pass
+
     def __enter__(self):
         super(_ConfigItem, self).__enter__()
         self._nesting_level = len(self.__class__.nested)
@@ -369,6 +384,10 @@ class ConfigRoot(_ConfigItem):
         super(ConfigRoot, self).__init__(**attr)
         self._root_conf = self
         self._contained_in = None
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
+        self._validate()
 
     @property
     def selected_env(self):
