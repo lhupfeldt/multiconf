@@ -102,3 +102,9 @@ class MulticonfTest(unittest.TestCase):
             key, value = actual
             ok (exp_key) == key
             ok (exp_value) == value
+
+    @test("property defined with same type and None")
+    def _g(self):
+        with ConfigRoot(prod, [prod, pp], a=None) as cr:
+            cr.a(prod=1, pp=2)
+        ok (cr.a) == 1

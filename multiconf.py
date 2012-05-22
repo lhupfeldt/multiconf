@@ -54,7 +54,8 @@ class AttributeCollector(object):
 
         defaults = self._container._defaults
         if self._attribute_name in defaults:
-            attr_types.add(type(defaults[self._attribute_name]))
+            if defaults[self._attribute_name] != None:
+                attr_types.add(type(defaults[self._attribute_name]))
 
         # Validate and assign given env values to container
         for eg_name, value in kwargs.iteritems():
@@ -62,10 +63,11 @@ class AttributeCollector(object):
                 eg = env_or_group(eg_name)
 
                 # Validate that an attribute has the same type for all envs
-                if type(value) not in attr_types and attr_types:
-                    msg = "Found different types of property " + repr(self._attribute_name) + " for different envs: " + repr(type(value)) + " previously found types: " + repr(list(attr_types))
-                    errors = _error_msg(errors, msg)
-                attr_types.add(type(value))
+                if type(value) != type(None):
+                    if type(value) not in attr_types and attr_types:
+                        msg = "Found different types of property " + repr(self._attribute_name) + " for different envs: " + repr(type(value)) + " previously found types: " + repr(list(attr_types))
+                        errors = _error_msg(errors, msg)
+                    attr_types.add(type(value))
 
                 # TODO: allow env overrides group, allow group nested override?
                 for env in eg.envs():
