@@ -24,7 +24,7 @@ def main():
     parser = argparse.ArgumentParser(description="Demo of mini pseudo weblogic config for multiple envs")
     parser.add_argument('--env', required=True, help="The environment for which to load the config")
     args = parser.parse_args()
-    
+
     generate(multiconf.envs.Env(args.env))
 
 

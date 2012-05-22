@@ -27,7 +27,7 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod]) as conf:
             ok (conf.root_conf) == conf
             ok (conf.contained_in) == None
-        
+
             with ConfigItem() as c1:
                 ok (c1.root_conf) == conf
                 ok (c1.contained_in) == conf
@@ -47,7 +47,7 @@ class MulticonfTest(unittest.TestCase):
         class rchild(ConfigItem):
             pass
 
-        with root(prod, [prod, pp]) as cr:            
+        with root(prod, [prod, pp]) as cr:
             with rchild(name="first", aa=1, bb=1) as ci:
                 ci.aa(prod=3)
 

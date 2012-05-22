@@ -41,7 +41,7 @@ def ce(line_num, *lines):
 class RepeatableItem(ConfigItem):
     pass
 
-    
+
 class ErrorsTest(unittest.TestCase):
     @test("valid_envs arg as EnvGroup")
     def _a(self):

@@ -103,7 +103,7 @@ class DecoratorsTest(unittest.TestCase):
             ok (ex.message) == "Attribute 'a' undefined for env Env('prod')"
 
     @test("decorator arg not a valid identifier - required")
-    def _e(self): 
+    def _e(self):
         try:
             @required('a, a-b, b, 99')
             class root(ConfigRoot):
@@ -113,7 +113,7 @@ class DecoratorsTest(unittest.TestCase):
             ok (ex.message) == "['a-b', '99'] are not valid identifiers"
 
     @test("decorator arg not a valid identifier - required_if")
-    def _e(self): 
+    def _e(self):
         try:
             @required_if('-a', 'a, a-b, b, 99')
             class root(ConfigRoot):

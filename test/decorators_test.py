@@ -133,7 +133,7 @@ class DecoratorsTest(unittest.TestCase):
         class root(ConfigRoot):
             pass
 
-        proj = root(prod, [prod, dev2ct], name='abc')            
+        proj = root(prod, [prod, dev2ct], name='abc')
         ok (repr(proj)) == "project {\n}"
 
 if __name__ == '__main__':

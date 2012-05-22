@@ -10,14 +10,14 @@ class EnvException(Exception):
 _envs = {}
 
 class Env(object):
-    def __init__(self, name):        
+    def __init__(self, name):
         if not isinstance(name, type("")):
             raise EnvException(self.__class__.__name__ + ": 'name' must be instanceof " + type("").__name__ + ", found: " +  type(name).__name__)
         if not len(name):
             raise EnvException(self.__class__.__name__ + ": 'name' must not be empty")
         if name[0] == '_':
             raise EnvException(self.__class__.__name__ + ": 'name' must not start with '_', got: " + repr(name))
-            
+
         self._name = name
         self.members = []
 
@@ -36,7 +36,7 @@ class Env(object):
     def envs(self):
         """ return self"""
         yield self
-        
+
     all = envs
 
     def __eq__(self, other):
@@ -47,7 +47,7 @@ class Env(object):
 
     def __contains__(self, other):
         if other == self:
-            return True            
+            return True
 
 _groups = {}
 
@@ -86,7 +86,7 @@ class EnvGroup(Env, Container):
 
         # All good
         self.members = members
-        
+
         _groups[name] = self
 
     def irepr(self, indent_level):
@@ -131,14 +131,14 @@ class EnvGroup(Env, Container):
 
     def __contains__(self, other):
         if other == self:
-            return True            
+            return True
         for member in self.members:
             if other == member:
                 return True
             if isinstance(member, EnvGroup):
                 if other in member:
-                    return True            
-            
+                    return True
+
         return False
 
 

@@ -19,8 +19,8 @@ _Traceback = namedtuple('Traceback', 'filename, lineno, function, code_context, 
 
 def _error_msg(num_errors, message):
     tb = _Traceback(*inspect.stack()[2][1:])
-    print >>sys.stderr, 'File "' + tb.filename + '", line', tb.lineno
-    print >>sys.stderr, 'ConfigError:', message
+    print >> sys.stderr, 'File "' + tb.filename + '", line', tb.lineno
+    print >> sys.stderr, 'ConfigError:', message
     return num_errors + 1
 
 
@@ -171,7 +171,7 @@ class _ConfigBase(object):
         for key in self.__class__._deco_nested_repeatables:
             self._attributes[key] = OrderedDict()
 
-        self._defaults = attr        
+        self._defaults = attr
         self._finalized = True
 
     def named_as(self):
@@ -348,14 +348,14 @@ class _ConfigItem(_ConfigBase):
 
     def _validate(self):
         self.validate()
-        for child_name,child_value in self.iteritems():
+        for _child_name, child_value in self.iteritems():
             if isinstance(child_value, OrderedDict):
                 for dict_entry in child_value.values():
                     dict_entry._validate()
-            
+
             if isinstance(child_value, _ConfigItem):
                 child_value._validate()
-            
+
     def validate(self):
         """Can be overridden to provide post-frozen validation"""
         pass

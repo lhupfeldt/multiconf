@@ -21,7 +21,7 @@ def _check_valid_identifiers(names):
         if not _isidentifier(name):
             invalid.append(name)
     if not invalid:
-        return    
+        return
     if len(invalid) == 1:
         raise ConfigDefinitionException(repr(invalid[0]) + " is not a valid identifier")
     raise ConfigDefinitionException(repr(invalid) + " are not valid identifiers")
@@ -52,7 +52,7 @@ def nested_repeatables(attr_names):
         return cls
 
     return deco
-        
+
 
 def required(attr_names):
     def deco(cls):

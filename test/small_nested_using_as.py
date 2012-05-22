@@ -30,14 +30,14 @@ class RepeatableItem(ConfigItem):
 def config(env):
     """Test config"""
     with project(env, valid_envs) as conf:
-    
+
         with RepeatableItem(id=0, b='hello') as c:
             hello = "Hello"
             c.id(prod=3)
             c.a(prod=hello, dev2CT="hi", dev2ST="hay")
             with ConfigItem(c=1) as c:
                 c.c(prod=2)
-    
+
         with RepeatableItem(id=1, d='hello') as c:
             hello = "World"
             c.a(prod=hello, dev2CT="hi", dev2ST="hay")
@@ -49,7 +49,7 @@ def config(env):
 def test(env):
     """Create config and print some values"""
     conf = config(env)
-    
+
     print "----", env, "----"
     print conf.RepeatableItems[0].a
     print conf.RepeatableItems[0].ConfigItem.c

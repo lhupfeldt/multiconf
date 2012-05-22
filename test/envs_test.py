@@ -79,14 +79,14 @@ class EnvsTest(unittest.TestCase):
         ok (dev2ct not in g_dev3) == True
         ok (g_dev2 in g_dev) == True
         ok (g_dev not in g_dev2) == True
-    
+
     @test("Iterating envs only")
     def _2(self):
         envs = []
         for env in valid_envs.envs():
             envs.append(env)
         ok (envs) == envs_only
-    
+
 
     @test("Iterating Groups only")
     def _3(self):
@@ -94,7 +94,7 @@ class EnvsTest(unittest.TestCase):
         for group in valid_envs.groups():
             groups.append(group)
         ok (groups) == groups_only
-    
+
     @test("Iterating Groups and Envs")
     def _4(self):
         envs = []
