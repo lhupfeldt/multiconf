@@ -415,7 +415,8 @@ class ConfigItem(_ConfigItem):
         if self.__class__._deco_repeatable:
             # Validate that the containing item has specified this item as repeatable
             if not my_key in self._contained_in.__class__._deco_nested_repeatables:
-                msg = repr(my_key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + repr(self._contained_in.named_as())
+                msg = repr(my_key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
+                    repr(self._contained_in.named_as())
                 raise ConfigException(msg)
                 # TODO?: type check of list items (instanceof(ConfigItem). Same type?
 
@@ -432,10 +433,13 @@ class ConfigItem(_ConfigItem):
                     obj_key = self._defaults['id']
                 except KeyError:
                     obj_key = self._defaults['name']
+
+                # Check that we are no replacing an object with the same id/name
+                if self._contained_in._attributes[my_key].get(obj_key):
+                    raise ConfigException("Re-used id/name " + repr(obj_key) + " in nested objects")
             except KeyError:
                 obj_key = id(self)
 
-            # TODO, exists check: self._contained_in._attributes[my_key][obj_key]
             self._contained_in._attributes[my_key][obj_key] = self
             return
 
@@ -443,7 +447,8 @@ class ConfigItem(_ConfigItem):
             if isinstance(self._contained_in._attributes[my_key], ConfigItem):
                 raise ConfigException("Repeated non repeatable conf item: " + repr(my_key))
             if isinstance(self._contained_in._attributes[my_key], OrderedDict):
-                msg = repr(my_key) + ': ' + repr(self) + ' is defined as non-repeatable, but the containing object has repatable items with the same name: ' + repr(self._contained_in)
+                msg = repr(my_key) + ': ' + repr(self) + ' is defined as non-repeatable, but the containing object has repatable items with the same name: ' + \
+                    repr(self._contained_in)
                 raise ConfigException(msg)
             raise ConfigException(repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self))
 

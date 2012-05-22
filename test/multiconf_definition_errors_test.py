@@ -15,7 +15,7 @@ from utils import lazy, config_error, lineno
 
 from multiconf import ConfigRoot, ConfigItem, ConfigException
 from multiconf.envs import Env, EnvGroup
-from multiconf.decorators import repeat
+from multiconf.decorators import nested_repeatables, repeat
 
 dev2ct = Env('dev2CT')
 dev2st = Env('dev2ST')
@@ -99,7 +99,7 @@ class ErrorsTest(unittest.TestCase):
             ok (ex.message) == "There were 1 errors when defining attribute 'a'"
 
     @test("property redefined")
-    def _g(self):
+    def _h(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod]) as cr:
@@ -113,7 +113,7 @@ class ErrorsTest(unittest.TestCase):
             ok (ex.message) == "Attribute redefinition error: 'a'"
 
     @test("nested item overrides simple property")
-    def _h(self):
+    def _i(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
                 cr.ConfigItem(prod="hello")
@@ -123,7 +123,7 @@ class ErrorsTest(unittest.TestCase):
             ok (ex.message) == "'ConfigItem' is defined both as simple value and a contained item: ConfigItem {\n}"
 
     @test("nested repeatable item overrides simple property - not contained in repeatable")
-    def _i(self):
+    def _j(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
                 cr.RepeatableItems(prod="hello")
@@ -134,7 +134,7 @@ class ErrorsTest(unittest.TestCase):
 
     #@test("nested repeatable item overrides simple property - contained in repeatable")
     #@todo
-    #def _i2(self):
+    #def _k(self):
     #    try:
     #        @nested_repeatables('children')
     #        class root(ConfigRoot):
@@ -153,7 +153,7 @@ class ErrorsTest(unittest.TestCase):
     #        ok (ex.message) == "'children' is defined both as simple value and a contained item: children {\n}"
 
     @test("simple property overrides contained item")
-    def _j(self):
+    def _l(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod]) as cr:
@@ -167,7 +167,7 @@ class ErrorsTest(unittest.TestCase):
             ok (ex.message) == "Attribute redefinition error: 'ConfigItem'"
 
     @test("repeated non-repeatable item")
-    def _k(self):
+    def _m(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
                 ConfigItem()
@@ -177,6 +177,19 @@ class ErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             ok (ex.message) == "Repeated non repeatable conf item: 'ConfigItem'"
 
+    @test("nested repeatable items with repeated name")
+    def _n(self):
+        @nested_repeatables('RepeatableItems')
+        class project(ConfigRoot):
+            pass
+
+        try:
+            with project(prod, [prod]) as cr:
+                RepeatableItem(id='my_name')
+                RepeatableItem(id='my_name')
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "Re-used id/name 'my_name' in nested objects"
 
 if __name__ == '__main__':
     unittest.main()
