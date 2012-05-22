@@ -67,7 +67,6 @@ class MulticonfTest(unittest.TestCase):
             ok (ci.aa) == index
             index += 1
 
-
     @test("empty nested repeatable items")
     def _b(self):
         @nested_repeatables('children')
@@ -79,3 +78,31 @@ class MulticonfTest(unittest.TestCase):
 
         for ci in cr.children.values():
             fail ("list should be empty")
+
+    @test("iteritems - root, attributes")
+    def _b(self):
+        with ConfigRoot(prod, [prod, pp], a=1, b=2) as cr:
+            pass
+
+        for exp, actual in zip([('a', 1), ('b', 2)], list(cr.iteritems())):
+            print exp
+            print actual
+            exp_key, exp_value = exp
+            key, value = actual
+            ok (exp_key) == key
+            ok (exp_value) == value
+
+
+    @test("iteritems - item, attributes")
+    def _b(self):
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            with ConfigItem(a=1, b=2) as ci:
+                pass
+
+        for exp, actual in zip([('a', 1), ('b', 2)], list(ci.iteritems())):
+            print exp
+            print actual
+            exp_key, exp_value = exp
+            key, value = actual
+            ok (exp_key) == key
+            ok (exp_value) == value
