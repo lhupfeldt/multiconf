@@ -15,7 +15,7 @@ from utils import lazy, config_error, lineno
 
 from multiconf import ConfigRoot, ConfigItem, ConfigException
 from multiconf.envs import Env, EnvGroup
-from multiconf.decorators import *
+from multiconf.decorators import repeat
 
 dev2ct = Env('dev2CT')
 dev2st = Env('dev2ST')

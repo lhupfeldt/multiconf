@@ -11,7 +11,7 @@ sys.path.append(jp(here, '../..'))
 
 from multiconf import ConfigRoot, ConfigItem
 from multiconf.envs import Env, EnvGroup
-from multiconf.decorators import *
+from multiconf.decorators import nested_repeatables, named_as, repeat
 
 prod = Env('prod')
 dev2ct = Env('dev2CT')

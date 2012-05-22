@@ -14,7 +14,7 @@ from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
 from multiconf import ConfigRoot, ConfigItem, ConfigException
-from multiconf.decorators import *
+from multiconf.decorators import  required, required_if, nested_repeatables, named_as, repeat, optional
 from multiconf.envs import Env, EnvGroup
 
 def ce(line_num, *lines):
@@ -128,7 +128,7 @@ class DecoratorsTest(unittest.TestCase):
         ok (cr.a) == 17
 
     @test("named_as")
-    def _f(self):
+    def _g(self):
         @named_as('project')
         class root(ConfigRoot):
             pass

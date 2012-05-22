@@ -15,7 +15,7 @@ from utils import lazy, config_error, lineno
 
 from multiconf import ConfigRoot, ConfigItem
 from multiconf.envs import Env
-from multiconf.decorators import *
+from multiconf.decorators import nested_repeatables, named_as, repeat
 
 prod = Env('prod')
 pp = Env('pp')
