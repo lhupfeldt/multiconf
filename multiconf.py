@@ -326,7 +326,11 @@ class _ConfigBase(object):
 
     def iteritems(self):
         for key, value in self._attributes.iteritems():
-            yield key, self._env_specific_value(key, value, self._root_conf._selected_env)
+            try:
+                yield key, self._env_specific_value(key, value, self._root_conf._selected_env)
+            except NoAttributeException:
+                # This should only happen in case of  a conditional attribute
+                pass
 
     def items(self):
         return list(self.iteritems())
