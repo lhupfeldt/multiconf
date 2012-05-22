@@ -68,7 +68,7 @@ class ErrorsTest(unittest.TestCase):
                     cr.a(pros="hello", prod="hi")
                 fail ("Expected exception")
         except ConfigException as ex:
-            sout, serr = d_io
+            _sout, serr = d_io
             ok (serr) == ce(errorline, "No such Env or EnvGroup: 'pros'")
             ok (ex.message) == "There were 1 errors when defining attribute 'a'"
 
@@ -81,7 +81,7 @@ class ErrorsTest(unittest.TestCase):
                     cr.a(prod="hello")
                 fail ("Expected exception")
         except ConfigException as ex:
-            sout, serr = d_io
+            _sout, serr = d_io
             ok (serr) == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
             ok (ex.message) == "There were 1 errors when defining attribute 'a'"
 
@@ -94,7 +94,7 @@ class ErrorsTest(unittest.TestCase):
                     cr.a(prod=1, pp="hello")
                 fail ("Expected exception")
         except ConfigException as ex:
-            sout, serr = d_io
+            _sout, serr = d_io
             ok (serr) == ce(errorline, "Found different types of property 'a' for different envs: <type 'int'> previously found types: [<type 'str'>]")
             ok (ex.message) == "There were 1 errors when defining attribute 'a'"
 
@@ -108,7 +108,7 @@ class ErrorsTest(unittest.TestCase):
                     cr.a(prod=2)
                 fail ("Expected exception")
         except ConfigException as ex:
-            sout, serr = d_io
+            _sout, serr = d_io
             ok (serr) == ce(errorline, "Redefined attribute 'a'")
             ok (ex.message) == "Attribute redefinition error: 'a'"
 
@@ -162,7 +162,7 @@ class ErrorsTest(unittest.TestCase):
                     cr.ConfigItem(prod="hello")
                 fail ("Expected exception")
         except ConfigException as ex:
-            sout, serr = d_io
+            _sout, serr = d_io
             ok (serr) == ce(errorline, "Redefined attribute 'ConfigItem'")
             ok (ex.message) == "Attribute redefinition error: 'ConfigItem'"
 
