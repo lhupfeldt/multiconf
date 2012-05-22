@@ -85,8 +85,6 @@ class MulticonfTest(unittest.TestCase):
             pass
 
         for exp, actual in zip([('a', 1), ('b', 2)], list(cr.iteritems())):
-            print exp
-            print actual
             exp_key, exp_value = exp
             key, value = actual
             ok (exp_key) == key
@@ -100,8 +98,6 @@ class MulticonfTest(unittest.TestCase):
                 pass
 
         for exp, actual in zip([('a', 1), ('b', 2)], list(ci.iteritems())):
-            print exp
-            print actual
             exp_key, exp_value = exp
             key, value = actual
             ok (exp_key) == key
