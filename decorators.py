@@ -1,8 +1,9 @@
 # Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # This code is free for anybody to use
 
-import re
+import re, sys
 import keyword
+import multiconf
 
 class ConfigDefinitionException(Exception):
     def __init__(self, msg):
@@ -58,7 +59,11 @@ def required(attr_names):
     def deco(cls):
         attributes = [attr.strip() for attr in attr_names.split(',')]
         _check_valid_identifiers(attributes)
-        cls._deco_required_attributes = attributes
+        super_deco_required = super(cls, cls)._deco_required_attributes
+        for attr in super_deco_required:
+            if attr in attributes:
+                multiconf._warning_msg("Attribute name: " + repr(attr) + " re-specified as 'required' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
+        cls._deco_required_attributes = attributes + super_deco_required
         return cls
 
     return deco
@@ -75,4 +80,5 @@ def required_if(attr_name, attr_names):
 
 
 def optional(attr_name):
+    # TODO: Implement this cleanly so the a reasonable error message will be given
     return required_if(attr_name, attr_name)

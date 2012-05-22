@@ -24,6 +24,12 @@ def _error_msg(num_errors, message):
     return num_errors + 1
 
 
+def _warning_msg(message):
+    tb = _Traceback(*inspect.stack()[2][1:])
+    print >> sys.stderr, 'File "' + tb.filename + '", line', tb.lineno
+    print >> sys.stderr, 'ConfigWarning:', message
+
+
 class AttributeCollector(object):
     def __init__(self, attribute_name, container):
         self._attribute_name = attribute_name

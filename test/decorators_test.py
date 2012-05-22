@@ -152,6 +152,25 @@ class DecoratorsTest(unittest.TestCase):
         proj = root(prod, [prod, dev2ct], name='abc')
         ok (repr(proj)) == "project {\n}"
 
+    @test("required attributes - inherited, ok")
+    def _h(self):
+        @required('anattr, anotherattr')
+        class root(ConfigRoot):
+            pass
+
+        @required('someattr2, someotherattr2')
+        class root2(root):
+            pass
+
+        with root2(prod, [prod]) as cr:
+            cr.anattr(prod=1)
+            cr.anotherattr(prod=2)
+            cr.someattr2(prod=3)
+            cr.someotherattr2(prod=4)
+        ok (cr.anattr) == 1
+        ok (cr.anotherattr) == 2
+        ok (cr.someattr2) == 3
+        ok (cr.someotherattr2) == 4
 
 if __name__ == '__main__':
     unittest.main()
