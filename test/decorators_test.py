@@ -85,20 +85,28 @@ class DecoratorsTest(unittest.TestCase):
         ok (cr.item.b) == 2
 
 
-    @test("required_if attributes - condition true and condition unset")
+    @test("required_if attributes - condition true (prod) and condition unset (dev2ct)")
     def _d(self):
         @required_if('a', 'b, c')
         class root(ConfigRoot):
             pass
 
         with root(prod, [prod, dev2ct]) as cr:
-            cr.a(prod=1)
-            cr.b(prod=2)
-            cr.c(prod=3)
+            cr.a(prod=10)
+            cr.b(prod=20)
+            cr.c(prod=30)
 
-        ok (cr.a) == 1
-        ok (cr.b) == 2
-        ok (cr.c) == 3
+        ok (cr.a) == 10
+        ok (cr.b) == 20
+        ok (cr.c) == 30
+
+        # Test iteritems
+        expected_keys = ['a', 'b', 'c']
+        index = 0
+        for key, val in cr.iteritems():
+            ok (key) == expected_keys[index]
+            ok (val) == (index + 1) * 10
+            index += 1
 
     @test("required_if attributes - condition false")
     def _e(self):
@@ -108,10 +116,18 @@ class DecoratorsTest(unittest.TestCase):
 
         with root(prod, [prod]) as cr:
             cr.a(prod=0)
-            cr.b(prod=1)
+            cr.b(prod=10)
 
         ok (cr.a) == 0
-        ok (cr.b) == 1
+        ok (cr.b) == 10
+
+        # Test iteritems
+        expected_keys = ['a', 'b']
+        index = 0
+        for key, val in cr.iteritems():
+            ok (key) == expected_keys[index]
+            ok (val) == index * 10
+            index += 1
 
     @test("optional attribute")
     def _f(self):
@@ -135,6 +151,7 @@ class DecoratorsTest(unittest.TestCase):
 
         proj = root(prod, [prod, dev2ct], name='abc')
         ok (repr(proj)) == "project {\n}"
+
 
 if __name__ == '__main__':
     unittest.main()
