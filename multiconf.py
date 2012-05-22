@@ -4,7 +4,6 @@
 import sys
 from collections import Sequence, namedtuple, OrderedDict
 import inspect
-from attrdict import AttrDict
 from envs import Env, EnvGroup, env_or_group, EnvException
 
 
