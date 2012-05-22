@@ -151,7 +151,7 @@ class DecoratorsTest(unittest.TestCase):
             @required('anattr, anotherattr')
             class root(ConfigRoot):
                 pass
-    
+
             errorline = lineno() + 2
             @required('anattr, someotherattr2')
             class root2(root):
