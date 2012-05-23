@@ -3,18 +3,12 @@
 # Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # This code is free for anybody to use
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
 import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf import ConfigRoot, ConfigItem, ConfigException
-from multiconf.envs import Env, EnvGroup
+from .. import ConfigRoot, ConfigItem, ConfigException
+from ..envs import Env, EnvGroup
 
 prod = Env('prod')
 
@@ -31,6 +25,3 @@ class ErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "ConfigRoot {\n} has no attribute 'b'"
-
-if __name__ == '__main__':
-    unittest.main()

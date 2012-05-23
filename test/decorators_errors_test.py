@@ -3,19 +3,13 @@
 # Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # This code is free for anybody to use
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
 import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, config_warning, lineno
 
-from multiconf import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
-from multiconf.decorators import required, required_if, optional, ConfigDefinitionException
-from multiconf.envs import Env, EnvGroup
+from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
+from ..decorators import required, required_if, optional, ConfigDefinitionException
+from ..envs import Env, EnvGroup
 
 dev2ct = Env('dev2ct')
 dev2st = Env('dev2st')
@@ -159,6 +153,3 @@ class DecoratorsTest(unittest.TestCase):
 
         _sout, serr = d_io
         ok (serr) == cw(errorline, "Attribute name: 'anattr' re-specified as 'required' on class: 'root2' , was already inherited from a super class.")
-
-if __name__ == '__main__':
-    unittest.main()

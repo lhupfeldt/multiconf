@@ -3,16 +3,10 @@
 # Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # This code is free for anybody to use
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
 import unittest
 from oktest import ok, test
 
-from multiconf.envs import Env, EnvGroup
+from ..envs import Env, EnvGroup
 
 envs_only = []
 
@@ -109,7 +103,3 @@ class EnvsTest(unittest.TestCase):
             envs[env] = True
         for env in valid_envs.all():
             ok (envs[env]) == True
-
-
-if __name__ == '__main__':
-    unittest.main()

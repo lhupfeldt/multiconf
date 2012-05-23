@@ -3,15 +3,9 @@
 # Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # This code is free for anybody to use
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
-from multiconf import ConfigRoot, ConfigItem
-from multiconf.envs import Env, EnvGroup
-from multiconf.decorators import nested_repeatables, named_as, repeat
+from .. import ConfigRoot, ConfigItem
+from ..envs import Env, EnvGroup
+from ..decorators import nested_repeatables, named_as, repeat
 
 prod = Env('prod')
 dev2ct = Env('dev2CT')

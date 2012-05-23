@@ -3,19 +3,13 @@
 # Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # This code is free for anybody to use
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
 import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf import ConfigRoot, ConfigItem, ConfigException
-from multiconf.envs import Env, EnvGroup
-from multiconf.decorators import nested_repeatables, repeat
+from .. import ConfigRoot, ConfigItem, ConfigException
+from ..envs import Env, EnvGroup
+from ..decorators import nested_repeatables, repeat
 
 dev2ct = Env('dev2CT')
 dev2st = Env('dev2ST')
@@ -190,6 +184,3 @@ class ErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Re-used id/name 'my_name' in nested objects"
-
-if __name__ == '__main__':
-    unittest.main()

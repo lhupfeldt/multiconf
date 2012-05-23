@@ -3,19 +3,13 @@
 # Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # This code is free for anybody to use
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
 import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from multiconf import ConfigRoot, ConfigItem, ConfigException
-from multiconf.decorators import  required, required_if, nested_repeatables, named_as, repeat, optional
-from multiconf.envs import Env, EnvGroup
+from .. import ConfigRoot, ConfigItem, ConfigException
+from ..decorators import  required, required_if, nested_repeatables, named_as, repeat, optional
+from ..envs import Env, EnvGroup
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -171,6 +165,3 @@ class DecoratorsTest(unittest.TestCase):
         ok (cr.anotherattr) == 2
         ok (cr.someattr2) == 3
         ok (cr.someotherattr2) == 4
-
-if __name__ == '__main__':
-    unittest.main()
