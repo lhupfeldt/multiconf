@@ -180,7 +180,7 @@ class _ConfigBase(object):
             self._attributes[key] = OrderedDict()
 
         self._defaults = attr
-        self._finalized = True
+        self._frozen = True
 
     def named_as(self):
         if self.__class__._deco_named_as:
@@ -194,8 +194,8 @@ class _ConfigBase(object):
         indent1 = '  ' * indent_level
         indent2 =  indent1 + '     '
         # + ':' + self.__class__.__name__
-        not_finalized_msg = "" if self._finalized else " not finalized, defaults: " + repr(self._defaults) + '\n'
-        return self.named_as() + not_finalized_msg + ' {\n' + \
+        not_frozen_msg = "" if self._frozen else " not-frozen, defaults: " + repr(self._defaults) + '\n'
+        return self.named_as() + not_frozen_msg + ' {\n' + \
             ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.iteritems()]) + \
             indent1 + '}'
 
@@ -203,10 +203,10 @@ class _ConfigBase(object):
         return self.irepr(self._nesting_level)
 
     def __enter__(self):
-        self._finalized = False
+        self._frozen = False
         return self
 
-    def finalize_validate_required(self):
+    def freeze_validate_required(self):
         missing = []
         for req in self.__class__._deco_required_attributes:
             if not req in self._attributes:
@@ -214,7 +214,7 @@ class _ConfigBase(object):
         if missing:
             raise ConfigException("No value given for required attributes: " + repr(missing))
 
-    def finalize_validate_required_if(self):
+    def freeze_validate_required_if(self):
         required_if_key = self.__class__._deco_required_if_attributes[0]
         if not required_if_key:
             return
@@ -235,18 +235,18 @@ class _ConfigBase(object):
         if missing:
             raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + "==" +  repr(required_if) + ", missing: " + repr(missing))
 
-    def finalize_validation(self):
+    def freeze_validation(self):
         """Override this method if you need special checks"""
-        self.finalize_validate_required()
-        self.finalize_validate_required_if()
+        self.freeze_validate_required()
+        self.freeze_validate_required_if()
 
-    def finalize(self):
+    def freeze(self):
         # Collect remaining default values
         for name in list(self._defaults):
             AttributeCollector(name, self)()
 
         try:
-            self.finalize_validation()
+            self.freeze_validation()
         except ConfigException as ex:
             if self._debug_exc:
                 raise
@@ -257,14 +257,14 @@ class _ConfigBase(object):
                 raise
             raise ex
 
-        self._finalized = True
+        self._frozen = True
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
 
         try:
-            self.finalize()
+            self.freeze()
         except ConfigException as ex:
             if self._debug_exc:
                 raise
@@ -313,7 +313,7 @@ class _ConfigBase(object):
         return self._env_specific_value(name, attr_coll, env)
 
     def __getattr__(self, name):
-        if not self._finalized:
+        if not self._frozen:
             try:
                 # Return existing collector/dict of nested items if any
                 coll = self._attributes[name]
@@ -353,7 +353,6 @@ class _ConfigBase(object):
 
 
 class _ConfigItem(_ConfigBase):
-
     def _validate(self):
         self.validate()
         for _child_name, child_value in self.iteritems():
