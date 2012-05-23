@@ -1,9 +1,9 @@
 # Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # This code is free for anybody to use
 
-import re, sys
+import re
 import keyword
-import multiconf
+from config_errors import _warning_msg
 
 class ConfigDefinitionException(Exception):
     def __init__(self, msg):
@@ -52,7 +52,7 @@ def nested_repeatables(attr_names):
         super_deco_nested_repeatables = super(cls, cls)._deco_nested_repeatables
         for attr in super_deco_nested_repeatables:
             if attr in attributes:
-                multiconf._warning_msg("Attribute name: " + repr(attr) + " re-specified as 'nested_repeatables' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
+                _warning_msg("Attribute name: " + repr(attr) + " re-specified as 'nested_repeatables' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
         cls._deco_nested_repeatables = attributes + super_deco_nested_repeatables
         return cls
 
@@ -66,7 +66,7 @@ def required(attr_names):
         super_deco_required = super(cls, cls)._deco_required_attributes
         for attr in super_deco_required:
             if attr in attributes:
-                multiconf._warning_msg("Attribute name: " + repr(attr) + " re-specified as 'required' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
+                _warning_msg("Attribute name: " + repr(attr) + " re-specified as 'required' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
         cls._deco_required_attributes = attributes + super_deco_required
         return cls
 
