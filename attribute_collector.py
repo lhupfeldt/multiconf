@@ -15,11 +15,11 @@ class AttributeCollector(object):
     def __call__(self, **kwargs):
         self._frozen = True
 
-        if self._attribute_name in self._container._attributes:
+        if self._attribute_name in self._container.attributes:
             _error_msg(0, "Redefined attribute " + repr(self._attribute_name))
             raise ConfigException("Attribute redefinition error: " + repr(self._attribute_name))
 
-        self._container._attributes[self._attribute_name] = self
+        self._container.attributes[self._attribute_name] = self
 
         # For error messages
         eg_from = {}
@@ -63,11 +63,11 @@ class AttributeCollector(object):
         if required_if_key:
             try:
                 required_if_attributes = self._container.__class__._deco_required_if_attributes[1]
-                required_if = self._container._attributes[required_if_key]
+                required_if = self._container.attributes[required_if_key]
             except KeyError:
                 required_if = False
 
-        for eg in self._container._root_conf._valid_envs:
+        for eg in self._container.root_conf._valid_envs:
             for env in eg.envs():
                 if env in self._env_values:
                     # The attribute is set with an env specific value
@@ -120,7 +120,7 @@ class AttributeCollector(object):
         return self._container.getattr_env(self._attribute_name, env)
 
     def value(self):
-        return self.env_value(self._container._root_conf._selected_env)
+        return self.env_value(self._container.root_conf.selected_env)
 
     @property
     def env_values(self):

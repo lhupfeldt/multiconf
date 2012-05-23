@@ -200,6 +200,10 @@ class _ConfigBase(object):
     def root_conf(self):
         return self._root_conf
 
+    @property
+    def attributes(self):
+        return self._attributes
+
 
 class _ConfigItem(_ConfigBase):
     def _validate(self):
@@ -262,7 +266,7 @@ class ConfigItem(_ConfigItem):
 
         # Set back reference to containing Item and root item
         self._contained_in = self.__class__.nested[-1]
-        self._root_conf = self._contained_in._root_conf
+        self._root_conf = self._contained_in.root_conf
 
         # Insert self in containing Item's attributes
         my_key = self.named_as()
@@ -275,9 +279,9 @@ class ConfigItem(_ConfigItem):
                 raise ConfigException(msg)
                 # TODO?: type check of list items (instanceof(ConfigItem). Same type?
 
-            if my_key in self._contained_in._attributes:
+            if my_key in self._contained_in.attributes:
                 # Validate that an attribute value of parent is not overridden by nested item (self),
-                if not isinstance(self._contained_in._attributes[my_key], OrderedDict):
+                if not isinstance(self._contained_in.attributes[my_key], OrderedDict):
                     msg = repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self)
                     raise ConfigException(msg)
                 # TODO?: type check of list items (instanceof(ConfigItem). Same type?
@@ -290,24 +294,24 @@ class ConfigItem(_ConfigItem):
                     obj_key = self._defaults['name']
 
                 # Check that we are no replacing an object with the same id/name
-                if self._contained_in._attributes[my_key].get(obj_key):
+                if self._contained_in.attributes[my_key].get(obj_key):
                     raise ConfigException("Re-used id/name " + repr(obj_key) + " in nested objects")
             except KeyError:
                 obj_key = id(self)
 
-            self._contained_in._attributes[my_key][obj_key] = self
+            self._contained_in.attributes[my_key][obj_key] = self
             return
 
-        if my_key in self._contained_in._attributes:
-            if isinstance(self._contained_in._attributes[my_key], ConfigItem):
+        if my_key in self._contained_in.attributes:
+            if isinstance(self._contained_in.attributes[my_key], ConfigItem):
                 raise ConfigException("Repeated non repeatable conf item: " + repr(my_key))
-            if isinstance(self._contained_in._attributes[my_key], OrderedDict):
+            if isinstance(self._contained_in.attributes[my_key], OrderedDict):
                 msg = repr(my_key) + ': ' + repr(self) + ' is defined as non-repeatable, but the containing object has repatable items with the same name: ' + \
                     repr(self._contained_in)
                 raise ConfigException(msg)
             raise ConfigException(repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self))
 
-        self._contained_in._attributes[my_key] = self
+        self._contained_in.attributes[my_key] = self
 
 
 class ConfigBuilder(_ConfigBase):
@@ -316,7 +320,7 @@ class ConfigBuilder(_ConfigBase):
 
         # Set back reference to containing Item and root item
         self._contained_in = self.__class__.nested[-1]
-        self._root_conf = self._contained_in._root_conf
+        self._root_conf = self._contained_in.root_conf
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(ConfigBuilder, self).__exit__(exc_type, exc_value, traceback)
@@ -328,11 +332,11 @@ class ConfigBuilder(_ConfigBase):
 
     def override(self, config_item):
         """Assign attributes from builder to child Item"""
-        for key, value in self._attributes.iteritems():
-            config_item_attr = config_item._attributes.get(key)
+        for key, value in self.attributes.iteritems():
+            config_item_attr = config_item.attributes.get(key)
             if config_item_attr:
                 config_item_attr.override(value)
                 continue
-            config_item._attributes[key] = value
+            config_item.attributes[key] = value
 
 
