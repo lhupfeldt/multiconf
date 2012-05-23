@@ -49,7 +49,11 @@ def nested_repeatables(attr_names):
     def deco(cls):
         attributes = [attr.strip() for attr in attr_names.split(',')]
         _check_valid_identifiers(attributes)
-        cls._deco_nested_repeatables = attributes
+        super_deco_nested_repeatables = super(cls, cls)._deco_nested_repeatables
+        for attr in super_deco_nested_repeatables:
+            if attr in attributes:
+                multiconf._warning_msg("Attribute name: " + repr(attr) + " re-specified as 'nested_repeatables' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
+        cls._deco_nested_repeatables = attributes + super_deco_nested_repeatables
         return cls
 
     return deco
