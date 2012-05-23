@@ -2,11 +2,15 @@ import sys
 from collections import namedtuple
 import inspect
 
-class ConfigException(Exception):
+class ConfigBaseException(Exception):
     pass
 
 
-class NoAttributeException(Exception):
+class ConfigException(ConfigBaseException):
+    pass
+
+
+class NoAttributeException(ConfigBaseException):
     pass
 
 

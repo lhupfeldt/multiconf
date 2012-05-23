@@ -4,7 +4,7 @@
 from collections import Sequence, OrderedDict
 from envs import Env
 from attribute_collector import AttributeCollector
-from config_errors import ConfigException, NoAttributeException
+from config_errors import ConfigBaseException, ConfigException, NoAttributeException
 
 
 class _ConfigBase(object):
@@ -103,14 +103,10 @@ class _ConfigBase(object):
         try:
             self.freeze_validation()
             return self
-        except ConfigException as ex:
+        except ConfigBaseException as ex:
             if self._debug_exc:
                 raise
             # Strip stack
-            raise ex
-        except NoAttributeException as ex:
-            if self._debug_exc:
-                raise
             raise ex
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -120,11 +116,7 @@ class _ConfigBase(object):
         try:
             self._may_freeze = True
             self.freeze()
-        except ConfigException as ex:
-            if self._debug_exc:
-                raise
-            raise ex
-        except NoAttributeException as ex:
+        except ConfigBaseException as ex:
             if self._debug_exc:
                 raise
             raise ex
