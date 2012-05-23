@@ -172,7 +172,6 @@ class _ConfigBase(object):
 
         # Object linking
         self._root_conf = None
-        self._nesting_level = 0
 
         # Dict of dicts: attributes['a'] = dict(Env('prod')=1, EnvGroup('dev')=0)
         self._attributes = OrderedDict()
@@ -200,7 +199,7 @@ class _ConfigBase(object):
             indent1 + '}'
 
     def __repr__(self):
-        return self.irepr(self._nesting_level)
+        return self.irepr(len(self.__class__.nested) -1)
 
     def __enter__(self):
         self._frozen = False
@@ -369,7 +368,6 @@ class _ConfigItem(_ConfigBase):
 
     def __enter__(self):
         super(_ConfigItem, self).__enter__()
-        self._nesting_level = len(self.__class__.nested)
         self.__class__.nested.append(self)
         return self
 
