@@ -207,15 +207,15 @@ class _ConfigBase(object):
 
 
 class _ConfigItem(_ConfigBase):
-    def _validate(self):
+    def _validate_recursively(self):
         self.validate()
         for _child_name, child_value in self.iteritems():
             if isinstance(child_value, OrderedDict):
                 for dict_entry in child_value.values():
-                    dict_entry._validate()
+                    dict_entry._validate_recursively()
 
             if isinstance(child_value, _ConfigItem):
-                child_value._validate()
+                child_value._validate_recursively()
 
     def validate(self):
         """Can be overridden to provide post-frozen validation"""
@@ -250,7 +250,7 @@ class ConfigRoot(_ConfigItem):
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
-        self._validate()
+        self._validate_recursively()
 
     @property
     def selected_env(self):
