@@ -315,7 +315,7 @@ class ConfigItem(_ConfigItem):
             if isinstance(self._contained_in.attributes[my_key], ConfigItem):
                 raise ConfigException("Repeated non repeatable conf item: " + repr(my_key))
             if isinstance(self._contained_in.attributes[my_key], OrderedDict):
-                msg = repr(my_key) + ': ' + repr(self) + ' is defined as non-repeatable, but the containing object has repatable items with the same name: ' + \
+                msg = repr(my_key) + ': ' + repr(self) + ' is defined as non-repeatable, but the containing object has repeatable items with the same name: ' + \
                     repr(self._contained_in)
                 raise ConfigException(msg)
             raise ConfigException(repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self))
