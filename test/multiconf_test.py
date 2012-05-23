@@ -108,3 +108,10 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp], a=None) as cr:
             cr.a(prod=1, pp=2)
         ok (cr.a) == 1
+
+
+    @test("automatic freeze on attr access outside of with statement")
+    def _h(self):
+        with ConfigRoot(prod, [prod, pp], a=0) as cr:
+            ConfigItem(something=1)
+        ok (cr.ConfigItem.something) == 1

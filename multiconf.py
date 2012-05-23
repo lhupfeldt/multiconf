@@ -29,7 +29,8 @@ class _ConfigBase(object):
             self._attributes[key] = OrderedDict()
 
         self._defaults = attr
-        self._frozen = True
+        self._frozen = False
+        self._may_freeze = True
 
     def named_as(self):
         if self.__class__._deco_named_as:
@@ -43,7 +44,7 @@ class _ConfigBase(object):
         indent1 = '  ' * indent_level
         indent2 =  indent1 + '     '
         # + ':' + self.__class__.__name__
-        not_frozen_msg = "" if self._frozen else " not-frozen, defaults: " + repr(self._defaults) + '\n'
+        not_frozen_msg = "" if self._frozen else " not-frozen, defaults: " + repr(self._defaults)
         return self.named_as() + not_frozen_msg + ' {\n' + \
             ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.iteritems()]) + \
             indent1 + '}'
@@ -52,7 +53,8 @@ class _ConfigBase(object):
         return self.irepr(len(self.__class__.nested) -1)
 
     def __enter__(self):
-        self._frozen = False
+        assert not self._frozen
+        self._may_freeze = False
         return self
 
     def freeze_validate_required(self):
@@ -90,12 +92,17 @@ class _ConfigBase(object):
         self.freeze_validate_required_if()
 
     def freeze(self):
+        assert not self._frozen
+        assert self._may_freeze
+
         # Collect remaining default values
         for name in list(self._defaults):
-            AttributeCollector(name, self)()
+            AttributeCollector(name, self)()        
+        self._frozen = True
 
         try:
             self.freeze_validation()
+            return self
         except ConfigException as ex:
             if self._debug_exc:
                 raise
@@ -106,13 +113,12 @@ class _ConfigBase(object):
                 raise
             raise ex
 
-        self._frozen = True
-
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
 
         try:
+            self._may_freeze = True
             self.freeze()
         except ConfigException as ex:
             if self._debug_exc:
@@ -162,6 +168,9 @@ class _ConfigBase(object):
         return self._env_specific_value(name, attr_coll, env)
 
     def __getattr__(self, name):
+        if not self._frozen and self._may_freeze:
+            self.freeze()
+
         if not self._frozen:
             try:
                 # Return existing collector/dict of nested items if any
@@ -179,7 +188,7 @@ class _ConfigBase(object):
         except ConfigException as ex:
             if self._debug_exc:
                 raise
-            raise ConfigException(ex.message)
+            raise ex
 
     def iteritems(self):
         for key, value in self._attributes.iteritems():

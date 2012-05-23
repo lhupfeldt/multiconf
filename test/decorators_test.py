@@ -149,8 +149,8 @@ class DecoratorsTest(unittest.TestCase):
         class root(ConfigRoot):
             pass
 
-        proj = root(prod, [prod, dev2ct], name='abc')
-        ok (repr(proj)) == "project {\n}"
+        proj = root(prod, [prod, dev2ct], name='abc').freeze()
+        ok (repr(proj)) == "project {\n     name: 'abc',\n}"
 
     @test("required attributes - inherited, ok")
     def _h(self):

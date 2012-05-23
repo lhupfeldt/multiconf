@@ -120,7 +120,7 @@ class ErrorsTest(unittest.TestCase):
                 ConfigItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "'ConfigItem' is defined both as simple value and a contained item: ConfigItem {\n}"
+            ok (ex.message) == "'ConfigItem' is defined both as simple value and a contained item: ConfigItem not-frozen, defaults: {} {\n}"
 
     @test("nested repeatable item overrides simple property - not contained in repeatable")
     def _j(self):
@@ -130,7 +130,7 @@ class ErrorsTest(unittest.TestCase):
                 RepeatableItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "'RepeatableItems': RepeatableItems {\n} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"
+            ok (ex.message) == "'RepeatableItems': RepeatableItems not-frozen, defaults: {} {\n} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"
 
     #@test("nested repeatable item overrides simple property - contained in repeatable")
     #@todo
