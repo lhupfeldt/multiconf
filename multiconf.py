@@ -91,13 +91,13 @@ class _ConfigBase(object):
         self.freeze_validate_required()
         self.freeze_validate_required_if()
 
-    def freeze(self):
+    def _freeze(self):
         assert not self._frozen
         assert self._may_freeze
 
         # Collect remaining default values
         for name in list(self._defaults):
-            AttributeCollector(name, self)()        
+            AttributeCollector(name, self)()
         self._frozen = True
 
         try:
@@ -108,6 +108,20 @@ class _ConfigBase(object):
                 raise
             # Strip stack
             raise ex
+
+    def freeze(self):
+        """Recursively freeze contained items bottom up"""
+        for _child_name, child_value in self.iteritems():
+            if isinstance(child_value, OrderedDict):
+                for key, item in child_value.iteritems():
+                    if not item._frozen:
+                        item.freeze()
+
+            if isinstance(child_value, _ConfigItem):
+                if not child_value._frozen:
+                    child_value.freeze()
+
+        return self._freeze()
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
@@ -176,7 +190,7 @@ class _ConfigBase(object):
                 return AttributeCollector(name, self)
 
         try:
-            return self.getattr_env(name, self._root_conf._selected_env)
+            return self.getattr_env(name, self._root_conf.selected_env)
         except ConfigException as ex:
             if self._debug_exc:
                 raise
@@ -185,7 +199,7 @@ class _ConfigBase(object):
     def iteritems(self):
         for key, value in self._attributes.iteritems():
             try:
-                yield key, self._env_specific_value(key, value, self._root_conf._selected_env)
+                yield key, self._env_specific_value(key, value, self._root_conf.selected_env)
             except NoAttributeException:
                 # This should only happen in case of  a conditional attribute
                 pass

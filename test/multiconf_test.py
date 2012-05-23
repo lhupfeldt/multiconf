@@ -14,6 +14,13 @@ from ..decorators import nested_repeatables, named_as, repeat
 prod = Env('prod')
 pp = Env('pp')
 
+
+@named_as('someitems')
+@repeat()
+class RepeatableItem(ConfigItem):
+    pass
+
+
 class MulticonfTest(unittest.TestCase):
 
     @test("contained_in, root_conf")
@@ -109,3 +116,43 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             ConfigItem(something=1)
         ok (cr.ConfigItem.something) == 1
+
+
+    @test("automatic contained item freeze on exit")
+    def _i(self):
+        @named_as('someitems')
+        @nested_repeatables('someitems')
+        @repeat()
+        class NestedRepeatable(ConfigItem):
+            pass
+
+        @nested_repeatables('someitems')
+        class root(ConfigRoot):
+            pass
+
+        with root(prod, [prod, pp], a=0) as cr:
+            NestedRepeatable(id='a')
+            with NestedRepeatable(id='b') as ci:
+                NestedRepeatable(id='a')
+                with NestedRepeatable(id='b') as ci:
+                    NestedRepeatable(id='a')
+                    with NestedRepeatable(id='b') as ci:
+                        ci.a(prod=1, pp=2)
+                    NestedRepeatable(id='c', something=1)
+                NestedRepeatable(id='c', something=2)
+            NestedRepeatable(id='c', something=3)
+
+        ok (repr(cr).find("frozen")) == -1
+        ok (len(cr.someitems['a'].someitems)) == 0
+        ok (len(cr.someitems['b'].someitems)) == 3
+        ok (len(cr.someitems['c'].someitems)) == 0
+
+        ids = ['a', 'b', 'c']
+        index = 0
+        for item_id, item in cr.someitems['b'].someitems.iteritems():
+            ok (item.id) == ids[index]
+            ok (item_id) == ids[index]
+            index += 1
+        ok (index) == 3
+
+        ok (cr.someitems['b'].someitems['b'].someitems['b'].a) == 1
