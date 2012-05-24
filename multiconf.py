@@ -241,6 +241,9 @@ class _ConfigItem(_ConfigBase):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            return None
+
         self.__class__.nested.pop()
         super(_ConfigItem, self).__exit__(exc_type, exc_value, traceback)
 
@@ -256,6 +259,8 @@ class ConfigRoot(_ConfigItem):
 
         self._check_valid_env(selected_env, valid_envs)
 
+        del self.__class__.nested[:]
+
         self._selected_env = selected_env
         self._valid_envs = valid_envs
         super(ConfigRoot, self).__init__(**attr)
@@ -263,6 +268,9 @@ class ConfigRoot(_ConfigItem):
         self._contained_in = None
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            return None
+
         super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
         self._validate_recursively()
 
@@ -338,6 +346,9 @@ class ConfigBuilder(_ConfigBase):
         self._root_conf = self._contained_in.root_conf
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            return None
+
         super(ConfigBuilder, self).__exit__(exc_type, exc_value, traceback)
         self.build()
 
