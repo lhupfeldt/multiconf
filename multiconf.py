@@ -219,6 +219,26 @@ class _ConfigBase(object):
     def attributes(self):
         return self._attributes
 
+    @property
+    def env(self):
+        return self._root_conf.selected_env
+
+    def find_contained_in(self, named_as):
+        contained_in = self.contained_in
+        while contained_in:
+            if contained_in.named_as() == named_as:
+                return contained_in
+            contained_in = contained_in.contained_in
+
+        # Error, create error message
+        contained_in = self.contained_in
+        contained_in_names = []
+        while contained_in:
+            contained_in_names.append(contained_in.named_as())
+            contained_in = contained_in.contained_in
+
+        raise ConfigException('Could not find a parent container named as: ' + repr(named_as) + ' in hieracy with names: ' + repr(contained_in_names))
+
 
 class _ConfigItem(_ConfigBase):
     def _validate_recursively(self):

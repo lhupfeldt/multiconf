@@ -156,3 +156,45 @@ class MulticonfTest(unittest.TestCase):
         ok (index) == 3
 
         ok (cr.someitems['b'].someitems['b'].someitems['b'].a) == 1
+
+    @test("find_contained_in(named_as)")
+    def _j(self):
+        @named_as('someitems')
+        @nested_repeatables('someitems')
+        @repeat()
+        class NestedRepeatable(ConfigItem):
+            pass
+
+        @named_as('someitemX')
+        @nested_repeatables('someitems')
+        class X(ConfigItem):
+            pass
+
+        @named_as('someitemY')
+        class Y(ConfigItem):
+            pass
+
+        @nested_repeatables('someitems')
+        class root(ConfigRoot):
+            pass
+
+        with root(prod, [prod, pp], a=0) as cr:
+            NestedRepeatable()
+            with X() as ci:
+                ci.a(prod=0, pp=2)
+                NestedRepeatable(id='a')
+                with NestedRepeatable(id='b') as ci:
+                    NestedRepeatable(id='c')
+                    with X() as ci:
+                        ci.a(prod=1, pp=2)
+                        with NestedRepeatable(id='d') as ci:
+                            ci.a(prod=2, pp=2)
+                            with Y() as ci:
+                                ci.a(prod=3, pp=2)
+                    
+        ok (cr.someitemX.someitems['b'].someitemX.someitems['d'].someitemY.find_contained_in(named_as='someitemX').a) == 1
+        ok (cr.someitemX.someitems['b'].someitemX.someitems['d'].someitemY.find_contained_in(named_as='root').a) == 0
+        ok (cr.someitemX.someitems['b'].someitemX.someitems['d'].someitemY.find_contained_in(named_as='someitems').a) == 2
+        ok (cr.someitemX.someitems['b'].someitemX.find_contained_in(named_as='someitemX').a) == 0
+        
+                        
