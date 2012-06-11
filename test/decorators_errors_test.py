@@ -33,7 +33,7 @@ def ce(line_num, *lines):
 def cw(line_num, *lines):
     return config_warning(__file__, line_num, *lines)
 
-class DecoratorsTest(unittest.TestCase):
+class DecoratorsErrorsTest(unittest.TestCase):
     @test("required attributes missing - configroot")
     def _a(self):
         try:

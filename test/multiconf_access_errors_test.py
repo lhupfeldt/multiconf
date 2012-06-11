@@ -16,7 +16,7 @@ prod = Env('prod')
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
-class ErrorsTest(unittest.TestCase):
+class MultiConfAccessErrorsTest(unittest.TestCase):
     @test("access undefined attribute")
     def _a(self):
         cr = ConfigRoot(prod, [prod])
@@ -35,12 +35,12 @@ class ErrorsTest(unittest.TestCase):
         class NestedRepeatable(ConfigItem):
             pass
 
-        @named_as('someitemX')
+        @named_as('x')
         @nested_repeatables('someitems')
         class X(ConfigItem):
             pass
 
-        @named_as('someitemY')
+        @named_as('y')
         class Y(ConfigItem):
             pass
 
@@ -63,7 +63,45 @@ class ErrorsTest(unittest.TestCase):
                                 ci.a(prod=3)
 
         try:
-            cr.someitemX.someitems['b'].someitemX.someitems['d'].someitemY.find_contained_in(named_as='notthere').a
+            cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'someitemX', 'someitems', 'someitemX', 'root']"
+            ok (ex.message) == "Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root']"
+
+
+    @test("find_attribute(attribute_name) - not found")
+    def _k(self):
+        @named_as('someitems')
+        @nested_repeatables('someitems')
+        @repeat()
+        class NestedRepeatable(ConfigItem):
+            pass
+
+        @named_as('x')
+        @nested_repeatables('someitems')
+        class X(ConfigItem):
+            pass
+
+        @nested_repeatables('someitems')
+        class root(ConfigRoot):
+            pass
+
+        with root(prod, [prod], a=0, q=17) as cr:
+            NestedRepeatable()
+            with X() as ci:
+                ci.a(prod=0)
+                NestedRepeatable(id='a', a=9)
+                with NestedRepeatable(id='b') as ci:
+                    NestedRepeatable(id='c', a=7)
+                    with X() as ci:
+                        ci.b(prod=1)
+                        with NestedRepeatable(id='d') as ci:
+                            ci.a(prod=2)
+                            with X() as ci:
+                                ci.a(prod=3)
+                    
+        try:
+            ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e')) == 3
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"

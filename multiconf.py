@@ -158,7 +158,7 @@ class _ConfigBase(object):
         try:
             return attr_coll.env_values[env]
         except KeyError:
-            self._check_valid_env(env, self._root_conf._valid_envs)
+            self._check_valid_env(env, self.valid_envs)
             raise NoAttributeException("Attribute " + repr(attr_name) + " undefined for env " + repr(env))
 
     def getattr_env(self, name, env):
@@ -190,7 +190,7 @@ class _ConfigBase(object):
                 return AttributeCollector(name, self)
 
         try:
-            return self.getattr_env(name, self._root_conf.selected_env)
+            return self.getattr_env(name, self.env)
         except ConfigException as ex:
             if self._debug_exc:
                 raise
@@ -199,7 +199,7 @@ class _ConfigBase(object):
     def iteritems(self):
         for key, value in self._attributes.iteritems():
             try:
-                yield key, self._env_specific_value(key, value, self._root_conf.selected_env)
+                yield key, self._env_specific_value(key, value, self.env)
             except NoAttributeException:
                 # This should only happen in case of  a conditional attribute
                 pass
@@ -223,7 +223,12 @@ class _ConfigBase(object):
     def env(self):
         return self._root_conf.selected_env
 
+    @property
+    def valid_envs(self):
+        return self._root_conf.valid_envs
+
     def find_contained_in(self, named_as):
+        """Find first parent container named as 'named_as', by searching backwards towards root_conf, starting with parent container"""
         contained_in = self.contained_in
         while contained_in:
             if contained_in.named_as() == named_as:
@@ -238,6 +243,24 @@ class _ConfigBase(object):
             contained_in = contained_in.contained_in
 
         raise ConfigException('Could not find a parent container named as: ' + repr(named_as) + ' in hieracy with names: ' + repr(contained_in_names))
+
+    def find_attribute(self, attribute_name):
+        """Find first occurence of attribute 'attribute_name', by searching backwards towards root_conf, starting with self."""
+        contained_in = self
+        while contained_in:
+            attr_coll = contained_in.attributes.get(attribute_name)
+            if attr_coll:
+                return contained_in.__getattr__(attribute_name)
+            contained_in = contained_in.contained_in
+
+        # Error, create error message
+        contained_in = self
+        contained_in_names = []
+        while contained_in:
+            contained_in_names.append(contained_in.named_as())
+            contained_in = contained_in.contained_in
+
+        raise ConfigException('Could not find an attribute named: ' + repr(attribute_name) + ' in hieracy with names: ' + repr(contained_in_names))
 
 
 class _ConfigItem(_ConfigBase):
@@ -297,6 +320,10 @@ class ConfigRoot(_ConfigItem):
     @property
     def selected_env(self):
         return self._selected_env
+
+    @property
+    def valid_envs(self):
+        return self._valid_envs
 
 
 class ConfigItem(_ConfigItem):

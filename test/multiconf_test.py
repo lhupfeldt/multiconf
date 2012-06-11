@@ -165,12 +165,12 @@ class MulticonfTest(unittest.TestCase):
         class NestedRepeatable(ConfigItem):
             pass
 
-        @named_as('someitemX')
+        @named_as('x')
         @nested_repeatables('someitems')
         class X(ConfigItem):
             pass
 
-        @named_as('someitemY')
+        @named_as('y')
         class Y(ConfigItem):
             pass
 
@@ -192,9 +192,45 @@ class MulticonfTest(unittest.TestCase):
                             with Y() as ci:
                                 ci.a(prod=3, pp=2)
                     
-        ok (cr.someitemX.someitems['b'].someitemX.someitems['d'].someitemY.find_contained_in(named_as='someitemX').a) == 1
-        ok (cr.someitemX.someitems['b'].someitemX.someitems['d'].someitemY.find_contained_in(named_as='root').a) == 0
-        ok (cr.someitemX.someitems['b'].someitemX.someitems['d'].someitemY.find_contained_in(named_as='someitems').a) == 2
-        ok (cr.someitemX.someitems['b'].someitemX.find_contained_in(named_as='someitemX').a) == 0
-        
-                        
+        ok (cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='x').a) == 1
+        ok (cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='root').a) == 0
+        ok (cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='someitems').a) == 2
+        ok (cr.x.someitems['b'].x.find_contained_in(named_as='x').a) == 0
+
+    @test("find_attribute(attribute_name)")
+    def _k(self):
+        @named_as('someitems')
+        @nested_repeatables('someitems')
+        @repeat()
+        class NestedRepeatable(ConfigItem):
+            pass
+
+        @named_as('x')
+        @nested_repeatables('someitems')
+        class X(ConfigItem):
+            pass
+
+        @nested_repeatables('someitems')
+        class root(ConfigRoot):
+            pass
+
+        with root(prod, [prod, pp], a=-1, q='q0') as cr:
+            NestedRepeatable()
+            with X() as ci:
+                ci.a(prod=0, pp=20)
+                NestedRepeatable(id='a', a=9)
+                with NestedRepeatable(id='b') as ci:
+                    NestedRepeatable(id='c', a=7)
+                    with X() as ci:
+                        ci.b(prod='b1', pp='b21')
+                        with NestedRepeatable(id='d') as ci:
+                            ci.a(prod=2, pp=22)
+                            with X() as ci:
+                                ci.a(prod=3, pp=23)
+                    
+        ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('a')) == 3
+        ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('b')) == 'b1'
+        ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('someitems')['d'].a) == 2
+        ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('q')) == 'q0'
+        ok (cr.x.someitems['b'].x.find_attribute(attribute_name='a')) == 0
+

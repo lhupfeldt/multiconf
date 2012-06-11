@@ -120,7 +120,7 @@ class AttributeCollector(object):
         return self._container.getattr_env(self._attribute_name, env)
 
     def value(self):
-        return self.env_value(self._container.root_conf.selected_env)
+        return self.env_value(self._container.env)
 
     @property
     def env_values(self):

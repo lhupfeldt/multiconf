@@ -36,7 +36,7 @@ class RepeatableItem(ConfigItem):
     pass
 
 
-class ErrorsTest(unittest.TestCase):
+class MultiConfDefinitionErrorsTest(unittest.TestCase):
     @test("valid_envs arg as EnvGroup")
     def _a(self):
         ok (lazy(ConfigRoot, prod, valid_envs)).raises(ConfigException)
