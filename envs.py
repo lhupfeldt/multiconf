@@ -82,7 +82,7 @@ class EnvGroup(Env, Container):
         check_doublets(members)
 
         if self.name in seen_names:
-            raise EnvException("Can't have a member with my own name: " + repr(name) + ", members:  " + repr(members))
+            raise EnvException("Can't have a member with my own name: " + repr(name) + ", members:  " + repr(list(members)))
 
         # All good
         self.members = members
@@ -142,7 +142,26 @@ class EnvGroup(Env, Container):
         return False
 
 
+def env(name):
+    """Get an already declared env from it's name"""
+    _env = _envs.get(name)
+    if _env:
+        return _env
+
+    raise EnvException("No such " + Env.__name__ + ": " + repr(name))
+
+
+def group(name):
+    """Get an already declared group from it's name"""
+    _env_group = _groups.get(name)
+    if _env_group:
+        return _env_group
+
+    raise EnvException("No such " + EnvGroup.__name__ + ": " + repr(name))
+
+
 def env_or_group(name):
+    """Get an already declared env or group from it's name"""
     _env = _envs.get(name)
     if _env:
         return _env

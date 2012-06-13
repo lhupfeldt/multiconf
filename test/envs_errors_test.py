@@ -10,42 +10,15 @@ here = os.path.dirname(__file__)
 sys.path.append(jp(here, '../..'))
 
 import unittest
-from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno
+from oktest import ok, test, fail, dummy
+from utils import config_error, lineno
 
-from multiconf.envs import Env, EnvGroup, EnvException
+from multiconf.envs import Env, EnvGroup, EnvException, env, group, env_or_group
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
 class EnvsTest(unittest.TestCase):
-
-    @test("redefined env")
-    def _a(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                aa = Env('aa')
-                errorline = lineno() + 1
-                aa = Env('aa')
-                fail ("Expected exception")
-        except EnvException as ex:
-            sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
-
-    @test("redefined group")
-    def _b(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                bb1 = Env('bb')
-                bb2 = EnvGroup('bb2', bb1)
-                errorline = lineno() + 1
-                bb3 = EnvGroup('bb2', bb1)
-                fail ("Expected exception")
-        except EnvException as ex:
-            sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
 
     @test("env member with same name as self")
     def _c1(self):
@@ -57,8 +30,8 @@ class EnvsTest(unittest.TestCase):
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Can't have a member with my own name: 'cc11', members:  [Env('cc11')]"
 
     @test("group member with same name as self")
     def _c2(self):
@@ -71,35 +44,8 @@ class EnvsTest(unittest.TestCase):
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
-
-    @test("group redefines env")
-    def _d(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                dd1 = Env('dd')
-                errorline = lineno() + 1
-                dd2 = EnvGroup('dd')
-                fail ("Expected exception")
-        except EnvException as ex:
-            sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
-
-    @test("env redefines group")
-    def _e(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                ee1 = Env('ee1')
-                ee2 = EnvGroup('ee2', ee1)
-                errorline = lineno() + 1
-                ee2 = Env('ee2')
-                fail ("Expected exception")
-        except EnvException as ex:
-            sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Can't have a member with my own name: 'cc22', members:  [EnvGroup('cc22') {\n     Env('cc21')\n}]"
 
     @test("repeated direct env member")
     def _f(self):
@@ -111,8 +57,8 @@ class EnvsTest(unittest.TestCase):
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Repeated group member: Env('ff1') in EnvGroup('ff2') {\n\n}"
 
     @test("repeated direct group member")
     def _g(self):
@@ -125,8 +71,8 @@ class EnvsTest(unittest.TestCase):
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Repeated group member: EnvGroup('gg2') {\n     Env('gg1')\n} in EnvGroup('gg3') {\n\n}"
 
     @test("repeated nested env member")
     def _h(self):
@@ -139,8 +85,8 @@ class EnvsTest(unittest.TestCase):
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Repeated group member: Env('hh1') in EnvGroup('hh3') {\n\n}"
 
     @test("repeated nested env member reversed")
     def _i(self):
@@ -153,8 +99,8 @@ class EnvsTest(unittest.TestCase):
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Repeated group member: Env('ii1') in EnvGroup('ii3') {\n\n}"
 
     @test("repeated nested group member")
     def _j(self):
@@ -168,11 +114,11 @@ class EnvsTest(unittest.TestCase):
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Repeated group member: EnvGroup('jj2') {\n     Env('jj1')\n} in EnvGroup('jj4') {\n\n}"
 
     @test("repeated nested group member reversed")
-    def _j(self):
+    def _k(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 jj1 = Env('jj1')
@@ -183,8 +129,29 @@ class EnvsTest(unittest.TestCase):
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
-            ok (serr) == ce(errorline, "TODO")
-            ok (ex.message) == "TODO"
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Repeated group member: EnvGroup('jj2') {\n     Env('jj1')\n} in EnvGroup('jj4') {\n\n}"
 
-if __name__ == '__main__':
-    unittest.main()
+    @test("env from string - undefined")
+    def _l(self):
+        try:
+            env("undefined")
+            fail ("Expected exception")
+        except EnvException as ex:
+            ok (ex.message) == "No such Env: 'undefined'"
+
+    @test("group from string - undefined")
+    def _m(self):
+        try:
+            group("undefined")
+            fail ("Expected exception")
+        except EnvException as ex:
+            ok (ex.message) == "No such EnvGroup: 'undefined'"
+
+    @test("env_or_group from string - undefined")
+    def _n(self):
+        try:
+            env_or_group("undefined")
+            fail ("Expected exception")
+        except EnvException as ex:
+            ok (ex.message) == "No such Env or EnvGroup: 'undefined'"

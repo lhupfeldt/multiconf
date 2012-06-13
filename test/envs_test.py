@@ -6,7 +6,7 @@
 import unittest
 from oktest import ok, test
 
-from ..envs import Env, EnvGroup
+from ..envs import Env, EnvGroup, env, group, env_or_group
 
 envs_only = []
 
@@ -103,3 +103,16 @@ class EnvsTest(unittest.TestCase):
             envs[env] = True
         for env in valid_envs.all():
             ok (envs[env]) == True
+
+    @test("env from string")
+    def _l(self):
+        ok(env("dev2CT").name) == "dev2CT"
+
+    @test("group from string")
+    def _m(self):
+        ok(group("g_dev2").name) == "g_dev2"
+
+    @test("env_or_group from string")
+    def _n(self):
+        ok(env_or_group("dev2CT").name) == "dev2CT"
+        ok(env_or_group("g_dev2").name) == "g_dev2"
