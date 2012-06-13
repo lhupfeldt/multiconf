@@ -11,23 +11,23 @@ def conf(env):
         dc.ms_suffixes(prod=[1, 2, 3, 4], g_dev=[1])
 
         with admin_server(port=dc.base_port.value()+1) as c:
-            c.host(prod='admin.prod.xleap', devi='admin.dev2ct.xleap', devs='admin.dev2st.xleap')
+            c.host(prod='admin.prod.mydomain', devi='admin.dev2ct.mydomain', devs='admin.dev2st.mydomain')
 
         with managed_servers(num_servers=4) as c:
             c.num_servers(g_dev=1)
 
         # Add a special managed server, and add a property
         port = dc.base_port.value() + 110
-        with managed_server(host='ms.'+env.name+'.xleap', port=port+1, suffix=17) as c:
+        with managed_server(host='ms.'+env.name+'.mydomain', port=port+1, suffix=17) as c:
             c.someprop(prod=1, g_dev=2)
 
         # Add a special managed server, and override default value
         port = dc.base_port.value() + 210
-        with managed_server(host='ms.'+env.name+'.xleap', port=port+1, suffix=17, another_prop=[1]) as c:
+        with managed_server(host='ms.'+env.name+'.mydomain', port=port+1, suffix=17, another_prop=[1]) as c:
             c.another_prop(prod=[1, 2])
 
         # Add a managed server with no explicit env specific properties
-        managed_server(host='ms.'+env.name+'.xleap', port=port+2, suffix=18)
+        managed_server(host='ms.'+env.name+'.mydomain', port=port+2, suffix=18)
 
         with datasource(xx=18) as c:
             c.xx(prod=19)

@@ -8,7 +8,7 @@ here = os.path.dirname(__file__)
 sys.path.append(jp(here, '../..'))
 
 from multiconf import ConfigRoot, ConfigItem, ConfigBuilder
-from multiconf.decorators import *
+from multiconf.decorators import nested_repeatables, repeat, required
 
 
 @nested_repeatables('managed_servers, datasources')
