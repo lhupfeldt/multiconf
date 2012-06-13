@@ -7,7 +7,7 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from .. import ConfigRoot, ConfigItem
+from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..envs import Env
 from ..decorators import nested_repeatables, named_as, repeat
 
@@ -91,7 +91,6 @@ class MulticonfTest(unittest.TestCase):
             ok (exp_key) == key
             ok (exp_value) == value
 
-
     @test("iteritems - item, attributes")
     def _e(self):
         with ConfigRoot(prod, [prod, pp]) as cr:
@@ -110,13 +109,11 @@ class MulticonfTest(unittest.TestCase):
             cr.a(prod=1, pp=2)
         ok (cr.a) == 1
 
-
     @test("automatic freeze on attr access outside of with statement")
     def _h(self):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             ConfigItem(something=1)
         ok (cr.ConfigItem.something) == 1
-
 
     @test("automatic contained item freeze on exit")
     def _i(self):
@@ -233,4 +230,34 @@ class MulticonfTest(unittest.TestCase):
         ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('someitems')['d'].a) == 2
         ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('q')) == 'q0'
         ok (cr.x.someitems['b'].x.find_attribute(attribute_name='a')) == 0
+
+    @test("ConfigBuilder")
+    def _l(self):
+        @repeat()
+        @named_as('xses')
+        class X(ConfigItem):
+            pass
+
+        class XBuilder(ConfigBuilder):
+            def __init__(self, num_servers=4, **kwargs):
+                super(XBuilder, self).__init__(num_servers=num_servers, **kwargs)
+        
+            def build(self):
+                for server_num in xrange(1, self.num_servers+1):
+                    with X(name='server%d' % server_num) as c:
+                        self.override(c)
+
+        @nested_repeatables('xses')
+        class Root(ConfigRoot):
+            pass
+
+        with Root(prod, [prod, pp]) as cr:
+            with XBuilder(a=1) as xb:
+                xb.num_servers(pp=2)
+                xb.b(prod=3, pp=4)
+                    
+        ok (len(cr.xses)) == 4
+        ok (cr.xses['server1'].a) == 1
+        ok (cr.xses['server2'].b) == 3
+        ok (cr.xses['server4'].b) == 3
 
