@@ -3,17 +3,11 @@
 # Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # This code is free for anybody to use
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
 import unittest
 from oktest import ok, test, fail, dummy
 from utils import config_error, lineno
 
-from multiconf.envs import Env, EnvGroup, EnvException, env, group, env_or_group
+from ..envs import Env, EnvGroup, EnvException, env, group, env_or_group
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
