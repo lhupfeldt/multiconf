@@ -30,6 +30,20 @@ valid_envs = EnvGroup('g_all', g_dev, g_prod)
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
+_o_expected = """A value is already specified for: Env('dev2CT') from group EnvGroup('g_dev_overlap') {
+     Env('dev2CT')
+}=3, previous value: EnvGroup('g_dev2') {
+     Env('dev2CT'),
+     Env('dev2ST')
+}=2"""
+
+_p_expected = """A value is already specified for: Env('dev2CT') from group EnvGroup('g_dev_overlap') {
+     Env('dev2CT'),
+     Env('dev3CT')
+}=3, previous value: EnvGroup('g_dev2') {
+     Env('dev2CT'),
+     Env('dev2ST')
+}=2"""
 
 @repeat()
 class RepeatableItem(ConfigItem):
@@ -184,3 +198,33 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Re-used id/name 'my_name' in nested objects"
+
+    @test("value defined through multiple groups")
+    def _o(self):
+        try:
+            g_dev_overlap = EnvGroup('g_dev_overlap', dev2ct)
+
+            with dummy.dummy_io('stdin not used') as d_io:
+                with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
+                    errorline = lineno() + 1
+                    cr.a(prod=1, g_dev2=2, g_dev_overlap=3)
+                fail ("Expected exception")
+        except ConfigException as ex:
+            _sout, serr = d_io            
+            ok (serr) == ce(errorline, _o_expected)
+            ok (ex.message) == "There were 1 errors when defining attribute 'a'"
+
+    @test("value defined through multiple groups")
+    def _p(self):
+        try:
+            g_dev_overlap = EnvGroup('g_dev_overlap', dev2ct, dev3ct)
+
+            with dummy.dummy_io('stdin not used') as d_io:
+                with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
+                    errorline = lineno() + 1
+                    cr.a(prod=1, g_dev2=2, g_dev_overlap=3)
+                fail ("Expected exception")
+        except ConfigException as ex:
+            _sout, serr = d_io            
+            ok (serr) == ce(errorline, _p_expected)
+            ok (ex.message) == "There were 1 errors when defining attribute 'a'"

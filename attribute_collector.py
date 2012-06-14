@@ -44,16 +44,21 @@ class AttributeCollector(object):
                         errors = _error_msg(errors, msg)
                     attr_types.add(type(value))
 
-                # TODO: allow env overrides group, allow group nested override?
                 for env in eg.envs():
-                    if env in self._env_values:
-                        new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
-                        prev_eg_msg = repr(eg_from[env])
-                        msg = "A value is already specified for: " + new_eg_msg + '=' + repr(value) + ", previous value: " + prev_eg_msg + '=' + repr(self._env_values[env])
-                        errors = _error_msg(errors, msg)
+                    # If env == eg then this is a direct env specification, allow overwriting value previously specified through a group
+                    if env not in self._env_values or (isinstance(eg_from[env], EnvGroup) and (env == eg)):
+                        self._env_values[env] = value
+                        eg_from[env] = eg
+                        continue
 
-                    self._env_values[env] = value
-                    eg_from[env] = eg
+                    # If env != eg then this is specified through a group, if it was previously specified directly, just ignore
+                    if (not isinstance(eg_from[env], EnvGroup)) and (env != eg):
+                        continue
+
+                    new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
+                    prev_eg_msg = repr(eg_from[env])
+                    msg = "A value is already specified for: " + new_eg_msg + '=' + repr(value) + ", previous value: " + prev_eg_msg + '=' + repr(self._env_values[env])
+                    errors = _error_msg(errors, msg)
 
             except EnvException as ex:
                 errors = _error_msg(errors, ex.message)

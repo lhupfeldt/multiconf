@@ -8,11 +8,19 @@ from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
-from ..envs import Env
+from ..envs import Env, EnvGroup
 from ..decorators import nested_repeatables, named_as, repeat
 
-prod = Env('prod')
+dev1 = Env('dev1')
+dev2 = Env('dev2')
+g_dev = EnvGroup('g_dev', dev1, dev2)
+
+tst = Env('tst')
+
 pp = Env('pp')
+prod = Env('prod')
+
+g_prod_like = EnvGroup('g_prod_like', prod, pp)
 
 
 @named_as('someitems')
@@ -109,6 +117,7 @@ class MulticonfTest(unittest.TestCase):
             cr.a(prod=1, pp=2)
         ok (cr.a) == 1
 
+    # TODO
     @test("automatic freeze on attr access outside of with statement")
     def _h(self):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
@@ -261,3 +270,42 @@ class MulticonfTest(unittest.TestCase):
         ok (cr.xses['server2'].b) == 3
         ok (cr.xses['server4'].b) == 3
 
+    @test("env value overrides group value")
+    def _m(self):
+        with ConfigRoot(prod, [prod, pp]) as cr1:
+            with ConfigItem() as ci:
+                ci.aa(prod=1, g_prod_like=2)
+                ci.bb(g_prod_like=2, prod=3)
+
+        ok (cr1.ConfigItem.aa) == 1
+        ok (cr1.ConfigItem.bb) == 3
+
+    @test("group value overrides default value")
+    def _m(self):
+        with ConfigRoot(prod, [prod, pp]) as cr1:
+            with ConfigItem(aa=1, bb=3) as ci:
+                ci.aa(g_prod_like=2)
+                ci.bb(pp=4)
+
+        ok (cr1.ConfigItem.aa) == 2
+        ok (cr1.ConfigItem.bb) == 3
+
+    @test("env value overrides default value")
+    def _m(self):
+        with ConfigRoot(prod, [prod, pp]) as cr1:
+            with ConfigItem(aa=1, bb=3) as ci:
+                ci.aa(prod=2)
+                ci.bb(pp=4)
+
+        ok (cr1.ConfigItem.aa) == 2
+        ok (cr1.ConfigItem.bb) == 3
+
+    @test("env value overrides group value and default value")
+    def _m(self):
+        with ConfigRoot(prod, [prod, pp]) as cr1:
+            with ConfigItem(aa=0) as ci:
+                ci.aa(prod=1, g_prod_like=2)
+                ci.bb(g_prod_like=2, prod=3)
+
+        ok (cr1.ConfigItem.aa) == 1
+        ok (cr1.ConfigItem.bb) == 3
