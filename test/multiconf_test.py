@@ -281,7 +281,7 @@ class MulticonfTest(unittest.TestCase):
         ok (cr1.ConfigItem.bb) == 3
 
     @test("group value overrides default value")
-    def _m(self):
+    def _n(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
             with ConfigItem(aa=1, bb=3) as ci:
                 ci.aa(g_prod_like=2)
@@ -291,7 +291,7 @@ class MulticonfTest(unittest.TestCase):
         ok (cr1.ConfigItem.bb) == 3
 
     @test("env value overrides default value")
-    def _m(self):
+    def _o(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
             with ConfigItem(aa=1, bb=3) as ci:
                 ci.aa(prod=2)
@@ -301,7 +301,7 @@ class MulticonfTest(unittest.TestCase):
         ok (cr1.ConfigItem.bb) == 3
 
     @test("env value overrides group value and default value")
-    def _m(self):
+    def _p(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
             with ConfigItem(aa=0) as ci:
                 ci.aa(prod=1, g_prod_like=2)
