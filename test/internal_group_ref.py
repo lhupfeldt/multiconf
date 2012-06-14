@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-# Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
-# This code is free for anybody to use
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from .. import ConfigRoot, ConfigItem
 from ..envs import Env, EnvGroup

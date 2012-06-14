@@ -1,5 +1,5 @@
-# Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
-# This code is free for anybody to use
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from envs import EnvGroup, env_or_group, EnvException
 from config_errors import ConfigException, NoAttributeException, _error_msg

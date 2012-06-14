@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-# Copyright 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
-# This code is free for anybody to use
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
 from oktest import ok, test, fail, dummy
