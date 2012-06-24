@@ -2,9 +2,12 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from collections import Sequence, OrderedDict
+import json
+
 from envs import Env
 from attribute_collector import AttributeCollector
 from config_errors import ConfigBaseException, ConfigException, NoAttributeException
+import json_output
 
 
 class _ConfigBase(object):
@@ -51,6 +54,9 @@ class _ConfigBase(object):
 
     def __repr__(self):
         return self.irepr(len(self.__class__.nested) -1)
+
+    def json(self):
+        return json.dumps(self, cls=json_output.ConfigItemEncoder, sort_keys=True, indent=4)
 
     def __enter__(self):
         assert not self._frozen
