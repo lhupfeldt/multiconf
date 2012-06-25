@@ -21,105 +21,110 @@ prod = Env('prod')
 g_prod_like = EnvGroup('g_prod_like', prod, pp)
 
 
-expected_json_output = """{
+_a_expected_json_output = """{
     "__class__": "root", 
-    "a": 0, 
     "env": {
         "__class__": "Env", 
-        "members": [], 
-        "name": "prod", 
-        "name #calculated": true
+        "name": "prod"
     }, 
-    "env #calculated": true, 
-    "nested": [], 
-    "nested #calculated": true, 
     "someitems": {
-        "a": {
+        "a-level1": {
             "__class__": "NestedRepeatable", 
-            "id": "a", 
-            "nested": [], 
-            "nested #calculated": true, 
-            "someitems": {}
-        }, 
-        "b": {
-            "__class__": "NestedRepeatable", 
-            "id": "b", 
-            "nested": [], 
-            "nested #calculated": true, 
-            "someitems": {
-                "a": {
-                    "__class__": "NestedRepeatable", 
-                    "id": "a", 
-                    "nested": [], 
-                    "nested #calculated": true, 
-                    "someitems": {}
-                }, 
-                "b": {
-                    "__class__": "NestedRepeatable", 
-                    "id": "b", 
-                    "nested": [], 
-                    "nested #calculated": true, 
-                    "someitems": {
-                        "a": {
-                            "__class__": "NestedRepeatable", 
-                            "id": "a", 
-                            "nested": [], 
-                            "nested #calculated": true, 
-                            "someitems": {}
-                        }, 
-                        "b": {
-                            "__class__": "NestedRepeatable", 
-                            "a": 1, 
-                            "id": "b", 
-                            "nested": [], 
-                            "nested #calculated": true, 
-                            "someitems": {}
-                        }, 
-                        "c": {
-                            "__class__": "NestedRepeatable", 
-                            "id": "c", 
-                            "nested": [], 
-                            "nested #calculated": true, 
-                            "someitems": {}, 
-                            "something": 1
-                        }
-                    }
-                }, 
-                "c": {
-                    "__class__": "NestedRepeatable", 
-                    "id": "c", 
-                    "nested": [], 
-                    "nested #calculated": true, 
-                    "someitems": {}, 
-                    "something": 2
-                }
-            }
-        }, 
-        "c": {
-            "__class__": "NestedRepeatable", 
-            "id": "c", 
-            "nested": [], 
-            "nested #calculated": true, 
             "someitems": {}, 
-            "something": 3
+            "id": "a-level1"
+        }, 
+        "b-level1": {
+            "__class__": "NestedRepeatable", 
+            "someitems": {
+                "a-level2": {
+                    "__class__": "NestedRepeatable", 
+                    "someitems": {}, 
+                    "id": "a-level2"
+                }, 
+                "b-level2": {
+                    "__class__": "NestedRepeatable", 
+                    "someitems": {
+                        "a-level3": {
+                            "__class__": "NestedRepeatable", 
+                            "someitems": {}, 
+                            "id": "a-level3"
+                        }, 
+                        "b-level3": {
+                            "__class__": "NestedRepeatable", 
+                            "someitems": {}, 
+                            "a": 1, 
+                            "id": "b-level3"
+                        }, 
+                        "c-level3": {
+                            "__class__": "NestedRepeatable", 
+                            "someitems": {}, 
+                            "something": 1, 
+                            "id": "c-level3"
+                        }
+                    }, 
+                    "id": "b-level2"
+                }, 
+                "c-level2": {
+                    "__class__": "NestedRepeatable", 
+                    "someitems": {}, 
+                    "something": 2, 
+                    "id": "c-level2"
+                }
+            }, 
+            "id": "b-level1"
+        }, 
+        "c-level1": {
+            "__class__": "NestedRepeatable", 
+            "someitems": {}, 
+            "something": 3, 
+            "id": "c-level1"
         }
     }, 
-    "valid_envs": [
-        {
-            "__class__": "Env", 
-            "members": [], 
-            "name": "prod", 
-            "name #calculated": true
-        }, 
-        {
-            "__class__": "Env", 
-            "members": [], 
-            "name": "pp", 
-            "name #calculated": true
-        }
-    ], 
-    "valid_envs #calculated": true
+    "a": 0
 }"""
+
+
+_b_expected_json_output = """{
+    "__class__": "root", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitems": {
+        "a1": {
+            "__class__": "NestedRepeatable", 
+            "someitems": {}, 
+            "some_value": 2, 
+            "id": "a1"
+        }, 
+        "b1": {
+            "__class__": "NestedRepeatable", 
+            "someitems": {
+                "a2": {
+                    "__class__": "NestedRepeatable", 
+                    "someitems": {}, 
+                    "id": "a2", 
+                    "referenced_item": "#confitem ref: root.someitems"
+                }, 
+                "b2": {
+                    "__class__": "NestedRepeatable", 
+                    "someitems": {}, 
+                    "a": 1, 
+                    "id": "b2"
+                }
+            }, 
+            "someattr": 12, 
+            "id": "b1"
+        }
+    }, 
+    "anitem": {
+        "__class__": "AnXItem", 
+        "ref": "#confitem ref: root.someitems.someitems", 
+        "something": 3
+    }, 
+    "a": 0
+}"""
+
 
 @named_as('someitems')
 @repeat()
@@ -128,28 +133,57 @@ class RepeatableItem(ConfigItem):
 
 
 class MulticonfTest(unittest.TestCase):
-    @test("json dump")
+    @test("json dump - simple")
     def _a(self):
+        @nested_repeatables('someitems')
+        class root(ConfigRoot):
+            pass
+
         @named_as('someitems')
         @nested_repeatables('someitems')
         @repeat()
         class NestedRepeatable(ConfigItem):
             pass
 
+        with root(prod, [prod, pp], a=0) as cr:
+            NestedRepeatable(id='a-level1')
+            with NestedRepeatable(id='b-level1') as ci:
+                NestedRepeatable(id='a-level2')
+                with NestedRepeatable(id='b-level2') as ci:
+                    NestedRepeatable(id='a-level3')
+                    with NestedRepeatable(id='b-level3') as ci:
+                        ci.a(prod=1, pp=2)
+                    NestedRepeatable(id='c-level3', something=1)
+                NestedRepeatable(id='c-level2', something=2)
+            NestedRepeatable(id='c-level1', something=3)
+
+        ok (cr.json()) == _a_expected_json_output
+
+    @test("json dump - cyclic reference")
+    def _b(self):
         @nested_repeatables('someitems')
         class root(ConfigRoot):
             pass
 
-        with root(prod, [prod, pp], a=0) as cr:
-            NestedRepeatable(id='a')
-            with NestedRepeatable(id='b') as ci:
-                NestedRepeatable(id='a')
-                with NestedRepeatable(id='b') as ci:
-                    NestedRepeatable(id='a')
-                    with NestedRepeatable(id='b') as ci:
-                        ci.a(prod=1, pp=2)
-                    NestedRepeatable(id='c', something=1)
-                NestedRepeatable(id='c', something=2)
-            NestedRepeatable(id='c', something=3)
+        @named_as('someitems')
+        @nested_repeatables('someitems')
+        @repeat()
+        class NestedRepeatable(ConfigItem):
+            pass
 
-        ok (cr.json()) == expected_json_output
+        @named_as('anitem')
+        class AnXItem(ConfigItem):
+            pass
+
+        with root(prod, [prod, pp], a=0) as cr:
+            with NestedRepeatable(id='a1') as ref_obj1:
+                ref_obj1.some_value(pp=1, prod=2)
+        
+            with NestedRepeatable(id='b1', someattr=12):
+                NestedRepeatable(id='a2', referenced_item=ref_obj1)
+                with NestedRepeatable(id='b2') as ref_obj2:
+                    ref_obj2.a(prod=1, pp=2)
+            with AnXItem(something=3) as last_item:
+                last_item.ref(pp=ref_obj1, prod=ref_obj2)
+            
+        ok (cr.json()) == _b_expected_json_output

@@ -11,7 +11,7 @@ import json_output
 
 
 class _ConfigBase(object):
-    nested = []
+    _nested = []
 
     # Decoration attributes
     _deco_named_as = None
@@ -53,10 +53,10 @@ class _ConfigBase(object):
             indent1 + '}'
 
     def __repr__(self):
-        return self.irepr(len(self.__class__.nested) -1)
+        return self.irepr(len(self.__class__._nested) -1)
 
     def json(self):
-        return json.dumps(self, cls=json_output.ConfigItemEncoder, sort_keys=True, indent=4)
+        return json.dumps(self, cls=json_output.ConfigItemEncoder, sort_keys=False, indent=4)
 
     def __enter__(self):
         assert not self._frozen
@@ -286,14 +286,14 @@ class _ConfigItem(_ConfigBase):
 
     def __enter__(self):
         super(_ConfigItem, self).__enter__()
-        self.__class__.nested.append(self)
+        self.__class__._nested.append(self)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
 
-        self.__class__.nested.pop()
+        self.__class__._nested.pop()
         super(_ConfigItem, self).__exit__(exc_type, exc_value, traceback)
 
 
@@ -308,7 +308,7 @@ class ConfigRoot(_ConfigItem):
 
         self._check_valid_env(selected_env, valid_envs)
 
-        del self.__class__.nested[:]
+        del self.__class__._nested[:]
 
         self._selected_env = selected_env
         self._valid_envs = valid_envs
@@ -337,11 +337,11 @@ class ConfigItem(_ConfigItem):
         super(ConfigItem, self).__init__(**attr)
 
         # Automatic Nested Insert in parent
-        if not self.__class__.nested:
+        if not self.__class__._nested:
             raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
 
         # Set back reference to containing Item and root item
-        self._contained_in = self.__class__.nested[-1]
+        self._contained_in = self.__class__._nested[-1]
         self._root_conf = self._contained_in.root_conf
 
         # Insert self in containing Item's attributes
@@ -395,7 +395,7 @@ class ConfigBuilder(_ConfigBase):
         super(ConfigBuilder, self).__init__(**attr)
 
         # Set back reference to containing Item and root item
-        self._contained_in = self.__class__.nested[-1]
+        self._contained_in = self.__class__._nested[-1]
         self._root_conf = self._contained_in.root_conf
 
     def __exit__(self, exc_type, exc_value, traceback):

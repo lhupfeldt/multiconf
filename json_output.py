@@ -1,10 +1,15 @@
+from collections import OrderedDict
 import json
 import types
 
-import multiconf
+import multiconf, envs
 
 
 class ConfigItemEncoder(json.JSONEncoder):
+    def __init__(self, **kwargs):
+        super(ConfigItemEncoder, self).__init__(**kwargs)
+        self.seen = {}
+
     def default(self, obj):
         try:
             iterable = iter(obj)
@@ -14,26 +19,61 @@ class ConfigItemEncoder(json.JSONEncoder):
             return list(iterable)
 
         if isinstance(obj, multiconf._ConfigBase):
-            d = {'__class__':obj.__class__.__name__ }
+            # Handle ConfigItems
+            original = self.seen.get(id(obj))
+            if original:
+                where = [original.named_as()]
+                while original:
+                    original = original.contained_in
+                    if original:
+                        where = [original.named_as()] + where
+                return "#confitem ref: " + '.'.join(where)
+
+            self.seen[id(obj)] = obj
+
+            d = OrderedDict((('__class__', obj.__class__.__name__ ),))
+
+            # Order 'env' and first on root object
+            root_special_keys = ('env', 'valid_envs')
+            is_root = isinstance(obj, multiconf.ConfigRoot)
+            if is_root:
+                key = root_special_keys[0]
+                value = obj.__getattribute__(key)
+                d[key] = value                
+            
+            # Handle attributes
             for key, val in obj.iteritems():
                 if key[0] != '_':
                     d[key] = val
+
+            # Handle property methods (defined in inherited classes)
             for key in dir(obj):
-                if not key in obj.attributes and not key.startswith('_'):
-                    if key in ('selected_env', 'contained_in', 'root_conf', 'attributes'):
-                        continue
-                    if not isinstance(obj, multiconf.ConfigRoot):
-                        if key in ('valid_envs', 'env'):
-                            continue
-                    value = obj.__getattribute__(key)
-                    if type(value) == types.MethodType:
-                        continue
-                    d[key] = value
+                if key in obj.attributes or key.startswith('_'):
+                    continue
+                if key in ('selected_env', 'contained_in', 'root_conf', 'attributes'):
+                    continue
+                if key in root_special_keys:
+                    continue
+
+                value = obj.__getattribute__(key)
+                if type(value) == types.MethodType:
+                    continue
+
+                d[key] = value
+                if not key in ('valid_envs', 'env'):
                     d[key + ' #calculated'] = True
+
+            return d
+
+        if isinstance(obj, envs.Env):
+            d = OrderedDict((('__class__', obj.__class__.__name__ ),))
+            for eg in obj.all():
+                d['name'] = eg.name
             return d
 
         try:
-            d = {'__class__':obj.__class__.__name__ }
+            # Handle other objects
+            d = OrderedDict((('__class__', obj.__class__.__name__ ),))
             for key, val in obj.__dict__.iteritems():
                 if key[0] != '_':
                     d[key] = val
@@ -48,4 +88,5 @@ class ConfigItemEncoder(json.JSONEncoder):
         except AttributeError:
             pass
 
-        return json.JSONEncoder.default(self, obj)
+        # Handle builtin types
+        return super.default(self, obj)
