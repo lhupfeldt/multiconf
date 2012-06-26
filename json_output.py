@@ -10,16 +10,13 @@ class ConfigItemEncoder(json.JSONEncoder):
         super(ConfigItemEncoder, self).__init__(**kwargs)
         self.seen = {}
 
-    def default(self, obj):
-        try:
-            iterable = iter(obj)
-        except TypeError:
-            pass
-        else:
-            return list(iterable)
+    def _class_dict(self, obj):
+        return OrderedDict((('__class__', obj.__class__.__name__ ),))
 
+    def default(self, obj):
         if isinstance(obj, multiconf._ConfigBase):
-            # Handle ConfigItems
+            #print "# Handle ConfigItems", type(obj)
+            # Check for references to already dumped objects
             original = self.seen.get(id(obj))
             if original:
                 where = [original.named_as()]
@@ -28,23 +25,22 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if original:
                         where = [original.named_as()] + where
                 return "#confitem ref: " + '.'.join(where)
-
             self.seen[id(obj)] = obj
 
-            d = OrderedDict((('__class__', obj.__class__.__name__ ),))
+            dd = self._class_dict(obj)
 
             # Order 'env' and first on root object
             root_special_keys = ('env', 'valid_envs')
             is_root = isinstance(obj, multiconf.ConfigRoot)
             if is_root:
                 key = root_special_keys[0]
-                value = obj.__getattribute__(key)
-                d[key] = value                
-            
+                value = getattr(obj, key)
+                dd[key] = value
+
             # Handle attributes
             for key, val in obj.iteritems():
                 if key[0] != '_':
-                    d[key] = val
+                    dd[key] = val
 
             # Handle property methods (defined in inherited classes)
             for key in dir(obj):
@@ -55,38 +51,54 @@ class ConfigItemEncoder(json.JSONEncoder):
                 if key in root_special_keys:
                     continue
 
-                value = obj.__getattribute__(key)
-                if type(value) == types.MethodType:
+                val = getattr(obj, key)
+                if type(val) == types.MethodType:
                     continue
 
-                d[key] = value
+                dd[key] = val
                 if not key in ('valid_envs', 'env'):
-                    d[key + ' #calculated'] = True
+                    dd[key + ' #calculated'] = True
 
-            return d
+            return dd
 
         if isinstance(obj, envs.Env):
-            d = OrderedDict((('__class__', obj.__class__.__name__ ),))
+            #print "# Handle Env objects", type(obj)
+            dd = self._class_dict(obj)
             for eg in obj.all():
-                d['name'] = eg.name
-            return d
+                dd['name'] = eg.name
+            return dd
 
         try:
-            # Handle other objects
-            d = OrderedDict((('__class__', obj.__class__.__name__ ),))
-            for key, val in obj.__dict__.iteritems():
-                if key[0] != '_':
-                    d[key] = val
-            for key in dir(obj):
-                if not key in obj.__dict__ and not key.startswith('__'):                    
-                    value = obj.__getattribute__(key)
-                    if type(value) == types.MethodType:
-                        continue
-                    d[key] = value
-                    d[key + ' #calculated'] = True                        
-            return d
+            iterable = iter(obj)
+        except TypeError:
+            pass
+        else:
+            #print "# Handle iterable objects", type(obj)
+            # Check for references to already dumped objects
+            original = self.seen.get(id(obj))
+            if original:
+                return "#obj ref"
+            self.seen[id(obj)] = obj
+
+            return list(iterable)
+
+        try:
+            odict = obj.__dict__
         except AttributeError:
             pass
+        else:
+            #print "# Handle other class objects", type(obj)
+            # Check for references to already dumped objects
+            original = self.seen.get(id(obj))
+            if original:
+                return "#obj ref"
+            self.seen[id(obj)] = obj
 
-        # Handle builtin types
+            dd = self._class_dict(obj)
+            for key, val in obj.__dict__.iteritems():
+                if key[0] != '_':
+                    dd[key] = val
+            return dd
+
+        #print "# Handle builtin types", type(obj)
         return super.default(self, obj)

@@ -126,6 +126,24 @@ _b_expected_json_output = """{
 }"""
 
 
+_c_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitem": {
+        "__class__": "Nested", 
+        "cycl": {
+            "cyclic_item_ref": "#confitem ref: ConfigRoot.someitem"
+        }, 
+        "id": "b1", 
+        "someattr": 12
+    }, 
+    "a": 0
+}"""
+
+
 @named_as('someitems')
 @repeat()
 class RepeatableItem(ConfigItem):
@@ -159,7 +177,7 @@ class MulticonfTest(unittest.TestCase):
 
         ok (cr.json()) == _a_expected_json_output
 
-    @test("json dump - cyclic reference")
+    @test("json dump - cyclic references in conf items")
     def _b(self):
         @nested_repeatables('someitems')
         class root(ConfigRoot):
@@ -187,3 +205,19 @@ class MulticonfTest(unittest.TestCase):
                 last_item.ref(pp=ref_obj1, prod=ref_obj2)
             
         ok (cr.json()) == _b_expected_json_output
+
+
+    @test("json dump - cyclic references between conf items and other objects")
+    def _c(self):
+        @named_as('someitem')
+        class Nested(ConfigItem):
+            pass
+        
+        cycler = {}
+        
+        with ConfigRoot(prod, [prod, pp], a=0) as cr:
+            with Nested(id='b1', someattr=12, cycl=cycler) as ref_obj2:
+                pass            
+            cycler['cyclic_item_ref'] = ref_obj2
+
+        ok (cr.json()) == _c_expected_json_output
