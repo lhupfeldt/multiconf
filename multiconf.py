@@ -21,7 +21,7 @@ class _ConfigBase(object):
     _deco_required_if_attributes = (None, ())
 
     def __init__(self, **attr):
-        self._debug_exc = True
+        self._debug_exc = False
 
         # Object linking
         self._root_conf = None
