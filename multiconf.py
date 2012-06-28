@@ -391,8 +391,12 @@ class ConfigItem(_ConfigItem):
 
 
 class ConfigBuilder(_ConfigBase):
+    # Decoration attributes
+    _deco_override_attributes = []
+
     def __init__(self, **attr):
         super(ConfigBuilder, self).__init__(**attr)
+        self._override_keys = attr.keys()
 
         # Set back reference to containing Item and root item
         self._contained_in = self.__class__._nested[-1]
@@ -409,13 +413,15 @@ class ConfigBuilder(_ConfigBase):
         """Override this in derived classes. This is where child ConfigItems are declared"""
         raise ConfigException("'build' must be overridded")
 
-    def override(self, config_item):
-        """Assign attributes from builder to child Item"""
-        for key, value in self.attributes.iteritems():
-            config_item_attr = config_item.attributes.get(key)
-            if config_item_attr:
-                config_item_attr.override(value)
-                continue
-            config_item.attributes[key] = value
+    def override(self, config_item, *keys):
+        """Assign attributes that that match 'override' decorator keys or 'keys' from builder to child Item'"""
+        for key in self.__class__._deco_override_attributes + list(keys):
+            value = self.attributes.get(key)
+            if value:
+                config_item_attr = config_item.attributes.get(key)
+                if config_item_attr:
+                    config_item_attr.override(value)
+                    continue
+                config_item.attributes[key] = value
 
 

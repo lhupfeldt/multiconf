@@ -9,7 +9,7 @@ from utils import lazy, config_error, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..envs import Env, EnvGroup
-from ..decorators import nested_repeatables, named_as, repeat
+from ..decorators import nested_repeatables, named_as, repeat, required, override
 
 dev1 = Env('dev1')
 dev2 = Env('dev2')
@@ -240,13 +240,15 @@ class MulticonfTest(unittest.TestCase):
         ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('q')) == 'q0'
         ok (cr.x.someitems['b'].x.find_attribute(attribute_name='a')) == 0
 
-    @test("ConfigBuilder")
+    @test("ConfigBuilder - override")
     def _l(self):
         @repeat()
         @named_as('xses')
         class X(ConfigItem):
             pass
-
+        
+        @required('b')
+        @override('a')
         class XBuilder(ConfigBuilder):
             def __init__(self, num_servers=4, **kwargs):
                 super(XBuilder, self).__init__(num_servers=num_servers, **kwargs)
@@ -254,7 +256,7 @@ class MulticonfTest(unittest.TestCase):
             def build(self):
                 for server_num in xrange(1, self.num_servers+1):
                     with X(name='server%d' % server_num) as c:
-                        self.override(c)
+                        self.override(c, 'b')
 
         @nested_repeatables('xses')
         class Root(ConfigRoot):
