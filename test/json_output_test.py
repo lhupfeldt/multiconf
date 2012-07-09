@@ -144,6 +144,21 @@ _c_expected_json_output = """{
 }"""
 
 
+_d_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitem": {
+        "__class__": "Nested", 
+        "m": 1, 
+        "m #calculated": true
+    }, 
+    "a": 0
+}"""
+
+
 @named_as('someitems')
 @repeat()
 class RepeatableItem(ConfigItem):
@@ -221,3 +236,17 @@ class MulticonfTest(unittest.TestCase):
             cycler['cyclic_item_ref'] = ref_obj2
 
         ok (cr.json()) == _c_expected_json_output
+
+    @test("json dump - property method")
+    def _d(self):
+        @named_as('someitem')
+        class Nested(ConfigItem):
+
+            @property
+            def m(self):
+                return 1
+        
+        with ConfigRoot(prod, [prod, pp], a=0) as cr:
+            Nested()
+
+        ok (cr.json()) == _d_expected_json_output
