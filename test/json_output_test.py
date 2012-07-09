@@ -5,7 +5,7 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder
+from .. import ConfigRoot, ConfigItem, ConfigBuilder, InvalidUsageException
 from ..envs import Env, EnvGroup
 from ..decorators import nested_repeatables, named_as, repeat
 
@@ -159,6 +159,20 @@ _d_expected_json_output = """{
 }"""
 
 
+_e_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitem": {
+        "__class__": "Nested", 
+        "m #invalid usage context": true
+    }, 
+    "a": 0
+}"""
+
+
 @named_as('someitems')
 @repeat()
 class RepeatableItem(ConfigItem):
@@ -250,3 +264,17 @@ class MulticonfTest(unittest.TestCase):
             Nested()
 
         ok (cr.json()) == _d_expected_json_output
+
+    @test("json dump - property method raises InvalidUsageException")
+    def _e(self):
+        @named_as('someitem')
+        class Nested(ConfigItem):
+
+            @property
+            def m(self):
+                raise InvalidUsageException()
+        
+        with ConfigRoot(prod, [prod, pp], a=0) as cr:
+            Nested()
+
+        ok (cr.json()) == _e_expected_json_output

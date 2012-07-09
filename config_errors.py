@@ -17,6 +17,10 @@ class NoAttributeException(ConfigBaseException):
     pass
 
 
+class InvalidUsageException(ConfigBaseException):
+    pass
+
+
 _Traceback = namedtuple('Traceback', 'filename, lineno, function, code_context, index')
 
 

@@ -2,4 +2,4 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from multiconf import ConfigRoot, ConfigBuilder, ConfigItem
-from multiconf import ConfigException, NoAttributeException
+from config_errors import ConfigException, NoAttributeException, InvalidUsageException

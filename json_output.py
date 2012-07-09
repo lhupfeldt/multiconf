@@ -3,7 +3,9 @@ import json
 import types
 
 import multiconf, envs
+from config_errors import InvalidUsageException
 
+# Note: this is used for handling backreferences to avoid dumping objects multiple times
 class _AlreadySeen(Exception):
     pass
 
@@ -61,7 +63,12 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if key in root_special_keys:
                         continue
     
-                    val = getattr(obj, key)
+                    try:
+                        val = getattr(obj, key)
+                    except InvalidUsageException:
+                        dd[key + ' #invalid usage context'] = True
+                        continue
+
                     if type(val) == types.MethodType:
                         continue
     
