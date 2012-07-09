@@ -108,8 +108,9 @@ class ConfigItemEncoder(json.JSONEncoder):
                         dd[key] = val
                 return dd
     
-            #print "# Handle builtin types", type(obj)
-            return super.default(self, obj)
+            print "# Handle builtin types", type(obj)
+            return obj
+
 
         except _AlreadySeen as seen:
             return seen.message

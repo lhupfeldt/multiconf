@@ -5,7 +5,7 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder, InvalidUsageException
+from .. import ConfigRoot, ConfigItem, InvalidUsageException
 from ..envs import Env, EnvGroup
 from ..decorators import nested_repeatables, named_as, repeat
 
@@ -172,6 +172,22 @@ _e_expected_json_output = """{
     "a": 0
 }"""
 
+# TODO: insert information about skipped objects into json output
+_f_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitem": {
+        "__class__": "Nested", 
+        "b": {
+            
+        }
+    }, 
+    "a": 0
+}"""
+
 
 @named_as('someitems')
 @repeat()
@@ -255,7 +271,6 @@ class MulticonfTest(unittest.TestCase):
     def _d(self):
         @named_as('someitem')
         class Nested(ConfigItem):
-
             @property
             def m(self):
                 return 1
@@ -269,7 +284,6 @@ class MulticonfTest(unittest.TestCase):
     def _e(self):
         @named_as('someitem')
         class Nested(ConfigItem):
-
             @property
             def m(self):
                 raise InvalidUsageException()
@@ -278,3 +292,19 @@ class MulticonfTest(unittest.TestCase):
             Nested()
 
         ok (cr.json()) == _e_expected_json_output
+
+    @test("json dump - non conf item not json-serializable")
+    def _f(self):
+        class Key():
+            def __repr__(self):
+                return "<Key object>"
+
+        @named_as('someitem')
+        class Nested(ConfigItem):
+            def __init__(self):
+                super(Nested, self).__init__(b={Key():2})
+        
+        with ConfigRoot(prod, [prod, pp], a=0) as cr:
+            Nested()
+
+        ok (cr.json()) == _f_expected_json_output
