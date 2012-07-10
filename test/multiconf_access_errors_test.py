@@ -105,3 +105,27 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"
+
+    # TODO
+    #@test("error in property method implementation")
+    #def _l(self):
+    #    class root(ConfigRoot):
+    #        pass
+    #
+    #    @named_as('x')
+    #    class X(ConfigItem):
+    #        @property
+    #        def method(self):
+    #            # Cheat pylint by getting string from dict
+    #            a = {1:""}
+    #            return a[1].nosuchprop
+    #
+    #    with root(prod, [prod]) as cr:
+    #        X()
+    #                
+    #    try:
+    #        a = cr.x.method
+    #        fail ("Expected exception, but a " + repr(a) + " got a value")
+    #    except ConfigException as ex:
+    #        ok (ex.message) == ""
+
