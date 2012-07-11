@@ -3,7 +3,7 @@
 
 import unittest
 from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno
+from utils import lazy, config_error, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException
 from ..envs import Env, EnvGroup
@@ -23,6 +23,7 @@ g_prod_like = EnvGroup('g_prod_like', prod, pp)
 
 _a_expected_json_output = """{
     "__class__": "root", 
+    "__id__": 0000, 
     "env": {
         "__class__": "Env", 
         "name": "prod"
@@ -30,33 +31,40 @@ _a_expected_json_output = """{
     "someitems": {
         "a-level1": {
             "__class__": "NestedRepeatable", 
+            "__id__": 0000, 
             "someitems": {}, 
             "id": "a-level1"
         }, 
         "b-level1": {
             "__class__": "NestedRepeatable", 
+            "__id__": 0000, 
             "someitems": {
                 "a-level2": {
                     "__class__": "NestedRepeatable", 
+                    "__id__": 0000, 
                     "someitems": {}, 
                     "id": "a-level2"
                 }, 
                 "b-level2": {
                     "__class__": "NestedRepeatable", 
+                    "__id__": 0000, 
                     "someitems": {
                         "a-level3": {
                             "__class__": "NestedRepeatable", 
+                            "__id__": 0000, 
                             "someitems": {}, 
                             "id": "a-level3"
                         }, 
                         "b-level3": {
                             "__class__": "NestedRepeatable", 
+                            "__id__": 0000, 
                             "someitems": {}, 
                             "a": 1, 
                             "id": "b-level3"
                         }, 
                         "c-level3": {
                             "__class__": "NestedRepeatable", 
+                            "__id__": 0000, 
                             "someitems": {}, 
                             "something": 1, 
                             "id": "c-level3"
@@ -66,6 +74,7 @@ _a_expected_json_output = """{
                 }, 
                 "c-level2": {
                     "__class__": "NestedRepeatable", 
+                    "__id__": 0000, 
                     "someitems": {}, 
                     "something": 2, 
                     "id": "c-level2"
@@ -75,6 +84,7 @@ _a_expected_json_output = """{
         }, 
         "c-level1": {
             "__class__": "NestedRepeatable", 
+            "__id__": 0000, 
             "someitems": {}, 
             "something": 3, 
             "id": "c-level1"
@@ -86,6 +96,7 @@ _a_expected_json_output = """{
 
 _b_expected_json_output = """{
     "__class__": "root", 
+    "__id__": 0000, 
     "env": {
         "__class__": "Env", 
         "name": "prod"
@@ -93,21 +104,25 @@ _b_expected_json_output = """{
     "someitems": {
         "a1": {
             "__class__": "NestedRepeatable", 
+            "__id__": 0000, 
             "someitems": {}, 
             "some_value": 2, 
             "id": "a1"
         }, 
         "b1": {
             "__class__": "NestedRepeatable", 
+            "__id__": 0000, 
             "someitems": {
                 "a2": {
                     "__class__": "NestedRepeatable", 
+                    "__id__": 0000, 
                     "someitems": {}, 
                     "id": "a2", 
-                    "referenced_item": "#confitem ref: root.someitems"
+                    "referenced_item": "#ref id: 0000"
                 }, 
                 "b2": {
                     "__class__": "NestedRepeatable", 
+                    "__id__": 0000, 
                     "someitems": {}, 
                     "a": 1, 
                     "id": "b2"
@@ -119,7 +134,8 @@ _b_expected_json_output = """{
     }, 
     "anitem": {
         "__class__": "AnXItem", 
-        "ref": "#confitem ref: root.someitems.someitems", 
+        "__id__": 0000, 
+        "ref": "#ref id: 0000", 
         "something": 3
     }, 
     "a": 0
@@ -128,14 +144,16 @@ _b_expected_json_output = """{
 
 _c_expected_json_output = """{
     "__class__": "ConfigRoot", 
+    "__id__": 0000, 
     "env": {
         "__class__": "Env", 
         "name": "prod"
     }, 
     "someitem": {
         "__class__": "Nested", 
+        "__id__": 0000, 
         "cycl": {
-            "cyclic_item_ref": "#confitem ref: ConfigRoot.someitem"
+            "cyclic_item_ref": "#ref id: 0000"
         }, 
         "id": "b1", 
         "someattr": 12
@@ -146,12 +164,14 @@ _c_expected_json_output = """{
 
 _d_expected_json_output = """{
     "__class__": "ConfigRoot", 
+    "__id__": 0000, 
     "env": {
         "__class__": "Env", 
         "name": "prod"
     }, 
     "someitem": {
         "__class__": "Nested", 
+        "__id__": 0000, 
         "m": 1, 
         "m #calculated": true
     }, 
@@ -161,12 +181,14 @@ _d_expected_json_output = """{
 
 _e_expected_json_output = """{
     "__class__": "ConfigRoot", 
+    "__id__": 0000, 
     "env": {
         "__class__": "Env", 
         "name": "prod"
     }, 
     "someitem": {
         "__class__": "Nested", 
+        "__id__": 0000, 
         "m #invalid usage context": true
     }, 
     "a": 0
@@ -175,12 +197,14 @@ _e_expected_json_output = """{
 # TODO: insert information about skipped objects into json output
 _f_expected_json_output = """{
     "__class__": "ConfigRoot", 
+    "__id__": 0000, 
     "env": {
         "__class__": "Env", 
         "name": "prod"
     }, 
     "someitem": {
         "__class__": "Nested", 
+        "__id__": 0000, 
         "b": {
             
         }
@@ -220,7 +244,7 @@ class MulticonfTest(unittest.TestCase):
                 NestedRepeatable(id='c-level2', something=2)
             NestedRepeatable(id='c-level1', something=3)
 
-        ok (cr.json()) == _a_expected_json_output
+        ok (replace_ids(cr.json())) == _a_expected_json_output
 
     @test("json dump - cyclic references in conf items")
     def _b(self):
@@ -249,7 +273,7 @@ class MulticonfTest(unittest.TestCase):
             with AnXItem(something=3) as last_item:
                 last_item.ref(pp=ref_obj1, prod=ref_obj2)
             
-        ok (cr.json()) == _b_expected_json_output
+        ok (replace_ids(cr.json())) == _b_expected_json_output
 
 
     @test("json dump - cyclic references between conf items and other objects")
@@ -265,7 +289,7 @@ class MulticonfTest(unittest.TestCase):
                 pass            
             cycler['cyclic_item_ref'] = ref_obj2
 
-        ok (cr.json()) == _c_expected_json_output
+        ok (replace_ids(cr.json())) == _c_expected_json_output
 
     @test("json dump - property method")
     def _d(self):
@@ -278,7 +302,7 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             Nested()
 
-        ok (cr.json()) == _d_expected_json_output
+        ok (replace_ids(cr.json())) == _d_expected_json_output
 
     @test("json dump - property method raises InvalidUsageException")
     def _e(self):
@@ -291,7 +315,7 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             Nested()
 
-        ok (cr.json()) == _e_expected_json_output
+        ok (replace_ids(cr.json())) == _e_expected_json_output
 
     @test("json dump - non conf item not json-serializable")
     def _f(self):
@@ -307,4 +331,4 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             Nested()
 
-        ok (cr.json()) == _f_expected_json_output
+        ok (replace_ids(cr.json())) == _f_expected_json_output

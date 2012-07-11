@@ -9,30 +9,33 @@ from config_errors import InvalidUsageException
 class _AlreadySeen(Exception):
     pass
 
+
+def _class_tuple(obj, id_str=""):
+    return ('__class__', obj.__class__.__name__ + id_str)
+
+
 class ConfigItemEncoder(json.JSONEncoder):
-    def __init__(self, filter_callable=None, **kwargs):
+    def __init__(self, filter_callable=None, compact=False, **kwargs):
+        """
+        filter_callable: func(obj, key, value)
+        compact: Set compact to true if dumping for debug, false for machine readable output
+        """
         super(ConfigItemEncoder, self).__init__(**kwargs)
-        self.seen = {}
         self.filter = filter_callable
+        self.compact = compact
+        self.seen = {}
 
     def _class_dict(self, obj):
-        return OrderedDict((('__class__', obj.__class__.__name__ ),))
+        if self.compact:
+            return OrderedDict((_class_tuple(obj, ' #id: ' + repr(id(obj))),))
+
+        return OrderedDict((_class_tuple(obj), ('__id__', id(obj))))
 
     def _check_already_dumped(self, obj):
         # Check for references to already dumped objects
         original = self.seen.get(id(obj))
         if original:
-            try:
-                # ConfigItem ref
-                where = [original.named_as()]
-                while original:
-                    original = original.contained_in
-                    if original:
-                        where = [original.named_as()] + where
-                raise _AlreadySeen("#confitem ref: " + '.'.join(where))
-            except AttributeError:                        
-                # Other item ref
-                raise _AlreadySeen("#obj ref")
+            raise _AlreadySeen("#ref id: " + repr(id(obj)))
 
         self.seen[id(obj)] = obj
 
@@ -82,7 +85,7 @@ class ConfigItemEncoder(json.JSONEncoder):
             if isinstance(obj, envs.Env):
                 #print "# Handle Env objects", type(obj)
                 self._check_already_dumped(obj)
-                dd = self._class_dict(obj)
+                dd = OrderedDict((_class_tuple(obj),))
                 for eg in obj.all():
                     dd['name'] = eg.name
                 return dd
