@@ -10,14 +10,15 @@ class _AlreadySeen(Exception):
     pass
 
 class ConfigItemEncoder(json.JSONEncoder):
-    def __init__(self, **kwargs):
+    def __init__(self, filter_callable=None, **kwargs):
         super(ConfigItemEncoder, self).__init__(**kwargs)
         self.seen = {}
+        self.filter = filter_callable
 
     def _class_dict(self, obj):
         return OrderedDict((('__class__', obj.__class__.__name__ ),))
 
-    def _check_circular_ref(self, obj):
+    def _check_already_dumped(self, obj):
         # Check for references to already dumped objects
         original = self.seen.get(id(obj))
         if original:
@@ -39,9 +40,9 @@ class ConfigItemEncoder(json.JSONEncoder):
         try:
             if isinstance(obj, multiconf._ConfigBase):
                 #print "# Handle ConfigItems", type(obj)
-                self._check_circular_ref(obj)
+                self._check_already_dumped(obj)
                 dd = self._class_dict(obj)
-                # Order 'env' and first on root object
+                # Order 'env' first on root object
                 root_special_keys = ('env', 'valid_envs')
                 is_root = isinstance(obj, multiconf.ConfigRoot)
                 if is_root:
@@ -80,7 +81,7 @@ class ConfigItemEncoder(json.JSONEncoder):
     
             if isinstance(obj, envs.Env):
                 #print "# Handle Env objects", type(obj)
-                self._check_circular_ref(obj)
+                self._check_already_dumped(obj)
                 dd = self._class_dict(obj)
                 for eg in obj.all():
                     dd['name'] = eg.name
@@ -92,7 +93,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                 pass
             else:
                 #print "# Handle iterable objects", type(obj)
-                self._check_circular_ref(obj)    
+                self._check_already_dumped(obj)    
                 return list(iterable)
     
             try:
@@ -101,7 +102,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                 pass
             else:
                 #print "# Handle other class objects", type(obj)
-                self._check_circular_ref(obj)
+                self._check_already_dumped(obj)
                 dd = self._class_dict(obj)
                 for key, val in obj.__dict__.iteritems():
                     if key[0] != '_':
