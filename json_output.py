@@ -75,9 +75,15 @@ class ConfigItemEncoder(json.JSONEncoder):
 
                     if type(val) == types.MethodType:
                         continue
-    
-                    dd[key] = val
-                    if not key in ('valid_envs', 'env'):
+
+                    if key in ('valid_envs', 'env'):
+                        dd[key] = val
+                        continue
+
+                    if self.compact:
+                        dd[key] = str(val) + ' #calculated'
+                    else:
+                        dd[key] = val
                         dd[key + ' #calculated'] = True
     
                 return dd

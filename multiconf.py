@@ -55,8 +55,12 @@ class _ConfigBase(object):
     def __repr__(self):
         return self.irepr(len(self.__class__._nested) -1)
 
-    def json(self, skipkeys=True):
-        return json.dumps(self, skipkeys=skipkeys, cls=json_output.ConfigItemEncoder, check_circular=False, sort_keys=False, indent=4)
+    def json(self, compact=False, skipkeys=True):
+        class Encoder(json_output.ConfigItemEncoder):
+            def __init__(self, **kwargs):
+                super(Encoder, self).__init__(compact=compact, **kwargs)
+
+        return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=False, sort_keys=False, indent=4)
 
     def __enter__(self):
         assert not self._frozen
