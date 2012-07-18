@@ -5,7 +5,7 @@
 
 import unittest
 from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno
+from utils import lazy, config_error, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException
 from ..envs import Env, EnvGroup
@@ -27,8 +27,20 @@ g_prod = EnvGroup('g_prod', pp, prod)
 
 valid_envs = EnvGroup('g_all', g_dev, g_prod)
 
+
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
+
+
+_i_expected = """'ConfigItem' is defined both as simple value and a contained item: {
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen, defaults: {}"
+}"""
+
+
+_j_expected = """'RepeatableItems': {
+    "__class__": "RepeatableItem #as: 'RepeatableItems', id: 0000, not-frozen, defaults: {}"
+} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"""
+
 
 _o_expected = """A value is already specified for: Env('dev2CT') from group EnvGroup('g_dev_overlap') {
      Env('dev2CT')
@@ -37,6 +49,7 @@ _o_expected = """A value is already specified for: Env('dev2CT') from group EnvG
      Env('dev2ST')
 }=2"""
 
+
 _p_expected = """A value is already specified for: Env('dev2CT') from group EnvGroup('g_dev_overlap') {
      Env('dev2CT'),
      Env('dev3CT')
@@ -44,6 +57,7 @@ _p_expected = """A value is already specified for: Env('dev2CT') from group EnvG
      Env('dev2CT'),
      Env('dev2ST')
 }=2"""
+
 
 @repeat()
 class RepeatableItem(ConfigItem):
@@ -128,7 +142,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 ConfigItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "'ConfigItem' is defined both as simple value and a contained item: ConfigItem not-frozen, defaults: {} {\n}"
+            ok (replace_ids(ex.message, named_as=False)) == _i_expected
 
     @test("nested repeatable item overrides simple property - not contained in repeatable")
     def _j(self):
@@ -138,7 +152,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 RepeatableItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "'RepeatableItems': RepeatableItems not-frozen, defaults: {} {\n} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"
+            ok (replace_ids(ex.message, named_as=False)) == _j_expected
 
     #@test("nested repeatable item overrides simple property - contained in repeatable")
     #@todo

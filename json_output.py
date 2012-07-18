@@ -10,8 +10,8 @@ class _AlreadySeen(Exception):
     pass
 
 
-def _class_tuple(obj, id_str=""):
-    return ('__class__', obj.__class__.__name__ + id_str)
+def _class_tuple(obj, obj_info=""):
+    return ('__class__', obj.__class__.__name__ + obj_info)
 
 
 class ConfigItemEncoder(json.JSONEncoder):
@@ -28,8 +28,14 @@ class ConfigItemEncoder(json.JSONEncoder):
     def _class_dict(self, obj):
         if self.compact:
             return OrderedDict((_class_tuple(obj, ' #id: ' + repr(id(obj))),))
-
         return OrderedDict((_class_tuple(obj), ('__id__', id(obj))))
+
+    def _mc_class_dict(self, obj):
+        not_frozen_msg = "" if obj.frozen else ", not-frozen, defaults: " + repr(obj._defaults)
+        if self.compact:
+            msg = " #as: " + repr(obj.named_as()) + ', id: ' + repr(id(obj)) + not_frozen_msg
+            return OrderedDict((_class_tuple(obj, msg),))
+        return OrderedDict(( _class_tuple(obj, not_frozen_msg), ('__id__', id(obj))))
 
     def _check_already_dumped(self, obj):
         # Check for references to already dumped objects
@@ -44,7 +50,7 @@ class ConfigItemEncoder(json.JSONEncoder):
             if isinstance(obj, multiconf._ConfigBase):
                 #print "# Handle ConfigItems", type(obj)
                 self._check_already_dumped(obj)
-                dd = self._class_dict(obj)
+                dd = self._mc_class_dict(obj)
                 # Order 'env' first on root object
                 root_special_keys = ('env', 'valid_envs')
                 is_root = isinstance(obj, multiconf.ConfigRoot)
@@ -62,7 +68,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                 for key in dir(obj):
                     if key in obj.attributes or key.startswith('_'):
                         continue
-                    if key in ('selected_env', 'contained_in', 'root_conf', 'attributes'):
+                    if key in ('selected_env', 'contained_in', 'root_conf', 'attributes', 'frozen'):
                         continue
                     if key in root_special_keys:
                         continue
@@ -118,9 +124,8 @@ class ConfigItemEncoder(json.JSONEncoder):
                         dd[key] = val
                 return dd
     
-            print "# Handle builtin types", type(obj)
+            #print "# Handle builtin types", type(obj)
             return obj
-
 
         except _AlreadySeen as seen:
             return seen.message

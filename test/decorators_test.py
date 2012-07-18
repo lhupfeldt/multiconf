@@ -5,7 +5,7 @@
 
 import unittest
 from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno
+from utils import lazy, config_error, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import  required, required_if, nested_repeatables, named_as, repeat, optional
@@ -29,6 +29,15 @@ prod = Env('prod')
 g_prod = EnvGroup('g_prod', pp, prod)
 
 valid_envs = EnvGroup('g_all', g_dev, g_prod)
+
+_g_expected = """{
+    "__class__": "root #as: 'project', id: 0000", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "name": "abc"
+}"""
 
 class DecoratorsTest(unittest.TestCase):
     @test("required attributes - configroot")
@@ -144,7 +153,7 @@ class DecoratorsTest(unittest.TestCase):
             pass
 
         proj = root(prod, [prod, dev2ct], name='abc').freeze()
-        ok (repr(proj)) == "project {\n     name: 'abc',\n}"
+        ok (replace_ids(repr(proj), named_as=False)) == _g_expected
 
     @test("required attributes - inherited, ok")
     def _h(self):

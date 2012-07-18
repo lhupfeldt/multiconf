@@ -1,10 +1,9 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import re
 import unittest
 from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno
+from utils import lazy, config_error, lineno, replace_ids, to_compact
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException
 from ..envs import Env, EnvGroup
@@ -20,22 +19,6 @@ pp = Env('pp')
 prod = Env('prod')
 
 g_prod_like = EnvGroup('g_prod_like', prod, pp)
-
-
-_replace_ids_regex = re.compile(r'("__id__"| #id): [0-9]+("?),')
-_replace_refs_regex = re.compile(r'": "#ref id: [0-9]+"')
-
-def replace_ids(json_string):
-    json_string = _replace_ids_regex.sub(r'\1: 0000\2,', json_string)
-    return _replace_refs_regex.sub(r'": "#ref id: 0000"', json_string)
-
-
-_compact_ids_regex = re.compile(r'", \n *"__id__": ([0-9]+),')
-_compact_calculated_regex = re.compile(r': ([^ ]+)"?, \n *"([a-zA-Z0-9]*) #calculated": true')
-def to_compact(json_string):
-    json_string = _compact_ids_regex.sub(r' #id: \1",', json_string)
-    return _compact_calculated_regex.sub(r': "\1 #calculated"', json_string)
-
 
 
 _a_expected_json_output = """{

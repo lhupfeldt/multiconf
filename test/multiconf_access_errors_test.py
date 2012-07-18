@@ -5,7 +5,7 @@
 
 import unittest
 from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno
+from utils import lazy, config_error, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import nested_repeatables, named_as, repeat
@@ -16,6 +16,16 @@ prod = Env('prod')
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
+
+_a_expected_repr = """{
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }
+} has no attribute 'b'"""
+
+
 class MultiConfAccessErrorsTest(unittest.TestCase):
     @test("access undefined attribute")
     def _a(self):
@@ -25,7 +35,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
             print cr.b
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "ConfigRoot {\n} has no attribute 'b'"
+            ok (replace_ids(ex.message, named_as=False)) == _a_expected_repr
 
     @test("find_contained_in(named_as) - not found")
     def _b(self):

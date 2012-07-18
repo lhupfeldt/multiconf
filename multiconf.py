@@ -53,7 +53,9 @@ class _ConfigBase(object):
             indent1 + '}'
 
     def __repr__(self):
-        return self.irepr(len(self.__class__._nested) -1)
+        return self.json(compact=True)
+        # TODO proper pythonic repr, but until indentation is fixed, json is better
+        # return self.irepr(len(self.__class__._nested) -1)
 
     def json(self, compact=False, skipkeys=True):
         class Encoder(json_output.ConfigItemEncoder):
@@ -133,6 +135,11 @@ class _ConfigBase(object):
 
         return self._freeze()
 
+    @property
+    def frozen(self):
+        """Return frozen state"""
+        return self._frozen
+
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
@@ -184,6 +191,9 @@ class _ConfigBase(object):
         return self._env_specific_value(name, attr_coll, env)
 
     def __getattr__(self, name):
+        if name.startswith('__'):
+            super(_ConfigBase, self).__getattr__(name)
+
         if not self._frozen and self._may_freeze:
             self.freeze()
 
