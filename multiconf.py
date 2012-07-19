@@ -35,6 +35,9 @@ class _ConfigBase(object):
         self._frozen = False
         self._may_freeze = True
 
+        # Builders are only inserted here so that they can be frozen
+        self._builders = []
+
     def named_as(self):
         if self.__class__._deco_named_as:
             return self.__class__._deco_named_as
@@ -132,6 +135,10 @@ class _ConfigBase(object):
             if isinstance(child_value, _ConfigItem):
                 if not child_value._frozen:
                     child_value.freeze()
+
+        for builder in self._builders:
+            if not builder._frozen:
+                builder.freeze()
 
         return self._freeze()
 
@@ -299,16 +306,16 @@ class _ConfigItem(_ConfigBase):
         pass
 
     def __enter__(self):
-        super(_ConfigItem, self).__enter__()
         self.__class__._nested.append(self)
+        super(_ConfigItem, self).__enter__()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
 
-        self.__class__._nested.pop()
         super(_ConfigItem, self).__exit__(exc_type, exc_value, traceback)
+        self.__class__._nested.pop()
 
 
 class ConfigRoot(_ConfigItem):
@@ -416,11 +423,11 @@ class ConfigBuilder(_ConfigBase):
         self._contained_in = self.__class__._nested[-1]
         self._root_conf = self._contained_in.root_conf
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type:
-            return None
+        # Append self to containing Item's builders list so that parent can freeze us
+        self._contained_in._builders.append(self)
 
-        super(ConfigBuilder, self).__exit__(exc_type, exc_value, traceback)
+    def freeze(self):
+        super(ConfigBuilder, self).freeze()
         self.build()
 
     def build(self):

@@ -272,6 +272,34 @@ class MulticonfTest(unittest.TestCase):
         ok (cr.xses['server2'].b) == 3
         ok (cr.xses['server4'].b) == 3
 
+    @test("ConfigBuilder - build at freeze")
+    def _l2(self):
+        @repeat()
+        @named_as('xses')
+        class X(ConfigItem):
+            pass
+        
+        class XBuilder(ConfigBuilder):
+            def __init__(self, num_servers=4, **kwargs):
+                super(XBuilder, self).__init__(num_servers=num_servers, **kwargs)
+        
+            def build(self):
+                for server_num in xrange(1, self.num_servers+1):
+                    with X(name='server%d' % server_num) as c:
+                        pass
+
+        @nested_repeatables('xses')
+        class Root(ConfigRoot):
+            pass
+
+        with Root(prod, [prod, pp]) as cr:
+            XBuilder(a=1)
+                    
+        ok (len(cr.xses)) == 4
+        for ii in 1, 2, 3, 4:
+            name = 'server' + repr(ii)
+            ok (cr.xses[name].name) == name
+
     @test("env value overrides group value")
     def _m(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
