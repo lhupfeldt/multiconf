@@ -1,3 +1,4 @@
+import sys, traceback
 from collections import OrderedDict
 import json
 import types
@@ -65,34 +66,46 @@ class ConfigItemEncoder(json.JSONEncoder):
                         dd[key] = val
     
                 # Handle property methods (defined in inherited classes)
-                for key in dir(obj):
-                    if key in obj.attributes or key.startswith('_'):
-                        continue
-                    if key in ('selected_env', 'contained_in', 'root_conf', 'attributes', 'frozen'):
-                        continue
-                    if key in root_special_keys:
-                        continue
-    
-                    try:
-                        val = getattr(obj, key)
-                    except InvalidUsageException:
-                        dd[key + ' #invalid usage context'] = True
-                        continue
-
-                    if type(val) == types.MethodType:
-                        continue
-
-                    if key in ('valid_envs', 'env'):
-                        dd[key] = val
-                        continue
-
-                    if self.compact:
-                        dd[key] = str(val) + ' #calculated'
-                    else:
-                        dd[key] = val
-                        dd[key + ' #calculated'] = True
-    
-                return dd
+                try:
+                    for key in dir(obj):
+                        if key in obj.attributes or key.startswith('_'):
+                            continue
+                        if key in ('selected_env', 'contained_in', 'root_conf', 'attributes', 'frozen'):
+                            continue
+                        if key in root_special_keys:
+                            continue
+                    
+                        try:
+                            val = getattr(obj, key)
+                        except InvalidUsageException as ex:
+                            dd[key + ' #invalid usage context'] = repr(ex)
+                            continue
+                        except:
+                            # TODO
+                            # print >> sys.stderr, "Error in json generation:"
+                            # print >> sys.stderr, traceback.format_exc()
+                            dd['__json_error__ # trying to handle property methods, getattr key: ' + repr(key)] = repr(sys.exc_info()[1])
+                            continue
+                    
+                        if type(val) == types.MethodType:
+                            continue
+                    
+                        if key in ('valid_envs', 'env'):
+                            dd[key] = val
+                            continue
+                    
+                        if self.compact:
+                            dd[key] = str(val) + ' #calculated'
+                        else:
+                            dd[key] = val
+                            dd[key + ' #calculated'] = True
+                    
+                    return dd
+                except:
+                    print >> sys.stderr, "Error in json generation:"
+                    print >> sys.stderr, traceback.format_exc()
+                    dd['__json_error__ # trying to handle property methods'] = repr(sys.exc_info()[1])
+                    return dd
     
             if isinstance(obj, envs.Env):
                 #print "# Handle Env objects", type(obj)
