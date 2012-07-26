@@ -211,6 +211,43 @@ _e2_expected_json_output = """{
 }"""
 
 
+_e3_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "m": "#ref id: 0000"
+    }, 
+    "a": 0
+}"""
+
+
+_e4_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "referenced": {
+        "__class__": "X", 
+        "__id__": 0000, 
+        "a": 0
+    }, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "other_conf_item": "#ref id: 0000"
+    }, 
+    "a": 0
+}"""
+
+
 # TODO: insert information about skipped objects into json output
 _f_expected_json_output = """{
     "__class__": "ConfigRoot", 
@@ -353,6 +390,47 @@ class MulticonfTest(unittest.TestCase):
             # TODO
             ok (serr) == ''
             ok (replace_ids(cr.json())) == _e2_expected_json_output
+
+    @test("json dump - property method returns already seen conf item")
+    def _e3(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                @named_as('someitem')
+                class Nested(ConfigItem):
+                    @property
+                    def m(self):
+                        return self
+                
+                with ConfigRoot(prod, [prod, pp], a=0) as cr:
+                    Nested()
+        finally:
+            _sout, serr = d_io
+            # TODO
+            ok (serr) == ''
+            ok (replace_ids(cr.json())) == _e3_expected_json_output
+
+    @test("json dump - property method returns not previously seen conf item")
+    def _e4(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                @named_as('someitem')
+                class Nested(ConfigItem):
+                    @property
+                    def other_conf_item(self):
+                        return self.root_conf.referenced
+
+                @named_as('referenced')
+                class X(ConfigItem):
+                    pass
+                
+                with ConfigRoot(prod, [prod, pp], a=0) as cr:
+                    X(a=0)
+                    Nested()
+        finally:
+            _sout, serr = d_io
+            # TODO
+            ok (serr) == ''
+            ok (replace_ids(cr.json())) == _e4_expected_json_output
 
     @test("json dump - non conf item not json-serializable")
     def _f(self):

@@ -46,11 +46,13 @@ class ConfigItemEncoder(json.JSONEncoder):
 
         self.seen[id(obj)] = obj
 
+    # pylint: disable=E0202
     def default(self, obj):
         try:
+            self._check_already_dumped(obj)
+
             if isinstance(obj, multiconf._ConfigBase):
                 #print "# Handle ConfigItems", type(obj)
-                self._check_already_dumped(obj)
                 dd = self._mc_class_dict(obj)
                 # Order 'env' first on root object
                 root_special_keys = ('env', 'valid_envs')
@@ -77,9 +79,15 @@ class ConfigItemEncoder(json.JSONEncoder):
                     
                         try:
                             val = getattr(obj, key)
+                            self._check_already_dumped(val)
                         except InvalidUsageException as ex:
                             dd[key + ' #invalid usage context'] = repr(ex)
                             continue
+                        except _AlreadySeen as seen:
+                            dd[key] = seen.message
+                            continue
+                        except RuntimeError:
+                            raise
                         except:
                             # TODO
                             # print >> sys.stderr, "Error in json generation:"
@@ -101,6 +109,8 @@ class ConfigItemEncoder(json.JSONEncoder):
                             dd[key + ' #calculated'] = True
                     
                     return dd
+                except RuntimeError:
+                    raise
                 except:
                     print >> sys.stderr, "Error in json generation:"
                     print >> sys.stderr, traceback.format_exc()
@@ -109,7 +119,6 @@ class ConfigItemEncoder(json.JSONEncoder):
     
             if isinstance(obj, envs.Env):
                 #print "# Handle Env objects", type(obj)
-                self._check_already_dumped(obj)
                 dd = OrderedDict((_class_tuple(obj),))
                 for eg in obj.all():
                     dd['name'] = eg.name
@@ -121,7 +130,6 @@ class ConfigItemEncoder(json.JSONEncoder):
                 pass
             else:
                 #print "# Handle iterable objects", type(obj)
-                self._check_already_dumped(obj)    
                 return list(iterable)
     
             try:
@@ -130,10 +138,10 @@ class ConfigItemEncoder(json.JSONEncoder):
                 pass
             else:
                 #print "# Handle other class objects", type(obj)
-                self._check_already_dumped(obj)
                 dd = self._class_dict(obj)
                 for key, val in obj.__dict__.iteritems():
                     if key[0] != '_':
+                        self._check_already_dumped(val)
                         dd[key] = val
                 return dd
     
