@@ -5,7 +5,7 @@ import sys, unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno, replace_ids, to_compact
 
-from .. import ConfigRoot, ConfigItem, InvalidUsageException
+from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException
 from ..envs import Env, EnvGroup
 from ..decorators import nested_repeatables, named_as, repeat
 
@@ -211,6 +211,9 @@ _e2_expected_json_output = """{
 }"""
 
 
+_e2b_expected_json_output = _e2_expected_json_output.replace('Exception', 'ConfigException')
+
+
 _e3_expected_json_output = """{
     "__class__": "ConfigRoot", 
     "__id__": 0000, 
@@ -390,6 +393,24 @@ class MulticonfTest(unittest.TestCase):
             # TODO
             ok (serr) == ''
             ok (replace_ids(cr.json())) == _e2_expected_json_output
+
+    @test("json dump - property method raises ConfigException")
+    def _e2b(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                @named_as('someitem')
+                class Nested(ConfigItem):
+                    @property
+                    def m(self):
+                        raise ConfigException("Something is wrong")
+                
+                with ConfigRoot(prod, [prod, pp], a=0) as cr:
+                    Nested()
+        finally:
+            _sout, serr = d_io
+            # TODO
+            ok (serr) == ''
+            ok (replace_ids(cr.json())) == _e2b_expected_json_output
 
     @test("json dump - property method returns already seen conf item")
     def _e3(self):
