@@ -1,4 +1,4 @@
-import sys, traceback
+import sys, traceback, threading
 from collections import OrderedDict
 import json
 import types
@@ -6,8 +6,13 @@ import types
 import multiconf, envs
 from config_errors import InvalidUsageException
 
-# Note: this is used for handling backreferences to avoid dumping objects multiple times
+# For handling references to avoid dumping objects multiple times
 class _AlreadySeen(Exception):
+    pass
+
+
+# For handling references to avoid dumping objects multiple times
+class NestedJsonCallError(Exception):
     pass
 
 
@@ -16,6 +21,9 @@ def _class_tuple(obj, obj_info=""):
 
 
 class ConfigItemEncoder(json.JSONEncoder):
+    recursion_check = threading.local()
+    recursion_check.in_default = False
+        
     def __init__(self, filter_callable=None, compact=False, **kwargs):
         """
         filter_callable: func(obj, key, value)
@@ -47,8 +55,12 @@ class ConfigItemEncoder(json.JSONEncoder):
         self.seen[id(obj)] = obj
 
     # pylint: disable=E0202
-    def default(self, obj):
+    def default(self, obj):        
         try:
+            if ConfigItemEncoder.recursion_check.in_default:
+                raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
+            ConfigItemEncoder.recursion_check.in_default = True
+
             self._check_already_dumped(obj)
 
             if isinstance(obj, multiconf._ConfigBase):
@@ -90,9 +102,9 @@ class ConfigItemEncoder(json.JSONEncoder):
                             raise
                         except:
                             # TODO
-                            # print >> sys.stderr, "Error in json generation:"
-                            # print >> sys.stderr, traceback.format_exc()
-                            dd['__json_error__ # trying to handle property methods, getattr key: ' + repr(key)] = repr(sys.exc_info()[1])
+                            #print >> sys.stderr, "Error in json generation:"
+                            #print >> sys.stderr, traceback.format_exc()
+                            dd[repr(key) + ' # json_error trying to handle property method'] = repr(sys.exc_info()[1])
                             continue
                     
                         if type(val) == types.MethodType:
@@ -112,8 +124,8 @@ class ConfigItemEncoder(json.JSONEncoder):
                 except RuntimeError:
                     raise
                 except:
-                    print >> sys.stderr, "Error in json generation:"
-                    print >> sys.stderr, traceback.format_exc()
+                    #print >> sys.stderr, "Error in json generation:"
+                    #print >> sys.stderr, traceback.format_exc()
                     dd['__json_error__ # trying to handle property methods'] = repr(sys.exc_info()[1])
                     return dd
     
@@ -150,3 +162,6 @@ class ConfigItemEncoder(json.JSONEncoder):
 
         except _AlreadySeen as seen:
             return seen.message
+        finally:
+            ConfigItemEncoder.recursion_check.in_default = False
+

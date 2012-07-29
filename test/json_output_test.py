@@ -205,7 +205,7 @@ _e2_expected_json_output = """{
     "someitem": {
         "__class__": "Nested", 
         "__id__": 0000, 
-        "__json_error__ # trying to handle property methods, getattr key: 'm'": "Exception('Something is wrong',)"
+        "'m' # json_error trying to handle property method": "Exception('Something is wrong',)"
     }, 
     "a": 0
 }"""
@@ -246,6 +246,22 @@ _e4_expected_json_output = """{
         "__class__": "Nested", 
         "__id__": 0000, 
         "other_conf_item": "#ref id: 0000"
+    }, 
+    "a": 0
+}"""
+
+
+_e5_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "'other_conf_item' # json_error trying to handle property method": "NestedJsonCallError('Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?',)"
     }, 
     "a": 0
 }"""
@@ -452,6 +468,25 @@ class MulticonfTest(unittest.TestCase):
             # TODO
             ok (serr) == ''
             ok (replace_ids(cr.json())) == _e4_expected_json_output
+
+
+    @test("json dump - property method calls json")
+    def _e5(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                @named_as('someitem')
+                class Nested(ConfigItem):
+                    @property
+                    def other_conf_item(self):
+                        print self.json()
+                
+                with ConfigRoot(prod, [prod, pp], a=0) as cr:
+                    Nested()
+        finally:
+            _sout, serr = d_io
+            # TODO
+            ok (serr) == ''
+            ok (replace_ids(cr.json())) == _e5_expected_json_output
 
     @test("json dump - non conf item not json-serializable")
     def _f(self):
