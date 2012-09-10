@@ -3,7 +3,12 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+#
 # Small demo of a partial weblogic domain configuration
+#
+# Please look into config.py in this folder to see how sample Weblogic
+# environment is configured using Multiconf
+#
 
 import argparse
 import config
