@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from envs import EnvGroup, env_or_group, EnvException
+from envs import EnvFactory, EnvGroup, EnvException
 from config_errors import ConfigException, NoAttributeException, _error_msg
 
 
@@ -35,7 +35,7 @@ class AttributeCollector(object):
         # Validate and assign given env values to container
         for eg_name, value in kwargs.iteritems():
             try:
-                eg = env_or_group(eg_name)
+                eg = self._container.root_conf.env.factory.env_or_group(eg_name)
 
                 # Validate that an attribute has the same type for all envs
                 if type(value) != type(None):

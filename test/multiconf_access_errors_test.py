@@ -9,9 +9,12 @@ from utils import lazy, config_error, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import nested_repeatables, named_as, repeat
-from ..envs import Env, EnvGroup
 
-prod = Env('prod')
+from ..envs import EnvFactory
+
+ef = EnvFactory()
+
+prod = ef.Env('prod')
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)

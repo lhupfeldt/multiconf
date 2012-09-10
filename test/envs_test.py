@@ -6,28 +6,30 @@
 import unittest
 from oktest import ok, test
 
-from ..envs import Env, EnvGroup, env, group, env_or_group
+from ..envs import EnvFactory
+
+ef = EnvFactory()
 
 envs_only = []
 
-dev2ct = Env('dev2CT')
-dev2st = Env('dev2ST')
+dev2ct = ef.Env('dev2CT')
+dev2st = ef.Env('dev2ST')
 envs_only.extend((dev2ct, dev2st))
-g_dev2 = EnvGroup('g_dev2', dev2ct, dev2st)
+g_dev2 = ef.EnvGroup('g_dev2', dev2ct, dev2st)
 
-dev3ct = Env('dev3CT')
-dev3st = Env('dev3ST')
+dev3ct = ef.Env('dev3CT')
+dev3st = ef.Env('dev3ST')
 envs_only.extend((dev3ct, dev3st))
-g_dev3 = EnvGroup('g_dev3', dev3ct, dev3st)
+g_dev3 = ef.EnvGroup('g_dev3', dev3ct, dev3st)
 
-g_dev = EnvGroup('g_dev', g_dev2, g_dev3)
+g_dev = ef.EnvGroup('g_dev', g_dev2, g_dev3)
 
-pp = Env('pp')
-prod = Env('prod')
+pp = ef.Env('pp')
+prod = ef.Env('prod')
 envs_only.extend((pp, prod))
-g_prod = EnvGroup('g_prod', pp, prod)
+g_prod = ef.EnvGroup('g_prod', pp, prod)
 
-valid_envs = EnvGroup('g_all', g_dev, g_prod)
+valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
 groups_only = [valid_envs, g_dev, g_dev2, g_dev3, g_prod]
 all_envs = groups_only + envs_only
@@ -106,13 +108,13 @@ class EnvsTest(unittest.TestCase):
 
     @test("env from string")
     def _l(self):
-        ok(env("dev2CT").name) == "dev2CT"
+        ok(ef.env("dev2CT").name) == "dev2CT"
 
     @test("group from string")
     def _m(self):
-        ok(group("g_dev2").name) == "g_dev2"
+        ok(ef.group("g_dev2").name) == "g_dev2"
 
     @test("env_or_group from string")
     def _n(self):
-        ok(env_or_group("dev2CT").name) == "dev2CT"
-        ok(env_or_group("g_dev2").name) == "g_dev2"
+        ok(ef.env_or_group("dev2CT").name) == "dev2CT"
+        ok(ef.env_or_group("g_dev2").name) == "g_dev2"

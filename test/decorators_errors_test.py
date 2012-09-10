@@ -9,23 +9,25 @@ from utils import lazy, config_error, config_warning, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
 from ..decorators import required, required_if, optional, ConfigDefinitionException
-from ..envs import Env, EnvGroup
+from ..envs import EnvFactory
 
-dev2ct = Env('dev2ct')
-dev2st = Env('dev2st')
-g_dev2 = EnvGroup('g_dev2', dev2ct, dev2st)
+ef = EnvFactory()
 
-dev3ct = Env('dev3ct')
-dev3st = Env('dev3st')
-g_dev3 = EnvGroup('g_dev3', dev3ct, dev3st)
+dev2ct = ef.Env('dev2ct')
+dev2st = ef.Env('dev2st')
+g_dev2 = ef.EnvGroup('g_dev2', dev2ct, dev2st)
 
-g_dev = EnvGroup('g_dev', g_dev2, g_dev3)
+dev3ct = ef.Env('dev3ct')
+dev3st = ef.Env('dev3st')
+g_dev3 = ef.EnvGroup('g_dev3', dev3ct, dev3st)
 
-pp = Env('pp')
-prod = Env('prod')
-g_prod = EnvGroup('g_prod', pp, prod)
+g_dev = ef.EnvGroup('g_dev', g_dev2, g_dev3)
 
-valid_envs = EnvGroup('g_all', g_dev, g_prod)
+pp = ef.Env('pp')
+prod = ef.Env('prod')
+g_prod = ef.EnvGroup('g_prod', pp, prod)
+
+valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)

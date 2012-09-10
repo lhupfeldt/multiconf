@@ -8,24 +8,27 @@ from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException
-from ..envs import Env, EnvGroup
 from ..decorators import nested_repeatables, repeat
 
-dev2ct = Env('dev2CT')
-dev2st = Env('dev2ST')
-g_dev2 = EnvGroup('g_dev2', dev2ct, dev2st)
+from ..envs import EnvFactory
 
-dev3ct = Env('dev3CT')
-dev3st = Env('dev3ST')
-g_dev3 = EnvGroup('g_dev3', dev3ct, dev3st)
+ef = EnvFactory()
 
-g_dev = EnvGroup('g_dev', g_dev2, g_dev3)
+dev2ct = ef.Env('dev2CT')
+dev2st = ef.Env('dev2ST')
+g_dev2 = ef.EnvGroup('g_dev2', dev2ct, dev2st)
 
-pp = Env('pp')
-prod = Env('prod')
-g_prod = EnvGroup('g_prod', pp, prod)
+dev3ct = ef.Env('dev3CT')
+dev3st = ef.Env('dev3ST')
+g_dev3 = ef.EnvGroup('g_dev3', dev3ct, dev3st)
 
-valid_envs = EnvGroup('g_all', g_dev, g_prod)
+g_dev = ef.EnvGroup('g_dev', g_dev2, g_dev3)
+
+pp = ef.Env('pp')
+prod = ef.Env('prod')
+g_prod = ef.EnvGroup('g_prod', pp, prod)
+
+valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
 
 def ce(line_num, *lines):
@@ -216,7 +219,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     @test("value defined through multiple groups")
     def _o(self):
         try:
-            g_dev_overlap = EnvGroup('g_dev_overlap', dev2ct)
+            g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct)
 
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
@@ -231,7 +234,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     @test("value defined through multiple groups")
     def _p(self):
         try:
-            g_dev_overlap = EnvGroup('g_dev_overlap', dev2ct, dev3ct)
+            g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct, dev3ct)
 
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:

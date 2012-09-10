@@ -7,7 +7,9 @@ import unittest
 from oktest import ok, test, fail, dummy
 from utils import config_error, lineno
 
-from ..envs import Env, EnvGroup, EnvException, env, group, env_or_group
+from ..envs import EnvFactory, EnvException
+
+ef = EnvFactory()
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -18,9 +20,9 @@ class EnvsTest(unittest.TestCase):
     def _c1(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
-                cc11 = Env('cc11')
+                cc11 = ef.Env('cc11')
                 errorline = lineno() + 1
-                cc11 = EnvGroup('cc11', cc11)
+                cc11 = ef.EnvGroup('cc11', cc11)
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
@@ -31,10 +33,10 @@ class EnvsTest(unittest.TestCase):
     def _c2(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
-                cc21 = Env('cc21')
-                cc22 = EnvGroup('cc22', cc21)
+                cc21 = ef.Env('cc21')
+                cc22 = ef.EnvGroup('cc22', cc21)
                 errorline = lineno() + 1
-                cc22 = EnvGroup('cc22', cc22)
+                cc22 = ef.EnvGroup('cc22', cc22)
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
@@ -45,9 +47,9 @@ class EnvsTest(unittest.TestCase):
     def _f(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
-                ff1 = Env('ff1')
+                ff1 = ef.Env('ff1')
                 errorline = lineno() + 1
-                ff2 = EnvGroup('ff2', ff1, ff1)
+                ff2 = ef.EnvGroup('ff2', ff1, ff1)
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
@@ -58,10 +60,10 @@ class EnvsTest(unittest.TestCase):
     def _g(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
-                gg1 = Env('gg1')
-                gg2 = EnvGroup('gg2', gg1)
+                gg1 = ef.Env('gg1')
+                gg2 = ef.EnvGroup('gg2', gg1)
                 errorline = lineno() + 1
-                gg3 = EnvGroup('gg3', gg2, gg2)
+                gg3 = ef.EnvGroup('gg3', gg2, gg2)
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
@@ -72,10 +74,10 @@ class EnvsTest(unittest.TestCase):
     def _h(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
-                hh1 = Env('hh1')
-                hh2 = EnvGroup('hh2', hh1)
+                hh1 = ef.Env('hh1')
+                hh2 = ef.EnvGroup('hh2', hh1)
                 errorline = lineno() + 1
-                hh3 = EnvGroup('hh3', hh1, hh2)
+                hh3 = ef.EnvGroup('hh3', hh1, hh2)
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
@@ -86,10 +88,10 @@ class EnvsTest(unittest.TestCase):
     def _i(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
-                ii1 = Env('ii1')
-                ii2 = EnvGroup('ii2', ii1)
+                ii1 = ef.Env('ii1')
+                ii2 = ef.EnvGroup('ii2', ii1)
                 errorline = lineno() + 1
-                ii3 = EnvGroup('ii3', ii2, ii1)
+                ii3 = ef.EnvGroup('ii3', ii2, ii1)
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
@@ -100,11 +102,11 @@ class EnvsTest(unittest.TestCase):
     def _j(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
-                jj1 = Env('jj1')
-                jj2 = EnvGroup('jj2', jj1)
-                jj3 = EnvGroup('jj3', jj2)
+                jj1 = ef.Env('jj1')
+                jj2 = ef.EnvGroup('jj2', jj1)
+                jj3 = ef.EnvGroup('jj3', jj2)
                 errorline = lineno() + 1
-                jj4 = EnvGroup('jj4', jj3, jj2)
+                jj4 = ef.EnvGroup('jj4', jj3, jj2)
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
@@ -115,11 +117,11 @@ class EnvsTest(unittest.TestCase):
     def _k(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
-                jj1 = Env('jj1')
-                jj2 = EnvGroup('jj2', jj1)
-                jj3 = EnvGroup('jj3', jj2)
+                jj1 = ef.Env('jj1')
+                jj2 = ef.EnvGroup('jj2', jj1)
+                jj3 = ef.EnvGroup('jj3', jj2)
                 errorline = lineno() + 1
-                jj4 = EnvGroup('jj4', jj2, jj3)
+                jj4 = ef.EnvGroup('jj4', jj2, jj3)
                 fail ("Expected exception")
         except EnvException as ex:
             sout, serr = d_io
@@ -129,7 +131,7 @@ class EnvsTest(unittest.TestCase):
     @test("env from string - undefined")
     def _l(self):
         try:
-            env("undefined")
+            ef.env("undefined")
             fail ("Expected exception")
         except EnvException as ex:
             ok (ex.message) == "No such Env: 'undefined'"
@@ -137,7 +139,7 @@ class EnvsTest(unittest.TestCase):
     @test("group from string - undefined")
     def _m(self):
         try:
-            group("undefined")
+            ef.group("undefined")
             fail ("Expected exception")
         except EnvException as ex:
             ok (ex.message) == "No such EnvGroup: 'undefined'"
@@ -145,7 +147,7 @@ class EnvsTest(unittest.TestCase):
     @test("env_or_group from string - undefined")
     def _n(self):
         try:
-            env_or_group("undefined")
+            ef.env_or_group("undefined")
             fail ("Expected exception")
         except EnvException as ex:
             ok (ex.message) == "No such Env or EnvGroup: 'undefined'"

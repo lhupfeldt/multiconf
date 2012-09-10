@@ -3,14 +3,14 @@
 
 from collections import Container
 
+
 class EnvException(Exception):
     pass
 
 
-_envs = {}
-
 class Env(object):
-    def __init__(self, name):
+    def __init__(self, name, factory):
+        """ Private, use EnvFactory.Env() """
         if not isinstance(name, type("")):
             raise EnvException(self.__class__.__name__ + ": 'name' must be instanceof " + type("").__name__ + ", found: " +  type(name).__name__)
         if not len(name):
@@ -20,8 +20,8 @@ class Env(object):
 
         self._name = name
         self.members = []
-
-        _envs[name] = self
+        self.factory = factory
+        self.factory._envs[name] = self
 
     @property
     def name(self):
@@ -49,11 +49,10 @@ class Env(object):
         if other == self:
             return True
 
-_groups = {}
-
 class EnvGroup(Env, Container):
-    def __init__(self, name, *members):
-        super(EnvGroup, self).__init__(name)
+    def __init__(self, name, factory, *members):
+        """ Private, use EnvFactory.Group() method """
+        super(EnvGroup, self).__init__(name, factory)
 
         # Check for empty group
         if not members:
@@ -87,7 +86,7 @@ class EnvGroup(Env, Container):
         # All good
         self.members = members
 
-        _groups[name] = self
+        factory._groups[name] = self
 
     def irepr(self, indent_level):
         indent1 = '  ' * indent_level
@@ -142,32 +141,43 @@ class EnvGroup(Env, Container):
         return False
 
 
-def env(name):
-    """Get an already declared env from it's name"""
-    _env = _envs.get(name)
-    if _env:
-        return _env
+class EnvFactory(object):
+    def __init__(self):
+        self._envs = {}
+        self._groups = {}
+    
+    def Env(self, name):
+        """ Declare a new Env """
+        return Env(name, self)
 
-    raise EnvException("No such " + Env.__name__ + ": " + repr(name))
-
-
-def group(name):
-    """Get an already declared group from it's name"""
-    _env_group = _groups.get(name)
-    if _env_group:
-        return _env_group
-
-    raise EnvException("No such " + EnvGroup.__name__ + ": " + repr(name))
-
-
-def env_or_group(name):
-    """Get an already declared env or group from it's name"""
-    _env = _envs.get(name)
-    if _env:
-        return _env
-
-    _env_group = _groups.get(name)
-    if _env_group:
-        return _env_group
-
-    raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(name))
+    def EnvGroup(self, name, *members):
+        """ Declare a new EnvGroup """
+        return EnvGroup(name, self, *members)
+    
+    def env(self, name):
+        """Get an already declared env from it's name"""
+        _env = self._envs.get(name)
+        if _env:
+            return _env
+    
+        raise EnvException("No such " + Env.__name__ + ": " + repr(name))
+    
+    def group(self, name):
+        """Get an already declared group from it's name"""
+        _env_group = self._groups.get(name)
+        if _env_group:
+            return _env_group
+    
+        raise EnvException("No such " + EnvGroup.__name__ + ": " + repr(name))
+        
+    def env_or_group(self, name):
+        """Get an already declared env or group from it's name"""
+        _env = self._envs.get(name)
+        if _env:
+            return _env
+    
+        _env_group = self._groups.get(name)
+        if _env_group:
+            return _env_group
+    
+        raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(name))

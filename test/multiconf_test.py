@@ -8,19 +8,22 @@ from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
-from ..envs import Env, EnvGroup
 from ..decorators import nested_repeatables, named_as, repeat, required, override
 
-dev1 = Env('dev1')
-dev2 = Env('dev2')
-g_dev = EnvGroup('g_dev', dev1, dev2)
+from ..envs import EnvFactory
 
-tst = Env('tst')
+ef = EnvFactory()
 
-pp = Env('pp')
-prod = Env('prod')
+dev1 = ef.Env('dev1')
+dev2 = ef.Env('dev2')
+g_dev = ef.EnvGroup('g_dev', dev1, dev2)
 
-g_prod_like = EnvGroup('g_prod_like', prod, pp)
+tst = ef.Env('tst')
+
+pp = ef.Env('pp')
+prod = ef.Env('prod')
+
+g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
 
 
 @named_as('someitems')
