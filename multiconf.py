@@ -56,14 +56,15 @@ class _ConfigBase(object):
             indent1 + '}'
 
     def __repr__(self):
-        return self.json(compact=True)
+        # Don't call property methods i repr, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
+        return self.json(compact=True, property_methods=False)
         # TODO proper pythonic repr, but until indentation is fixed, json is better
         # return self.irepr(len(self.__class__._nested) -1)
 
-    def json(self, compact=False, skipkeys=True):
+    def json(self, compact=False, property_methods=True, skipkeys=True):
         class Encoder(json_output.ConfigItemEncoder):
             def __init__(self, **kwargs):
-                super(Encoder, self).__init__(compact=compact, **kwargs)
+                super(Encoder, self).__init__(compact=compact, property_methods=property_methods, **kwargs)
 
         return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=False, sort_keys=False, indent=4)
 

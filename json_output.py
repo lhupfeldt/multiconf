@@ -24,14 +24,16 @@ class ConfigItemEncoder(json.JSONEncoder):
     recursion_check = threading.local()
     recursion_check.in_default = False
         
-    def __init__(self, filter_callable=None, compact=False, **kwargs):
+    def __init__(self, filter_callable=None, compact=False, property_methods=True, **kwargs):
         """
         filter_callable: func(obj, key, value)
         compact: Set compact to true if dumping for debug, false for machine readable output
+        property_methods: call @property methods and insert values in output, including a comment that the value is calculated
         """
         super(ConfigItemEncoder, self).__init__(**kwargs)
         self.filter = filter_callable
         self.compact = compact
+        self.property_methods = property_methods
         self.seen = {}
 
     def _class_dict(self, obj):
@@ -42,7 +44,7 @@ class ConfigItemEncoder(json.JSONEncoder):
     def _mc_class_dict(self, obj):
         not_frozen_msg = "" if obj.frozen else ", not-frozen, defaults: " + repr(obj._defaults)
         if self.compact:
-            msg = " #as: " + repr(obj.named_as()) + ', id: ' + repr(id(obj)) + not_frozen_msg
+            msg = " #as: '" + obj.named_as() + "', id: " + str(id(obj)) + not_frozen_msg
             return OrderedDict((_class_tuple(obj, msg),))
         return OrderedDict(( _class_tuple(obj, not_frozen_msg), ('__id__', id(obj))))
 
@@ -68,8 +70,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                 dd = self._mc_class_dict(obj)
                 # Order 'env' first on root object
                 root_special_keys = ('env', 'valid_envs')
-                is_root = isinstance(obj, multiconf.ConfigRoot)
-                if is_root:
+                if isinstance(obj, multiconf.ConfigRoot):
                     key = root_special_keys[0]
                     value = getattr(obj, key)
                     dd[key] = value
@@ -79,6 +80,9 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if key[0] != '_':
                         dd[key] = val
     
+                if not self.property_methods:
+                    return dd
+
                 # Handle property methods (defined in inherited classes)
                 try:
                     for key in dir(obj):
