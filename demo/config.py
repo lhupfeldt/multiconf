@@ -2,13 +2,14 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from framework import weblogic_config, admin_server, managed_server, managed_servers, datasource
-from valid_envs import g_dev, prod
+from valid_envs import ef, g_dev, prod
 
 # This function is used to describe all environments and return environment
-# configuration for environment *env*, which is passed as parameter
-def conf(env):
-    # this will define weblogic configuration for environment group "g_dev" and
-    # for single environment "prod".
+# configuration for environment with name 'env_name', which is passed as parameter
+def conf(env_name):
+    env = ef.env(env_name)
+
+    # This will define weblogic configuration for environment group "g_dev" and for single environment "prod".
     # Take a look at valid_envs.py to see how environments are defined.
     # weblogic_config object is defined in framework.py
     with weblogic_config(env, [g_dev, prod]) as dc:

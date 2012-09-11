@@ -12,19 +12,20 @@
 
 import argparse
 import config
-import multiconf
-import multiconf.envs
 
 def generate(env):
     print '---- Loading Config: ' + repr(env) + ' -----'
     c = config.conf(env)
+    print '---- Loaded Config, printing full config: -----'
+    print c.json(compact=True)
+
     # In real life the loaded config could be used to do template substitution in a weblogic config.xml.template
     # Now we just print some env specific values
-    print 'c.ms_suffixes:', repr(c.ms_suffixes)
+    print '---- Use config: -----'
     print 'c.admin_server:', repr(c.admin_server)
     print 'c.managed_servers:', repr(c.managed_servers)
     print 'c.datasources:', repr(c.datasources)
-    print '---- Loaded: ' + repr(c.selected_env) + ' -----'
+
     print
 
 
@@ -33,7 +34,7 @@ def main():
     parser.add_argument('--env', required=True, help="The environment for which to load the config")
     args = parser.parse_args()
 
-    generate(multiconf.envs.Env(args.env))
+    generate(args.env)
 
 
 if __name__ == '__main__':
