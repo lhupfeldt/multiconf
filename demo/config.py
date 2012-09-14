@@ -14,7 +14,8 @@ def conf(env_name):
     # weblogic_config object is defined in framework.py
     with weblogic_config(env, [g_dev, prod]) as dc:
         # Here we will set domain base port number for different
-        # environments
+        # environments. Domain base port is used as base to calculate port
+        # offsets
         dc.base_port(prod=7000, devi=7100, devs=7200)
 
         # weblogic will have admin server, which will be listening on
@@ -24,15 +25,18 @@ def conf(env_name):
             c.host(prod='admin.prod.mydomain', devi='admin.devi.mydomain', devs='admin.devs.mydomain')
 
         # Here we define hom many managed servers we need in each environment:
-        # prod will have four and all dev environments will have only one
+        # by default only one managed server in environment
         with managed_servers(num_servers=1) as c:
+            # But prod will have 4
             c.num_servers(prod=4)
 
-        # Add a special managed server, and add a property
+        # Add a special managed server, and add custom roperty
+
+        # here we getting domain base port value set above
         port = dc.base_port.value() + 110
         with managed_server(host='ms.'+env.name+'.mydomain', port=port+1, suffix=17) as c:
             # We will have that property set to one in prod and two in dev
-            c.someprop(prod=1, g_dev=2)
+            c.custom_property(prod=1, g_dev=2)
 
         # Add a special managed server, and override default value
         port = dc.base_port.value() + 210
@@ -40,14 +44,19 @@ def conf(env_name):
             c.another_prop(prod=[1, 2])
 
         # Add a managed server with no explicit env specific properties
+        # This means all environment will have the same settings for this
+        # server
         managed_server(host='ms.'+env.name+'.mydomain', port=port+2, suffix=18)
 
-        with datasource(xx=18) as c:
-            c.xx(prod=19)
+        # Here we define data source used by this domain
+        with datasource(name='SampleDS_one', database_type="Oracle") as c:
+            # and in prod we are going to use Oracle RAC
+            c.database_type(prod="OracleRAC")
 
-        with datasource(xx=16) as c:
-            c.xx(prod=17)
+        # This datasource is the same for all environments
+        datasource(name='SampleDS_two', database_type="SQLServer")
 
         # Returned weblogic config will have settings only for environment
         # passed as argument for this function
         return dc
+
