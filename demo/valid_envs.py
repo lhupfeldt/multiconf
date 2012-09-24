@@ -5,9 +5,7 @@ from multiconf.envs import EnvFactory
 
 # Define environments
 #
-# Just instantiate object Env with environment name
-#
-
+# Use EnvFactory() to create environment or group environments
 ef = EnvFactory()
 
 devLocal = ef.Env('devLocal')
