@@ -108,9 +108,6 @@ class _ConfigBase(object):
         self.freeze_validate_required_if()
 
     def _freeze(self):
-        assert not self._frozen
-        assert self._may_freeze
-
         # Collect remaining default values
         for name in list(self._defaults):
             AttributeCollector(name, self)()

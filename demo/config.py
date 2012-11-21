@@ -17,10 +17,11 @@ def conf(env_name):
         # environments. Domain base port is used as base to calculate port
         # offsets
         dc.base_port(prod=7000, devi=7100, devs=7200)
+        dc.freeze()
 
         # weblogic will have admin server, which will be listening on
         # environment's base port plus one
-        with admin_server(port=dc.base_port.value()+1) as c:
+        with admin_server(port=dc.base_port+1) as c:
             # But admin server will be listening on different hosts
             c.host(prod='admin.prod.mydomain', devi='admin.devi.mydomain', devs='admin.devs.mydomain')
 
@@ -33,13 +34,13 @@ def conf(env_name):
         # Add a special managed server, and add custom roperty
 
         # here we getting domain base port value set above
-        port = dc.base_port.value() + 110
+        port = dc.base_port + 110
         with managed_server(host='ms.'+env.name+'.mydomain', port=port+1, suffix=17) as c:
             # We will have that property set to one in prod and two in dev
             c.custom_property(prod=1, g_dev=2)
 
         # Add a special managed server, and override default value
-        port = dc.base_port.value() + 210
+        port = dc.base_port + 210
         with managed_server(host='ms.'+env.name+'.mydomain', port=port+1, suffix=17, another_prop=[1]) as c:
             c.another_prop(prod=[1, 2])
 
