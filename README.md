@@ -2,7 +2,7 @@
 What
 ====
 
-Multiconf is a framework for describing complex environments using Python.
+Multiconf is a framework for describing complex configuration for multiple environments using Python.
 
 Why
 ===
@@ -39,3 +39,7 @@ What Multiconf is not
 * Multiconf doesn't know how to create any of the environment's components
 * Multiconf has nothing to execute
 
+Requirements
+=====================
+Python 2.7.3
+To run the test suite: nose and oktest

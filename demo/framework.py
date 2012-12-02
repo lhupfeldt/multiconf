@@ -39,13 +39,13 @@ class managed_server(ConfigItem):
 class managed_servers(ConfigBuilder):
     ''' Builder for managed_server objects. Used in environment configuration to
     automatically create proper number of managed_server objects '''
-    def __init__(self, **attr):
-        super(managed_servers, self).__init__(**attr)
+    def __init__(self, base_port, **attr):
+        super(managed_servers, self).__init__(base_port=base_port, **attr)
 
     def build(self):
         for server_num in xrange(1, self.num_servers+1):
             # Here we generating managed_server's name
-            with managed_server(name='ms%d' % server_num) as c:
+            with managed_server(name='ms%d' % server_num, port=self.base_port+10+server_num) as c:
                 # call for override is required because we changed default
                 # parameter
                 self.override(c)

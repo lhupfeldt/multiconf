@@ -14,17 +14,22 @@ import argparse
 import config
 
 def generate(env):
-    print '---- Loading Config: ' + repr(env) + ' -----'
+    print '---- Instantiating config for env: ' + repr(env) + ' -----'
     c = config.conf(env)
-    print '---- Loaded Config, printing full config: -----'
+    
+    print '\n---- Printing entire config as "compact" json: -----'
+    # json will dump property method values as well as multiconf property values
+    # compact give a more human readable output
     print c.json(compact=True)
 
     # In real life the loaded config could be used to do template substitution in a weblogic config.xml.template
     # Now we just print some env specific values
-    print '---- Use config: -----'
-    print 'c.admin_server:', repr(c.admin_server)
-    print 'c.managed_servers:', repr(c.managed_servers)
-    print 'c.datasources:', repr(c.datasources)
+    print '\n---- Access config objects/properties: -----'
+    print 'c.admin_server:', c.admin_server.json(compact=True)
+    # Repeatable objects are inserted in an ordered dict
+    print 'c.managed_servers["ms1"]:', c.managed_servers['ms1'].json()
+    print 'ms1.port:', c.managed_servers['ms1'].port
+    print 'c.datasources:', c.datasources
 
     print
 
