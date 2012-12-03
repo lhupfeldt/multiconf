@@ -1,10 +1,12 @@
 #!/usr/bin/python
 
-import subprocess
+import sys, subprocess
 
 print "Validating demo"
+rc = 0
 for env_name in 'prod', 'preprod', 'devlocal', 'devs', 'devi':
-    subprocess.call(('../demo/demo.py', '--env', env_name))
+    rc |= subprocess.call(('../demo/demo.py', '--env', env_name))
 
-subprocess.call(('nosetests'))
+rc |= subprocess.call(('nosetests'))
 
+sys.exit(rc)
