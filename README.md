@@ -42,4 +42,4 @@ What Multiconf is not
 Requirements
 =====================
 Python 2.7.3
-To run the test suite: nose and oktest
+To run the test suite install: nose oktest coverage (pip install nose oktest coverage)

@@ -45,15 +45,15 @@ class _ConfigBase(object):
             return self.__class__.__name__ + 's'
         return self.__class__.__name__
 
-    def irepr(self, indent_level):
-        """Indented repr"""
-        indent1 = '  ' * indent_level
-        indent2 =  indent1 + '     '
-        # + ':' + self.__class__.__name__
-        not_frozen_msg = "" if self._frozen else " not-frozen, defaults: " + repr(self._defaults)
-        return self.named_as() + not_frozen_msg + ' {\n' + \
-            ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.iteritems()]) + \
-            indent1 + '}'
+    # def irepr(self, indent_level):
+    #     """Indented repr"""
+    #     indent1 = '  ' * indent_level
+    #     indent2 =  indent1 + '     '
+    #     # + ':' + self.__class__.__name__
+    #     not_frozen_msg = "" if self._frozen else " not-frozen, defaults: " + repr(self._defaults)
+    #     return self.named_as() + not_frozen_msg + ' {\n' + \
+    #         ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.iteritems()]) + \
+    #         indent1 + '}'
 
     def __repr__(self):
         # Don't call property methods i repr, it is too dangerous, leading to double errors in case of incorrect user implemented property methods

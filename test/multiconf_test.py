@@ -303,6 +303,51 @@ class MulticonfTest(unittest.TestCase):
             name = 'server' + repr(ii)
             ok (cr.xses[name].name) == name
 
+    @test("ConfigBuilder - access to contained_in from build")
+    def _l3(self):
+        @named_as('x')
+        class X(ConfigItem):
+            pass
+        
+        class XBuilder(ConfigBuilder):
+            def build(self):
+                with X(number=self.contained_in.aaa):
+                    pass
+
+        @nested_repeatables('xses')
+        class Root(ConfigRoot):
+            aaa = 7
+
+        with Root(prod, [prod, pp]) as cr:
+            XBuilder()
+                    
+        ok (cr.x.number) == 7
+
+    # TODO
+    #@test("ConfigBuilder - access to contained_in from __init__")
+    #def _l4(self):
+    #    @named_as('x')
+    #    class X(ConfigItem):
+    #        pass
+    #    
+    #    class XBuilder(ConfigBuilder):            
+    #        def __init__(self):
+    #            super(XBuilder, self).__init__(number=self.contained_in.aaa)
+    #
+    #        def build(self):
+    #            with X(number=self.number):
+    #                pass
+    #
+    #    @nested_repeatables('xses')
+    #    class Root(ConfigRoot):
+    #        aaa = 7
+    #
+    #    with Root(prod, [prod, pp]) as cr:
+    #        cr.freeze()
+    #        XBuilder()
+    #                
+    #    ok (cr.x.number) == 7
+
     @test("env value overrides group value")
     def _m(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
