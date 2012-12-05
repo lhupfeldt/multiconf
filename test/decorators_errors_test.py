@@ -43,7 +43,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
             class root(ConfigRoot):
                 pass
 
-            with root(prod, [prod]) as cr:
+            with root(prod, [prod]):
                 pass
             fail ("Expected exception")
         except ConfigException as ex:
@@ -59,7 +59,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
             class item(ConfigItem):
                 pass
 
-            with root(prod, [prod]) as cr:
+            with root(prod, [prod]):
                 with item() as ii:
                     ii.efgh(prod=7)
 
@@ -68,7 +68,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
             ok (ex.message) == "No value given for required attributes: ['abcd', 'ijkl']"
 
 
-    @test("required_if attributes missing")
+    @test("required_if - optional attributes missing")
     def _c(self):
         try:
             class root(ConfigRoot):
@@ -78,13 +78,27 @@ class DecoratorsErrorsTest(unittest.TestCase):
             class item(ConfigItem):
                 pass
 
-            with root(prod, [prod]) as cr:
+            with root(prod, [prod]):
                 with item() as ii:
                     ii.abcd(prod=1)
 
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"
+
+    @test("required_if - condition attribute missing")
+    def _c2(self):
+        class root(ConfigRoot):
+            pass
+
+        @required_if('abcd', 'efgh, ijkl')
+        class item(ConfigItem):
+            pass
+
+        with root(prod, [prod]):
+            item()
+        # The above code is valid, the condition attribute i not mandatory
+        ok (1) == 1
 
     @test("optional attribute accessed for env where not specified")
     def _d(self):

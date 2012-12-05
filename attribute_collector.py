@@ -63,15 +63,17 @@ class AttributeCollector(object):
             except EnvException as ex:
                 errors = _error_msg(errors, ex.message)
 
-        # Validate that the attribute is defined for all envs / assign default value
+        # Check whether we need to check for conditionally required attributes
         required_if_key = self._container.__class__._deco_required_if_attributes[0]
         if required_if_key:
+            required_if_attributes = self._container.__class__._deco_required_if_attributes[1]
             try:
-                required_if_attributes = self._container.__class__._deco_required_if_attributes[1]
                 required_if = self._container.attributes[required_if_key]
             except KeyError:
-                required_if = False
+                # The condition property was not specified, so the conditional properties are not required
+                required_if_key = False                
 
+        # Validate that the attribute is defined for all envs / assign default value
         for eg in self._container.root_conf._valid_envs:
             for env in eg.envs():
                 if env in self._env_values:
@@ -86,12 +88,12 @@ class AttributeCollector(object):
                 # Check for required_if, the required_if atributes are optional if required_if is false or not specified for the env
                 if required_if_key:
                     if self._attribute_name == required_if_key:
-                        # A required_if key is optional
+                        # A required_if condition attribute is optional, so it is ok that it is not set for all environment
                         continue
 
                     required_if_env_value = False
                     try:
-                        required_if_env_value = required_if.env_value(env)
+                        required_if_env_value = required_if._env_value(env)
                     except NoAttributeException:
                         pass
                     if not required_if_env_value and self._attribute_name in required_if_attributes:
@@ -119,13 +121,11 @@ class AttributeCollector(object):
     def __repr__(self):
         return self.__class__.__name__ + ': ' + repr(self._attribute_name) + ':' + ('frozen' if self._frozen else 'not-frozen') + ", values: " + repr(self._env_values)
 
-    def env_value(self, env):
-        if not self._frozen:
-            raise ConfigException("Attribute " + repr(self._attribute_name) + " is not frozen.")
+    def _env_value(self, env):
         return self._container.getattr_env(self._attribute_name, env)
 
     def value(self):
-        return self.env_value(self._container.env)
+        return self._env_value(self._container.env)
 
     @property
     def env_values(self):
