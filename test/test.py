@@ -4,7 +4,7 @@ import sys, subprocess
 import os.path
 
 print "Running tests"
-rc = subprocess.call(('nosetests', '--with-coverage', '--cover-package=multiconf'))
+rc = subprocess.call(('nosetests', '--with-coverage', '--cover-branches', '--cover-package=multiconf'))
 
 print "Validating demo for all envs"
 here = os.path.abspath(os.path.dirname(__file__))
