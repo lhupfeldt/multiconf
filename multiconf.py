@@ -229,9 +229,6 @@ class _ConfigBase(object):
                 # This should only happen in case of  a conditional attribute
                 pass
 
-    def items(self):
-        return list(self.iteritems())
-
     @property
     def contained_in(self):
         return self._contained_in
