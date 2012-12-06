@@ -165,8 +165,8 @@ class _ConfigBase(object):
         raise ConfigException("Trying to set a property " + repr(name) + " on a config item")
 
     def _check_valid_env(self, env, valid_envs):
-        if type(env) != Env:
-            raise ConfigException(self.__class__.__name__ + ': env must be of type ' + repr(Env.__name__) + '; found type ' + repr(env.__class__.__name__))
+        if not isinstance(env, Env):
+            raise ConfigException(self.__class__.__name__ + ': env must be instance of ' + repr(Env.__name__) + '; found type ' + repr(env.__class__.__name__) + ': ' + repr(env))
 
         for valid_env in valid_envs:
             if env in valid_env:
@@ -317,11 +317,11 @@ class _ConfigItem(_ConfigBase):
 class ConfigRoot(_ConfigItem):
     def __init__(self, selected_env, valid_envs, **attr):
         if not isinstance(valid_envs, Sequence) or isinstance(valid_envs, str):
-            raise ConfigException(self.__class__.__name__ + ": valid_envs arg must be a 'Sequence'; found type " + repr(valid_envs.__class__.__name__))
+            raise ConfigException(self.__class__.__name__ + ": valid_envs arg must be a 'Sequence'; found type " + repr(valid_envs.__class__.__name__) + ': ' + repr(valid_envs))
 
         for env in valid_envs:
             if not isinstance(env, Env):
-                raise ConfigException(self.__class__.__name__ + ": valid_envs items must be instance of 'Env'; found a " + repr(env.__class__.__name__))
+                raise ConfigException(self.__class__.__name__ + ": valid_envs items must be instance of 'Env'; found a " + repr(env.__class__.__name__) + ': ' + repr(env))
 
         self._check_valid_env(selected_env, valid_envs)
 

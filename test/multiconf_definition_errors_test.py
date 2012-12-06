@@ -62,6 +62,10 @@ _p_expected = """A value is already specified for: Env('dev2CT') from group EnvG
 }=2"""
 
 
+@nested_repeatables('RepeatableItems')
+class project(ConfigRoot):
+    pass
+
 @repeat()
 class RepeatableItem(ConfigItem):
     pass
@@ -204,10 +208,6 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
 
     @test("nested repeatable items with repeated name")
     def _n(self):
-        @nested_repeatables('RepeatableItems')
-        class project(ConfigRoot):
-            pass
-
         try:
             with project(prod, [prod]) as cr:
                 RepeatableItem(id='my_name')
@@ -245,3 +245,54 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             _sout, serr = d_io            
             ok (serr) == ce(errorline, _p_expected)
             ok (ex.message) == "There were 1 errors when defining attribute 'a'"
+
+    @test("nested repeatable items with repeated name")
+    def _q(self):
+        try:
+            with project(prod, [prod]) as cr:
+                RepeatableItem(id='my_name')
+                RepeatableItem(id='my_name')
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "Re-used id/name 'my_name' in nested objects"
+
+    @test("assigning to attribute")
+    def _r(self):
+        try:
+            with project(prod, [prod]) as cr:
+                cr.a = 1
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "Trying to set a property 'a' on a config item"
+
+    @test("non-env for instantiatiation env")
+    def _s1(self):
+        try:
+            project('Why?', [prod])
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
+
+    @test("non-env in valid_envs")
+    def _s2(self):
+        try:
+            project(prod, [prod, 'Why?'])
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "project: valid_envs items must be instance of 'Env'; found a 'str': 'Why?'"
+
+    @test("valid_envs is not a sequence")
+    def _s3(self):
+        try:
+            project(prod, 1)
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
+
+    @test("valid_envs is a str")
+    def _s4(self):
+        try:
+            project(prod, 'Why?')
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
