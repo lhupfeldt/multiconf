@@ -1,6 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import os
 from collections import Sequence, OrderedDict
 import json
 
@@ -9,6 +10,7 @@ from attribute_collector import AttributeCollector
 from config_errors import ConfigBaseException, ConfigException, NoAttributeException
 import json_output
 
+_debug_exc = os.environ.get('MULTICONF_DEBUG_EXCEPTION')
 
 class _ConfigBase(object):
     _nested = []
@@ -21,8 +23,6 @@ class _ConfigBase(object):
     _deco_required_if_attributes = (None, ())
 
     def __init__(self, **attr):
-        self._debug_exc = False
-
         # Object linking
         self._root_conf = None
 
@@ -117,7 +117,7 @@ class _ConfigBase(object):
             self.freeze_validation()
             return self
         except ConfigBaseException as ex:
-            if self._debug_exc:
+            if _debug_exc:
                 raise
             # Strip stack
             raise ex
@@ -126,7 +126,7 @@ class _ConfigBase(object):
         """Recursively freeze contained items bottom up"""
         for _child_name, child_value in self.iteritems():
             if isinstance(child_value, OrderedDict):
-                for key, item in child_value.iteritems():
+                for item in child_value.itervalues():
                     if not item._frozen:
                         item.freeze()
 
@@ -153,7 +153,7 @@ class _ConfigBase(object):
             self._may_freeze = True
             self.freeze()
         except ConfigBaseException as ex:
-            if self._debug_exc:
+            if _debug_exc:
                 raise
             raise ex
 
@@ -217,7 +217,7 @@ class _ConfigBase(object):
         try:
             return self.getattr_env(name, self.env)
         except ConfigException as ex:
-            if self._debug_exc:
+            if _debug_exc:
                 raise
             raise ex
 
@@ -291,7 +291,8 @@ class _ConfigItem(_ConfigBase):
         for _child_name, child_value in self.iteritems():
             if isinstance(child_value, OrderedDict):
                 for dict_entry in child_value.values():
-                    dict_entry._validate_recursively()
+                    if isinstance(dict_entry, _ConfigBase):
+                        dict_entry._validate_recursively()
 
             if isinstance(child_value, _ConfigItem):
                 child_value._validate_recursively()
