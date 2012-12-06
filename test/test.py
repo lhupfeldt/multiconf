@@ -1,7 +1,11 @@
 #!/usr/bin/python
 
 import sys, subprocess
+import os
 import os.path
+
+here = os.path.abspath(os.path.dirname(__file__))
+os.chdir(here)
 
 print "Running tests"
 rc = subprocess.call(('nosetests', '--with-coverage', '--cover-branches', '--cover-package=multiconf'))
