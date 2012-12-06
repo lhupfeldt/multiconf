@@ -7,6 +7,9 @@ import unittest
 from oktest import ok, test, fail, todo, dummy
 from utils import lazy, config_error, lineno
 
+
+from collections import Sequence, OrderedDict
+
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import nested_repeatables, named_as, repeat, required, override
 
@@ -387,3 +390,24 @@ class MulticonfTest(unittest.TestCase):
 
         ok (cr1.ConfigItem.aa) == 1
         ok (cr1.ConfigItem.bb) == 3
+
+    @test("attribute is an OrderedDict")
+    def _q(self):
+        class y(ConfigItem):
+            pass
+
+        with ConfigRoot(prod, [prod, pp]) as cr1:
+            x = y(aa=0)
+            od = OrderedDict(((None, 1), ('foo', x)))
+            ConfigItem(aa=od)
+
+        ok (cr1.ConfigItem.aa) == od
+
+    @test("attribute is a Sequence")
+    def _q2(self):
+        with ConfigRoot(prod, [prod, pp]) as cr1:
+            seq = []
+            ConfigItem(aa=seq)
+
+        ok (cr1.ConfigItem.aa) == seq
+
