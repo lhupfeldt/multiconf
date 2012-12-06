@@ -411,3 +411,11 @@ class MulticonfTest(unittest.TestCase):
 
         ok (cr1.ConfigItem.aa) == seq
 
+    @test("get valid_envs")
+    def _r(self):
+        ve = [prod, pp]
+        with ConfigRoot(prod, ve) as cr:
+            ConfigItem()
+
+        ok (cr.valid_envs) == ve
+        ok (cr.ConfigItem.valid_envs) == ve
