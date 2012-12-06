@@ -72,20 +72,44 @@ class RepeatableItem(ConfigItem):
 
 
 class MultiConfDefinitionErrorsTest(unittest.TestCase):
+    @test("non-env for instantiatiation env")
+    def _config_root_args1(self):
+        try:
+            project('Why?', [prod])
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
+
+    @test("non-env in valid_envs")
+    def _config_root_args2(self):
+        try:
+            project(prod, [prod, 'Why?'])
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "project: valid_envs items must be instance of 'Env'; found a 'str': 'Why?'"
+
+    @test("valid_envs is not a sequence")
+    def _config_root_args3(self):
+        try:
+            project(prod, 1)
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
+
+    @test("valid_envs is a str")
+    def _config_root_args4(self):
+        try:
+            project(prod, 'Why?')
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
+
     @test("valid_envs arg as EnvGroup")
-    def _a(self):
+    def _config_root_args5(self):
         ok (lazy(ConfigRoot, prod, valid_envs)).raises(ConfigException)
 
-    @test("valid_envs arg as str")
-    def _b(self):
-        ok (lazy(ConfigRoot, prod, "abc")).raises(ConfigException)
-
-    @test("valid_envs arg contains non Env")
-    def _c(self):
-        ok (lazy(ConfigRoot, prod, [g_prod, 'a'])).raises(ConfigException)
-
     @test("selected_conf not in valid_envs")
-    def _d(self):
+    def _config_root_args6(self):
         ok (lazy(ConfigRoot, prod, [dev3ct, dev3st])).raises(ConfigException)
 
     @test("assign to undefine env")
@@ -264,35 +288,3 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Trying to set a property 'a' on a config item"
-
-    @test("non-env for instantiatiation env")
-    def _s1(self):
-        try:
-            project('Why?', [prod])
-            fail ("Expected exception")
-        except ConfigException as ex:
-            ok (ex.message) == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
-
-    @test("non-env in valid_envs")
-    def _s2(self):
-        try:
-            project(prod, [prod, 'Why?'])
-            fail ("Expected exception")
-        except ConfigException as ex:
-            ok (ex.message) == "project: valid_envs items must be instance of 'Env'; found a 'str': 'Why?'"
-
-    @test("valid_envs is not a sequence")
-    def _s3(self):
-        try:
-            project(prod, 1)
-            fail ("Expected exception")
-        except ConfigException as ex:
-            ok (ex.message) == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
-
-    @test("valid_envs is a str")
-    def _s4(self):
-        try:
-            project(prod, 'Why?')
-            fail ("Expected exception")
-        except ConfigException as ex:
-            ok (ex.message) == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
