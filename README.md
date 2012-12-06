@@ -4,7 +4,7 @@ What
 
 Multiconf is a framework for describing complex configuration for multiple environments using Python.
 
-Why
+Why?
 ===
 
 It started from a simple need of deployment automation for Java EE projects, Apache and more. Having worked on different projects with plain text property files or XML configuration files, I thought something better was needed. With plain text property files, the number of property files increases as projects and environments are added, and number of scripts increases too. It gets hard to get an overview of properties describing similar configurations. Has a property value been defined for all projects for every environment? And it is getting even harder to describe *proper* settings: what depends on what and what can be used and what can't. With XML you keep having to extend the schema and the tool processing it. So why use XML or property files when you can have your configuration directly in python? So, out of this Multiconf was born.
