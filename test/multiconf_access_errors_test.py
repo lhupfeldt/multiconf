@@ -20,13 +20,23 @@ def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
 
-_a_expected_repr = """{
+_a1_expected_repr = """{
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000", 
     "env": {
         "__class__": "Env", 
         "name": "prod"
     }
 } has no attribute 'b'"""
+
+
+_a2_expected_repr = """{
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "bs": 4
+} has no attribute 'b', but found attribute 'bs'"""
 
 
 class MultiConfAccessErrorsTest(unittest.TestCase):
@@ -38,7 +48,18 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
             print cr.b
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (replace_ids(ex.message, named_as=False)) == _a_expected_repr
+            ok (replace_ids(ex.message, named_as=False)) == _a1_expected_repr
+
+    @test("access undefined attribute - but has repeatable? attribute with attribute name+s")
+    def _a2(self):
+        with ConfigRoot(prod, [prod]) as cr:
+            cr.bs(prod=4)
+
+        try:
+            print cr.b
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (replace_ids(ex.message, named_as=False)) == _a2_expected_repr
 
     @test("find_contained_in(named_as) - not found")
     def _b(self):

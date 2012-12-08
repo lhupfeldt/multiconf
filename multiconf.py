@@ -11,7 +11,7 @@ from .attribute_collector import AttributeCollector
 from .config_errors import ConfigBaseException, ConfigException, NoAttributeException
 import json_output
 
-_debug_exc = os.environ.get('MULTICONF_DEBUG_EXCEPTION')
+_debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTION')).lower() == 'true'
 
 
 class _ConfigBase(object):
@@ -148,9 +148,6 @@ class _ConfigBase(object):
         return self._frozen
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type:
-            return None
-
         try:
             self._may_freeze = True
             self.freeze()
