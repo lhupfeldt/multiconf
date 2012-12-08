@@ -26,9 +26,21 @@ prod = ef.Env('prod')
 g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
 
 
-@named_as('someitems')
+@nested_repeatables('children')
+class root(ConfigRoot):
+    pass
+
+
+@named_as('children')
 @repeat()
-class RepeatableItem(ConfigItem):
+class rchild(ConfigItem):
+    pass
+
+
+@named_as('recursive_items')
+@nested_repeatables('recursive_items')
+@repeat()
+class NestedRepeatable(ConfigItem):
     pass
 
 
@@ -50,15 +62,6 @@ class MulticonfTest(unittest.TestCase):
 
     @test("nested repeatable items")
     def _b(self):
-        @nested_repeatables('children')
-        class root(ConfigRoot):
-            pass
-
-        @named_as('children')
-        @repeat()
-        class rchild(ConfigItem):
-            pass
-
         with root(prod, [prod, pp]) as cr:
             with rchild(name="first", aa=1, bb=1) as ci:
                 ci.aa(prod=3)
@@ -81,10 +84,6 @@ class MulticonfTest(unittest.TestCase):
 
     @test("empty nested repeatable items")
     def _c(self):
-        @nested_repeatables('children')
-        class root(ConfigRoot):
-            pass
-
         with root(prod, [prod, pp]) as cr:
             pass
 
@@ -129,13 +128,7 @@ class MulticonfTest(unittest.TestCase):
 
     @test("automatic contained item freeze on exit")
     def _i(self):
-        @named_as('someitems')
-        @nested_repeatables('someitems')
-        @repeat()
-        class NestedRepeatable(ConfigItem):
-            pass
-
-        @nested_repeatables('someitems')
+        @nested_repeatables('recursive_items')
         class root(ConfigRoot):
             pass
 
@@ -152,30 +145,24 @@ class MulticonfTest(unittest.TestCase):
             NestedRepeatable(id='c', something=3)
 
         ok (repr(cr).find("frozen")) == -1
-        ok (len(cr.someitems['a'].someitems)) == 0
-        ok (len(cr.someitems['b'].someitems)) == 3
-        ok (len(cr.someitems['c'].someitems)) == 0
+        ok (len(cr.recursive_items['a'].recursive_items)) == 0
+        ok (len(cr.recursive_items['b'].recursive_items)) == 3
+        ok (len(cr.recursive_items['c'].recursive_items)) == 0
 
         ids = ['a', 'b', 'c']
         index = 0
-        for item_id, item in cr.someitems['b'].someitems.iteritems():
+        for item_id, item in cr.recursive_items['b'].recursive_items.iteritems():
             ok (item.id) == ids[index]
             ok (item_id) == ids[index]
             index += 1
         ok (index) == 3
 
-        ok (cr.someitems['b'].someitems['b'].someitems['b'].a) == 1
+        ok (cr.recursive_items['b'].recursive_items['b'].recursive_items['b'].a) == 1
 
     @test("find_contained_in(named_as)")
     def _j(self):
-        @named_as('someitems')
-        @nested_repeatables('someitems')
-        @repeat()
-        class NestedRepeatable(ConfigItem):
-            pass
-
         @named_as('x')
-        @nested_repeatables('someitems')
+        @nested_repeatables('recursive_items')
         class X(ConfigItem):
             pass
 
@@ -183,7 +170,7 @@ class MulticonfTest(unittest.TestCase):
         class Y(ConfigItem):
             pass
 
-        @nested_repeatables('someitems')
+        @nested_repeatables('recursive_items')
         class root(ConfigRoot):
             pass
 
@@ -201,25 +188,19 @@ class MulticonfTest(unittest.TestCase):
                             with Y() as ci:
                                 ci.a(prod=3, pp=2)
                     
-        ok (cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='x').a) == 1
-        ok (cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='root').a) == 0
-        ok (cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='someitems').a) == 2
-        ok (cr.x.someitems['b'].x.find_contained_in(named_as='x').a) == 0
+        ok (cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='x').a) == 1
+        ok (cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='root').a) == 0
+        ok (cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='recursive_items').a) == 2
+        ok (cr.x.recursive_items['b'].x.find_contained_in(named_as='x').a) == 0
 
     @test("find_attribute(attribute_name)")
     def _k(self):
-        @named_as('someitems')
-        @nested_repeatables('someitems')
-        @repeat()
-        class NestedRepeatable(ConfigItem):
-            pass
-
         @named_as('x')
-        @nested_repeatables('someitems')
+        @nested_repeatables('recursive_items')
         class X(ConfigItem):
             pass
 
-        @nested_repeatables('someitems')
+        @nested_repeatables('recursive_items')
         class root(ConfigRoot):
             pass
 
@@ -237,11 +218,11 @@ class MulticonfTest(unittest.TestCase):
                             with X() as ci:
                                 ci.a(prod=3, pp=23)
                     
-        ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('a')) == 3
-        ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('b')) == 'b1'
-        ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('someitems')['d'].a) == 2
-        ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('q')) == 'q0'
-        ok (cr.x.someitems['b'].x.find_attribute(attribute_name='a')) == 0
+        ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('a')) == 3
+        ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('b')) == 'b1'
+        ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('recursive_items')['d'].a) == 2
+        ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('q')) == 'q0'
+        ok (cr.x.recursive_items['b'].x.find_attribute(attribute_name='a')) == 0
 
     @test("ConfigBuilder - override")
     def _l(self):
@@ -259,6 +240,7 @@ class MulticonfTest(unittest.TestCase):
             def build(self):
                 for server_num in xrange(1, self.num_servers+1):
                     with X(name='server%d' % server_num) as c:
+                        c.something(prod=1, pp=2)
                         self.override(c, 'b')
 
         @nested_repeatables('xses')
