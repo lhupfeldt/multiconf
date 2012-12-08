@@ -45,6 +45,18 @@ _j_expected = """'RepeatableItems': {
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"""
 
 
+_k_expected = """'RepeatableItems': {
+    "__class__": "RepeatableItems #as: 'RepeatableItems', id: 0000, not-frozen, defaults: {}"
+} is defined as non-repeatable, but the containing object has repeatable items with the same name: {
+    "__class__": "project #as: 'project', id: 0000, not-frozen, defaults: {}", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "RepeatableItems": {}
+}"""
+
+
 _o_expected = """A value is already specified for: Env('dev2CT') from group EnvGroup('g_dev_overlap') {
      Env('dev2CT')
 }=3, previous value: EnvGroup('g_dev2') {
@@ -204,6 +216,19 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     #        fail ("Expected exception")
     #    except ConfigException as ex:
     #        ok (ex.message) == "'children' is defined both as simple value and a contained item: children {\n}"
+
+    @test("non-repeatable but container expects repeatable")
+    def _k(self):
+        try:
+            # The following class in not repeatable!
+            class RepeatableItems(ConfigItem):
+                pass
+
+            with project(prod, [prod]) as cr:
+                RepeatableItems()
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (replace_ids(ex.message, named_as=False)) == _k_expected
 
     @test("simple property overrides contained item")
     def _l(self):
