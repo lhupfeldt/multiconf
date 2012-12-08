@@ -4,12 +4,12 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno, replace_ids
+from oktest import ok, test, fail, dummy
+
+from .utils import lazy, config_error, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import nested_repeatables, repeat
-
 from ..envs import EnvFactory
 
 ef = EnvFactory()
@@ -288,3 +288,12 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Trying to set a property 'a' on a config item"
+
+    # TODO
+    #@test("ConfigItem outside of root")
+    #def _r(self):
+    #    try:
+    #        ConfigItem()
+    #        fail ("Expected exception")
+    #    except ConfigException as ex:
+    #        ok (ex.message) == "Trying to set a property 'a' on a config item"

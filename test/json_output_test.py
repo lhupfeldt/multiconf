@@ -1,9 +1,9 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, unittest
-from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno, replace_ids, to_compact
+import unittest
+from oktest import ok, test, dummy
+from .utils import replace_ids, to_compact
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException
 

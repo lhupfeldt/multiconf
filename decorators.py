@@ -3,7 +3,8 @@
 
 import re
 import keyword
-from config_errors import _warning_msg
+
+from .config_errors import _warning_msg as warn
 
 class ConfigDefinitionException(Exception):
     def __init__(self, msg):
@@ -52,7 +53,7 @@ def nested_repeatables(attr_names):
         super_deco_nested_repeatables = super(cls, cls)._deco_nested_repeatables
         for attr in super_deco_nested_repeatables:
             if attr in attributes:
-                _warning_msg("Attribute name: " + repr(attr) + " re-specified as 'nested_repeatables' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
+                warn("Attribute name: " + repr(attr) + " re-specified as 'nested_repeatables' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
         cls._deco_nested_repeatables = attributes + super_deco_nested_repeatables
         return cls
 
@@ -66,7 +67,7 @@ def required(attr_names):
         super_deco_required = super(cls, cls)._deco_required_attributes
         for attr in super_deco_required:
             if attr in attributes:
-                _warning_msg("Attribute name: " + repr(attr) + " re-specified as 'required' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
+                warn("Attribute name: " + repr(attr) + " re-specified as 'required' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
         cls._deco_required_attributes = attributes + super_deco_required
         return cls
 
@@ -90,7 +91,7 @@ def override(attr_names):
         super_deco_override = super(cls, cls)._deco_override_attributes
         for attr in super_deco_override:
             if attr in attributes:
-                _warning_msg("Attribute name: " + repr(attr) + " re-specified as 'override' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
+                warn("Attribute name: " + repr(attr) + " re-specified as 'override' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
         cls._deco_override_attributes = attributes + super_deco_override
         return cls
 

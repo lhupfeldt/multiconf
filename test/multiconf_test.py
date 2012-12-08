@@ -3,16 +3,13 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from collections import OrderedDict
+
 import unittest
-from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno
-
-
-from collections import Sequence, OrderedDict
+from oktest import ok, test, fail
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import nested_repeatables, named_as, repeat, required, override
-
 from ..envs import EnvFactory
 
 ef = EnvFactory()

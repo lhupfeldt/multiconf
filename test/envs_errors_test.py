@@ -5,7 +5,8 @@
 
 import unittest
 from oktest import ok, test, fail, dummy
-from utils import config_error, lineno
+
+from .utils import config_error, lineno
 
 from ..envs import EnvFactory, EnvException
 

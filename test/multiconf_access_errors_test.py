@@ -4,12 +4,12 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno, replace_ids
+from oktest import ok, test, fail
+
+from .utils import config_error, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import nested_repeatables, named_as, repeat
-
 from ..envs import EnvFactory
 
 ef = EnvFactory()

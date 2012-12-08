@@ -1,8 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from envs import EnvFactory, EnvGroup, EnvException
-from config_errors import ConfigException, NoAttributeException, _error_msg
+from .envs import EnvGroup, EnvException
+from .config_errors import ConfigException, NoAttributeException, _error_msg as error
 
 
 class AttributeCollector(object):
@@ -16,14 +16,14 @@ class AttributeCollector(object):
         self._frozen = True
 
         if self._attribute_name in self._container.attributes:
-            _error_msg(0, "Redefined attribute " + repr(self._attribute_name))
+            error(0, "Redefined attribute " + repr(self._attribute_name))
             raise ConfigException("Attribute redefinition error: " + repr(self._attribute_name))
 
         self._container.attributes[self._attribute_name] = self
 
         # For error messages
         eg_from = {}
-        errors = 0
+        num_errors = 0
 
         attr_types = set()
 
@@ -41,7 +41,7 @@ class AttributeCollector(object):
                 if type(value) != type(None):
                     if type(value) not in attr_types and attr_types:
                         msg = "Found different types of property " + repr(self._attribute_name) + " for different envs: " + repr(type(value)) + " previously found types: " + repr(list(attr_types))
-                        errors = _error_msg(errors, msg)
+                        num_errors = error(num_errors, msg)
                     attr_types.add(type(value))
 
                 for env in eg.envs():
@@ -58,10 +58,10 @@ class AttributeCollector(object):
                     new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
                     prev_eg_msg = repr(eg_from[env])
                     msg = "A value is already specified for: " + new_eg_msg + '=' + repr(value) + ", previous value: " + prev_eg_msg + '=' + repr(self._env_values[env])
-                    errors = _error_msg(errors, msg)
+                    num_errors = error(num_errors, msg)
 
             except EnvException as ex:
-                errors = _error_msg(errors, ex.message)
+                num_errors = error(num_errors, ex.message)
 
         # Check whether we need to check for conditionally required attributes
         required_if_key = self._container.__class__._deco_required_if_attributes[0]
@@ -101,13 +101,13 @@ class AttributeCollector(object):
 
                 group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
                 msg = "Attribute: " + repr(self._attribute_name) + " did not receive a value for env " + repr(env)
-                errors = _error_msg(errors, msg + group_msg)
+                num_errors = error(num_errors, msg + group_msg)
 
         if self._attribute_name in defaults:
             del defaults[self._attribute_name]
 
-        if errors:
-            raise ConfigException("There were " + repr(errors) + " errors when defining attribute " + repr(self._attribute_name))
+        if num_errors:
+            raise ConfigException("There were " + repr(num_errors) + " errors when defining attribute " + repr(self._attribute_name))
 
         return self
 

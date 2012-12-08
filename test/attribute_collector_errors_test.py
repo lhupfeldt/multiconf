@@ -4,8 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, lineno
+from oktest import ok, test, fail
 
 from .. import ConfigException
 from ..attribute_collector import AttributeCollector

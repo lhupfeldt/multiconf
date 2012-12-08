@@ -5,9 +5,9 @@ import os
 from collections import Sequence, OrderedDict
 import json
 
-from envs import Env
-from attribute_collector import AttributeCollector
-from config_errors import ConfigBaseException, ConfigException, NoAttributeException
+from .envs import Env
+from .attribute_collector import AttributeCollector
+from .config_errors import ConfigBaseException, ConfigException, NoAttributeException
 import json_output
 
 _debug_exc = os.environ.get('MULTICONF_DEBUG_EXCEPTION')

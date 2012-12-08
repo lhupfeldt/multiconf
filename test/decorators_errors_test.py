@@ -4,8 +4,8 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, fail, todo, dummy
-from utils import lazy, config_error, config_warning, lineno
+from oktest import ok, test, fail, dummy
+from .utils import config_error, config_warning, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
 from ..decorators import required, required_if, optional, ConfigDefinitionException

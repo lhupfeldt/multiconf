@@ -1,10 +1,10 @@
-import sys, traceback, threading
+import sys, threading
 from collections import OrderedDict
 import json
 import types
 
 import multiconf, envs
-from config_errors import InvalidUsageException
+from .config_errors import InvalidUsageException
 
 # For handling references to avoid dumping objects multiple times
 class _AlreadySeen(Exception):
