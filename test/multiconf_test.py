@@ -239,16 +239,16 @@ class MulticonfTest(unittest.TestCase):
         
             def build(self):
                 for server_num in xrange(1, self.num_servers+1):
-                    with X(name='server%d' % server_num) as c:
+                    with X(name='server%d' % server_num, server_num=server_num) as c:
                         c.something(prod=1, pp=2)
-                        self.override(c, 'b')
+                        self.override(c, 'b', 'something')
 
         @nested_repeatables('xses')
         class Root(ConfigRoot):
             pass
 
         with Root(prod, [prod, pp]) as cr:
-            with XBuilder(a=1) as xb:
+            with XBuilder(a=1, something=7) as xb:
                 xb.num_servers(pp=2)
                 xb.b(prod=3, pp=4)
                     
@@ -256,6 +256,12 @@ class MulticonfTest(unittest.TestCase):
         ok (cr.xses['server1'].a) == 1
         ok (cr.xses['server2'].b) == 3
         ok (cr.xses['server4'].b) == 3
+        ok (cr.xses['server1'].something) == 7
+        ok (cr.xses['server4'].something) == 7
+        ok (cr.xses['server1'].server_num) == 1
+        ok (cr.xses['server3'].server_num) == 3
+        ok (cr.xses['server4'].server_num) == 4
+        # TODO: override of conditional attributes (required_if)
 
     @test("ConfigBuilder - build at freeze")
     def _l2(self):
