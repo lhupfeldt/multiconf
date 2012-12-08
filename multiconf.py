@@ -1,6 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import abc
 import os
 from collections import Sequence, OrderedDict
 import json
@@ -11,6 +12,7 @@ from .config_errors import ConfigBaseException, ConfigException, NoAttributeExce
 import json_output
 
 _debug_exc = os.environ.get('MULTICONF_DEBUG_EXCEPTION')
+
 
 class _ConfigBase(object):
     _nested = []
@@ -426,9 +428,10 @@ class ConfigBuilder(_ConfigBase):
         super(ConfigBuilder, self).freeze()
         self.build()
 
+    @abc.abstractmethod
     def build(self):
         """Override this in derived classes. This is where child ConfigItems are declared"""
-        raise ConfigException("'build' must be overridded")
+        raise Exception("AbstractNotImplemented")
 
     def override(self, config_item, *keys):
         """Assign attributes that that match 'override' decorator keys or 'keys' from builder to child Item'"""
