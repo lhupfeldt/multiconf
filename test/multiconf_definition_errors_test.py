@@ -340,11 +340,10 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             ok (ex.message) == "Trying to set a property 'a' on a config item"
 
-    # TODO
-    #@test("ConfigItem outside of root")
-    #def _t(self):
-    #    try:
-    #        ConfigItem()
-    #        fail ("Expected exception")
-    #    except ConfigException as ex:
-    #        ok (ex.message) == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
+    @test("ConfigItem outside of root")
+    def _t(self):
+        try:
+            ConfigItem()
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"

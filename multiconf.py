@@ -306,9 +306,6 @@ class _ConfigItem(_ConfigBase):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type:
-            return None
-
         super(_ConfigItem, self).__exit__(exc_type, exc_value, traceback)
         self.__class__._nested.pop()
 
@@ -333,9 +330,6 @@ class ConfigRoot(_ConfigItem):
         self._contained_in = None
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type:
-            return None
-
         super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
         self._validate_recursively()
 
@@ -369,13 +363,6 @@ class ConfigItem(_ConfigItem):
                 msg = repr(my_key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
                     repr(self._contained_in.named_as())
                 raise ConfigException(msg)
-                # TODO?: type check of list items (instanceof(ConfigItem). Same type?
-
-            if my_key in self._contained_in.attributes:
-                # Validate that an attribute value of parent is not overridden by nested item (self),
-                if not isinstance(self._contained_in.attributes[my_key], OrderedDict):
-                    msg = repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self)
-                    raise ConfigException(msg)
                 # TODO?: type check of list items (instanceof(ConfigItem). Same type?
 
             # Insert in Ordered dict by 'id' or 'name', 'id' is preferred if given
