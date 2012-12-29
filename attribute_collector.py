@@ -64,9 +64,9 @@ class AttributeCollector(object):
                 num_errors = error(num_errors, ex.message)
 
         # Check whether we need to check for conditionally required attributes
-        required_if_key = self._container.__class__._deco_required_if_attributes[0]
+        required_if_key = self._container.__class__._deco_required_if[0]
         if required_if_key:
-            required_if_attributes = self._container.__class__._deco_required_if_attributes[1]
+            required_if_attributes = self._container.__class__._deco_required_if[1]
             try:
                 required_if = self._container.attributes[required_if_key]
             except KeyError:

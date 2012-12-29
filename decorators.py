@@ -29,6 +29,19 @@ def _check_valid_identifiers(names):
     raise ConfigDefinitionException(repr(invalid) + " are not valid identifiers")
 
 
+def _add_super_list_deco_values(cls, attr_names_str, deco_attr_name):
+    attr_names = [attr.strip() for attr in attr_names_str.split(',')]
+    _check_valid_identifiers(attr_names)
+
+    super_names = getattr(super(cls, cls), '_deco_' + deco_attr_name)
+    for attr in super_names:
+        if attr in attr_names:
+            warn("Attribute name: " + repr(attr) + " re-specified as " + repr(deco_attr_name) + " on class: " + repr(cls.__name__) + " , was already inherited from a super class.",
+                 up_level=3)
+
+    return attr_names + super_names
+
+
 def named_as(insert_as_name):
     def deco(cls):
         _check_valid_identifiers((insert_as_name,))
@@ -48,13 +61,7 @@ def repeat():
 
 def nested_repeatables(attr_names):
     def deco(cls):
-        attributes = [attr.strip() for attr in attr_names.split(',')]
-        _check_valid_identifiers(attributes)
-        super_deco_nested_repeatables = super(cls, cls)._deco_nested_repeatables
-        for attr in super_deco_nested_repeatables:
-            if attr in attributes:
-                warn("Attribute name: " + repr(attr) + " re-specified as 'nested_repeatables' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
-        cls._deco_nested_repeatables = attributes + super_deco_nested_repeatables
+        cls._deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
         return cls
 
     return deco
@@ -62,13 +69,7 @@ def nested_repeatables(attr_names):
 
 def required(attr_names):
     def deco(cls):
-        attributes = [attr.strip() for attr in attr_names.split(',')]
-        _check_valid_identifiers(attributes)
-        super_deco_required = super(cls, cls)._deco_required_attributes
-        for attr in super_deco_required:
-            if attr in attributes:
-                warn("Attribute name: " + repr(attr) + " re-specified as 'required' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
-        cls._deco_required_attributes = attributes + super_deco_required
+        cls._deco_required = _add_super_list_deco_values(cls, attr_names, 'required')
         return cls
 
     return deco
@@ -78,7 +79,7 @@ def required_if(attr_name, attr_names):
     def deco(cls):
         attributes = [attr.strip() for attr in attr_names.split(',')]
         _check_valid_identifiers([attr_name] + attributes)
-        cls._deco_required_if_attributes = attr_name, attributes
+        cls._deco_required_if = attr_name, attributes
         return cls
 
     return deco
@@ -86,13 +87,7 @@ def required_if(attr_name, attr_names):
 
 def override(attr_names):
     def deco(cls):
-        attributes = [attr.strip() for attr in attr_names.split(',')]
-        _check_valid_identifiers(attributes)
-        super_deco_override = super(cls, cls)._deco_override_attributes
-        for attr in super_deco_override:
-            if attr in attributes:
-                warn("Attribute name: " + repr(attr) + " re-specified as 'override' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
-        cls._deco_override_attributes = attributes + super_deco_override
+        cls._deco_override = _add_super_list_deco_values(cls, attr_names, 'override')
         return cls
 
     return deco

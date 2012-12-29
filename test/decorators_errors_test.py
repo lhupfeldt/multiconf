@@ -8,7 +8,7 @@ from oktest import ok, test, fail, dummy
 from .utils import config_error, config_warning, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
-from ..decorators import required, required_if, optional, ConfigDefinitionException
+from ..decorators import required, required_if, optional, nested_repeatables, ConfigDefinitionException
 from ..envs import EnvFactory
 
 ef = EnvFactory()
@@ -124,6 +124,26 @@ class DecoratorsErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigDefinitionException  as ex:
             ok (ex.message) == "['a-b', '99'] are not valid identifiers"
+
+    @test("decorator arg is keyword - nested_repeatables")
+    def _e2(self):
+        try:
+            @nested_repeatables('a, b, def, c')
+            class root(ConfigRoot):
+                pass
+            fail ("Expected exception")
+        except ConfigDefinitionException  as ex:
+            ok (ex.message) == "'def' is not a valid identifier"
+
+    @test("decorator args are keywords - required")
+    def _e2(self):
+        try:
+            @required('a, class, b, 99')
+            class root(ConfigRoot):
+                pass
+            fail ("Expected exception")
+        except ConfigDefinitionException  as ex:
+            ok (ex.message) == "['class', '99'] are not valid identifiers"
 
     @test("decorator arg not a valid identifier - required_if")
     def _f(self):

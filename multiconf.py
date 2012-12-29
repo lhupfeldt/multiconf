@@ -21,8 +21,8 @@ class _ConfigBase(object):
     _deco_named_as = None
     _deco_repeatable = False
     _deco_nested_repeatables = []
-    _deco_required_attributes = []
-    _deco_required_if_attributes = (None, ())
+    _deco_required = []
+    _deco_required_if = (None, ())
 
     def __init__(self, **attr):
         # Object linking
@@ -77,14 +77,14 @@ class _ConfigBase(object):
 
     def freeze_validate_required(self):
         missing = []
-        for req in self.__class__._deco_required_attributes:
+        for req in self.__class__._deco_required:
             if not req in self._attributes:
                 missing.append(req)
         if missing:
             raise ConfigException("No value given for required attributes: " + repr(missing))
 
     def freeze_validate_required_if(self):
-        required_if_key = self.__class__._deco_required_if_attributes[0]
+        required_if_key = self.__class__._deco_required_if[0]
         if not required_if_key:
             return
 
@@ -98,7 +98,7 @@ class _ConfigBase(object):
             return
 
         missing = []
-        for req in self.__class__._deco_required_if_attributes[1]:
+        for req in self.__class__._deco_required_if[1]:
             if not req in self._attributes:
                 missing.append(req)
         if missing:
@@ -395,7 +395,7 @@ class ConfigItem(_ConfigItem):
 
 class ConfigBuilder(_ConfigBase):
     # Decoration attributes
-    _deco_override_attributes = []
+    _deco_override = []
 
     def __init__(self, **attr):
         super(ConfigBuilder, self).__init__(**attr)
@@ -419,7 +419,7 @@ class ConfigBuilder(_ConfigBase):
 
     def override(self, config_item, *keys):
         """Assign attributes that that match 'override' decorator keys or 'keys' from builder to child Item'"""
-        for key in self.__class__._deco_override_attributes + list(keys):
+        for key in self.__class__._deco_override + list(keys):
             value = self.attributes.get(key)
             if value:
                 config_item_attr = config_item.attributes.get(key)
