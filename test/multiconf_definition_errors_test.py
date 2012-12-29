@@ -79,9 +79,16 @@ _p_expected = """A value is already specified for: Env('dev2CT') from group EnvG
 }=2"""
 
 
+_t_expected = """project: env must be instance of 'Env'; found type 'EnvGroup': EnvGroup('g_dev3') {
+     Env('dev3CT'),
+     Env('dev3ST')
+}"""
+
+
 @nested_repeatables('RepeatableItems')
 class project(ConfigRoot):
     pass
+
 
 @repeat()
 class RepeatableItem(ConfigItem):
@@ -103,7 +110,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             project(prod, [prod, 'Why?'])
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "project: valid_envs items must be instance of 'Env'; found a 'str': 'Why?'"
+            ok (ex.message) == "project: valid_envs items must be instance of 'Env' or 'EnvGroup'; found a 'str': 'Why?'"
 
     @test("valid_envs is not a sequence")
     def _config_root_args3(self):
@@ -347,3 +354,11 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
+
+    @test("using group for selected env")
+    def _t(self):
+        try:
+            project(g_dev3, [g_dev3])
+            fail ("Expected exception")
+        except ConfigException as ex:
+            ok (ex.message) == _t_expected

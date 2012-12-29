@@ -8,11 +8,11 @@ class EnvException(Exception):
     pass
 
 
-class Env(object):
+class BaseEnv(object):
     def __init__(self, name, factory):
         """ Private, use EnvFactory.Env() """
         if not isinstance(name, type("")):
-            raise EnvException(self.__class__.__name__ + ": 'name' must be instanceof " + type("").__name__ + ", found: " +  type(name).__name__)
+            raise EnvException(self.__class__.__name__ + ": 'name' must be instance of " + type("").__name__ + ", found: " +  type(name).__name__)
         if not len(name):
             raise EnvException(self.__class__.__name__ + ": 'name' must not be empty")
         if name[0] == '_':
@@ -21,7 +21,6 @@ class Env(object):
         self._name = name
         self.members = []
         self.factory = factory
-        self.factory._envs[name] = self
 
     @property
     def name(self):
@@ -49,10 +48,18 @@ class Env(object):
         if other == self:
             return True
 
-class EnvGroup(Env, Container):
+
+class Env(BaseEnv):
+    def __init__(self, name, factory):
+        super(Env, self).__init__(name, factory)
+        self.factory._envs[name] = self
+
+
+class EnvGroup(BaseEnv, Container):
     def __init__(self, name, factory, *members):
         """ Private, use EnvFactory.Group() method """
         super(EnvGroup, self).__init__(name, factory)
+        self.factory._groups[name] = self
 
         # Check for empty group
         if not members:
@@ -60,8 +67,9 @@ class EnvGroup(Env, Container):
 
         # Check arg types
         for cfg in members:
-            if not isinstance(cfg, Env):
-                raise EnvException(self.__class__.__name__ +  ': ' + ' Group members args must be of type ' + repr(Env.__name__) + ', found:' + repr(cfg))
+            if not isinstance(cfg, BaseEnv):
+                raise EnvException(self.__class__.__name__ +  ': ' + ' Group members args must be instance of ' + 
+                                   repr(Env.__name__) + ' or ' + repr(EnvGroup.__name__) + ', found: ' + repr(cfg))
 
         # Check for doublets
         seen_envs = set()
@@ -85,8 +93,6 @@ class EnvGroup(Env, Container):
 
         # All good
         self.members = members
-
-        factory._groups[name] = self
 
     def irepr(self, indent_level):
         indent1 = '  ' * indent_level

@@ -6,7 +6,7 @@ import os
 from collections import Sequence, OrderedDict
 import json
 
-from .envs import Env
+from .envs import BaseEnv, Env, EnvGroup
 from .attribute_collector import AttributeCollector
 from .config_errors import ConfigBaseException, ConfigException, NoAttributeException
 import json_output
@@ -316,8 +316,8 @@ class ConfigRoot(_ConfigItem):
             raise ConfigException(self.__class__.__name__ + ": valid_envs arg must be a 'Sequence'; found type " + repr(valid_envs.__class__.__name__) + ': ' + repr(valid_envs))
 
         for env in valid_envs:
-            if not isinstance(env, Env):
-                raise ConfigException(self.__class__.__name__ + ": valid_envs items must be instance of 'Env'; found a " + repr(env.__class__.__name__) + ': ' + repr(env))
+            if not isinstance(env, BaseEnv):
+                raise ConfigException(self.__class__.__name__ + ": valid_envs items must be instance of " + repr(Env.__name__) + " or " + repr(EnvGroup.__name__) + "; found a " + repr(env.__class__.__name__) + ': ' + repr(env))
 
         self._check_valid_env(selected_env, valid_envs)
 
@@ -363,7 +363,7 @@ class ConfigItem(_ConfigItem):
                 msg = repr(my_key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
                     repr(self._contained_in.named_as())
                 raise ConfigException(msg)
-                # TODO?: type check of list items (instanceof(ConfigItem). Same type?
+                # TODO?: type check of list items (isinstance(ConfigItem). Same type?
 
             # Insert in Ordered dict by 'id' or 'name', 'id' is preferred if given
             try:

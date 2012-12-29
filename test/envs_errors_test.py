@@ -152,3 +152,61 @@ class EnvsTest(unittest.TestCase):
             fail ("Expected exception")
         except EnvException as ex:
             ok (ex.message) == "No such Env or EnvGroup: 'undefined'"
+
+    @test("env - name is not a str")
+    def _o(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                _e1 = ef.Env(1)
+                fail ("Expected exception")
+        except EnvException as ex:
+            sout, serr = d_io
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Env: 'name' must be instance of str, found: int"
+
+    @test("env - name is empty")
+    def _o(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                _e1 = ef.Env("")
+                fail ("Expected exception")
+        except EnvException as ex:
+            sout, serr = d_io
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Env: 'name' must not be empty"
+
+
+    @test("env - name starts with '_'")
+    def _o(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                _e1 = ef.Env("_a")
+                fail ("Expected exception")
+        except EnvException as ex:
+            sout, serr = d_io
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Env: 'name' must not start with '_', got: '_a'"
+
+
+    @test("no group members")
+    def _g(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                gg2 = ef.EnvGroup('gg')
+                fail ("Expected exception")
+        except EnvException as ex:
+            sout, serr = d_io
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "EnvGroup: No group members specified"
+
+
+    @test("group - member is not instanceof Env")
+    def _o(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                _g = ef.EnvGroup('gg', 1)
+                fail ("Expected exception")
+        except EnvException as ex:
+            sout, serr = d_io
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "EnvGroup:  Group members args must be instance of 'Env' or 'EnvGroup', found: 1"

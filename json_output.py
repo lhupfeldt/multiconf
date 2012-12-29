@@ -133,7 +133,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                     dd['__json_error__ # trying to handle property methods'] = repr(sys.exc_info()[1])
                     return dd
     
-            if isinstance(obj, envs.Env):
+            if isinstance(obj, envs.BaseEnv):
                 #print "# Handle Env objects", type(obj)
                 dd = OrderedDict((_class_tuple(obj),))
                 for eg in obj.all():
