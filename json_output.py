@@ -31,7 +31,9 @@ class ConfigItemEncoder(json.JSONEncoder):
         property_methods: call @property methods and insert values in output, including a comment that the value is calculated
         """
         super(ConfigItemEncoder, self).__init__(**kwargs)
-        self.filter = filter_callable
+        self.root_special_keys = ('env', 'valid_envs')
+        self.filter_out_keys = self.root_special_keys + ('selected_env', 'contained_in', 'root_conf', 'attributes', 'frozen')
+        self.user_filter_callable = filter_callable        
         self.compact = compact
         self.property_methods = property_methods
         self.seen = {}
@@ -56,8 +58,17 @@ class ConfigItemEncoder(json.JSONEncoder):
 
         self.seen[id(obj)] = obj
 
+    def encode(self, obj, **kwargs):
+        #print self.__class__.__name__, "encode: type(obj)", type(obj)        
+        return super(ConfigItemEncoder, self).encode(obj, **kwargs)
+
+    def iterencode(self, obj, **kwargs):
+        #print self.__class__.__name__, "iterencode: type(obj)", type(obj)        
+        return super(ConfigItemEncoder, self).iterencode(obj, **kwargs)
+
     # pylint: disable=E0202
-    def default(self, obj):        
+    def default(self, obj):
+        #print self.__class__.__name__, "default: type(obj)", type(obj)
         try:
             if ConfigItemEncoder.recursion_check.in_default:
                 raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
@@ -68,10 +79,10 @@ class ConfigItemEncoder(json.JSONEncoder):
             if isinstance(obj, multiconf._ConfigBase):
                 #print "# Handle ConfigItems", type(obj)
                 dd = self._mc_class_dict(obj)
-                # Order 'env' first on root object
-                root_special_keys = ('env', 'valid_envs')
+
+                # Order 'env' first on root object                
                 if isinstance(obj, multiconf.ConfigRoot):
-                    key = root_special_keys[0]
+                    key = self.root_special_keys[0]
                     value = getattr(obj, key)
                     dd[key] = value
     
@@ -83,14 +94,12 @@ class ConfigItemEncoder(json.JSONEncoder):
                 if not self.property_methods:
                     return dd
 
-                # Handle property methods (defined in inherited classes)
+                # Handle property methods (defined in subclasses)
                 try:
                     for key in dir(obj):
                         if key in obj.attributes or key.startswith('_'):
                             continue
-                        if key in ('selected_env', 'contained_in', 'root_conf', 'attributes', 'frozen'):
-                            continue
-                        if key in root_special_keys:
+                        if key in self.filter_out_keys:
                             continue
                     
                         try:
@@ -112,10 +121,6 @@ class ConfigItemEncoder(json.JSONEncoder):
                             continue
                     
                         if type(val) == types.MethodType:
-                            continue
-                    
-                        if key in ('valid_envs', 'env'):
-                            dd[key] = val
                             continue
                     
                         if self.compact:
@@ -147,22 +152,18 @@ class ConfigItemEncoder(json.JSONEncoder):
             else:
                 #print "# Handle iterable objects", type(obj)
                 return list(iterable)
-    
-            try:
-                odict = obj.__dict__
-            except AttributeError:
-                pass
-            else:
-                #print "# Handle other class objects", type(obj)
+
+            if isinstance(obj, types.InstanceType):
+                #print "# Handle instances of old style classes", type(obj)
+                # Note that new style class instances are practically indistinguishable from other types of objects
                 dd = self._class_dict(obj)
                 for key, val in obj.__dict__.iteritems():
                     if key[0] != '_':
                         self._check_already_dumped(val)
                         dd[key] = val
                 return dd
-    
-            #print "# Handle builtin types", type(obj)
-            return obj
+
+            return "__json_error__ # don't know how to handle obj of type: " + repr(type(obj))
 
         except _AlreadySeen as seen:
             return seen.message

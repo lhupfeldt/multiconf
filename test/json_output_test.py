@@ -290,6 +290,26 @@ _f_expected_json_output = """{
 }"""
 
 
+_g_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "a": {
+            "__class__": "SomeClass", 
+            "__id__": 0000, 
+            "a": 187
+        }
+    }, 
+    "a": 0
+}"""
+
+
 @named_as('someitems')
 @repeat()
 class RepeatableItem(ConfigItem):
@@ -507,3 +527,20 @@ class MulticonfTest(unittest.TestCase):
             Nested()
 
         ok (replace_ids(cr.json())) == _f_expected_json_output
+
+    @test("json dump - non conf item")
+    def _g(self):
+        # This is an old style class
+        class SomeClass():
+            def __init__(self):
+                self.a = 187
+                
+        @named_as('someitem')
+        class Nested(ConfigItem):
+            def __init__(self):
+                super(Nested, self).__init__(a=SomeClass())
+        
+        with ConfigRoot(prod, [prod, pp], a=0) as cr:
+            Nested()
+
+        ok (replace_ids(cr.json())) == _g_expected_json_output
