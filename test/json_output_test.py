@@ -154,7 +154,7 @@ _c_expected_json_output = """{
         "name": "prod"
     }, 
     "someitem": {
-        "__class__": "Nested", 
+        "__class__": "SimpleItem", 
         "__id__": 0000, 
         "cycl": {
             "cyclic_item_ref": "#ref id: 0000"
@@ -280,7 +280,7 @@ _f_expected_json_output = """{
         "name": "prod"
     }, 
     "someitem": {
-        "__class__": "Nested", 
+        "__class__": "SimpleItem", 
         "__id__": 0000, 
         "b": {
             
@@ -298,7 +298,7 @@ _g_expected_json_output = """{
         "name": "prod"
     }, 
     "someitem": {
-        "__class__": "Nested", 
+        "__class__": "SimpleItem", 
         "__id__": 0000, 
         "a": {
             "__class__": "SomeClass", 
@@ -310,10 +310,32 @@ _g_expected_json_output = """{
 }"""
 
 
+_h_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitem": {
+        "__class__": "SimpleItem", 
+        "__id__": 0000, 
+        "func": "__json_error__ # don't know how to handle obj of type: <type 'function'>"
+    }
+}"""
+
+
 @named_as('someitems')
+@nested_repeatables('someitems')
 @repeat()
-class RepeatableItem(ConfigItem):
+class NestedRepeatable(ConfigItem):
     pass
+
+
+@named_as('someitem')
+class SimpleItem(ConfigItem):
+    def __init__(self, **kwargs):
+        super(SimpleItem, self).__init__(**kwargs)
 
 
 class MulticonfTest(unittest.TestCase):
@@ -321,12 +343,6 @@ class MulticonfTest(unittest.TestCase):
     def _a(self):
         @nested_repeatables('someitems')
         class root(ConfigRoot):
-            pass
-
-        @named_as('someitems')
-        @nested_repeatables('someitems')
-        @repeat()
-        class NestedRepeatable(ConfigItem):
             pass
 
         with root(prod, [prod, pp], a=0) as cr:
@@ -350,12 +366,6 @@ class MulticonfTest(unittest.TestCase):
         class root(ConfigRoot):
             pass
 
-        @named_as('someitems')
-        @nested_repeatables('someitems')
-        @repeat()
-        class NestedRepeatable(ConfigItem):
-            pass
-
         @named_as('anitem')
         class AnXItem(ConfigItem):
             pass
@@ -375,15 +385,11 @@ class MulticonfTest(unittest.TestCase):
 
 
     @test("json dump - cyclic references between conf items and other objects")
-    def _c(self):
-        @named_as('someitem')
-        class Nested(ConfigItem):
-            pass
-        
+    def _c(self):        
         cycler = {}
         
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
-            with Nested(id='b1', someattr=12, cycl=cycler) as ref_obj2:
+            with SimpleItem(id='b1', someattr=12, cycl=cycler) as ref_obj2:
                 pass            
             cycler['cyclic_item_ref'] = ref_obj2
 
@@ -518,13 +524,8 @@ class MulticonfTest(unittest.TestCase):
             def __repr__(self):
                 return "<Key object>"
 
-        @named_as('someitem')
-        class Nested(ConfigItem):
-            def __init__(self):
-                super(Nested, self).__init__(b={Key():2})
-        
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
-            Nested()
+            SimpleItem(b={Key():2})
 
         ok (replace_ids(cr.json())) == _f_expected_json_output
 
@@ -535,12 +536,17 @@ class MulticonfTest(unittest.TestCase):
             def __init__(self):
                 self.a = 187
                 
-        @named_as('someitem')
-        class Nested(ConfigItem):
-            def __init__(self):
-                super(Nested, self).__init__(a=SomeClass())
-        
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
-            Nested()
+            SimpleItem(a=SomeClass())
 
         ok (replace_ids(cr.json())) == _g_expected_json_output
+
+    @test("json dump - unhandled item (function ref)")
+    def _h(self):
+        def fff():
+            pass
+                
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            SimpleItem(func=fff)
+
+        ok (replace_ids(cr.json())) == _h_expected_json_output
