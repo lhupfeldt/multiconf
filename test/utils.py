@@ -38,7 +38,7 @@ def config_warning(file_name, line_num, *lines):
 
 # Handle variable ids in json/repr output
 
-_replace_ids_regex = re.compile(r'("__id__"|, id): [0-9]+("?),')
+_replace_ids_regex = re.compile(r'("__id__"|, id| #id): [0-9]+("?),')
 _replace_refs_regex = re.compile(r'": "#ref id: [0-9]+"')
 _replace_named_as_regex = re.compile(r" #as: '[^,]+',")
 

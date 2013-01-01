@@ -557,6 +557,9 @@ class MulticonfTest(unittest.TestCase):
             SimpleItem(a=SomeClass())
 
         ok (replace_ids(cr.json())) == _g_expected_json_output
+        # to_compact will not handle conversion of non-multiconf object representation, an extra '#as...' is inserted,
+        # we remove it again
+        ok (replace_ids(cr.json(compact=True))) == to_compact(_g_expected_json_output).replace("SomeClass #as: 'xxxx', id", 'SomeClass #id')
 
     @test("json dump - unhandled item (function ref)")
     def _h(self):
