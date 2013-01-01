@@ -325,6 +325,23 @@ _h_expected_json_output = """{
 }"""
 
 
+_i_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "someitem": {
+        "__class__": "SimpleItem", 
+        "__id__": 0000, 
+        "a": [
+            1
+        ]
+    }
+}"""
+
+
 @named_as('someitems')
 @nested_repeatables('someitems')
 @repeat()
@@ -550,3 +567,14 @@ class MulticonfTest(unittest.TestCase):
             SimpleItem(func=fff)
 
         ok (replace_ids(cr.json())) == _h_expected_json_output
+
+    @test("json dump - iterable")
+    def _i(self):
+        class MyIterable(object):
+            def __iter__(self):
+                yield 1
+
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            SimpleItem(a=MyIterable())
+
+        ok (replace_ids(cr.json())) == _i_expected_json_output
