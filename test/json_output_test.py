@@ -342,6 +342,11 @@ _i_expected_json_output = """{
 }"""
 
 
+@nested_repeatables('someitems')
+class root(ConfigRoot):
+    pass
+
+
 @named_as('someitems')
 @nested_repeatables('someitems')
 @repeat()
@@ -358,10 +363,6 @@ class SimpleItem(ConfigItem):
 class MulticonfTest(unittest.TestCase):
     @test("json dump - simple")
     def _a(self):
-        @nested_repeatables('someitems')
-        class root(ConfigRoot):
-            pass
-
         with root(prod, [prod, pp], a=0) as cr:
             NestedRepeatable(id='a-level1')
             with NestedRepeatable(id='b-level1') as ci:
@@ -379,10 +380,6 @@ class MulticonfTest(unittest.TestCase):
 
     @test("json dump - cyclic references in conf items")
     def _b(self):
-        @nested_repeatables('someitems')
-        class root(ConfigRoot):
-            pass
-
         @named_as('anitem')
         class AnXItem(ConfigItem):
             pass
@@ -451,11 +448,12 @@ class MulticonfTest(unittest.TestCase):
                 
                 with ConfigRoot(prod, [prod, pp], a=0) as cr:
                     Nested()
-        finally:
+        except Exception as ex:
             _sout, serr = d_io
             # TODO
             ok (serr) == ''
             ok (replace_ids(cr.json())) == _e2_expected_json_output
+            ok (ex.message) == "Something is wrong"
 
     @test("json dump - property method raises ConfigException")
     def _e2b(self):
@@ -469,71 +467,69 @@ class MulticonfTest(unittest.TestCase):
                 
                 with ConfigRoot(prod, [prod, pp], a=0) as cr:
                     Nested()
-        finally:
+        except ConfigException as ex:
             _sout, serr = d_io
             # TODO
             ok (serr) == ''
             ok (replace_ids(cr.json())) == _e2b_expected_json_output
+            ok (ex.message) == "Something is wrong"
+
+    @test("json dump - property method returns self")
+    def _e3(self):
+        with dummy.dummy_io('stdin not used') as d_io:
+            @named_as('someitem')
+            class Nested(ConfigItem):
+                @property
+                def m(self):
+                    return self
+            
+            with ConfigRoot(prod, [prod, pp], a=0) as cr:
+                Nested()
+
+        _sout, serr = d_io
+        # TODO
+        ok (serr) == ''
+        ok (replace_ids(cr.json())) == _e3_expected_json_output
 
     @test("json dump - property method returns already seen conf item")
-    def _e3(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                @named_as('someitem')
-                class Nested(ConfigItem):
-                    @property
-                    def m(self):
-                        return self
-                
-                with ConfigRoot(prod, [prod, pp], a=0) as cr:
-                    Nested()
-        finally:
-            _sout, serr = d_io
-            # TODO
-            ok (serr) == ''
-            ok (replace_ids(cr.json())) == _e3_expected_json_output
-
-    @test("json dump - property method returns not previously seen conf item")
     def _e4(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                @named_as('someitem')
-                class Nested(ConfigItem):
-                    @property
-                    def other_conf_item(self):
-                        return self.root_conf.referenced
+        with dummy.dummy_io('stdin not used') as d_io:
+            @named_as('someitem')
+            class Nested(ConfigItem):
+                @property
+                def other_conf_item(self):
+                    return self.root_conf.referenced
 
-                @named_as('referenced')
-                class X(ConfigItem):
-                    pass
-                
-                with ConfigRoot(prod, [prod, pp], a=0) as cr:
-                    X(a=0)
-                    Nested()
-        finally:
-            _sout, serr = d_io
-            # TODO
-            ok (serr) == ''
-            ok (replace_ids(cr.json())) == _e4_expected_json_output
+            @named_as('referenced')
+            class X(ConfigItem):
+                pass
+            
+            with ConfigRoot(prod, [prod, pp], a=0) as cr:
+                X(a=0)
+                Nested()
+
+        _sout, serr = d_io
+        # TODO
+        ok (serr) == ''
+        ok (replace_ids(cr.json())) == _e4_expected_json_output
 
 
     @test("json dump - property method calls json")
     def _e5(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                @named_as('someitem')
-                class Nested(ConfigItem):
-                    @property
-                    def other_conf_item(self):
-                        print self.json()
-                
-                with ConfigRoot(prod, [prod, pp], a=0) as cr:
-                    Nested()
-        finally:
-            _sout, serr = d_io
-            # TODO
-            ok (serr) == ''
-            ok (replace_ids(cr.json())) == _e5_expected_json_output
+        with dummy.dummy_io('stdin not used') as d_io:
+            @named_as('someitem')
+            class Nested(ConfigItem):
+                @property
+                def other_conf_item(self):
+                    print self.json()
+            
+            with ConfigRoot(prod, [prod, pp], a=0) as cr:
+                Nested()
+
+        _sout, serr = d_io
+        # TODO
+        ok (serr) == ''
+        ok (replace_ids(cr.json())) == _e5_expected_json_output
 
     @test("json dump - non conf item not json-serializable")
     def _f(self):
