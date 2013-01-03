@@ -13,7 +13,9 @@ class AttributeCollectorTest(unittest.TestCase):
 
     @test("AttributeCollector - repr")
     def _a(self):
-        ac = AttributeCollector(attribute_name='some_name1', container='no-container')
+        class Container(object):
+            attributes = {}
+        ac = AttributeCollector(attribute_name='some_name1', container=Container(), has_default=False, default_value=None)
         ok (repr(ac)) == "AttributeCollector: 'some_name1':not-frozen, values: {}"
         ac._frozen = True
         ok (repr(ac)) == "AttributeCollector: 'some_name1':frozen, values: {}"

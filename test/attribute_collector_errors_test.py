@@ -14,7 +14,9 @@ class AttributeCollectorTest(unittest.TestCase):
 
     @test("assigning property on AttributeCollector - not allowed")
     def _a(self):
-        ac = AttributeCollector('attribute_name', 'container')
+        class Container(object):
+            attributes = {}
+        ac = AttributeCollector('attribute_name', Container(), has_default=False, default_value=None)
 
         try:
             ac.someprop = 1

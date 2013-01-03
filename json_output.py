@@ -44,7 +44,7 @@ class ConfigItemEncoder(json.JSONEncoder):
         return OrderedDict((_class_tuple(obj), ('__id__', id(obj))))
 
     def _mc_class_dict(self, obj):
-        not_frozen_msg = "" if obj.frozen else ", not-frozen, defaults: " + repr(obj._defaults)
+        not_frozen_msg = "" if obj.frozen else ", not-frozen"
         if self.compact:
             msg = " #as: '" + obj.named_as() + "', id: " + str(id(obj)) + not_frozen_msg
             return OrderedDict((_class_tuple(obj, msg),))

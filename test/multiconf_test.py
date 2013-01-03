@@ -90,6 +90,26 @@ class MulticonfTest(unittest.TestCase):
         for ci in cr.children.values():
             fail ("list should be empty")
 
+    @test("unnamed nested repeatable item (no 'name' or 'id')")
+    def _c(self):
+        with root(prod, [prod, pp]) as cr:
+            with rchild(aa=1, bb=1) as ci:
+                ci.aa(prod=3)
+            ci_id = id(ci)
+
+        ok (cr.children[ci_id].aa) == 3
+
+    @test("unnamed nested repeatable item (no default 'name' or 'id')")
+    def _c(self):
+        with root(prod, [prod, pp]) as cr:
+            with rchild(aa=1, bb=1) as ci:
+                ci.name(prod='somevalue', pp='another')
+            ci_id = id(ci)
+
+        ok (cr.children[ci_id].aa) == 1
+        ok (cr.children[ci_id].name) == 'somevalue'
+            
+
     @test("iteritems - root, attributes")
     def _d(self):
         with ConfigRoot(prod, [prod, pp], a=1, b=2) as cr:
@@ -119,15 +139,25 @@ class MulticonfTest(unittest.TestCase):
             cr.a(prod=1, pp=2)
         ok (cr.a) == 1
 
-    # TODO
-    @test("automatic freeze on attr access outside of with statement")
-    def _h(self):
+    @test("automatic freeze of child on exit")
+    def _freeze0(self):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             ConfigItem(something=1)
         ok (cr.ConfigItem.something) == 1
 
+    @test("automatic freeze of previous sibling")
+    def _freeze1(self):
+        class X(ConfigItem):
+            def __init__(self):
+                super(X, self).__init__()
+                ok (self.contained_in.children['a'].x) == 18
+
+        with root(prod, [prod, pp], a=0):
+            rchild(id='a', x=18)
+            X()
+
     @test("automatic contained item freeze on exit")
-    def _i(self):
+    def _freeze2(self):
         @nested_repeatables('recursive_items')
         class root(ConfigRoot):
             pass
@@ -144,7 +174,6 @@ class MulticonfTest(unittest.TestCase):
                 NestedRepeatable(id='c', something=2)
             NestedRepeatable(id='c', something=3)
 
-        ok (repr(cr).find("frozen")) == -1
         ok (len(cr.recursive_items['a'].recursive_items)) == 0
         ok (len(cr.recursive_items['b'].recursive_items)) == 3
         ok (len(cr.recursive_items['c'].recursive_items)) == 0
@@ -158,6 +187,60 @@ class MulticonfTest(unittest.TestCase):
         ok (index) == 3
 
         ok (cr.recursive_items['b'].recursive_items['b'].recursive_items['b'].a) == 1
+
+    @test("automatic freeze of property defined in with_statement")
+    def _freeze3(self):
+        with root(prod, [prod, pp], a=0):
+            with rchild(id='a') as rc:
+                rc.y(prod=1, pp=2)
+
+                ok (rc.y) == 1
+
+    @test("automatic freeze of property overridden in with_statement")
+    def _freeze4(self):
+        with root(prod, [prod, pp], a=0):
+            with rchild(id='a', y=18) as rc:
+                rc.y(prod=7, pp=2)
+
+                ok (rc.y) == 7
+
+    @test("explicit freeze of all defined properties")
+    def _freeze5(self):
+        with root(prod, [prod, pp], a=0):
+            with rchild(id='a', x=17, z=18) as rc:
+                rc.y(prod=7, pp=2)
+                rc.z(pp=3)
+                rc.freeze()
+
+                ok (rc.y) == 7
+                ok (rc.x) == 17
+                ok (rc.z) == 18
+
+    @test("explicit freeze of single property")
+    def _freeze6(self):
+        with root(prod, [prod, pp], a=0):
+            with rchild(id='a', x=19, z=20) as rc:
+                rc.y(prod=7, pp=2)
+                ok (rc.y) == 7
+                rc.z(pp=3)
+                ok (rc.z) == 20
+                rc.x.freeze()
+                ok (rc.x) == 19
+
+
+    # TODO: allow this (while inside with statement only)
+    #@test("define new attribute after freeze")
+    #def _freeze6(self):
+    #    with root(prod, [prod, pp], a=0):
+    #        with rchild(id='a', x=19, z=20) as rc:
+    #            rc.y(prod=7, pp=2)
+    #            ok (rc.y) == 7
+    #            rc.z(pp=3)
+    #            ok (rc.z) == 20
+    #            rc.freeze()
+    #            ok (rc.x) == 19
+    #            rc.a(prod=3, pp=4)
+    #            ok (rc.a) == 3
 
     @test("find_contained_in(named_as)")
     def _j(self):
@@ -311,30 +394,30 @@ class MulticonfTest(unittest.TestCase):
                     
         ok (cr.x.number) == 7
 
-    # TODO
-    #@test("ConfigBuilder - access to contained_in from __init__")
-    #def _l4(self):
-    #    @named_as('x')
-    #    class X(ConfigItem):
-    #        pass
-    #    
-    #    class XBuilder(ConfigBuilder):            
-    #        def __init__(self):
-    #            super(XBuilder, self).__init__(number=self.contained_in.aaa)
-    #
-    #        def build(self):
-    #            with X(number=self.number):
-    #                pass
-    #
-    #    @nested_repeatables('xses')
-    #    class Root(ConfigRoot):
-    #        aaa = 7
-    #
-    #    with Root(prod, [prod, pp]) as cr:
-    #        cr.freeze()
-    #        XBuilder()
-    #                
-    #    ok (cr.x.number) == 7
+    @test("ConfigBuilder - access to contained_in from __init__")
+    def _l4(self):
+        @named_as('x')
+        class X(ConfigItem):
+            pass
+
+        class XBuilder(ConfigBuilder):
+            def __init__(self):
+                super(XBuilder, self).__init__()
+                self.number(default=self.contained_in.aaa)
+
+            def build(self):
+                with X(number=self.number):
+                    pass
+
+        @nested_repeatables('xses')
+        class Root(ConfigRoot):
+            aaa = 7
+
+        with Root(prod, [prod, pp]) as cr:
+            cr.freeze()
+            XBuilder()
+
+        ok (cr.x.number) == 7
 
     @test("env value overrides group value")
     def _m(self):

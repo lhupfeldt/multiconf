@@ -6,31 +6,33 @@ from .config_errors import ConfigException, NoAttributeException, _error_msg as 
 
 
 class AttributeCollector(object):
-    def __init__(self, attribute_name, container):
+    def __init__(self, attribute_name, container, has_default, default_value):
         self._attribute_name = attribute_name
         self._container = container
+        # Insert self in container
+        self._container.attributes[self._attribute_name] = self
+        self._has_default = has_default
+        self._default_value = default_value
         self._env_values = {}
         self._frozen = False
 
     def __call__(self, **kwargs):
         self._frozen = True
 
-        if self._attribute_name in self._container.attributes:
-            error(0, "Redefined attribute " + repr(self._attribute_name))
-            raise ConfigException("Attribute redefinition error: " + repr(self._attribute_name))
-
-        self._container.attributes[self._attribute_name] = self
-
         # For error messages
         eg_from = {}
         num_errors = 0
 
         attr_types = set()
-
-        defaults = self._container._defaults
-        if self._attribute_name in defaults:
-            if defaults[self._attribute_name] != None:
-                attr_types.add(type(defaults[self._attribute_name]))
+        if self._has_default and self._default_value != None:
+            attr_types.add(type(self._default_value))
+        
+        if 'default' in kwargs:            
+            if self._has_default:
+                raise ConfigException("Attribute already has a default value: " + repr(self._attribute_name))
+            self._has_default = True
+            self._default_value = kwargs['default']
+            del kwargs['default']
 
         # Validate and assign given env values to container
         for eg_name, value in kwargs.iteritems():
@@ -80,9 +82,9 @@ class AttributeCollector(object):
                     # The attribute is set with an env specific value
                     continue
 
-                if self._attribute_name in defaults:
+                if self._has_default:
                     # The attribute is set with a default value, update env value
-                    self._env_values[env] = defaults[self._attribute_name]
+                    self._env_values[env] = self._default_value
                     continue
 
                 # Check for required_if, the required_if atributes are optional if required_if is false or not specified for the env
@@ -102,9 +104,6 @@ class AttributeCollector(object):
                 group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
                 msg = "Attribute: " + repr(self._attribute_name) + " did not receive a value for env " + repr(env)
                 num_errors = error(num_errors, msg + group_msg)
-
-        if self._attribute_name in defaults:
-            del defaults[self._attribute_name]
 
         if num_errors:
             raise ConfigException("There were " + repr(num_errors) + " errors when defining attribute " + repr(self._attribute_name))
@@ -134,3 +133,6 @@ class AttributeCollector(object):
     def override(self, other):
         assert other._frozen
         self._env_values.update(other._env_values)
+
+    def freeze(self):
+        self()

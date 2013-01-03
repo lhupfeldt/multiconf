@@ -32,69 +32,69 @@ _a_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitems": {
         "a-level1": {
             "__class__": "NestedRepeatable", 
             "__id__": 0000, 
-            "someitems": {}, 
-            "id": "a-level1"
+            "id": "a-level1", 
+            "someitems": {}
         }, 
         "b-level1": {
             "__class__": "NestedRepeatable", 
             "__id__": 0000, 
+            "id": "b-level1", 
             "someitems": {
                 "a-level2": {
                     "__class__": "NestedRepeatable", 
                     "__id__": 0000, 
-                    "someitems": {}, 
-                    "id": "a-level2"
+                    "id": "a-level2", 
+                    "someitems": {}
                 }, 
                 "b-level2": {
                     "__class__": "NestedRepeatable", 
                     "__id__": 0000, 
+                    "id": "b-level2", 
                     "someitems": {
                         "a-level3": {
                             "__class__": "NestedRepeatable", 
                             "__id__": 0000, 
-                            "someitems": {}, 
-                            "id": "a-level3"
+                            "id": "a-level3", 
+                            "someitems": {}
                         }, 
                         "b-level3": {
                             "__class__": "NestedRepeatable", 
                             "__id__": 0000, 
+                            "id": "b-level3", 
                             "someitems": {}, 
-                            "a": 1, 
-                            "id": "b-level3"
+                            "a": 1
                         }, 
                         "c-level3": {
                             "__class__": "NestedRepeatable", 
                             "__id__": 0000, 
-                            "someitems": {}, 
                             "something": 1, 
-                            "id": "c-level3"
+                            "id": "c-level3", 
+                            "someitems": {}
                         }
-                    }, 
-                    "id": "b-level2"
+                    }
                 }, 
                 "c-level2": {
                     "__class__": "NestedRepeatable", 
                     "__id__": 0000, 
-                    "someitems": {}, 
                     "something": 2, 
-                    "id": "c-level2"
+                    "id": "c-level2", 
+                    "someitems": {}
                 }
-            }, 
-            "id": "b-level1"
+            }
         }, 
         "c-level1": {
             "__class__": "NestedRepeatable", 
             "__id__": 0000, 
-            "someitems": {}, 
             "something": 3, 
-            "id": "c-level1"
+            "id": "c-level1", 
+            "someitems": {}
         }
-    }, 
-    "a": 0
+    }
 }"""
 
 
@@ -105,44 +105,44 @@ _b_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitems": {
         "a1": {
             "__class__": "NestedRepeatable", 
             "__id__": 0000, 
+            "id": "a1", 
             "someitems": {}, 
-            "some_value": 2, 
-            "id": "a1"
+            "some_value": 2
         }, 
         "b1": {
             "__class__": "NestedRepeatable", 
             "__id__": 0000, 
+            "someattr": 12, 
+            "id": "b1", 
             "someitems": {
                 "a2": {
                     "__class__": "NestedRepeatable", 
                     "__id__": 0000, 
-                    "someitems": {}, 
                     "id": "a2", 
-                    "referenced_item": "#ref id: 0000"
+                    "referenced_item": "#ref id: 0000", 
+                    "someitems": {}
                 }, 
                 "b2": {
                     "__class__": "NestedRepeatable", 
                     "__id__": 0000, 
+                    "id": "b2", 
                     "someitems": {}, 
-                    "a": 1, 
-                    "id": "b2"
+                    "a": 1
                 }
-            }, 
-            "someattr": 12, 
-            "id": "b1"
+            }
         }
     }, 
     "anitem": {
         "__class__": "AnXItem", 
         "__id__": 0000, 
-        "ref": "#ref id: 0000", 
-        "something": 3
-    }, 
-    "a": 0
+        "something": 3, 
+        "ref": "#ref id: 0000"
+    }
 }"""
 
 
@@ -153,6 +153,7 @@ _c_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitem": {
         "__class__": "SimpleItem", 
         "__id__": 0000, 
@@ -161,8 +162,7 @@ _c_expected_json_output = """{
         }, 
         "id": "b1", 
         "someattr": 12
-    }, 
-    "a": 0
+    }
 }"""
 
 
@@ -173,13 +173,13 @@ _d_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitem": {
         "__class__": "Nested", 
         "__id__": 0000, 
         "m": 1, 
         "m #calculated": true
-    }, 
-    "a": 0
+    }
 }"""
 
 
@@ -190,12 +190,12 @@ _e_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitem": {
         "__class__": "Nested", 
         "__id__": 0000, 
         "m #invalid usage context": "InvalidUsageException('No m now',)"
-    }, 
-    "a": 0
+    }
 }"""
 
 
@@ -206,12 +206,12 @@ _e2_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitem": {
         "__class__": "Nested", 
         "__id__": 0000, 
         "'m' # json_error trying to handle property method": "Exception('Something is wrong',)"
-    }, 
-    "a": 0
+    }
 }"""
 
 
@@ -225,12 +225,12 @@ _e3_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitem": {
         "__class__": "Nested", 
         "__id__": 0000, 
         "m": "#ref id: 0000"
-    }, 
-    "a": 0
+    }
 }"""
 
 
@@ -241,6 +241,7 @@ _e4_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "referenced": {
         "__class__": "X", 
         "__id__": 0000, 
@@ -250,8 +251,7 @@ _e4_expected_json_output = """{
         "__class__": "Nested", 
         "__id__": 0000, 
         "other_conf_item": "#ref id: 0000"
-    }, 
-    "a": 0
+    }
 }"""
 
 
@@ -262,12 +262,12 @@ _e5_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitem": {
         "__class__": "Nested", 
         "__id__": 0000, 
         "'other_conf_item' # json_error trying to handle property method": "NestedJsonCallError('Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?',)"
-    }, 
-    "a": 0
+    }
 }"""
 
 
@@ -279,14 +279,14 @@ _f_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitem": {
         "__class__": "SimpleItem", 
         "__id__": 0000, 
         "b": {
             
         }
-    }, 
-    "a": 0
+    }
 }"""
 
 
@@ -297,6 +297,7 @@ _g_expected_json_output = """{
         "__class__": "Env", 
         "name": "prod"
     }, 
+    "a": 0, 
     "someitem": {
         "__class__": "SimpleItem", 
         "__id__": 0000, 
@@ -305,8 +306,7 @@ _g_expected_json_output = """{
             "__id__": 0000, 
             "a": 187
         }
-    }, 
-    "a": 0
+    }
 }"""
 
 

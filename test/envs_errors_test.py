@@ -187,6 +187,28 @@ class EnvsTest(unittest.TestCase):
             #ok (serr) == ce(errorline, "TODO")
             ok (ex.message) == "Env: 'name' must not start with '_', got: '_a'"
 
+    @test("env - name == 'default'")
+    def _o(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                _e1 = ef.Env("default")
+                fail ("Expected exception")
+        except EnvException as ex:
+            sout, serr = d_io
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "Env: 'default' is a reserved name"
+
+    @test("group - name == 'default'")
+    def _o(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                e1 = ef.Env("e1")
+                _g1 = ef.EnvGroup("default", e1)
+                fail ("Expected exception")
+        except EnvException as ex:
+            sout, serr = d_io
+            #ok (serr) == ce(errorline, "TODO")
+            ok (ex.message) == "EnvGroup: 'default' is a reserved name"
 
     @test("no group members")
     def _g(self):

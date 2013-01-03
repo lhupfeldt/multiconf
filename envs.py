@@ -17,6 +17,8 @@ class BaseEnv(object):
             raise EnvException(self.__class__.__name__ + ": 'name' must not be empty")
         if name[0] == '_':
             raise EnvException(self.__class__.__name__ + ": 'name' must not start with '_', got: " + repr(name))
+        if name == 'default':
+            raise EnvException(self.__class__.__name__ + ": 'default' is a reserved name")
 
         self._name = name
         self.members = []

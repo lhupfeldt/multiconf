@@ -42,7 +42,8 @@ _a2_expected_repr = """{
 class MultiConfAccessErrorsTest(unittest.TestCase):
     @test("access undefined attribute")
     def _a(self):
-        cr = ConfigRoot(prod, [prod])
+        with ConfigRoot(prod, [prod]) as cr:
+            pass
 
         try:
             print cr.b

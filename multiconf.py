@@ -11,7 +11,7 @@ from .attribute_collector import AttributeCollector
 from .config_errors import ConfigBaseException, ConfigException, NoAttributeException
 import json_output
 
-_debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTION')).lower() == 'true'
+_debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
 
 
 class _ConfigBase(object):
@@ -25,17 +25,18 @@ class _ConfigBase(object):
     _deco_required_if = (None, ())
 
     def __init__(self, **attr):
-        # Object linking
         self._root_conf = None
-
-        # Dict of dicts: attributes['a'] = dict(Env('prod')=1, EnvGroup('dev')=0)
         self._attributes = OrderedDict()
+        self._frozen = False
+
+        # Prepare collectors with default values
+        for key, value in attr.iteritems():
+            if key in self.__class__._deco_nested_repeatables:
+                raise ConfigException(repr(key) + ' defined as default value shadows a nested-repeatable')
+            AttributeCollector(key, self, has_default=True, default_value=value)
+
         for key in self.__class__._deco_nested_repeatables:
             self._attributes[key] = OrderedDict()
-
-        self._defaults = attr
-        self._frozen = False
-        self._may_freeze = True
 
         # Builders are only inserted here so that they can be frozen
         self._builders = []
@@ -52,7 +53,7 @@ class _ConfigBase(object):
     #     indent1 = '  ' * indent_level
     #     indent2 =  indent1 + '     '
     #     # + ':' + self.__class__.__name__
-    #     not_frozen_msg = "" if self._frozen else " not-frozen, defaults: " + repr(self._defaults)
+    #     not_frozen_msg = "" if self._frozen else " not-frozen"
     #     return self.named_as() + not_frozen_msg + ' {\n' + \
     #         ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.iteritems()]) + \
     #         indent1 + '}'
@@ -72,7 +73,6 @@ class _ConfigBase(object):
 
     def __enter__(self):
         assert not self._frozen
-        self._may_freeze = False
         return self
 
     def freeze_validate_required(self):
@@ -109,12 +109,23 @@ class _ConfigBase(object):
         self.freeze_validate_required()
         self.freeze_validate_required_if()
 
-    def _freeze(self):
-        # Collect remaining default values
-        for name in list(self._defaults):
-            AttributeCollector(name, self)()
-        self._frozen = True
+    def freeze(self):
+        """Recursively freeze contained items bottom up"""
+        for _child_name, child_value in self._attributes.iteritems():
+            if isinstance(child_value, OrderedDict):
+                for item in child_value.itervalues():
+                    if not item._frozen:
+                        item.freeze()
+                continue
 
+            if not child_value._frozen:
+                child_value.freeze()
+
+        for builder in self._builders:
+            if not builder._frozen:
+                builder.freeze()
+
+        self._frozen = True
         try:
             self.freeze_validation()
             return self
@@ -124,24 +135,6 @@ class _ConfigBase(object):
             # Strip stack
             raise ex
 
-    def freeze(self):
-        """Recursively freeze contained items bottom up"""
-        for _child_name, child_value in self.iteritems():
-            if isinstance(child_value, OrderedDict):
-                for item in child_value.itervalues():
-                    if not item._frozen:
-                        item.freeze()
-
-            if isinstance(child_value, _ConfigItem):
-                if not child_value._frozen:
-                    child_value.freeze()
-
-        for builder in self._builders:
-            if not builder._frozen:
-                builder.freeze()
-
-        return self._freeze()
-
     @property
     def frozen(self):
         """Return frozen state"""
@@ -149,7 +142,6 @@ class _ConfigBase(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
-            self._may_freeze = True
             self.freeze()
         except ConfigBaseException as ex:
             if _debug_exc:
@@ -198,20 +190,17 @@ class _ConfigBase(object):
         if name.startswith('__'):
             super(_ConfigBase, self).__getattr__(name)
 
-        if not self._frozen and self._may_freeze:
-            self.freeze()
-
-        if not self._frozen:
-            try:
-                # Return existing collector/dict of nested items if any
-                coll = self._attributes[name]
-                if type(coll) in (AttributeCollector, OrderedDict):
-                    return coll
-                if isinstance(coll, _ConfigItem):
-                    return AttributeCollector(name, self)
-                raise Exception("Internal error, unexpected type: " + repr(type(coll)) + ':' + repr(coll))
-            except KeyError:
-                return AttributeCollector(name, self)
+        try:
+            # Return existing collector/(dict of)nested item(s) if any
+            coll = self._attributes[name]
+            if isinstance(coll, (ConfigItem, OrderedDict)):
+                return coll
+            assert isinstance(coll, AttributeCollector), "Expected AttributeCollector, got: " + repr(type(coll))
+            if not coll._frozen:
+                return coll
+        except KeyError:
+            if not self._frozen:
+                return AttributeCollector(name, self, has_default=False, default_value=None)
 
         try:
             return self.getattr_env(name, self.env)
@@ -242,7 +231,7 @@ class _ConfigBase(object):
 
     @property
     def env(self):
-        return self._root_conf.selected_env
+        return self._root_conf._selected_env
 
     @property
     def valid_envs(self):
@@ -334,19 +323,14 @@ class ConfigRoot(_ConfigItem):
         self._validate_recursively()
 
     @property
-    def selected_env(self):
-        return self._selected_env
-
-    @property
     def valid_envs(self):
         return self._valid_envs
 
 
-class ConfigItem(_ConfigItem):
+class _ContainedConfigBase(_ConfigBase):
     def __init__(self, **attr):
-        super(ConfigItem, self).__init__(**attr)
+        super(_ContainedConfigBase, self).__init__(**attr)
 
-        # Automatic Nested Insert in parent
         if not self.__class__._nested:
             raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
 
@@ -354,7 +338,20 @@ class ConfigItem(_ConfigItem):
         self._contained_in = self.__class__._nested[-1]
         self._root_conf = self._contained_in.root_conf
 
-        # Insert self in containing Item's attributes
+        # Freeze attributes on parent-container and previously defined siblings
+        try:
+            self._contained_in.freeze()
+        except ConfigBaseException as ex:
+            if _debug_exc:
+                raise
+            raise ex
+
+
+class ConfigItem(_ContainedConfigBase, _ConfigItem):
+    def __init__(self, **attr):
+        super(ConfigItem, self).__init__(**attr)
+
+        # Automatic Nested Insert in parent, insert self in containing Item's attributes
         my_key = self.named_as()
 
         if self.__class__._deco_repeatable:
@@ -368,11 +365,14 @@ class ConfigItem(_ConfigItem):
             # Insert in Ordered dict by 'id' or 'name', 'id' is preferred if given
             try:
                 try:
-                    obj_key = self._defaults['id']
+                    obj_key = self._attributes['id']
                 except KeyError:
-                    obj_key = self._defaults['name']
+                    obj_key = self._attributes['name']
+                if not obj_key._has_default:
+                    raise KeyError()
+                obj_key = obj_key._default_value
 
-                # Check that we are no replacing an object with the same id/name
+                # Check that we are not replacing an object with the same id/name
                 if self._contained_in.attributes[my_key].get(obj_key):
                     raise ConfigException("Re-used id/name " + repr(obj_key) + " in nested objects")
             except KeyError:
@@ -393,17 +393,13 @@ class ConfigItem(_ConfigItem):
         self._contained_in.attributes[my_key] = self
 
 
-class ConfigBuilder(_ConfigBase):
+class ConfigBuilder(_ContainedConfigBase):
     # Decoration attributes
     _deco_override = []
 
     def __init__(self, **attr):
         super(ConfigBuilder, self).__init__(**attr)
         self._override_keys = attr.keys()
-
-        # Set back reference to containing Item and root item
-        self._contained_in = self.__class__._nested[-1]
-        self._root_conf = self._contained_in.root_conf
 
         # Append self to containing Item's builders list so that parent can freeze us
         self._contained_in._builders.append(self)
