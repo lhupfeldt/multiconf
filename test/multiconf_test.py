@@ -487,3 +487,33 @@ class MulticonfTest(unittest.TestCase):
 
         ok (cr.valid_envs) == ve
         ok (cr.ConfigItem.valid_envs) == ve
+
+    @test("required attributes - not required on imtermediate freeze - configroot")
+    def _freeze_validation1(self):
+        @required('anattr, anotherattr')
+        class root(ConfigRoot):
+            pass
+
+        with root(prod, [prod]) as cr:
+            cr.anattr(prod=1)
+            ok (cr.anattr) == 1
+            cr.freeze()
+            cr.anotherattr(prod=2)
+            ok (cr.anotherattr) == 2
+
+    @test("required attributes - not required on imtermediate freeze - configitem")
+    def _freeze_validation2(self):
+        class root(ConfigRoot):
+            pass
+
+        @required('a, b')
+        class item(ConfigItem):
+            pass
+
+        with root(prod, [prod]) as cr:
+            with item() as ii:
+                ii.a(prod=1)
+                ok (cr.item.a) == 1
+                ii.freeze()
+                ii.b(prod=2)
+                ok (cr.item.b) == 2

@@ -28,6 +28,7 @@ class _ConfigBase(object):
         self._root_conf = None
         self._attributes = OrderedDict()
         self._frozen = False
+        self._may_validate = True
 
         # Prepare collectors with default values
         for key, value in attr.iteritems():
@@ -73,6 +74,7 @@ class _ConfigBase(object):
 
     def __enter__(self):
         assert not self._frozen
+        self._may_validate = False
         return self
 
     def freeze_validate_required(self):
@@ -110,7 +112,11 @@ class _ConfigBase(object):
         self.freeze_validate_required_if()
 
     def freeze(self):
-        """Recursively freeze contained items bottom up"""
+        """
+        Recursively freeze contained items bottom up.
+        If self is ready to be validated (exit from with_statement or not declared in a with_statement), self
+        will be frozen and validated
+        """
         for _child_name, child_value in self._attributes.iteritems():
             if isinstance(child_value, OrderedDict):
                 for item in child_value.itervalues():
@@ -124,6 +130,9 @@ class _ConfigBase(object):
         for builder in self._builders:
             if not builder._frozen:
                 builder.freeze()
+
+        if not self._may_validate:
+            return self
 
         self._frozen = True
         try:
@@ -141,11 +150,13 @@ class _ConfigBase(object):
         return self._frozen
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self._may_validate = True
         try:
             self.freeze()
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
+            # Strip stack
             raise ex
 
     def __setattr__(self, name, value):

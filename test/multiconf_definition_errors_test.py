@@ -53,7 +53,7 @@ _k1_expected = """'RepeatableItems': {
 _k4_expected = """'RepeatableItems': {
     "__class__": "RepeatableItems #as: 'RepeatableItems', id: 0000, not-frozen"
 } is defined as non-repeatable, but the containing object has repeatable items with the same name: {
-    "__class__": "project #as: 'project', id: 0000", 
+    "__class__": "project #as: 'project', id: 0000, not-frozen", 
     "env": {
         "__class__": "Env", 
         "name": "prod"
