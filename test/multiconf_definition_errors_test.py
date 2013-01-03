@@ -375,3 +375,29 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Attribute already has a default value: 'a'"
+
+    @test("validation error - uplevel reference while dumping from lower nesting level")
+    def _uplevel_ref(self):
+        try:
+            @nested_repeatables('someitems1')
+            class root(ConfigRoot):
+                pass
+            
+            @named_as('someitems1')
+            @nested_repeatables('someitems2')
+            @repeat()
+            class NestedRepeatable1(ConfigItem):
+                pass
+
+            @named_as('someitems2')
+            @repeat()
+            class NestedRepeatable2(ConfigItem):
+                pass
+
+            with dummy.dummy_io('stdin not used') as d_io:
+                with root(prod, [prod, pp], a=0):
+                    with NestedRepeatable1(id='n1', b=1) as n1:
+                        NestedRepeatable2(id='n2', uplevel_ref=n1, c=2)
+
+        except:
+            raise

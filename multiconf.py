@@ -28,7 +28,8 @@ class _ConfigBase(object):
         self._root_conf = None
         self._attributes = OrderedDict()
         self._frozen = False
-        self._may_validate = True
+        self._may_freeze_validate = True
+        self._user_validated = False
 
         # Prepare collectors with default values
         for key, value in attr.iteritems():
@@ -74,7 +75,7 @@ class _ConfigBase(object):
 
     def __enter__(self):
         assert not self._frozen
-        self._may_validate = False
+        self._may_freeze_validate = False
         return self
 
     def freeze_validate_required(self):
@@ -131,9 +132,10 @@ class _ConfigBase(object):
             if not builder._frozen:
                 builder.freeze()
 
-        if not self._may_validate:
+        if not self._may_freeze_validate:
             return self
 
+        # Freeze item
         self._frozen = True
         try:
             self.freeze_validation()
@@ -150,7 +152,7 @@ class _ConfigBase(object):
         return self._frozen
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self._may_validate = True
+        self._may_freeze_validate = True
         try:
             self.freeze()
         except ConfigBaseException as ex:
@@ -286,7 +288,12 @@ class _ConfigBase(object):
 
 class _ConfigItem(_ConfigBase):
     def _validate_recursively(self):
+        if self._user_validated:
+            return
+
         self.validate()
+        self._user_validated = True
+
         for _child_name, child_value in self.iteritems():
             if isinstance(child_value, OrderedDict):
                 for dict_entry in child_value.values():
