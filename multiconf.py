@@ -29,6 +29,7 @@ class _ConfigBase(object):
         self._attributes = OrderedDict()
         self._frozen = False
         self._may_freeze_validate = True
+        self._in_exit = False
         self._user_validated = False
 
         # Prepare collectors with default values
@@ -76,6 +77,7 @@ class _ConfigBase(object):
     def __enter__(self):
         assert not self._frozen
         self._may_freeze_validate = False
+        self.__class__._nested.append(self)
         return self
 
     def freeze_validate_required(self):
@@ -115,8 +117,8 @@ class _ConfigBase(object):
     def freeze(self):
         """
         Recursively freeze contained items bottom up.
-        If self is ready to be validated (exit from with_statement or not declared in a with_statement), self
-        will be frozen and validated
+        If self is ready to be validated (exit from with_statement or not declared in a with_statement),
+        then self will be frozen and validated
         """
         for _child_name, child_value in self._attributes.iteritems():
             if isinstance(child_value, OrderedDict):
@@ -153,6 +155,7 @@ class _ConfigBase(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._may_freeze_validate = True
+        self._in_exit = True
         try:
             self.freeze()
         except ConfigBaseException as ex:
@@ -160,6 +163,8 @@ class _ConfigBase(object):
                 raise
             # Strip stack
             raise ex
+        self.__class__._nested.pop()
+        self._in_exit = False
 
     def __setattr__(self, name, value):
         if name[0] == '_':
@@ -285,8 +290,6 @@ class _ConfigBase(object):
 
         raise ConfigException('Could not find an attribute named: ' + repr(attribute_name) + ' in hieracy with names: ' + repr(contained_in_names))
 
-
-class _ConfigItem(_ConfigBase):
     def _validate_recursively(self):
         if self._user_validated:
             return
@@ -300,24 +303,15 @@ class _ConfigItem(_ConfigBase):
                     if isinstance(dict_entry, _ConfigBase):
                         dict_entry._validate_recursively()
 
-            if isinstance(child_value, _ConfigItem):
+            if isinstance(child_value, _ConfigBase):
                 child_value._validate_recursively()
 
     def validate(self):
         """Can be overridden to provide post-frozen validation"""
         pass
 
-    def __enter__(self):
-        self.__class__._nested.append(self)
-        super(_ConfigItem, self).__enter__()
-        return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        super(_ConfigItem, self).__exit__(exc_type, exc_value, traceback)
-        self.__class__._nested.pop()
-
-
-class ConfigRoot(_ConfigItem):
+class ConfigRoot(_ConfigBase):
     def __init__(self, selected_env, valid_envs, **attr):
         if not isinstance(valid_envs, Sequence) or isinstance(valid_envs, str):
             raise ConfigException(self.__class__.__name__ + ": valid_envs arg must be a 'Sequence'; found type " + repr(valid_envs.__class__.__name__) + ': ' + repr(valid_envs))
@@ -367,7 +361,7 @@ class _ContainedConfigBase(_ConfigBase):
             raise ex
 
 
-class ConfigItem(_ContainedConfigBase, _ConfigItem):
+class ConfigItem(_ContainedConfigBase):
     def __init__(self, **attr):
         super(ConfigItem, self).__init__(**attr)
 
@@ -423,10 +417,23 @@ class ConfigBuilder(_ContainedConfigBase):
 
         # Append self to containing Item's builders list so that parent can freeze us
         self._contained_in._builders.append(self)
+        self._freezing = False
 
     def freeze(self):
+        if self._freezing:
+            return 
+        self._freezing = True
+       
         super(ConfigBuilder, self).freeze()
-        self.build()
+        if self._may_freeze_validate:
+            # The items we are building goes into the parent object, not the builder!
+            if self._in_exit:
+                self.__class__._nested.pop()
+            self.build()
+            if self._in_exit:
+                self.__class__._nested.append(self)
+        self._freezing = False
+        return self
 
     @abc.abstractmethod
     def build(self):
@@ -434,7 +441,7 @@ class ConfigBuilder(_ContainedConfigBase):
         raise Exception("AbstractNotImplemented")
 
     def override(self, config_item, *keys):
-        """Assign attributes that that match 'override' decorator keys or 'keys' from builder to child Item'"""
+        """Assign attributes that that match 'override' decorator keys or 'keys' from builder to child Item"""
         for key in self.__class__._deco_override + list(keys):
             value = self.attributes.get(key)
             if value:

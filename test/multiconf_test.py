@@ -419,6 +419,47 @@ class MulticonfTest(unittest.TestCase):
 
         ok (cr.x.number) == 7
 
+    @test("ConfigBuilder - nested items")
+    def _l5(self):
+        @named_as('xses')
+        @repeat()
+        class X(ConfigItem):
+            pass
+        
+        @named_as('x_children')
+        @repeat()
+        class XChild(ConfigItem):
+            pass
+        
+        @override('x_children, b')
+        @nested_repeatables('xses, x_children')
+        class XBuilder(ConfigBuilder):
+            def __init__(self):
+                super(XBuilder, self).__init__()
+                self.number(default=self.contained_in.aaa)
+        
+            def build(self):
+                for num in xrange(1, self.number+1):
+                    with X(name='server%d' % num, server_num=num) as c:
+                        c.something(prod=1, pp=2)
+                        self.override(c)
+        
+        @nested_repeatables('xses')
+        class Root(ConfigRoot):
+            aaa = 2
+        
+        with Root(prod, [prod, pp]) as cr:
+            with XBuilder() as xb:
+                xb.b(default=27)
+                XChild(a=10)
+                XChild(a=11)
+        
+        ok (len(cr.xses)) == 2
+        index = 10
+        for x_child in cr.xses['server1'].x_children.values():
+            ok (x_child.a) == index
+            index += 1
+
     @test("env value overrides group value")
     def _m(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
