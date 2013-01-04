@@ -61,7 +61,7 @@ class MulticonfTest(unittest.TestCase):
                     ok (c2.contained_in) == c1
 
     @test("nested repeatable items")
-    def _b(self):
+    def _nested_repeatable1(self):
         with root(prod, [prod, pp]) as cr:
             with rchild(name="first", aa=1, bb=1) as ci:
                 ci.aa(prod=3)
@@ -83,7 +83,7 @@ class MulticonfTest(unittest.TestCase):
             index += 1
 
     @test("empty nested repeatable items")
-    def _c(self):
+    def _nested_repeatable2(self):
         with root(prod, [prod, pp]) as cr:
             pass
 
@@ -91,7 +91,7 @@ class MulticonfTest(unittest.TestCase):
             fail ("list should be empty")
 
     @test("unnamed nested repeatable item (no 'name' or 'id')")
-    def _c(self):
+    def _nested_repeatable3(self):
         with root(prod, [prod, pp]) as cr:
             with rchild(aa=1, bb=1) as ci:
                 ci.aa(prod=3)
@@ -100,7 +100,7 @@ class MulticonfTest(unittest.TestCase):
         ok (cr.children[ci_id].aa) == 3
 
     @test("unnamed nested repeatable item (no default 'name' or 'id')")
-    def _c(self):
+    def _nested_repeatable4(self):
         with root(prod, [prod, pp]) as cr:
             with rchild(aa=1, bb=1) as ci:
                 ci.name(prod='somevalue', pp='another')
