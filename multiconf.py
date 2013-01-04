@@ -159,10 +159,11 @@ class _ConfigBase(object):
         try:
             self.freeze()
         except ConfigBaseException as ex:
-            if _debug_exc:
-                raise
-            # Strip stack
-            raise ex
+            if not exc_type:
+                if _debug_exc:
+                    raise
+                # Strip stack
+                raise ex
         self.__class__._nested.pop()
         self._in_exit = False
 
@@ -333,7 +334,11 @@ class ConfigRoot(_ConfigBase):
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
-        self._validate_recursively()
+        try:
+            self._validate_recursively()
+        except:
+            if not exc_type:
+                raise
 
     @property
     def valid_envs(self):
