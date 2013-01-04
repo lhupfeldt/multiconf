@@ -6,12 +6,7 @@ import types
 import multiconf, envs
 from .config_errors import InvalidUsageException
 
-# For handling references to avoid dumping objects multiple times
-class _AlreadySeen(Exception):
-    pass
 
-
-# For handling references to avoid dumping objects multiple times
 class NestedJsonCallError(Exception):
     pass
 
@@ -51,12 +46,28 @@ class ConfigItemEncoder(json.JSONEncoder):
         return OrderedDict(( _class_tuple(obj, not_frozen_msg), ('__id__', id(obj))))
 
     def _check_already_dumped(self, obj):
-        # Check for references to already dumped objects
+        # Check for reference to already dumped objects
         original = self.seen.get(id(obj))
         if original:
-            raise _AlreadySeen("#ref id: " + repr(id(obj)))
+            return "#ref id: " + repr(id(obj))
+        return False
 
+    def _set_already_dumped(self, obj):
         self.seen[id(obj)] = obj
+
+    def _check_nesting_level(self, current_nesting_level, child_obj):
+        # Check for reference to parent or sibling object (in case we dump from a lower level than root)
+        # We dont want to display an outer/sibling object as nested under an inner object
+        dumped = self._check_already_dumped(child_obj)
+        if dumped:
+            return dumped
+
+        if isinstance(child_obj, multiconf._ConfigBase):
+            if child_obj._nesting_level <= current_nesting_level:
+                id_msg = ": id: " + child_obj.id if hasattr(child_obj, 'id') else ''
+                name_msg = ", name: " + child_obj.name if hasattr(child_obj, 'name') else ''
+                return "#outside-ref: " + repr(type(child_obj)) + id_msg + name_msg
+        return False
 
     def encode(self, obj, **kwargs):
         #print self.__class__.__name__, "encode: type(obj)", type(obj)        
@@ -68,13 +79,16 @@ class ConfigItemEncoder(json.JSONEncoder):
 
     # pylint: disable=E0202
     def default(self, obj):
-        #print self.__class__.__name__, "default: type(obj)", type(obj)
         try:
             if ConfigItemEncoder.recursion_check.in_default:
+                # print >> sys.stderr, self.__class__.__name__, "json_output.default: type(obj)", type(obj)
                 raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
             ConfigItemEncoder.recursion_check.in_default = True
 
-            self._check_already_dumped(obj)
+            dumped = self._check_already_dumped(obj)
+            if dumped:
+                return dumped
+            self._set_already_dumped(obj)
 
             if isinstance(obj, multiconf._ConfigBase):
                 #print "# Handle ConfigItems", type(obj)
@@ -88,8 +102,15 @@ class ConfigItemEncoder(json.JSONEncoder):
     
                 # Handle attributes
                 for key, val in obj.iteritems():
-                    if key[0] != '_':
-                        dd[key] = val
+                    if key in self.filter_out_keys:
+                        continue
+
+                    dumped = self._check_nesting_level(obj._nesting_level, val)
+                    if dumped:
+                        dd[key] = dumped
+                        continue
+                    
+                    dd[key] = val
     
                 if not self.property_methods:
                     return dd
@@ -97,19 +118,13 @@ class ConfigItemEncoder(json.JSONEncoder):
                 # Handle property methods (defined in subclasses)
                 try:
                     for key in dir(obj):
-                        if key in obj.attributes or key.startswith('_'):
+                        if key.startswith('_') or key in self.filter_out_keys or key in obj.attributes:
                             continue
-                        if key in self.filter_out_keys:
-                            continue
-                    
+                        
                         try:
                             val = getattr(obj, key)
-                            self._check_already_dumped(val)
                         except InvalidUsageException as ex:
                             dd[key + ' #invalid usage context'] = repr(ex)
-                            continue
-                        except _AlreadySeen as seen:
-                            dd[key] = seen.message
                             continue
                         except RuntimeError:
                             raise
@@ -122,12 +137,18 @@ class ConfigItemEncoder(json.JSONEncoder):
                     
                         if type(val) == types.MethodType:
                             continue
+
+                        dumped = self._check_nesting_level(obj._nesting_level, val)
+                        if dumped:
+                            dd[key] = dumped
+                            continue
                     
                         if self.compact:
                             dd[key] = str(val) + ' #calculated'
-                        else:
-                            dd[key] = val
-                            dd[key + ' #calculated'] = True
+                            continue
+
+                        dd[key] = val
+                        dd[key + ' #calculated'] = True
                     
                     return dd
                 except RuntimeError:
@@ -159,14 +180,15 @@ class ConfigItemEncoder(json.JSONEncoder):
                 dd = self._class_dict(obj)
                 for key, val in obj.__dict__.iteritems():
                     if key[0] != '_':
-                        self._check_already_dumped(val)
+                        dumped = self._check_already_dumped(val)
+                        if dumped:
+                            dd[key] = dumped
+                            continue
                         dd[key] = val
                 return dd
 
             return "__json_error__ # don't know how to handle obj of type: " + repr(type(obj))
 
-        except _AlreadySeen as seen:
-            return seen.message
         finally:
             ConfigItemEncoder.recursion_check.in_default = False
 

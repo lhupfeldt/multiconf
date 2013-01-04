@@ -335,6 +335,7 @@ class ConfigRoot(_ConfigItem):
         super(ConfigRoot, self).__init__(**attr)
         self._root_conf = self
         self._contained_in = None
+        self._nesting_level = 0
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
@@ -351,6 +352,7 @@ class _ContainedConfigBase(_ConfigBase):
 
         if not self.__class__._nested:
             raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
+        self._nesting_level = len(self.__class__._nested)
 
         # Set back reference to containing Item and root item
         self._contained_in = self.__class__._nested[-1]

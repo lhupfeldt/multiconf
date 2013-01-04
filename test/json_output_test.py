@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, dummy
+from oktest import ok, test, dummy, fail
 from .utils import replace_ids, to_compact
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException
@@ -341,6 +341,23 @@ _i_expected_json_output = """{
     }
 }"""
 
+_uplevel_ref_expected_json_output = """{
+    "__class__": "NestedRepeatable", 
+    "__id__": 0000, 
+    "c": 2, 
+    "id": "n2", 
+    "someitems": {
+        "n3": {
+            "__class__": "NestedRepeatable", 
+            "__id__": 0000, 
+            "d": 3, 
+            "uplevel_ref": "#outside-ref: <class 'multiconf.test.json_output_test.NestedRepeatable'>: id: n1", 
+            "id": "n3", 
+            "someitems": {}
+        }
+    }
+}"""
+
 
 @nested_repeatables('someitems')
 class root(ConfigRoot):
@@ -516,20 +533,21 @@ class MulticonfTest(unittest.TestCase):
 
     @test("json dump - property method calls json")
     def _e5(self):
-        with dummy.dummy_io('stdin not used') as d_io:
-            @named_as('someitem')
-            class Nested(ConfigItem):
-                @property
-                def other_conf_item(self):
-                    print self.json()
-            
-            with ConfigRoot(prod, [prod, pp], a=0) as cr:
-                Nested()
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                @named_as('someitem')
+                class Nested(ConfigItem):
+                    @property
+                    def other_conf_item(self):
+                        print self.json()
+                
+                with ConfigRoot(prod, [prod, pp], a=0) as cr:
+                    Nested()
 
-        _sout, serr = d_io
-        # TODO
-        ok (serr) == ''
-        ok (replace_ids(cr.json())) == _e5_expected_json_output
+        finally:
+            _sout, serr = d_io
+            # TODO ok (serr) == "Encoder json_output.default: type(obj) <class 'multiconf.test.json_output_test.Nested'>"
+            ok (replace_ids(cr.json())) == _e5_expected_json_output
 
     @test("json dump - non conf item not json-serializable")
     def _f(self):
@@ -577,3 +595,12 @@ class MulticonfTest(unittest.TestCase):
             SimpleItem(a=MyIterable())
 
         ok (replace_ids(cr.json())) == _i_expected_json_output
+
+    @test("json dump - uplevel reference while dumping from lower nesting level")
+    def _uplevel_ref(self):
+        with root(prod, [prod, pp], a=0):
+            with NestedRepeatable(id='n1', b=1) as n1:
+                with NestedRepeatable(id='n2', c=2) as n2:
+                    NestedRepeatable(id='n3', uplevel_ref=n1, d=3)
+
+        ok (replace_ids(n2.json())) == _uplevel_ref_expected_json_output
