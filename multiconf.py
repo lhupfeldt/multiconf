@@ -24,13 +24,14 @@ class _ConfigBase(object):
     _deco_required = []
     _deco_required_if = (None, ())
 
-    def __init__(self, **attr):
+    def __init__(self, json_filter=None, **attr):
+        self._json_filter = json_filter
         self._root_conf = None
         self._attributes = OrderedDict()
         self._frozen = False
         self._may_freeze_validate = True
         self._in_exit = False
-        self._user_validated = False
+        self._user_validated = False        
 
         # Prepare collectors with default values
         for key, value in attr.iteritems():
@@ -68,9 +69,10 @@ class _ConfigBase(object):
         # return self.irepr(len(self.__class__._nested) -1)
 
     def json(self, compact=False, property_methods=True, skipkeys=True):
+        filter_callable = self.json_filter_callable()
         class Encoder(json_output.ConfigItemEncoder):
             def __init__(self, **kwargs):
-                super(Encoder, self).__init__(compact=compact, property_methods=property_methods, **kwargs)
+                super(Encoder, self).__init__(filter_callable=filter_callable, compact=compact, property_methods=property_methods, **kwargs)
 
         return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=False, sort_keys=False, indent=4)
 
@@ -256,6 +258,14 @@ class _ConfigBase(object):
     def valid_envs(self):
         return self._root_conf.valid_envs
 
+    def json_filter_callable(self):
+        contained_in = self
+        while contained_in:
+            if contained_in._json_filter:
+                return contained_in._json_filter
+            contained_in = contained_in.contained_in
+        return None
+
     def find_contained_in(self, named_as):
         """Find first parent container named as 'named_as', by searching backwards towards root_conf, starting with parent container"""
         contained_in = self.contained_in
@@ -291,7 +301,8 @@ class _ConfigBase(object):
 
         raise ConfigException('Could not find an attribute named: ' + repr(attribute_name) + ' in hieracy with names: ' + repr(contained_in_names))
 
-    def _validate_recursively(self):
+    def _user_validate_recursively(self):
+        """Call the user defined 'validate' methods on all items"""
         if self._user_validated:
             return
 
@@ -302,10 +313,10 @@ class _ConfigBase(object):
             if isinstance(child_value, OrderedDict):
                 for dict_entry in child_value.values():
                     if isinstance(dict_entry, _ConfigBase):
-                        dict_entry._validate_recursively()
+                        dict_entry._user_validate_recursively()
 
             if isinstance(child_value, _ConfigBase):
-                child_value._validate_recursively()
+                child_value._user_validate_recursively()
 
     def validate(self):
         """Can be overridden to provide post-frozen validation"""
@@ -313,7 +324,7 @@ class _ConfigBase(object):
 
 
 class ConfigRoot(_ConfigBase):
-    def __init__(self, selected_env, valid_envs, **attr):
+    def __init__(self, selected_env, valid_envs, json_filter=None, **attr):
         if not isinstance(valid_envs, Sequence) or isinstance(valid_envs, str):
             raise ConfigException(self.__class__.__name__ + ": valid_envs arg must be a 'Sequence'; found type " + repr(valid_envs.__class__.__name__) + ': ' + repr(valid_envs))
 
@@ -327,7 +338,7 @@ class ConfigRoot(_ConfigBase):
 
         self._selected_env = selected_env
         self._valid_envs = valid_envs
-        super(ConfigRoot, self).__init__(**attr)
+        super(ConfigRoot, self).__init__(json_filter=json_filter, **attr)
         self._root_conf = self
         self._contained_in = None
         self._nesting_level = 0
@@ -335,7 +346,7 @@ class ConfigRoot(_ConfigBase):
     def __exit__(self, exc_type, exc_value, traceback):
         super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
         try:
-            self._validate_recursively()
+            self._user_validate_recursively()
         except:
             if not exc_type:
                 raise
@@ -346,8 +357,8 @@ class ConfigRoot(_ConfigBase):
 
 
 class _ContainedConfigBase(_ConfigBase):
-    def __init__(self, **attr):
-        super(_ContainedConfigBase, self).__init__(**attr)
+    def __init__(self, json_filter=None, **attr):
+        super(_ContainedConfigBase, self).__init__(json_filter=json_filter, **attr)
 
         if not self.__class__._nested:
             raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
@@ -367,8 +378,8 @@ class _ContainedConfigBase(_ConfigBase):
 
 
 class ConfigItem(_ContainedConfigBase):
-    def __init__(self, **attr):
-        super(ConfigItem, self).__init__(**attr)
+    def __init__(self, json_filter=None, **attr):
+        super(ConfigItem, self).__init__(json_filter=json_filter, **attr)
 
         # Automatic Nested Insert in parent, insert self in containing Item's attributes
         my_key = self.named_as()
@@ -416,8 +427,8 @@ class ConfigBuilder(_ContainedConfigBase):
     # Decoration attributes
     _deco_override = []
 
-    def __init__(self, **attr):
-        super(ConfigBuilder, self).__init__(**attr)
+    def __init__(self, json_filter=None, **attr):
+        super(ConfigBuilder, self).__init__(json_filter=json_filter, **attr)
         self._override_keys = attr.keys()
 
         # Append self to containing Item's builders list so that parent can freeze us

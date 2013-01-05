@@ -229,7 +229,8 @@ _e3_expected_json_output = """{
     "someitem": {
         "__class__": "Nested", 
         "__id__": 0000, 
-        "m": "#ref id: 0000"
+        "m": "#ref id: 0000", 
+        "m #calculated": true
     }
 }"""
 
@@ -250,7 +251,8 @@ _e4_expected_json_output = """{
     "someitem": {
         "__class__": "Nested", 
         "__id__": 0000, 
-        "other_conf_item": "#ref id: 0000"
+        "other_conf_item": "#ref id: 0000", 
+        "other_conf_item #calculated": true
     }
 }"""
 
@@ -341,6 +343,7 @@ _i_expected_json_output = """{
     }
 }"""
 
+
 _uplevel_ref_expected_json_output = """{
     "__class__": "NestedRepeatable", 
     "__id__": 0000, 
@@ -351,10 +354,28 @@ _uplevel_ref_expected_json_output = """{
             "__class__": "NestedRepeatable", 
             "__id__": 0000, 
             "d": 3, 
-            "uplevel_ref": "#outside-ref: <class 'multiconf.test.json_output_test.NestedRepeatable'>: id: n1", 
+            "uplevel_ref": "#outside-ref: NestedRepeatable: id: 'n1', name: 'Number 1'", 
             "id": "n3", 
             "someitems": {}
         }
+    }
+}"""
+
+
+_filter_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "b": 2, 
+        "a": 1, 
+        "a #calculated": true
     }
 }"""
 
@@ -404,24 +425,24 @@ class MulticonfTest(unittest.TestCase):
         with root(prod, [prod, pp], a=0) as cr:
             with NestedRepeatable(id='a1') as ref_obj1:
                 ref_obj1.some_value(pp=1, prod=2)
-        
+
             with NestedRepeatable(id='b1', someattr=12):
                 NestedRepeatable(id='a2', referenced_item=ref_obj1)
                 with NestedRepeatable(id='b2') as ref_obj2:
                     ref_obj2.a(prod=1, pp=2)
             with AnXItem(something=3) as last_item:
                 last_item.ref(pp=ref_obj1, prod=ref_obj2)
-            
+
         ok (replace_ids(cr.json())) == _b_expected_json_output
 
 
     @test("json dump - cyclic references between conf items and other objects")
-    def _c(self):        
+    def _c(self):
         cycler = {}
-        
+
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             with SimpleItem(id='b1', someattr=12, cycl=cycler) as ref_obj2:
-                pass            
+                pass
             cycler['cyclic_item_ref'] = ref_obj2
 
         ok (replace_ids(cr.json())) == _c_expected_json_output
@@ -433,7 +454,7 @@ class MulticonfTest(unittest.TestCase):
             @property
             def m(self):
                 return 1
-        
+
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             Nested()
 
@@ -447,7 +468,7 @@ class MulticonfTest(unittest.TestCase):
             @property
             def m(self):
                 raise InvalidUsageException("No m now")
-        
+
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             Nested()
 
@@ -462,7 +483,7 @@ class MulticonfTest(unittest.TestCase):
                     @property
                     def m(self):
                         raise Exception("Something is wrong")
-                
+
                 with ConfigRoot(prod, [prod, pp], a=0) as cr:
                     Nested()
         except Exception as ex:
@@ -481,7 +502,7 @@ class MulticonfTest(unittest.TestCase):
                     @property
                     def m(self):
                         raise ConfigException("Something is wrong")
-                
+
                 with ConfigRoot(prod, [prod, pp], a=0) as cr:
                     Nested()
         except ConfigException as ex:
@@ -499,7 +520,7 @@ class MulticonfTest(unittest.TestCase):
                 @property
                 def m(self):
                     return self
-            
+
             with ConfigRoot(prod, [prod, pp], a=0) as cr:
                 Nested()
 
@@ -520,7 +541,7 @@ class MulticonfTest(unittest.TestCase):
             @named_as('referenced')
             class X(ConfigItem):
                 pass
-            
+
             with ConfigRoot(prod, [prod, pp], a=0) as cr:
                 X(a=0)
                 Nested()
@@ -540,7 +561,7 @@ class MulticonfTest(unittest.TestCase):
                     @property
                     def other_conf_item(self):
                         print self.json()
-                
+
                 with ConfigRoot(prod, [prod, pp], a=0) as cr:
                     Nested()
 
@@ -566,7 +587,7 @@ class MulticonfTest(unittest.TestCase):
         class SomeClass():
             def __init__(self):
                 self.a = 187
-                
+
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             SimpleItem(a=SomeClass())
 
@@ -579,7 +600,7 @@ class MulticonfTest(unittest.TestCase):
     def _h(self):
         def fff():
             pass
-                
+
         with ConfigRoot(prod, [prod, pp]) as cr:
             SimpleItem(func=fff)
 
@@ -599,8 +620,32 @@ class MulticonfTest(unittest.TestCase):
     @test("json dump - uplevel reference while dumping from lower nesting level")
     def _uplevel_ref(self):
         with root(prod, [prod, pp], a=0):
-            with NestedRepeatable(id='n1', b=1) as n1:
+            with NestedRepeatable(id='n1', name='Number 1', b=1) as n1:
                 with NestedRepeatable(id='n2', c=2) as n2:
                     NestedRepeatable(id='n3', uplevel_ref=n1, d=3)
 
         ok (replace_ids(n2.json())) == _uplevel_ref_expected_json_output
+
+    @test("json dump - user defined attribute filter")
+    def _filter(self):
+        with dummy.dummy_io('stdin not used') as d_io:
+            def json_filter(obj, key, value):
+                return (False, None) if (key == 'hide_me1' or key == 'hide_me2') else (key, value)
+
+            @named_as('someitem')
+            class Nested(ConfigItem):
+                @property
+                def hide_me2(self):
+                    return "FAIL"
+
+                @property
+                def a(self):
+                    return 1
+
+            with ConfigRoot(prod, [prod, pp], json_filter=json_filter, a=0, hide_me1='FAILED') as cr:
+                Nested(b=2, hide_me1=7)
+
+        _sout, serr = d_io
+        # TODO
+        ok (serr) == ''
+        ok (replace_ids(cr.json())) == _filter_expected_json_output
