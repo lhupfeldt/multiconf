@@ -16,7 +16,7 @@ def lazy(*args):
     return lambda: args[0](*args[1:])
 
 
-def _config_msg(err_or_warn, file_name, line_num, *lines):
+def _config_msg(error_type, file_name, line_num, *lines):
     if not file_name.endswith('.py'):
         # file_name  may end in .pyc!
         file_name = file_name[:-1]
@@ -24,16 +24,20 @@ def _config_msg(err_or_warn, file_name, line_num, *lines):
     emsg = ""
     for line in lines:
         emsg += 'File "{file_name}", line {line_num}'.format(file_name=file_name, line_num=line_num) + '\n'
-        emsg += 'Config' + err_or_warn + ': ' + line + '\n'
+        emsg += error_type + ': ' + line + '\n'
     return emsg
     
 
 def config_error(file_name, line_num, *lines):
-    return _config_msg('Error', file_name, line_num, *lines)
+    return _config_msg('ConfigError', file_name, line_num, *lines)
 
 
 def config_warning(file_name, line_num, *lines):
-    return _config_msg('Warning', file_name, line_num, *lines)
+    return _config_msg('ConfigWarning', file_name, line_num, *lines)
+
+
+def api_error(file_name, line_num, *lines):
+    return _config_msg('MultiConfApiError', file_name, line_num, *lines)
 
 
 # Handle variable ids in json/repr output

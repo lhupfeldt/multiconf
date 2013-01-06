@@ -8,10 +8,18 @@ import json
 
 from .envs import BaseEnv, Env, EnvGroup
 from .attribute_collector import AttributeCollector
-from .config_errors import ConfigBaseException, ConfigException, NoAttributeException
+from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _error_msg
 import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
+
+
+class ConfigApiException(ConfigBaseException):
+    pass
+
+
+def error(num_errors, message, up_level, error_type='MultiConfApiError'):
+    return _error_msg(num_errors, message, up_level, error_type)
 
 
 class _ConfigBase(object):
@@ -210,6 +218,13 @@ class _ConfigBase(object):
     def __getattr__(self, name):
         if name.startswith('__'):
             super(_ConfigBase, self).__getattr__(name)
+
+        if name.startswith('_'):
+            ex_msg = "An error was detected trying to get attribute " + repr(name) + " on class " + repr(self.__class__.__name__)
+            msg  = "\n    - Attributes starting with '_' are reserved for internal MultiConf usage. You probably tried to use the"
+            msg += "\n      MultiConf API in a derived class __init__ before calling the parent class __init__"
+            error(1, ex_msg + msg, 4)
+            raise ConfigApiException(ex_msg)
 
         try:
             # Return existing collector/(dict of)nested item(s) if any
