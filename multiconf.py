@@ -460,9 +460,11 @@ class ConfigBuilder(_ContainedConfigBase):
             # The items we are building goes into the parent object, not the builder!
             if self._in_exit:
                 self.__class__._nested.pop()
-            self.build()
-            if self._in_exit:
-                self.__class__._nested.append(self)
+            try:
+                self.build()
+            finally:
+                if self._in_exit:
+                    self.__class__._nested.append(self)
         self._freezing = False
         return self
 
