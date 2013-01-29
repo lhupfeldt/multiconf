@@ -367,14 +367,14 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             ok (ex.message) == _group_for_selected_env_expected
 
-    @test("default value respecified in with_statement - root")
-    def _default_respecified(self):
-        try:
-            with project(prod, [prod], a=1) as pr:
-                pr.a(default=1)
-            fail ("Expected exception")
-        except ConfigException as ex:
-            ok (ex.message) == "Attribute already has a default value: 'a'"
+    # @test("default value respecified in with_statement - root")
+    # def _default_respecified(self):
+    #     try:
+    #         with project(prod, [prod], a=1) as pr:
+    #             pr.a(default=1)
+    #         fail ("Expected exception")
+    #     except ConfigException as ex:
+    #         ok (ex.message) == "Attribute already has a default value: 'a'"
 
     @test("exception in __exit__ must print ex info and raise original exception if any pending")
     def _exception_in_exit(self):

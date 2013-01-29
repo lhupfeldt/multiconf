@@ -28,8 +28,8 @@ class AttributeCollector(object):
             attr_types.add(type(self._default_value))
         
         if 'default' in kwargs:            
-            if self._has_default:
-                raise ConfigException("Attribute already has a default value: " + repr(self._attribute_name))
+            # if self._has_default:
+            #     raise ConfigException("Attribute already has a default value: " + repr(self._attribute_name))
             self._has_default = True
             self._default_value = kwargs['default']
             del kwargs['default']
