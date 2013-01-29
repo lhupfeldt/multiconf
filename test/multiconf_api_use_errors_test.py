@@ -109,7 +109,6 @@ class MultiConfApiUseErrorsTest(unittest.TestCase):
             class inner(ConfigItem):
                 def __init__(self, **kwargs):
                     global inner_errorline
-                    # Error: contained_in must not be called before parent __init__
                     inner_errorline = lineno() + 1
                     self.ttt('')
 
@@ -133,7 +132,6 @@ class MultiConfApiUseErrorsTest(unittest.TestCase):
             class inner(ConfigItem):
                 def __init__(self, **kwargs):
                     global inner_errorline
-                    # Error: contained_in must not be called before parent __init__
                     inner_errorline = lineno() + 1
                     self.ttt
 

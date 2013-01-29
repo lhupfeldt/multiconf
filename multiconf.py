@@ -1,6 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import sys
 import abc
 import os
 from collections import Sequence, OrderedDict
@@ -39,7 +40,7 @@ class _ConfigBase(object):
         self._frozen = False
         self._may_freeze_validate = True
         self._in_exit = False
-        self._user_validated = False        
+        self._user_validated = False
 
         # Prepare collectors with default values
         for key, value in attr.iteritems():
@@ -164,18 +165,21 @@ class _ConfigBase(object):
         return self._frozen
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self._may_freeze_validate = True
-        self._in_exit = True
         try:
+            self._may_freeze_validate = True
+            self._in_exit = True
             self.freeze()
-        except ConfigBaseException as ex:
+            self.__class__._nested.pop()
+            self._in_exit = False
+        except Exception as ex:
             if not exc_type:
-                if _debug_exc:
-                    raise
-                # Strip stack
+                if _debug_exc and isinstance(ex, ConfigBaseException):
+                    # Strip stack for ConfigBaseException
+                    raise ex
                 raise ex
-        self.__class__._nested.pop()
-        self._in_exit = False
+
+            print >> sys.stderr, "Exception in __exit__:", repr(ex)
+            print >> sys.stderr, "Exception in with block will be raised"
 
     def __setattr__(self, name, value):
         if name[0] == '_':
@@ -362,9 +366,12 @@ class ConfigRoot(_ConfigBase):
         super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
         try:
             self._user_validate_recursively()
-        except:
+        except Exception as ex:
             if not exc_type:
                 raise
+            print >> sys.stderr, "Exception in validate:", ex
+            print >> sys.stderr, "Exception in with block will be raised"
+
 
     @property
     def valid_envs(self):
@@ -452,9 +459,9 @@ class ConfigBuilder(_ContainedConfigBase):
 
     def freeze(self):
         if self._freezing:
-            return 
+            return
         self._freezing = True
-       
+
         super(ConfigBuilder, self).freeze()
         if self._may_freeze_validate:
             # The items we are building goes into the parent object, not the builder!

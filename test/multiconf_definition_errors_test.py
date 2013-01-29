@@ -8,7 +8,7 @@ from oktest import ok, test, fail, dummy
 
 from .utils import lazy, config_error, lineno, replace_ids
 
-from .. import ConfigRoot, ConfigItem, ConfigException
+from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
 from ..decorators import nested_repeatables, repeat, named_as
 from ..envs import EnvFactory
 
@@ -375,3 +375,24 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "Attribute already has a default value: 'a'"
+
+    @test("exception in __exit__ must print ex info and raise original exception if any pending")
+    def _exception_in_exit(self):
+        try:
+            class root(ConfigRoot):
+                pass
+            
+            class inner(ConfigBuilder):
+                def build(self):
+                    raise Exception("in build")
+
+            with dummy.dummy_io('stdin not used') as d_io:
+                with root(prod, [prod, pp], a=0):
+                    with inner(id='n1', b=1):
+                        raise Exception("in with")
+            
+            fail ("Expected exception")
+        except Exception as ex:
+            _sout, serr = d_io
+            ok (serr) == "Exception in __exit__: Exception('in build',)\nException in with block will be raised\n"
+            ok (ex.message) == 'in with'
