@@ -558,3 +558,19 @@ class MulticonfTest(unittest.TestCase):
                 ii.freeze()
                 ii.b(prod=2)
                 ok (cr.item.b) == 2
+
+
+    @test("hasattr")
+    def _hasattr(self):
+        class root(ConfigRoot):
+            pass
+
+        with root(prod, [prod]) as cr:
+            with ConfigItem(a=1) as ii:
+                ii.b(default=2)
+                ii.c(prod=3)
+        
+            ok (hasattr(ii, 'a')) == True
+            ok (hasattr(ii, 'b')) == True
+            ok (hasattr(ii, 'c')) == True
+            ok (hasattr(ii, 'd')) == False
