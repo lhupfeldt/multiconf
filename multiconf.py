@@ -9,7 +9,7 @@ import json
 
 from .envs import BaseEnv, Env, EnvGroup
 from .attribute_collector import AttributeCollector
-from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _error_msg
+from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _error_msg, _user_file_line
 import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
@@ -40,13 +40,14 @@ class _ConfigBase(object):
         self._frozen = False
         self._may_freeze_validate = True
         self._in_exit = False
-        self._user_validated = False
+        self._in_build = False
+        self._user_validated = False        
 
         # Prepare collectors with default values
         for key, value in attr.iteritems():
             if key in self.__class__._deco_nested_repeatables:
                 raise ConfigException(repr(key) + ' defined as default value shadows a nested-repeatable')
-            AttributeCollector(key, self, has_default=True, default_value=value)
+            AttributeCollector(key, self, default_value=value, default_user_file_line=_user_file_line())
 
         for key in self.__class__._deco_nested_repeatables:
             self._attributes[key] = OrderedDict()
@@ -202,7 +203,7 @@ class _ConfigBase(object):
             return attr_coll
 
         try:
-            return attr_coll.env_values[env]
+            return attr_coll.env_values[env][0]
         except KeyError:
             self._check_valid_env(env, self.valid_envs)
             raise NoAttributeException("Attribute " + repr(attr_name) + " undefined for env " + repr(env))
@@ -240,7 +241,7 @@ class _ConfigBase(object):
                 return coll
         except KeyError:
             if not self._frozen:
-                return AttributeCollector(name, self, has_default=False, default_value=None)
+                return AttributeCollector(name, self, default_value=None, default_user_file_line=None)
 
         try:
             return self.getattr_env(name, self.env)
@@ -420,9 +421,9 @@ class ConfigItem(_ContainedConfigBase):
                     obj_key = self._attributes['id']
                 except KeyError:
                     obj_key = self._attributes['name']
-                if not obj_key._has_default:
+                if not obj_key._has_default():
                     raise KeyError()
-                obj_key = obj_key._default_value
+                obj_key = obj_key._default_value()[0]
 
                 # Check that we are not replacing an object with the same id/name
                 if self._contained_in.attributes[my_key].get(obj_key):
@@ -468,8 +469,10 @@ class ConfigBuilder(_ContainedConfigBase):
             if self._in_exit:
                 self.__class__._nested.pop()
             try:
+                self._in_build = True
                 self.build()
             finally:
+                self._in_build = False
                 if self._in_exit:
                     self.__class__._nested.append(self)
         self._freezing = False

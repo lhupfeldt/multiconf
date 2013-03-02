@@ -67,7 +67,7 @@ _o_expected = """A value is already specified for: Env('dev2CT') from group EnvG
 }=3, previous value: EnvGroup('g_dev2') {
      Env('dev2CT'),
      Env('dev2ST')
-}=2"""
+}=(2, ('/home/lhn/src/multiconf/test/multiconf_definition_errors_test.py', 302))"""
 
 
 _p_expected = """A value is already specified for: Env('dev2CT') from group EnvGroup('g_dev_overlap') {
@@ -76,7 +76,7 @@ _p_expected = """A value is already specified for: Env('dev2CT') from group EnvG
 }=3, previous value: EnvGroup('g_dev2') {
      Env('dev2CT'),
      Env('dev2ST')
-}=2"""
+}=(2, ('/home/lhn/src/multiconf/test/multiconf_definition_errors_test.py', 317))"""
 
 
 _group_for_selected_env_expected = """project: env must be instance of 'Env'; found type 'EnvGroup': EnvGroup('g_dev3') {

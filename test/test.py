@@ -3,6 +3,7 @@
 import sys, os, subprocess
 
 here = os.path.abspath(os.path.dirname(__file__))
+
 os.chdir(here)
 
 print "Running tests"

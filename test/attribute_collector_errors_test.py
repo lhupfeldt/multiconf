@@ -8,6 +8,7 @@ from oktest import ok, test, fail
 
 from .. import ConfigException
 from ..attribute_collector import AttributeCollector
+from ..config_errors import _user_file_line
 
 
 class AttributeCollectorTest(unittest.TestCase):
@@ -16,7 +17,7 @@ class AttributeCollectorTest(unittest.TestCase):
     def _a(self):
         class Container(object):
             attributes = {}
-        ac = AttributeCollector('attribute_name', Container(), has_default=False, default_value=None)
+        ac = AttributeCollector('attribute_name', Container(), default_value=None, default_user_file_line=_user_file_line())
 
         try:
             ac.someprop = 1
