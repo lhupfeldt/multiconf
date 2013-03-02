@@ -408,7 +408,7 @@ class MulticonfTest(unittest.TestCase):
                 with NestedRepeatable(id='b-level2') as ci:
                     NestedRepeatable(id='a-level3')
                     with NestedRepeatable(id='b-level3') as ci:
-                        ci.a(prod=1, pp=2)
+                        ci.setattr('a', prod=1, pp=2)
                     NestedRepeatable(id='c-level3', something=1)
                 NestedRepeatable(id='c-level2', something=2)
             NestedRepeatable(id='c-level1', something=3)
@@ -424,14 +424,14 @@ class MulticonfTest(unittest.TestCase):
 
         with root(prod, [prod, pp], a=0) as cr:
             with NestedRepeatable(id='a1') as ref_obj1:
-                ref_obj1.some_value(pp=1, prod=2)
+                ref_obj1.setattr('some_value', pp=1, prod=2)
 
             with NestedRepeatable(id='b1', someattr=12):
                 NestedRepeatable(id='a2', referenced_item=ref_obj1)
                 with NestedRepeatable(id='b2') as ref_obj2:
-                    ref_obj2.a(prod=1, pp=2)
+                    ref_obj2.setattr('a', prod=1, pp=2)
             with AnXItem(something=3) as last_item:
-                last_item.ref(pp=ref_obj1, prod=ref_obj2)
+                last_item.setattr('ref', pp=ref_obj1, prod=ref_obj2)
 
         ok (replace_ids(cr.json())) == _b_expected_json_output
 

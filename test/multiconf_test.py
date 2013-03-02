@@ -76,14 +76,14 @@ class MulticonfTest(unittest.TestCase):
     def _nested_repeatable1(self):
         with root(prod, [prod, pp]) as cr:
             with rchild(name="first", aa=1, bb=1) as ci:
-                ci.aa(prod=3)
+                ci.setattr('aa', prod=3)
 
             with rchild(name="second", aa=4) as ci:
-                ci.bb(prod=2, pp=17)
+                ci.setattr('bb', prod=2, pp=17)
 
             with rchild(name="third") as ci:
-                ci.aa(prod=5, pp=18)
-                ci.bb(prod=3, pp=19)
+                ci.setattr('aa', prod=5, pp=18)
+                ci.setattr('bb', prod=3, pp=19)
 
         ok (cr.children['first'].bb) == 1
         ok (cr.children['second'].bb) == 2
@@ -106,7 +106,7 @@ class MulticonfTest(unittest.TestCase):
     def _nested_repeatable3(self):
         with root(prod, [prod, pp]) as cr:
             with rchild(aa=1, bb=1) as ci:
-                ci.aa(prod=3)
+                ci.setattr('aa', prod=3)
             ci_id = id(ci)
 
         ok (cr.children[ci_id].aa) == 3
@@ -115,7 +115,7 @@ class MulticonfTest(unittest.TestCase):
     def _nested_repeatable4(self):
         with root(prod, [prod, pp]) as cr:
             with rchild(aa=1, bb=1) as ci:
-                ci.name(prod='somevalue', pp='another')
+                ci.setattr('name', prod='somevalue', pp='another')
             ci_id = id(ci)
 
         ok (cr.children[ci_id].aa) == 1
@@ -148,7 +148,7 @@ class MulticonfTest(unittest.TestCase):
     @test("property defined with same type and None")
     def _g(self):
         with ConfigRoot(prod, [prod, pp], a=None) as cr:
-            cr.a(prod=1, pp=2)
+            cr.setattr('a', prod=1, pp=2)
         ok (cr.a) == 1
 
     @test("automatic freeze of child on exit")
@@ -181,7 +181,7 @@ class MulticonfTest(unittest.TestCase):
                 with NestedRepeatable(id='b') as ci:
                     NestedRepeatable(id='a')
                     with NestedRepeatable(id='b') as ci:
-                        ci.a(prod=1, pp=2)
+                        ci.setattr('a', prod=1, pp=2)
                     NestedRepeatable(id='c', something=1)
                 NestedRepeatable(id='c', something=2)
             NestedRepeatable(id='c', something=3)
@@ -204,7 +204,7 @@ class MulticonfTest(unittest.TestCase):
     def _freeze3(self):
         with root(prod, [prod, pp], a=0):
             with rchild(id='a') as rc:
-                rc.y(prod=1, pp=2)
+                rc.setattr('y', prod=1, pp=2)
 
                 ok (rc.y) == 1
 
@@ -212,7 +212,7 @@ class MulticonfTest(unittest.TestCase):
     def _freeze4(self):
         with root(prod, [prod, pp], a=0):
             with rchild(id='a', y=18) as rc:
-                rc.y(prod=7, pp=2)
+                rc.setattr('y', prod=7, pp=2)
 
                 ok (rc.y) == 7
 
@@ -220,8 +220,8 @@ class MulticonfTest(unittest.TestCase):
     def _freeze5(self):
         with root(prod, [prod, pp], a=0):
             with rchild(id='a', x=17, z=18) as rc:
-                rc.y(prod=7, pp=2)
-                rc.z(pp=3)
+                rc.setattr('y', prod=7, pp=2)
+                rc.setattr('z', pp=3)
                 rc.freeze()
 
                 ok (rc.y) == 7
@@ -232,9 +232,9 @@ class MulticonfTest(unittest.TestCase):
     def _freeze6(self):
         with root(prod, [prod, pp], a=0):
             with rchild(id='a', x=19, z=20) as rc:
-                rc.y(prod=7, pp=2)
+                rc.setattr('y', prod=7, pp=2)
                 ok (rc.y) == 7
-                rc.z(pp=3)
+                rc.setattr('z', pp=3)
                 ok (rc.z) == 20
                 rc.x.freeze()
                 ok (rc.x) == 19
@@ -245,9 +245,9 @@ class MulticonfTest(unittest.TestCase):
     #def _freeze6(self):
     #    with root(prod, [prod, pp], a=0):
     #        with rchild(id='a', x=19, z=20) as rc:
-    #            rc.y(prod=7, pp=2)
+    #            rc.setattr('y', prod=7, pp=2)
     #            ok (rc.y) == 7
-    #            rc.z(pp=3)
+    #            rc.setattr('z', pp=3)
     #            ok (rc.z) == 20
     #            rc.freeze()
     #            ok (rc.x) == 19
@@ -272,16 +272,16 @@ class MulticonfTest(unittest.TestCase):
         with root(prod, [prod, pp], a=0) as cr:
             NestedRepeatable()
             with X() as ci:
-                ci.a(prod=0, pp=2)
+                ci.setattr('a', prod=0, pp=2)
                 NestedRepeatable(id='a')
                 with NestedRepeatable(id='b') as ci:
                     NestedRepeatable(id='c')
                     with X() as ci:
-                        ci.a(prod=1, pp=2)
+                        ci.setattr('a', prod=1, pp=2)
                         with NestedRepeatable(id='d') as ci:
-                            ci.a(prod=2, pp=2)
+                            ci.setattr('a', prod=2, pp=2)
                             with Y() as ci:
-                                ci.a(prod=3, pp=2)
+                                ci.setattr('a', prod=3, pp=2)
                     
         ok (cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='x').a) == 1
         ok (cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='root').a) == 0
@@ -302,16 +302,16 @@ class MulticonfTest(unittest.TestCase):
         with root(prod, [prod, pp], a=-1, q='q0') as cr:
             NestedRepeatable()
             with X() as ci:
-                ci.a(prod=0, pp=20)
+                ci.setattr('a', prod=0, pp=20)
                 NestedRepeatable(id='a', a=9)
                 with NestedRepeatable(id='b') as ci:
                     NestedRepeatable(id='c', a=7)
                     with X() as ci:
-                        ci.b(prod='b1', pp='b21')
+                        ci.setattr('b', prod='b1', pp='b21')
                         with NestedRepeatable(id='d') as ci:
-                            ci.a(prod=2, pp=22)
+                            ci.setattr('a', prod=2, pp=22)
                             with X() as ci:
-                                ci.a(prod=3, pp=23)
+                                ci.setattr('a', prod=3, pp=23)
                     
         ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('a')) == 3
         ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('b')) == 'b1'
@@ -340,7 +340,7 @@ class MulticonfTest(unittest.TestCase):
         with Root(prod, [prod, pp]) as cr:
             with XBuilder(a=1, something=7) as xb:
                 xb.num_servers(pp=2)
-                xb.b(prod=3, pp=4)
+                xb.setattr('b', prod=3, pp=4)
                     
         ok (len(cr.xses)) == 4
         ok (cr.xses['server1'].a) == 1
@@ -442,7 +442,7 @@ class MulticonfTest(unittest.TestCase):
         
         with Root(prod, [prod, pp]) as cr:
             with XBuilder() as xb:
-                xb.b(default=27)
+                xb.setattr('b', default=27)
                 XChild(a=10)
                 XChild(a=11)
         
@@ -475,7 +475,7 @@ class MulticonfTest(unittest.TestCase):
     #     
     #     with Root(prod, [prod, pp]) as cr:
     #         with XBuilder() as xb:
-    #             xb.b(default=27)
+    #             xb.setattr('b', default=27)
     #             # Here we finalize the setting of 'something' which was started in the 'build' method
     #             xb.something(pp=2)
     #             XChild(a=10)
@@ -491,8 +491,8 @@ class MulticonfTest(unittest.TestCase):
     def _m(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
             with ConfigItem() as ci:
-                ci.aa(prod=1, g_prod_like=2)
-                ci.bb(g_prod_like=2, prod=3)
+                ci.setattr('aa', prod=1, g_prod_like=2)
+                ci.setattr('bb', g_prod_like=2, prod=3)
 
         ok (cr1.ConfigItem.aa) == 1
         ok (cr1.ConfigItem.bb) == 3
@@ -501,8 +501,8 @@ class MulticonfTest(unittest.TestCase):
     def _n(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
             with ConfigItem(aa=1, bb=3) as ci:
-                ci.aa(g_prod_like=2)
-                ci.bb(pp=4)
+                ci.setattr('aa', g_prod_like=2)
+                ci.setattr('bb', pp=4)
 
         ok (cr1.ConfigItem.aa) == 2
         ok (cr1.ConfigItem.bb) == 3
@@ -511,8 +511,8 @@ class MulticonfTest(unittest.TestCase):
     def _o(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
             with ConfigItem(aa=1, bb=3) as ci:
-                ci.aa(prod=2)
-                ci.bb(pp=4)
+                ci.setattr('aa', prod=2)
+                ci.setattr('bb', pp=4)
 
         ok (cr1.ConfigItem.aa) == 2
         ok (cr1.ConfigItem.bb) == 3
@@ -521,8 +521,8 @@ class MulticonfTest(unittest.TestCase):
     def _p(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
             with ConfigItem(aa=0) as ci:
-                ci.aa(prod=1, g_prod_like=2)
-                ci.bb(g_prod_like=2, prod=3)
+                ci.setattr('aa', prod=1, g_prod_like=2)
+                ci.setattr('bb', g_prod_like=2, prod=3)
 
         ok (cr1.ConfigItem.aa) == 1
         ok (cr1.ConfigItem.bb) == 3
@@ -583,7 +583,7 @@ class MulticonfTest(unittest.TestCase):
                 ii.a(prod=1)
                 ok (cr.item.a) == 1
                 ii.freeze()
-                ii.b(prod=2)
+                ii.setattr('b', prod=2)
                 ok (cr.item.b) == 2
 
 
@@ -594,8 +594,8 @@ class MulticonfTest(unittest.TestCase):
 
         with root(prod, [prod]) as cr:
             with ConfigItem(a=1) as ii:
-                ii.b(default=2)
-                ii.c(prod=3)
+                ii.setattr('b', default=2)
+                ii.setattr('c', prod=3)
         
             ok (hasattr(ii, 'a')) == True
             ok (hasattr(ii, 'b')) == True

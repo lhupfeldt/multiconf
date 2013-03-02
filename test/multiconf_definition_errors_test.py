@@ -142,7 +142,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod]) as cr:
                     errorline = lineno() + 1
-                    cr.a(pros="hello", prod="hi")
+                    cr.setattr('a', pros="hello", prod="hi")
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
@@ -155,7 +155,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod, pp]) as cr:
                     errorline = lineno() + 1
-                    cr.a(prod="hello")
+                    cr.setattr('a', prod="hello")
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
@@ -168,7 +168,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod, pp]) as cr:
                     errorline = lineno() + 1
-                    cr.a(prod=1, pp="hello")
+                    cr.setattr('a', prod=1, pp="hello")
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
@@ -179,9 +179,9 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     def _h(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
-                cr.a(prod=1)
+                cr.setattr('a', prod=1)
                 errorline = lineno() + 1
-                cr.a(prod=2)
+                cr.setattr('a', prod=2)
                 fail ("Expected exception")
         except TypeError as ex:
             ok (ex.message) == "'int' object is not callable"
@@ -299,7 +299,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
                     errorline = lineno() + 1
-                    cr.a(prod=1, g_dev2=2, g_dev_overlap=3)
+                    cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io            
@@ -314,7 +314,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
                     errorline = lineno() + 1
-                    cr.a(prod=1, g_dev2=2, g_dev_overlap=3)
+                    cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io            
@@ -371,7 +371,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     # def _default_respecified(self):
     #     try:
     #         with project(prod, [prod], a=1) as pr:
-    #             pr.a(default=1)
+    #             pr.setattr('a', default=1)
     #         fail ("Expected exception")
     #     except ConfigException as ex:
     #         ok (ex.message) == "Attribute already has a default value: 'a'"

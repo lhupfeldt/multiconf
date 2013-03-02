@@ -51,8 +51,8 @@ class DecoratorsTest(unittest.TestCase):
             pass
 
         with root(prod, [prod]) as cr:
-            cr.anattr(prod=1)
-            cr.anotherattr(prod=2)
+            cr.setattr('anattr',prod=1)
+            cr.setattr('anotherattr', prod=2)
         ok (cr.anattr) == 1
         ok (cr.anotherattr) == 2
 
@@ -67,8 +67,8 @@ class DecoratorsTest(unittest.TestCase):
 
         with root(prod, [prod]) as cr:
             with item() as ii:
-                ii.a(prod=1)
-                ii.b(prod=2)
+                ii.setattr('a', prod=1)
+                ii.setattr('b', prod=2)
 
         ok (cr.item.a) == 1
         ok (cr.item.b) == 2
@@ -86,7 +86,7 @@ class DecoratorsTest(unittest.TestCase):
 
         with root(prod, [prod]) as cr:
             with item(a=1, b=1) as ii:
-                ii.b(prod=2)
+                ii.setattr('b', prod=2)
 
         ok (cr.item.a) == 1
         ok (cr.item.b) == 2
@@ -99,9 +99,9 @@ class DecoratorsTest(unittest.TestCase):
             pass
 
         with root(prod, [prod, dev2ct]) as cr:
-            cr.a(prod=10)
-            cr.b(prod=20)
-            cr.c(prod=30)
+            cr.setattr('a', prod=10)
+            cr.setattr('b', prod=20)
+            cr.setattr('c', prod=30)
 
         ok (cr.a) == 10
         ok (cr.b) == 20
@@ -122,8 +122,8 @@ class DecoratorsTest(unittest.TestCase):
             pass
 
         with root(prod, [prod]) as cr:
-            cr.a(prod=0)
-            cr.b(prod=10)
+            cr.setattr('a', prod=0)
+            cr.setattr('b', prod=10)
 
         ok (cr.a) == 0
         ok (cr.b) == 10
@@ -143,11 +143,11 @@ class DecoratorsTest(unittest.TestCase):
             pass
 
         with root(prod, [prod, dev2ct]) as cr:
-            cr.a(dev2ct=18)
+            cr.setattr('a', dev2ct=18)
         ok ("no-exception") == "no-exception"
 
         with root(prod, [prod, dev2ct]) as cr:
-            cr.a(prod=17)
+            cr.setattr('a', prod=17)
         ok (cr.a) == 17
 
     @test("named_as")

@@ -189,6 +189,12 @@ class _ConfigBase(object):
             return
         raise ConfigException("Trying to set a property " + repr(name) + " on a config item")
 
+    def setattr(self, name, **kwargs):
+        if name[0] == '_':
+            raise ConfigException("Trying to set an attribute starting with '_' " + repr(name) +
+                                  " on a config item. Atributes starting with '_' are reserved for multiconf internal usage")
+        self.__getattr__(name)(**kwargs)
+
     def _check_valid_env(self, env, valid_envs):
         if not isinstance(env, Env):
             raise ConfigException(self.__class__.__name__ + ': env must be instance of ' + repr(Env.__name__) + '; found type ' + repr(env.__class__.__name__) + ': ' + repr(env))

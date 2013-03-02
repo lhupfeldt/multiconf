@@ -61,7 +61,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
 
             with root(prod, [prod]):
                 with item() as ii:
-                    ii.efgh(prod=7)
+                    ii.setattr('efgh', prod=7)
 
             fail ("Expected exception")
         except ConfigException as ex:
@@ -80,7 +80,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
 
             with root(prod, [prod]):
                 with item() as ii:
-                    ii.abcd(prod=1)
+                    ii.setattr('abcd', prod=1)
 
             fail ("Expected exception")
         except ConfigException as ex:
@@ -108,7 +108,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
 
         try:
             with root(prod, [prod, dev2ct]) as cr:
-                cr.a(dev2ct=18)
+                cr.setattr('a', dev2ct=18)
 
             print cr.a
             fail ("Expected exception")
@@ -168,9 +168,9 @@ class DecoratorsErrorsTest(unittest.TestCase):
 
         try:
             with root2(prod, [prod]) as cr:
-                cr.anattr(prod=1)
-                cr.someattr2(prod=3)
-                cr.someotherattr2(prod=4)
+                cr.setattr('anattr', prod=1)
+                cr.setattr('someattr2', prod=3)
+                cr.setattr('someotherattr2', prod=4)
             fail ("Expected exception")
         except ConfigException as ex:
             ok (ex.message) == "No value given for required attributes: ['anotherattr']"

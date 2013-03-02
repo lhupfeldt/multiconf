@@ -54,7 +54,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
     @test("access undefined attribute - but has repeatable? attribute with attribute name+s")
     def _a2(self):
         with ConfigRoot(prod, [prod]) as cr:
-            cr.bs(prod=4)
+            cr.setattr('bs', prod=4)
 
         try:
             print cr.b
@@ -86,16 +86,16 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
         with root(prod, [prod], a=0) as cr:
             NestedRepeatable()
             with X() as ci:
-                ci.a(prod=0)
+                ci.setattr('a', prod=0)
                 NestedRepeatable(id='a')
                 with NestedRepeatable(id='b') as ci:
                     NestedRepeatable(id='c')
                     with X() as ci:
-                        ci.a(prod=1)
+                        ci.setattr('a', prod=1)
                         with NestedRepeatable(id='d') as ci:
-                            ci.a(prod=2)
+                            ci.setattr('a', prod=2)
                             with Y() as ci:
-                                ci.a(prod=3)
+                                ci.setattr('a', prod=3)
 
         try:
             cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
@@ -124,16 +124,16 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
         with root(prod, [prod], a=0, q=17) as cr:
             NestedRepeatable()
             with X() as ci:
-                ci.a(prod=0)
+                ci.setattr('a', prod=0)
                 NestedRepeatable(id='a', a=9)
                 with NestedRepeatable(id='b') as ci:
                     NestedRepeatable(id='c', a=7)
                     with X() as ci:
-                        ci.b(prod=1)
+                        ci.setattr('b', prod=1)
                         with NestedRepeatable(id='d') as ci:
-                            ci.a(prod=2)
+                            ci.setattr('a', prod=2)
                             with X() as ci:
-                                ci.a(prod=3)
+                                ci.setattr('a', prod=3)
                     
         try:
             ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e')) == 3
