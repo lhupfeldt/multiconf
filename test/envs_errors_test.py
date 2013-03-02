@@ -165,7 +165,7 @@ class EnvsTest(unittest.TestCase):
             ok (ex.message) == "Env: 'name' must be instance of str, found: int"
 
     @test("env - name is empty")
-    def _o(self):
+    def _o1(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 _e1 = ef.Env("")
@@ -177,7 +177,7 @@ class EnvsTest(unittest.TestCase):
 
 
     @test("env - name starts with '_'")
-    def _o(self):
+    def _o2(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 _e1 = ef.Env("_a")
@@ -188,7 +188,7 @@ class EnvsTest(unittest.TestCase):
             ok (ex.message) == "Env: 'name' must not start with '_', got: '_a'"
 
     @test("env - name == 'default'")
-    def _o(self):
+    def _o3(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 _e1 = ef.Env("default")
@@ -199,7 +199,7 @@ class EnvsTest(unittest.TestCase):
             ok (ex.message) == "Env: 'default' is a reserved name"
 
     @test("group - name == 'default'")
-    def _o(self):
+    def _o4(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 e1 = ef.Env("e1")
@@ -211,7 +211,7 @@ class EnvsTest(unittest.TestCase):
             ok (ex.message) == "EnvGroup: 'default' is a reserved name"
 
     @test("no group members")
-    def _g(self):
+    def _o5(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 gg2 = ef.EnvGroup('gg')
@@ -223,7 +223,7 @@ class EnvsTest(unittest.TestCase):
 
 
     @test("group - member is not instanceof Env")
-    def _o(self):
+    def _o6(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 _g = ef.EnvGroup('gg', 1)
