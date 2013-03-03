@@ -146,10 +146,16 @@ class MulticonfTest(unittest.TestCase):
             ok (exp_value) == value
 
     @test("property defined with same type and None")
-    def _g(self):
+    def _g1(self):
         with ConfigRoot(prod, [prod, pp], a=None) as cr:
             cr.setattr('a', prod=1, pp=2)
         ok (cr.a) == 1
+
+    @test("property defined with None and same type")
+    def _g2(self):
+        with ConfigRoot(prod, [prod, pp], a=1) as cr:
+            cr.setattr('a', prod=None, pp=2)
+        ok (cr.a) == None
 
     @test("automatic freeze of child on exit")
     def _freeze0(self):
@@ -236,7 +242,6 @@ class MulticonfTest(unittest.TestCase):
                 ok (rc.y) == 7
                 rc.setattr('z', pp=3)
                 ok (rc.z) == 20
-                rc.x.freeze()
                 ok (rc.x) == 19
 
 
@@ -330,7 +335,7 @@ class MulticonfTest(unittest.TestCase):
             def build(self):
                 for server_num in xrange(1, self.num_servers+1):
                     with Xses(name='server%d' % server_num, server_num=server_num) as c:
-                        c.something(prod=1, pp=2)
+                        c.setattr('something', prod=1, pp=2)
                         self.override(c, 'b', 'something')
 
         @nested_repeatables('xses')
@@ -339,7 +344,7 @@ class MulticonfTest(unittest.TestCase):
 
         with Root(prod, [prod, pp]) as cr:
             with XBuilder(a=1, something=7) as xb:
-                xb.num_servers(pp=2)
+                xb.setattr('num_servers', pp=2)
                 xb.setattr('b', prod=3, pp=4)
                     
         ok (len(cr.xses)) == 4
@@ -405,7 +410,7 @@ class MulticonfTest(unittest.TestCase):
         class XBuilder(ConfigBuilder):
             def __init__(self):
                 super(XBuilder, self).__init__()
-                self.number(default=self.contained_in.aaa)
+                self.setattr('number', default=self.contained_in.aaa)
 
             def build(self):
                 with X(number=self.number):
@@ -428,12 +433,12 @@ class MulticonfTest(unittest.TestCase):
         class XBuilder(ConfigBuilder):
             def __init__(self):
                 super(XBuilder, self).__init__()
-                self.number(default=self.contained_in.aaa)
+                self.setattr('number', default=self.contained_in.aaa)
         
             def build(self):
                 for num in xrange(1, self.number+1):
                     with Xses(name='server%d' % num, server_num=num) as c:
-                        c.something(prod=1, pp=2)
+                        c.setattr('something', prod=1, pp=2)
                         self.override(c)
         
         @nested_repeatables('xses')
@@ -453,6 +458,7 @@ class MulticonfTest(unittest.TestCase):
             index += 1
 
 
+    # TODO not yet implemente 'partial' feature
     # @test("ConfigBuilder - Nested Items - override values, extend envs")
     # def _l6(self):
     #     @override('x_children, b')
@@ -563,10 +569,9 @@ class MulticonfTest(unittest.TestCase):
             pass
 
         with root(prod, [prod]) as cr:
-            cr.anattr(prod=1)
+            cr.setattr('anattr', prod=1)
             ok (cr.anattr) == 1
-            cr.freeze()
-            cr.anotherattr(prod=2)
+            cr.setattr('anotherattr', prod=2)
             ok (cr.anotherattr) == 2
 
     @test("required attributes - not required on imtermediate freeze - configitem")
@@ -580,9 +585,8 @@ class MulticonfTest(unittest.TestCase):
 
         with root(prod, [prod]) as cr:
             with item() as ii:
-                ii.a(prod=1)
+                ii.setattr('a', prod=1)
                 ok (cr.item.a) == 1
-                ii.freeze()
                 ii.setattr('b', prod=2)
                 ok (cr.item.b) == 2
 
@@ -596,8 +600,22 @@ class MulticonfTest(unittest.TestCase):
             with ConfigItem(a=1) as ii:
                 ii.setattr('b', default=2)
                 ii.setattr('c', prod=3)
+                ok (hasattr(ii, 'd')) == False
         
             ok (hasattr(ii, 'a')) == True
             ok (hasattr(ii, 'b')) == True
             ok (hasattr(ii, 'c')) == True
             ok (hasattr(ii, 'd')) == False
+
+    @test("assigning to attribute - root")
+    def _r1(self):
+        with root(prod, [prod]) as cr:
+            cr.a = 7
+        ok (cr.a) == 7
+
+    @test("assigning to attribute - nested item")
+    def _r2(self):
+        with root(prod, [prod]) as cr:
+            with ConfigItem() as ci:
+                ci.a = 1
+        ok (ci.a) == 1

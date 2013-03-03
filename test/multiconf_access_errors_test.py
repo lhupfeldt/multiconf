@@ -48,7 +48,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
         try:
             print cr.b
             fail ("Expected exception")
-        except ConfigException as ex:
+        except AttributeError as ex:
             ok (replace_ids(ex.message, named_as=False)) == _a1_expected_repr
 
     @test("access undefined attribute - but has repeatable? attribute with attribute name+s")
@@ -59,7 +59,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
         try:
             print cr.b
             fail ("Expected exception")
-        except ConfigException as ex:
+        except AttributeError as ex:
             ok (replace_ids(ex.message, named_as=False)) == _a2_expected_repr
 
     @test("find_contained_in(named_as) - not found")

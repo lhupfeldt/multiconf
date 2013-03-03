@@ -28,28 +28,33 @@ def _config_msg(error_type, file_name, line_num, *lines):
     return emsg
     
 
-def config_error(file_name, line_num, *lines):
-    return _config_msg('ConfigError', file_name, line_num, *lines)
+def config_error(file_name, line_num, line):
+    return _config_msg('ConfigError', file_name, line_num, *[line])
 
 
-def config_warning(file_name, line_num, *lines):
-    return _config_msg('ConfigWarning', file_name, line_num, *lines)
+def config_warning(file_name, line_num, line):
+    return _config_msg('ConfigWarning', file_name, line_num, *[line])
 
 
-def api_error(file_name, line_num, *lines):
-    return _config_msg('MultiConfApiError', file_name, line_num, *lines)
+def api_error(file_name, line_num, line):
+    return _config_msg('MultiConfApiError', file_name, line_num, *[line])
 
 
-# Handle variable ids in json/repr output
+# Handle variable ids and source file line numbers in json/repr output
 
 _replace_ids_regex = re.compile(r'("__id__"|, id| #id): [0-9]+("?),')
 _replace_refs_regex = re.compile(r'": "#ref id: [0-9]+"')
 _replace_named_as_regex = re.compile(r" #as: '[^,]+',")
+_replace_line_numbers_regex = re.compile(r"\('(.*)_test.py', [0-9]+\)")
+
+def replace_line_numbers(json_string):
+    return _replace_line_numbers_regex.sub(r"('\1_test.py', 999)", json_string)
 
 def replace_ids(json_string, named_as=True):
     json_string = _replace_ids_regex.sub(r'\1: 0000\2,', json_string)
     if named_as:
         json_string = _replace_named_as_regex.sub(r" #as: 'xxxx',", json_string)
+    json_string = replace_line_numbers(json_string)
     return _replace_refs_regex.sub(r'": "#ref id: 0000"', json_string)
 
 

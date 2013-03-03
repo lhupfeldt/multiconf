@@ -7,9 +7,9 @@ import os
 from collections import Sequence, OrderedDict
 import json
 
-from .envs import BaseEnv, Env, EnvGroup
-from .attribute_collector import AttributeCollector
-from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _error_msg, _user_file_line
+from .envs import BaseEnv, Env, EnvGroup, EnvException
+from .attribute import Attribute
+from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _error_msg, _api_error_msg, _user_file_line
 import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
@@ -17,11 +17,6 @@ _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
 
 class ConfigApiException(ConfigBaseException):
     pass
-
-
-def error(num_errors, message, up_level, error_type='MultiConfApiError'):
-    return _error_msg(num_errors, message, up_level, error_type)
-
 
 class _ConfigBase(object):
     _nested = []
@@ -47,7 +42,9 @@ class _ConfigBase(object):
         for key, value in attr.iteritems():
             if key in self.__class__._deco_nested_repeatables:
                 raise ConfigException(repr(key) + ' defined as default value shadows a nested-repeatable')
-            AttributeCollector(key, self, default_value=value, default_user_file_line=_user_file_line())
+            attribute = Attribute(key)
+            attribute.env_values['__init__'] = (value, _user_file_line())
+            self._attributes[key] = attribute
 
         for key in self.__class__._deco_nested_repeatables:
             self._attributes[key] = OrderedDict()
@@ -106,7 +103,7 @@ class _ConfigBase(object):
             return
 
         try:
-            required_if = self._attributes[required_if_key].value()
+            required_if = self._attributes[required_if_key].env_values[self.env][0]
             if not required_if:
                 return
         except KeyError:
@@ -187,13 +184,107 @@ class _ConfigBase(object):
             # Needed to set private values in __init__
             super(_ConfigBase, self).__setattr__(name, value)
             return
-        raise ConfigException("Trying to set a property " + repr(name) + " on a config item")
+        self.setattr(name, default=value)
 
     def setattr(self, name, **kwargs):
         if name[0] == '_':
             raise ConfigException("Trying to set an attribute starting with '_' " + repr(name) +
                                   " on a config item. Atributes starting with '_' are reserved for multiconf internal usage")
-        self.__getattr__(name)(**kwargs)
+        
+        # For error messages
+        ufl = _user_file_line()
+        eg_from = {}
+        def error(msg):
+            attribute.num_errors = _error_msg(attribute.num_errors, msg)
+
+        attribute = self._attributes.setdefault(name, Attribute(name))
+        if attribute._frozen:
+            msg = "The attribute " + repr(name) + " is already fully defined"
+            error(msg)
+            raise ConfigException(msg + " on object " + repr(self))
+
+        attribute._frozen = True
+
+        # Validate and assign given env values
+        for eg_name, value in kwargs.iteritems():
+            v_ufl = (value, ufl)
+            try:
+                attribute.validate_types(eg_name, v_ufl)
+                
+                if eg_name == 'default':
+                    attribute.env_values['default'] = v_ufl
+                    continue
+
+                eg = self.env.factory.env_or_group(eg_name)
+                for env in eg.envs():
+                    # If env == eg then this is a direct env specification, allow overwriting value previously specified through a group
+                    if env not in attribute.env_values or (isinstance(eg_from[env], EnvGroup) and (env == eg)):
+                        attribute.env_values[env] = v_ufl
+                        eg_from[env] = eg
+                        continue
+
+                    # If env != eg then this is specified through a group, if it was previously specified directly, just ignore
+                    if (not isinstance(eg_from[env], EnvGroup)) and (env != eg):
+                        continue
+
+                    new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
+                    prev_eg_msg = repr(eg_from[env])
+                    msg = "A value is already specified for: " + new_eg_msg + '=' + repr(v_ufl) + ", previous value: " + prev_eg_msg + '=' + repr(attribute.env_values[env])
+                    error(msg)
+
+            except EnvException as ex:
+                error(ex.message)
+
+        if not attribute.has_default():
+            # Check whether we need to check for conditionally required attributes
+            required_if_key = self.__class__._deco_required_if[0]
+            if required_if_key:
+                required_if_attributes = self.__class__._deco_required_if[1]
+                try:
+                    required_if = self.attributes[required_if_key]
+                except KeyError:
+                    # The condition property was not specified, so the conditional properties are not required
+                    required_if_key = False                
+    
+            # Validate that the attribute is defined for all envs
+            attribute.all_envs_initialized = True
+            for eg in self.root_conf._valid_envs:
+                for env in eg.envs():
+                    if env in attribute.env_values:
+                        # The attribute is set with an env specific value
+                        continue
+    
+                    # Check for required_if, the required_if atributes are optional if required_if is false or not specified for the env
+                    if required_if_key:
+                        if name == required_if_key:
+                            # A required_if CONDITION attribute is optional, so it is ok that it is not set for all environments
+                            continue
+    
+                        required_if_env_value = False
+                        try:
+                            required_if_env_value = attribute.env_values[env]
+                        except KeyError:
+                            pass
+                        if not required_if_env_value and name in required_if_attributes:
+                            continue
+    
+                    attribute.all_envs_initialized = False
+                    group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
+                    msg = "Attribute: " + repr(name) + " did not receive a value for env " + repr(env)
+                    error(msg + group_msg)
+    
+                    # ci = container
+                    # while ci != None:
+                    #     print ci._nesting_level, ci._in_build
+                    #     ci = ci._contained_in
+                    # 
+                    # if not container.contained_in._in_build:
+                    #     attribute.num_errors = error(attribute.num_errors, msg + group_msg)
+                    # else:
+                    #     warning(msg + group_msg)
+    
+        if attribute.num_errors:
+            raise ConfigException("There were " + repr(attribute.num_errors) + " errors when defining attribute " + repr(name) + " on object: " + repr(self))
 
     def _check_valid_env(self, env, valid_envs):
         if not isinstance(env, Env):
@@ -204,27 +295,19 @@ class _ConfigBase(object):
                 return
         raise ConfigException("The env " + repr(env) + " must be in the (nested) list of valid_envs " + repr(valid_envs))
 
-    def _env_specific_value(self, attr_name, attr_coll, env):
-        if isinstance(attr_coll, ConfigItem) or isinstance(attr_coll, OrderedDict):
-            return attr_coll
+    def _env_specific_value(self, attr_name, attr, env):
+        if isinstance(attr, ConfigItem) or isinstance(attr, OrderedDict):
+            return attr
 
-        try:
-            return attr_coll.env_values[env][0]
-        except KeyError:
-            self._check_valid_env(env, self.valid_envs)
-            raise NoAttributeException("Attribute " + repr(attr_name) + " undefined for env " + repr(env))
+        attr.freeze()            
 
-    def getattr_env(self, name, env):
-        try:
-            attr_coll = self._attributes[name]
-        except KeyError:
-            error_message = ""
-            repeatable_name = name + 's'
-            if self._attributes.get(repeatable_name):
-                error_message = ", but found attribute " + repr(repeatable_name)
-            raise ConfigException(repr(self) + " has no attribute " + repr(name) + error_message)
+        if env in attr.env_values:
+            return attr.env_values[env][0]
+            
+        if attr.has_default():
+            return attr.default_value()[0]
 
-        return self._env_specific_value(name, attr_coll, env)
+        raise NoAttributeException("Attribute " + repr(attr_name) + " undefined for env " + repr(env))
 
     def __getattr__(self, name):
         if name.startswith('__'):
@@ -234,27 +317,18 @@ class _ConfigBase(object):
             ex_msg = "An error was detected trying to get attribute " + repr(name) + " on class " + repr(self.__class__.__name__)
             msg  = "\n    - Attributes starting with '_' are reserved for internal MultiConf usage. You probably tried to use the"
             msg += "\n      MultiConf API in a derived class __init__ before calling the parent class __init__"
-            error(1, ex_msg + msg, 4)
+            _api_error_msg(1, ex_msg + msg)
             raise ConfigApiException(ex_msg)
 
         try:
-            # Return existing collector/(dict of)nested item(s) if any
-            coll = self._attributes[name]
-            if isinstance(coll, (ConfigItem, OrderedDict)):
-                return coll
-            assert isinstance(coll, AttributeCollector), "Expected AttributeCollector, got: " + repr(type(coll))
-            if not coll._frozen:
-                return coll
+            attr = self._attributes[name]
         except KeyError:
-            if not self._frozen:
-                return AttributeCollector(name, self, default_value=None, default_user_file_line=None)
-
-        try:
-            return self.getattr_env(name, self.env)
-        except ConfigException as ex:
-            if _debug_exc:
-                raise
-            raise ex
+            error_message = ""
+            repeatable_name = name + 's'
+            if self._attributes.get(repeatable_name):
+                error_message = ", but found attribute " + repr(repeatable_name)
+            raise AttributeError(repr(self) + " has no attribute " + repr(name) + error_message)
+        return self._env_specific_value(name, attr, self.env)
 
     def iteritems(self):
         for key, value in self._attributes.iteritems():
@@ -313,8 +387,8 @@ class _ConfigBase(object):
         """Find first occurence of attribute 'attribute_name', by searching backwards towards root_conf, starting with self."""
         contained_in = self
         while contained_in:
-            attr_coll = contained_in.attributes.get(attribute_name)
-            if attr_coll:
+            attr = contained_in.attributes.get(attribute_name)
+            if attr:
                 return contained_in.__getattr__(attribute_name)
             contained_in = contained_in.contained_in
 
@@ -427,9 +501,9 @@ class ConfigItem(_ContainedConfigBase):
                     obj_key = self._attributes['id']
                 except KeyError:
                     obj_key = self._attributes['name']
-                if not obj_key._has_default():
+                if not obj_key.has_default():
                     raise KeyError()
-                obj_key = obj_key._default_value()[0]
+                obj_key = obj_key.default_value()[0]
 
                 # Check that we are not replacing an object with the same id/name
                 if self._contained_in.attributes[my_key].get(obj_key):
@@ -492,12 +566,9 @@ class ConfigBuilder(_ContainedConfigBase):
     def override(self, config_item, *keys):
         """Assign attributes that that match 'override' decorator keys or 'keys' from builder to child Item"""
         for key in self.__class__._deco_override + list(keys):
-            value = self.attributes.get(key)
-            if value:
+            if key in self._attributes:
+                value = self._attributes[key]
                 config_item_attr = config_item.attributes.get(key)
-                if config_item_attr:
-                    config_item_attr.override(value)
-                    continue
                 config_item.attributes[key] = value
 
 

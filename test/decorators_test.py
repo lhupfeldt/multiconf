@@ -170,10 +170,10 @@ class DecoratorsTest(unittest.TestCase):
             pass
 
         with root2(prod, [prod]) as cr:
-            cr.anattr(prod=1)
-            cr.anotherattr(prod=2)
-            cr.someattr2(prod=3)
-            cr.someotherattr2(prod=4)
+            cr.setattr('anattr', prod=1)
+            cr.setattr('anotherattr', prod=2)
+            cr.setattr('someattr2', prod=3)
+            cr.setattr('someotherattr2', prod=4)
         ok (cr.anattr) == 1
         ok (cr.anotherattr) == 2
         ok (cr.someattr2) == 3

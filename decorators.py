@@ -36,7 +36,7 @@ def _add_super_list_deco_values(cls, attr_names_str, deco_attr_name):
     super_names = getattr(super(cls, cls), '_deco_' + deco_attr_name)
     for attr in super_names:
         if attr in attr_names:
-            warn("Attribute name: " + repr(attr) + " re-specified as " + repr(deco_attr_name) + " on class: " + repr(cls.__name__) + " , was already inherited from a super class.",
+            warn(0, "Attribute name: " + repr(attr) + " re-specified as " + repr(deco_attr_name) + " on class: " + repr(cls.__name__) + " , was already inherited from a super class.",
                  up_level=3)
 
     return attr_names + super_names
