@@ -3,7 +3,6 @@
 
 import sys, os.path
 from collections import namedtuple
-import inspect
 
 class ConfigBaseException(Exception):
     pass
@@ -21,17 +20,15 @@ class InvalidUsageException(ConfigBaseException):
     pass
 
 
-_Traceback = namedtuple('Traceback', 'filename, lineno, function, code_context, index')
-
-
-def _user_file_line(up_level_start=0):
+def _user_file_line(up_level_start=1):
+    frame = sys._getframe(up_level_start)
     while 1:
-        tb = _Traceback(*inspect.stack()[up_level_start][1:])
-        if os.path.basename(os.path.dirname(tb.filename)) != 'multiconf':
+        filename = frame.f_globals['__file__']
+        if os.path.basename(os.path.dirname(filename)) != 'multiconf':
             break
-        up_level_start += 1
+        frame = frame.f_back
 
-    return tb.filename, tb.lineno 
+    return filename if filename[-1] == 'y' else filename[:-1], frame.f_lineno
 
 
 def _error_msg(num_errors, message, up_level=2, error_type='ConfigError'):
