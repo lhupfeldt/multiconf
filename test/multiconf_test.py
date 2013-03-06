@@ -456,6 +456,7 @@ class MulticonfTest(unittest.TestCase):
         for x_child in cr.xses['server1'].x_children.values():
             ok (x_child.a) == index
             index += 1
+        ok (index) == 12
 
 
     # TODO not yet implemente 'partial' feature
