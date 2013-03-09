@@ -60,3 +60,8 @@ def to_compact(json_string):
     json_string = _compact_ids_regex.sub(r" #as: 'xxxx', id: \2\1,", json_string)
     return _compact_calculated_regex.sub(r': "\1 #calculated"', json_string)
 
+
+_replace_user_file_line_regex = re.compile(r"\('[^,]+_test.py', [0-9]+\)")
+def replace_user_file_line(json_string):
+    return _replace_user_file_line_regex.sub("('fake_file_test.py', 999)", json_string)
+    

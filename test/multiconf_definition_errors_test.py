@@ -6,7 +6,7 @@
 import unittest
 from oktest import ok, test, fail, dummy
 
-from .utils import lazy, config_error, lineno, replace_ids
+from .utils import lazy, config_error, lineno, replace_ids, replace_user_file_line
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
 from ..decorators import nested_repeatables, repeat, named_as
@@ -67,7 +67,7 @@ _o_expected = """A value is already specified for: Env('dev2CT') from group EnvG
 }=3, previous value: EnvGroup('g_dev2') {
      Env('dev2CT'),
      Env('dev2ST')
-}=(2, ('/home/lhn/src/multiconf/test/multiconf_definition_errors_test.py', 302))"""
+}=(2, ('fake_file_test.py', 999))"""
 
 
 _p_expected = """A value is already specified for: Env('dev2CT') from group EnvGroup('g_dev_overlap') {
@@ -76,7 +76,7 @@ _p_expected = """A value is already specified for: Env('dev2CT') from group EnvG
 }=3, previous value: EnvGroup('g_dev2') {
      Env('dev2CT'),
      Env('dev2ST')
-}=(2, ('/home/lhn/src/multiconf/test/multiconf_definition_errors_test.py', 317))"""
+}=(2, ('fake_file_test.py', 999))"""
 
 
 _group_for_selected_env_expected = """project: env must be instance of 'Env'; found type 'EnvGroup': EnvGroup('g_dev3') {
@@ -303,7 +303,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io            
-            ok (serr) == ce(errorline, _o_expected)
+            ok (replace_user_file_line(serr)) == ce(errorline, _o_expected)
             ok (ex.message) == "There were 1 errors when defining attribute 'a'"
 
     @test("value defined through multiple groups")
@@ -318,7 +318,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io            
-            ok (serr) == ce(errorline, _p_expected)
+            ok (replace_user_file_line(serr)) == ce(errorline, _p_expected)
             ok (ex.message) == "There were 1 errors when defining attribute 'a'"
 
     @test("nested repeatable items with repeated name")

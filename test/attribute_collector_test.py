@@ -16,7 +16,7 @@ class AttributeCollectorTest(unittest.TestCase):
     def _a(self):
         class Container(object):
             attributes = {}
-        ac = AttributeCollector(attribute_name='some_name1', container=Container(), default_value=None, default_user_file_line=_user_file_line())
-        ok (repr(ac)) == "AttributeCollector: 'some_name1':not-frozen not-all-envs-initialized, values: {'__init__': (None, ('/home/lhn/src/multiconf/test/attribute_collector_test.py', 19))}"
+        ac = AttributeCollector(attribute_name='some_name1', container=Container(), default_value=None, default_user_file_line=('fake_file.py', 999))
+        ok (repr(ac)) == "AttributeCollector: 'some_name1':not-frozen not-all-envs-initialized, values: {'__init__': (None, ('fake_file.py', 999))}"
         ac._frozen = True
-        ok (repr(ac)) == "AttributeCollector: 'some_name1':frozen not-all-envs-initialized, values: {'__init__': (None, ('/home/lhn/src/multiconf/test/attribute_collector_test.py', 19))}"
+        ok (repr(ac)) == "AttributeCollector: 'some_name1':frozen not-all-envs-initialized, values: {'__init__': (None, ('fake_file.py', 999))}"
