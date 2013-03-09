@@ -6,7 +6,7 @@
 import unittest
 from oktest import ok, test, fail, dummy
 
-from .utils import lazy, config_error, lineno, replace_ids, replace_line_numbers
+from .utils import lazy, config_error, lineno, replace_ids, replace_user_file_line
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
 from ..decorators import nested_repeatables, repeat, named_as
@@ -379,7 +379,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io            
-            ok (replace_line_numbers(serr)) == ce(errorline, _o_expected)
+            ok (replace_user_file_line(serr)) == ce(errorline, _o_expected)
             ok (replace_ids(ex.message, False)) == _o_expected_ex
 
     @test("value defined through multiple groups")
@@ -394,7 +394,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io            
-            ok (replace_line_numbers(serr)) == ce(errorline, _p_expected)
+            ok (replace_user_file_line(serr)) == ce(errorline, _p_expected)
             ok (replace_ids(ex.message, False)) == _p_expected_ex
 
     @test("nested repeatable items with repeated name")

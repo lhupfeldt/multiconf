@@ -42,19 +42,19 @@ def api_error(file_name, line_num, line):
 
 # Handle variable ids and source file line numbers in json/repr output
 
+_replace_user_file_line_regex = re.compile(r"\('(.*)_test.py', [0-9]+\)")
+def replace_user_file_line(json_string):
+    return _replace_user_file_line_regex.sub(r"('\1_test.py', 999)", json_string)
+
+
 _replace_ids_regex = re.compile(r'("__id__"|, id| #id): [0-9]+("?),')
 _replace_refs_regex = re.compile(r'": "#ref id: [0-9]+"')
 _replace_named_as_regex = re.compile(r" #as: '[^,]+',")
-_replace_line_numbers_regex = re.compile(r"\('(.*)_test.py', [0-9]+\)")
-
-def replace_line_numbers(json_string):
-    return _replace_line_numbers_regex.sub(r"('\1_test.py', 999)", json_string)
-
 def replace_ids(json_string, named_as=True):
     json_string = _replace_ids_regex.sub(r'\1: 0000\2,', json_string)
     if named_as:
         json_string = _replace_named_as_regex.sub(r" #as: 'xxxx',", json_string)
-    json_string = replace_line_numbers(json_string)
+    json_string = replace_user_file_line(json_string)
     return _replace_refs_regex.sub(r'": "#ref id: 0000"', json_string)
 
 
@@ -64,4 +64,3 @@ def to_compact(json_string):
     # There is no named_as in the non-compact format, just insert
     json_string = _compact_ids_regex.sub(r" #as: 'xxxx', id: \2\1,", json_string)
     return _compact_calculated_regex.sub(r': "\1 #calculated"', json_string)
-
