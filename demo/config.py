@@ -50,20 +50,20 @@ def conf(env_name):
 
         # Here we are getting the domain base port value set above
         port = dc.base_port + 110
-        with managed_server(host='ms.'+env.name+'.mydomain', port=port+1, suffix=17) as ms:
+        with managed_server(name='ms5', host='ms.'+env.name+'.mydomain', port=port+1, suffix=17) as ms:
             ms.setattr('host', devlocal='localhost')
             # We will have that property set to one in prod and preprod and two in all dev environments
             ms.setattr('custom_property', g_prod=1, g_dev=2)
 
         # Add a special managed server, and override default value
         port = dc.base_port + 210
-        with managed_server(host='ms.'+env.name+'.mydomain', port=port+1, suffix=17, another_prop=[1, 2]) as c:
+        with managed_server(name='ms6', host='ms.'+env.name+'.mydomain', port=port+1, suffix=17, another_prop=[1, 2]) as c:
             c.setattr('another_prop', g_dev=[1])
 
         # Add a managed server with no explicit env specific properties
         # This means all environment will have the same settings for this
         # server
-        managed_server(host='ms.'+env.name+'.mydomain', port=port+2, suffix=18)
+        managed_server(name='ms7', host='ms.'+env.name+'.mydomain', port=port+2, suffix=18)
 
         # Here we define data source used by this domain
         with datasource(name='SampleDS_one', database_type="OracleRAC") as c:

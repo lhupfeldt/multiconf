@@ -10,7 +10,7 @@ sys.path.append(jp(here, '../..'))
 from multiconf import ConfigRoot, ConfigItem, ConfigBuilder
 from multiconf.decorators import nested_repeatables, repeat, required
 
-# Here we define what can be repeated within configuration item. In this case
+# Here we define what can be repeated within the configuration item. In this case
 # we will have many managed servers and datasources
 @nested_repeatables('managed_servers, datasources')
 class weblogic_config(ConfigRoot):
@@ -25,14 +25,14 @@ class admin_server(ConfigItem):
         super(admin_server, self).__init__(server_type='admin', **attr)
 
 
-# Here we saying that managed_server can be repeated within it's holder
+# Here specify that a managed_server can be repeated within it's holder
 @repeat()
 class managed_server(ConfigItem):
-    def __init__(self, **attr):
-        super(managed_server, self).__init__(server_type='managed', **attr)
+    def __init__(self, name, **attr):
+        super(managed_server, self).__init__(name=name, server_type='managed', **attr)
 
 
-# Here we saying that parameter num_servers is required when we defining a
+# Here specify that a parameter num_servers is required when defining a
 # builder for managed_server
 @required('num_servers')
 @repeat()
