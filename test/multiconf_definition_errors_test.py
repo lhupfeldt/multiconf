@@ -102,10 +102,10 @@ _k4_expected = """'RepeatableItems': {
 
 _o_expected = """A value is already specified for: Env('dev2CT') from group EnvGroup('g_dev_overlap') {
      Env('dev2CT')
-}=(3, ('/home/lhn/src/multiconf/test/multiconf_definition_errors_test.py', 999)), previous value: EnvGroup('g_dev2') {
+}=(3, ('fake_dir/multiconf_definition_errors_test.py', 999)), previous value: EnvGroup('g_dev2') {
      Env('dev2CT'),
      Env('dev2ST')
-}=(2, ('/home/lhn/src/multiconf/test/multiconf_definition_errors_test.py', 999))"""
+}=(2, ('fake_dir/multiconf_definition_errors_test.py', 999))"""
 
 _o_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
@@ -120,10 +120,10 @@ _o_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
 _p_expected = """A value is already specified for: Env('dev2CT') from group EnvGroup('g_dev_overlap') {
      Env('dev2CT'),
      Env('dev3CT')
-}=(3, ('/home/lhn/src/multiconf/test/multiconf_definition_errors_test.py', 999)), previous value: EnvGroup('g_dev2') {
+}=(3, ('fake_dir/multiconf_definition_errors_test.py', 999)), previous value: EnvGroup('g_dev2') {
      Env('dev2CT'),
      Env('dev2ST')
-}=(2, ('/home/lhn/src/multiconf/test/multiconf_definition_errors_test.py', 999))"""
+}=(2, ('fake_dir/multiconf_definition_errors_test.py', 999))"""
 
 _p_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 

@@ -42,9 +42,10 @@ def api_error(file_name, line_num, line):
 
 # Handle variable ids and source file line numbers in json/repr output
 
-_replace_user_file_line_regex = re.compile(r"\('(.*)_test.py', [0-9]+\)")
-def replace_user_file_line(json_string):
-    return _replace_user_file_line_regex.sub(r"('\1_test.py', 999)", json_string)
+
+_replace_user_file_line_regex = re.compile(r"\('[^,()]+/([^/]+)_test.py', [0-9]+\)")
+def replace_user_file_line(string):
+    return _replace_user_file_line_regex.sub(r"('fake_dir/\1_test.py', 999)", string)
 
 
 _replace_ids_regex = re.compile(r'("__id__"|, id| #id): [0-9]+("?),')
