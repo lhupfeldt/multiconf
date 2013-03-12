@@ -34,9 +34,9 @@ class _ConfigBase(object):
         self._attributes = OrderedDict()
         self._frozen = False
         self._may_freeze_validate = True
-        self._in_exit = False
         self._in_build = False
-        self._user_validated = False        
+        self._user_validated = False
+        self._in_init = True
 
         # Prepare collectors with default values
         for key, value in attr.iteritems():
@@ -48,9 +48,6 @@ class _ConfigBase(object):
 
         for key in self.__class__._deco_nested_repeatables:
             self._attributes[key] = OrderedDict()
-
-        # Builders are only inserted here so that they can be frozen
-        self._builders = []
 
     def named_as(self):
         if self.__class__._deco_named_as:
@@ -86,6 +83,7 @@ class _ConfigBase(object):
     def __enter__(self):
         assert not self._frozen
         self._may_freeze_validate = False
+        self._in_init = False
         self.__class__._nested.append(self)
         return self
 
@@ -139,10 +137,6 @@ class _ConfigBase(object):
             if not child_value._frozen:
                 child_value.freeze()
 
-        for builder in self._builders:
-            if not builder._frozen:
-                builder.freeze()
-
         if not self._may_freeze_validate:
             return self
 
@@ -165,15 +159,12 @@ class _ConfigBase(object):
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             self._may_freeze_validate = True
-            self._in_exit = True
             self.freeze()
             self.__class__._nested.pop()
-            self._in_exit = False
         except Exception as ex:
             if not exc_type:
-                if _debug_exc and isinstance(ex, ConfigBaseException):
-                    # Strip stack for ConfigBaseException
-                    raise ex
+                if _debug_exc:
+                    raise
                 raise ex
 
             print >> sys.stderr, "Exception in __exit__:", repr(ex)
@@ -190,7 +181,7 @@ class _ConfigBase(object):
         if name[0] == '_':
             raise ConfigException("Trying to set an attribute starting with '_' " + repr(name) +
                                   " on a config item. Atributes starting with '_' are reserved for multiconf internal usage")
-        
+
         # For error messages
         ufl = _user_file_line()
         eg_from = {}
@@ -203,14 +194,15 @@ class _ConfigBase(object):
             error(msg)
             raise ConfigException(msg + " on object " + repr(self))
 
-        attribute._frozen = True
+        if not self._in_init and not ('default' in kwargs and len(kwargs) == 1):
+            attribute._frozen = True
 
         # Validate and assign given env values
         for eg_name, value in kwargs.iteritems():
             v_ufl = (value, ufl)
             try:
                 attribute.validate_types(eg_name, v_ufl)
-                
+
                 if eg_name == 'default':
                     attribute.env_values['default'] = v_ufl
                     continue
@@ -244,8 +236,8 @@ class _ConfigBase(object):
                     required_if = self.attributes[required_if_key]
                 except KeyError:
                     # The condition property was not specified, so the conditional properties are not required
-                    required_if_key = False                
-    
+                    required_if_key = False
+
             # Validate that the attribute is defined for all envs
             attribute.all_envs_initialized = True
             for eg in self.root_conf._valid_envs:
@@ -253,13 +245,13 @@ class _ConfigBase(object):
                     if env in attribute.env_values:
                         # The attribute is set with an env specific value
                         continue
-    
+
                     # Check for required_if, the required_if atributes are optional if required_if is false or not specified for the env
                     if required_if_key:
                         if name == required_if_key:
                             # A required_if CONDITION attribute is optional, so it is ok that it is not set for all environments
                             continue
-    
+
                         required_if_env_value = False
                         try:
                             required_if_env_value = attribute.env_values[env]
@@ -267,22 +259,22 @@ class _ConfigBase(object):
                             pass
                         if not required_if_env_value and name in required_if_attributes:
                             continue
-    
+
                     attribute.all_envs_initialized = False
                     group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
                     msg = "Attribute: " + repr(name) + " did not receive a value for env " + repr(env)
                     error(msg + group_msg)
-    
+
                     # ci = container
                     # while ci != None:
                     #     print ci._nesting_level, ci._in_build
                     #     ci = ci._contained_in
-                    # 
+                    #
                     # if not container.contained_in._in_build:
                     #     attribute.num_errors = error(attribute.num_errors, msg + group_msg)
                     # else:
                     #     warning(msg + group_msg)
-    
+
         if attribute.num_errors:
             raise ConfigException("There were " + repr(attribute.num_errors) + " errors when defining attribute " + repr(name) + " on object: " + repr(self))
 
@@ -295,19 +287,10 @@ class _ConfigBase(object):
                 return
         raise ConfigException("The env " + repr(env) + " must be in the (nested) list of valid_envs " + repr(valid_envs))
 
-    def _env_specific_value(self, attr_name, attr, env):
+    def _env_specific_value(self, attr, env):
         if isinstance(attr, ConfigItem) or isinstance(attr, OrderedDict):
             return attr
-
-        attr.freeze()            
-
-        if env in attr.env_values:
-            return attr.env_values[env][0]
-            
-        if attr.has_default():
-            return attr.default_value()[0]
-
-        raise NoAttributeException("Attribute " + repr(attr_name) + " undefined for env " + repr(env))
+        return attr.value(env)
 
     def __getattr__(self, name):
         if name.startswith('__'):
@@ -328,12 +311,12 @@ class _ConfigBase(object):
             if self._attributes.get(repeatable_name):
                 error_message = ", but found attribute " + repr(repeatable_name)
             raise AttributeError(repr(self) + " has no attribute " + repr(name) + error_message)
-        return self._env_specific_value(name, attr, self.env)
+        return self._env_specific_value(attr, self.env)
 
     def iteritems(self):
         for key, value in self._attributes.iteritems():
             try:
-                yield key, self._env_specific_value(key, value, self.env)
+                yield key, self._env_specific_value(value, self.env)
             except NoAttributeException:
                 # This should only happen in case of  a conditional attribute
                 pass
@@ -459,9 +442,9 @@ class ConfigRoot(_ConfigBase):
         return self._valid_envs
 
 
-class _ContainedConfigBase(_ConfigBase):
+class ConfigItem(_ConfigBase):
     def __init__(self, json_filter=None, **attr):
-        super(_ContainedConfigBase, self).__init__(json_filter=json_filter, **attr)
+        super(ConfigItem, self).__init__(json_filter=json_filter, **attr)
 
         if not self.__class__._nested:
             raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
@@ -479,21 +462,21 @@ class _ContainedConfigBase(_ConfigBase):
                 raise
             raise ex
 
-
-class ConfigItem(_ContainedConfigBase):
-    def __init__(self, json_filter=None, **attr):
-        super(ConfigItem, self).__init__(json_filter=json_filter, **attr)
-
         # Automatic Nested Insert in parent, insert self in containing Item's attributes
         my_key = self.named_as()
 
         if self.__class__._deco_repeatable:
             # Validate that the containing item has specified this item as repeatable
             if not my_key in self._contained_in.__class__._deco_nested_repeatables:
-                msg = repr(my_key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
-                    repr(self._contained_in.named_as())
-                raise ConfigException(msg)
-                # TODO?: type check of list items (isinstance(ConfigItem). Same type?
+                if isinstance(self._contained_in, ConfigBuilder):
+                    # Builders don't declare nested repeatables, since the items are ultimately to be assigned to the built items
+                    if not my_key in self._contained_in.attributes:
+                        self._contained_in.attributes[my_key] = OrderedDict()
+                else:
+                    msg = repr(my_key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
+                        repr(self._contained_in.named_as())
+                    raise ConfigException(msg)
+                    # TODO?: type check of list items (isinstance(ConfigItem). Same type?
 
             # Insert in Ordered dict by 'id' or 'name', 'id' is preferred if given
             try:
@@ -526,16 +509,10 @@ class ConfigItem(_ContainedConfigBase):
         self._contained_in.attributes[my_key] = self
 
 
-class ConfigBuilder(_ContainedConfigBase):
-    # Decoration attributes
-    _deco_override = []
-
+class ConfigBuilder(ConfigItem):
     def __init__(self, json_filter=None, **attr):
         super(ConfigBuilder, self).__init__(json_filter=json_filter, **attr)
-        self._override_keys = attr.keys()
-
-        # Append self to containing Item's builders list so that parent can freeze us
-        self._contained_in._builders.append(self)
+        self._what_built = OrderedDict()
         self._freezing = False
 
     def freeze(self):
@@ -543,18 +520,57 @@ class ConfigBuilder(_ContainedConfigBase):
             return
         self._freezing = True
 
+        def override(item, attributes):
+            if isinstance(item, ConfigItem):
+                for override_key, override_value in attributes.iteritems():
+                    item._attributes[override_key] = override_value
+
         super(ConfigBuilder, self).freeze()
         if self._may_freeze_validate:
-            # The items we are building goes into the parent object, not the builder!
-            if self._in_exit:
-                self.__class__._nested.pop()
             try:
+                existing_attributes = self._attributes.copy()
+
+                # We need to allow the same nested repeatables as the parent item
+                self.__class__._deco_nested_repeatables = self._contained_in.__class__._deco_nested_repeatables
+                for key in self.__class__._deco_nested_repeatables:
+                    self._attributes[key] = OrderedDict()
+
                 self._in_build = True
                 self.build()
+
+                # Attributes/Items on builder are copied to items created in build
+                # Loop over attributes created in build
+                for build_key, build_value in self._attributes.iteritems():
+                    if build_key in existing_attributes:
+                        continue
+                    self._what_built[build_key] = build_value.value(self.env) if isinstance(build_value, Attribute) else build_value
+
+                    if isinstance(build_value, OrderedDict):
+                        for key, value in build_value.iteritems():
+                            override(value, existing_attributes)
+                        continue
+
+                    override(build_value, existing_attributes)
+
+                # Items and attributes created in 'build' goes into parent
+                for key, value in self._attributes.iteritems():
+                    if key in existing_attributes:
+                        continue
+
+                    # Merge repeatable items in to parent
+                    if isinstance(value, OrderedDict):
+                        for obj_key, ovalue in value.iteritems():
+                            if obj_key in self._contained_in.attributes[key]:
+                                raise ConfigException("Nested repeatable from 'build', key: " + repr(obj_key) + ", value: " + repr(ovalue) +
+                                                      " overwrites existing entry in parent: " + repr(self._contained_in))
+                            self._contained_in.attributes[key][obj_key] = ovalue
+                        continue
+
+                    # TODO validation
+                    self.contained_in._attributes[key] = value
             finally:
+                self.__class__._deco_nested_repeatables = []
                 self._in_build = False
-                if self._in_exit:
-                    self.__class__._nested.append(self)
         self._freezing = False
         return self
 
@@ -563,12 +579,8 @@ class ConfigBuilder(_ContainedConfigBase):
         """Override this in derived classes. This is where child ConfigItems are declared"""
         raise Exception("AbstractNotImplemented")
 
-    def override(self, config_item, *keys):
-        """Assign attributes that that match 'override' decorator keys or 'keys' from builder to child Item"""
-        for key in self.__class__._deco_override + list(keys):
-            if key in self._attributes:
-                value = self._attributes[key]
-                config_item_attr = config_item.attributes.get(key)
-                config_item.attributes[key] = value
+    def what_built(self):
+        return self._what_built
 
-
+    def named_as(self):
+        return super(ConfigBuilder, self).named_as() + '.builder.' + repr(id(self))

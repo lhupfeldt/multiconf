@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .config_errors import _error_type_msg as error_msg, _line_msg as line_msg
+from .config_errors import NoAttributeException, _error_type_msg as error_msg, _line_msg as line_msg
 
 class Attribute(object):
     def __init__(self, attribute_name):
@@ -33,12 +33,23 @@ class Attribute(object):
                 return self.env_values[default_key]
         raise Exception('No default value')
 
-    def __repr__(self):
-        return self.__class__.__name__ + ': ' + repr(self.attribute_name) + ':' + ('frozen' if self._frozen else 'not-frozen') + ' ' \
-            + ('all-envs-initialized' if self.all_envs_initialized else 'not-all-envs-initialized') + ", values: " + repr(self.env_values)
-
     def env_value(self, env):
         return self.env_values[env]
 
     def freeze(self):
         self._frozen = True
+
+    def value(self, env):
+        self.freeze()
+
+        if env in self.env_values:
+            return self.env_values[env][0]
+
+        if self.has_default():
+            return self.default_value()[0]
+
+        raise NoAttributeException("Attribute " + repr(self.attribute_name) + " undefined for env " + repr(env))
+
+    def __repr__(self):
+        return self.__class__.__name__ + ': ' + repr(self.attribute_name) + ':' + ('frozen' if self._frozen else 'not-frozen') + ' ' \
+            + ('all-envs-initialized' if self.all_envs_initialized else 'not-all-envs-initialized') + ", values: " + repr(self.env_values)

@@ -9,7 +9,7 @@ import unittest
 from oktest import ok, test, fail
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
-from ..decorators import nested_repeatables, named_as, repeat, required, override
+from ..decorators import nested_repeatables, named_as, repeat, required
 from ..envs import EnvFactory
 
 ef = EnvFactory()
@@ -211,7 +211,6 @@ class MulticonfTest(unittest.TestCase):
         with root(prod, [prod, pp], a=0):
             with rchild(id='a') as rc:
                 rc.setattr('y', prod=1, pp=2)
-
                 ok (rc.y) == 1
 
     @test("automatic freeze of property overridden in with_statement")
@@ -219,7 +218,6 @@ class MulticonfTest(unittest.TestCase):
         with root(prod, [prod, pp], a=0):
             with rchild(id='a', y=18) as rc:
                 rc.setattr('y', prod=7, pp=2)
-
                 ok (rc.y) == 7
 
     @test("explicit freeze of all defined properties")
@@ -229,7 +227,6 @@ class MulticonfTest(unittest.TestCase):
                 rc.setattr('y', prod=7, pp=2)
                 rc.setattr('z', pp=3)
                 rc.freeze()
-
                 ok (rc.y) == 7
                 ok (rc.x) == 17
                 ok (rc.z) == 18
@@ -327,7 +324,6 @@ class MulticonfTest(unittest.TestCase):
     @test("ConfigBuilder - override")
     def _l(self):
         @required('b')
-        @override('a')
         class XBuilder(ConfigBuilder):
             def __init__(self, num_servers=4, **kwargs):
                 super(XBuilder, self).__init__(num_servers=num_servers, **kwargs)
@@ -336,7 +332,6 @@ class MulticonfTest(unittest.TestCase):
                 for server_num in xrange(1, self.num_servers+1):
                     with Xses(name='server%d' % server_num, server_num=server_num) as c:
                         c.setattr('something', prod=1, pp=2)
-                        self.override(c, 'b', 'something')
 
         @nested_repeatables('xses')
         class Root(ConfigRoot):
@@ -383,23 +378,23 @@ class MulticonfTest(unittest.TestCase):
 
     @test("ConfigBuilder - access to contained_in from build")
     def _l3(self):
-        @named_as('x')
-        class X(ConfigItem):
+        @named_as('y')
+        class Y(ConfigItem):
             pass
         
-        class XBuilder(ConfigBuilder):
+        class YBuilder(ConfigBuilder):
             def build(self):
-                with X(number=self.contained_in.aaa):
+                with Y(number=self.contained_in.aaa):
                     pass
 
-        @nested_repeatables('xses')
+        @nested_repeatables('ys')
         class Root(ConfigRoot):
             aaa = 7
 
         with Root(prod, [prod, pp]) as cr:
-            XBuilder()
+            YBuilder()
                     
-        ok (cr.x.number) == 7
+        ok (cr.y.number) == 7
 
     @test("ConfigBuilder - access to contained_in from __init__")
     def _l4(self):
@@ -410,7 +405,7 @@ class MulticonfTest(unittest.TestCase):
         class XBuilder(ConfigBuilder):
             def __init__(self):
                 super(XBuilder, self).__init__()
-                self.setattr('number', default=self.contained_in.aaa)
+                self.number = self.contained_in.aaa
 
             def build(self):
                 with X(number=self.number):
@@ -428,18 +423,15 @@ class MulticonfTest(unittest.TestCase):
 
     @test("ConfigBuilder - Nested Items")
     def _l5(self):
-        @override('x_children, b')
-        @nested_repeatables('xses, x_children')
         class XBuilder(ConfigBuilder):
             def __init__(self):
                 super(XBuilder, self).__init__()
-                self.setattr('number', default=self.contained_in.aaa)
+                self.number = self.contained_in.aaa
         
             def build(self):
                 for num in xrange(1, self.number+1):
                     with Xses(name='server%d' % num, server_num=num) as c:
                         c.setattr('something', prod=1, pp=2)
-                        self.override(c)
         
         @nested_repeatables('xses')
         class Root(ConfigRoot):
@@ -447,34 +439,78 @@ class MulticonfTest(unittest.TestCase):
         
         with Root(prod, [prod, pp]) as cr:
             with XBuilder() as xb:
-                xb.setattr('b', default=27)
+                xb.b = 27
                 XChild(a=10)
                 XChild(a=11)
         
         ok (len(cr.xses)) == 2
-        index = 10
-        for x_child in cr.xses['server1'].x_children.values():
-            ok (x_child.a) == index
-            index += 1
-        ok (index) == 12
+        for server in 'server1', 'server2':
+            index = 10
+            for x_child in cr.xses[server].x_children.values():
+                ok (x_child.a) == index
+                index += 1
+            ok (index) == 12
 
 
-    # TODO not yet implemente 'partial' feature
+    @test("ConfigBuilder - repeated")
+    def _l6(self):
+        class XBuilder(ConfigBuilder):
+            def __init__(self, first=1, last=2):
+                super(XBuilder, self).__init__()
+                self.first = first
+                self.last = last
+        
+            def build(self):
+                for num in xrange(self.first, self.last+1):
+                    with Xses(name='server%d' % num, server_num=num) as c:
+                        c.setattr('something', prod=1, pp=2)
+                    self.q = self.last
+        
+        @nested_repeatables('xses')
+        class Root(ConfigRoot):
+            aaa = 2
+        
+        with Root(prod, [prod, pp]) as cr:
+            with XBuilder() as xb1:
+                XChild(a=10)
+                XChild(a=11)
+            with XBuilder(first=3) as xb2:
+                xb2.last = 3
+                XChild(a=10)
+        
+        ok (len(cr.xses)) == 3
+        total_children = 0
+        for server in 'server1', 'server2', 'server3':
+            index = 10
+            for x_child in cr.xses[server].x_children.values():
+                ok (x_child.a) == index
+                index += 1
+                total_children += 1
+        ok (total_children) == 5        
+
+        ok (len(xb1.what_built())) == 2
+        ok (isinstance(xb1.what_built(), OrderedDict)) == True
+        ok (xb1.what_built()['q']) == 2
+
+        ok (len(xb1.what_built())) == 2
+        ok (isinstance(xb2.what_built(), OrderedDict)) == True
+        ok (xb2.what_built()['xses']['server3'].something) == 1
+        ok (xb2.what_built()['q']) == 3
+
+    # TODO not yet implemented 'partial' feature
     # @test("ConfigBuilder - Nested Items - override values, extend envs")
     # def _l6(self):
-    #     @override('x_children, b')
     #     @nested_repeatables('xses, x_children')
     #     class XBuilder(ConfigBuilder):
     #         def __init__(self):
     #             super(XBuilder, self).__init__()
-    #             self.number(default=self.contained_in.aaa)
+    #             self.number = self.contained_in.aaa
     #     
     #         def build(self):
     #             for num in xrange(1, self.number+1):
     #                 with Xses(name='server%d' % num, server_num=num) as c:
     #                     # This does not list all envs
     #                     c.something(prod=1)
-    #                     self.override(c)
     #     
     #     @nested_repeatables('xses')
     #     class Root(ConfigRoot):
@@ -482,7 +518,7 @@ class MulticonfTest(unittest.TestCase):
     #     
     #     with Root(prod, [prod, pp]) as cr:
     #         with XBuilder() as xb:
-    #             xb.setattr('b', default=27)
+    #             xb.b = 27)
     #             # Here we finalize the setting of 'something' which was started in the 'build' method
     #             xb.something(pp=2)
     #             XChild(a=10)
@@ -504,8 +540,8 @@ class MulticonfTest(unittest.TestCase):
         ok (cr1.ConfigItem.aa) == 1
         ok (cr1.ConfigItem.bb) == 3
 
-    @test("group value overrides default value")
-    def _n(self):
+    @test("group value overrides default value - from init")
+    def _n1(self):
         with ConfigRoot(prod, [prod, pp]) as cr1:
             with ConfigItem(aa=1, bb=3) as ci:
                 ci.setattr('aa', g_prod_like=2)
@@ -513,6 +549,30 @@ class MulticonfTest(unittest.TestCase):
 
         ok (cr1.ConfigItem.aa) == 2
         ok (cr1.ConfigItem.bb) == 3
+
+    @test("group value overrides default value - from setattr")
+    def _n2(self):
+        with ConfigRoot(prod, [prod, pp]) as cr1:
+            with ConfigItem() as ci:
+                ci.setattr('aa', default=1, g_prod_like=2)
+
+        ok (cr1.ConfigItem.aa) == 2
+
+    @test("assigned default value overrides default value from init")
+    def _n3(self):
+        with ConfigRoot(prod, [prod, pp]) as cr1:
+            with ConfigItem(aa=1) as ci:
+                ci.aa = 2
+
+        ok (cr1.ConfigItem.aa) == 2
+
+    @test("default value from setattr overrides default value from init")
+    def _n4(self):
+        with ConfigRoot(prod, [prod, pp]) as cr1:
+            with ConfigItem(aa=1) as ci:
+                ci.setattr('aa', default=2, pp=3)
+
+        ok (cr1.ConfigItem.aa) == 2
 
     @test("env value overrides default value")
     def _o(self):
@@ -599,7 +659,7 @@ class MulticonfTest(unittest.TestCase):
 
         with root(prod, [prod]) as cr:
             with ConfigItem(a=1) as ii:
-                ii.setattr('b', default=2)
+                ii.b = 2
                 ii.setattr('c', prod=3)
                 ok (hasattr(ii, 'd')) == False
         

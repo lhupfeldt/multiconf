@@ -35,7 +35,6 @@ class managed_server(ConfigItem):
 # Here specify that a parameter num_servers is required when defining a
 # builder for managed_server
 @required('num_servers')
-@repeat()
 class managed_servers(ConfigBuilder):
     ''' Builder for managed_server objects. Used in environment configuration to
     automatically create proper number of managed_server objects '''
@@ -45,10 +44,7 @@ class managed_servers(ConfigBuilder):
     def build(self):
         for server_num in xrange(1, self.num_servers+1):
             # Here we generating managed_server's name
-            with managed_server(name='ms%d' % server_num, port=self.base_port+10+server_num) as c:
-                # call for override is required because we changed default
-                # parameter
-                self.override(c)
+            managed_server(name='ms%d' % server_num, port=self.base_port+10+server_num)
 
 
 @repeat()

@@ -9,6 +9,11 @@ class ConfigBaseException(Exception):
     pass
 
 
+class ConfigDefinitionException(ConfigBaseException):
+    def __init__(self, msg):
+        super(ConfigDefinitionException, self).__init__(msg)
+
+
 class ConfigException(ConfigBaseException):
     pass
 

@@ -6,9 +6,9 @@
 import unittest
 from oktest import ok, test, fail, dummy
 
-from .utils import lazy, config_error, lineno, replace_ids, replace_user_file_line
+from .utils import lazy, config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
+from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
 from ..decorators import nested_repeatables, repeat, named_as
 from ..envs import EnvFactory
 
@@ -309,11 +309,11 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     #         @nested_repeatables('children')
     #         class root(ConfigRoot):
     #             pass
-    # 
+    #
     #         @named_as('children')
     #         class rchild(RepeatableItem):
     #             pass
-    # 
+    #
     #         with root(prod, [prod]) as cr:
                   # TODO: 'cr' is an OrderedDict, so this call is not possible, which is fine, but the error message is not good
     #             cr.children(prod="hello")
@@ -378,8 +378,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                     cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
                 fail ("Expected exception")
         except ConfigException as ex:
-            _sout, serr = d_io            
-            ok (replace_user_file_line(serr)) == ce(errorline, _o_expected)
+            _sout, serr = d_io
+            ok (replace_user_file_line_tuple(serr)) == ce(errorline, _o_expected)
             ok (replace_ids(ex.message, False)) == _o_expected_ex
 
     @test("value defined through multiple groups")
@@ -393,8 +393,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                     cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
                 fail ("Expected exception")
         except ConfigException as ex:
-            _sout, serr = d_io            
-            ok (replace_user_file_line(serr)) == ce(errorline, _p_expected)
+            _sout, serr = d_io
+            ok (replace_user_file_line_tuple(serr)) == ce(errorline, _p_expected)
             ok (replace_ids(ex.message, False)) == _p_expected_ex
 
     @test("nested repeatable items with repeated name")
@@ -452,21 +452,12 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             ok (ex.message) == _group_for_selected_env_expected
 
-    # @test("default value respecified in with_statement - root")
-    # def _default_respecified(self):
-    #     try:
-    #         with project(prod, [prod], a=1) as pr:
-    #             pr.setattr('a', default=1)
-    #         fail ("Expected exception")
-    #     except ConfigException as ex:
-    #         ok (ex.message) == "Attribute already has a default value: 'a'"
-
     @test("exception in __exit__ must print ex info and raise original exception if any pending")
     def _exception_in_exit(self):
         try:
             class root(ConfigRoot):
                 pass
-            
+
             class inner(ConfigBuilder):
                 def build(self):
                     raise Exception("in build")
@@ -475,9 +466,25 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 with root(prod, [prod, pp], a=0):
                     with inner(id='n1', b=1):
                         raise Exception("in with")
-            
+
             fail ("Expected exception")
         except Exception as ex:
             _sout, serr = d_io
             ok (serr) == "Exception in __exit__: Exception('in build',)\nException in with block will be raised\n"
             ok (ex.message) == 'in with'
+
+    @test("builder does not accept nested_repeatables decorator")
+    def _builder_no_nested_repeatable(self):
+        try:
+            with dummy.dummy_io('stdin not used') as d_io:
+                @nested_repeatables('a')
+                class _inner(ConfigBuilder):
+                    def build(self):
+                        _a = 1
+
+            fail ("Expected exception")
+        except ConfigDefinitionException as ex:
+            _sout, serr = d_io
+            err_msg = "File \"fake_dir/multiconf_definition_errors_test.py\", line 999\nConfigError: Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder.\n"
+            ok (replace_user_file_line_msg(serr)) == err_msg
+            ok (ex.message) == "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."

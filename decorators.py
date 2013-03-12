@@ -4,17 +4,14 @@
 import re
 import keyword
 
-from .config_errors import _warning_msg as warn
-
-class ConfigDefinitionException(Exception):
-    def __init__(self, msg):
-        super(ConfigDefinitionException, self).__init__(msg)
+from .config_errors import ConfigDefinitionException, _warning_msg as warn, _error_msg as error
+from . import ConfigBuilder
 
 
-def _isidentifier(s):
-    if s in keyword.kwlist:
+def _isidentifier(name):
+    if name in keyword.kwlist:
         return False
-    return re.match(r'^[a-z_][a-z0-9_]*$', s, re.I) is not None
+    return re.match(r'^[a-z_][a-z0-9_]*$', name, re.I) is not None
 
 
 def _check_valid_identifiers(names):
@@ -61,6 +58,10 @@ def repeat():
 
 def nested_repeatables(attr_names):
     def deco(cls):
+        if issubclass(cls, ConfigBuilder):
+            msg = "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."
+            error(0, msg)
+            raise ConfigDefinitionException(msg)
         cls._deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
         return cls
 
@@ -80,14 +81,6 @@ def required_if(attr_name, attr_names):
         attributes = [attr.strip() for attr in attr_names.split(',')]
         _check_valid_identifiers([attr_name] + attributes)
         cls._deco_required_if = attr_name, attributes
-        return cls
-
-    return deco
-
-
-def override(attr_names):
-    def deco(cls):
-        cls._deco_override = _add_super_list_deco_values(cls, attr_names, 'override')
         return cls
 
     return deco
