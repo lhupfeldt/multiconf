@@ -156,7 +156,8 @@ class DecoratorsTest(unittest.TestCase):
         class root(ConfigRoot):
             pass
 
-        proj = root(prod, [prod, dev2ct], name='abc').freeze()
+        with root(prod, [prod, dev2ct], name='abc') as proj:
+            pass
         ok (replace_ids(repr(proj), named_as=False)) == _g_expected
 
     @test("required attributes - inherited, ok")

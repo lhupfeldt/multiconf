@@ -323,7 +323,11 @@ class _ConfigBase(object):
 
     @property
     def contained_in(self):
-        return self._contained_in
+        contained_in = self._contained_in
+        while 1:
+            if not isinstance(contained_in, ConfigBuilder):                
+                return contained_in
+            contained_in = contained_in.contained_in
 
     @property
     def root_conf(self):
@@ -567,7 +571,7 @@ class ConfigBuilder(ConfigItem):
                         continue
 
                     # TODO validation
-                    self.contained_in._attributes[key] = value
+                    self._contained_in._attributes[key] = value
             finally:
                 self.__class__._deco_nested_repeatables = []
                 self._in_build = False

@@ -226,7 +226,7 @@ class MulticonfTest(unittest.TestCase):
             with rchild(id='a', x=17, z=18) as rc:
                 rc.setattr('y', prod=7, pp=2)
                 rc.setattr('z', pp=3)
-                rc.freeze()
+
                 ok (rc.y) == 7
                 ok (rc.x) == 17
                 ok (rc.z) == 18
@@ -251,7 +251,6 @@ class MulticonfTest(unittest.TestCase):
     #            ok (rc.y) == 7
     #            rc.setattr('z', pp=3)
     #            ok (rc.z) == 20
-    #            rc.freeze()
     #            ok (rc.x) == 19
     #            rc.a(prod=3, pp=4)
     #            ok (rc.a) == 3
@@ -416,10 +415,60 @@ class MulticonfTest(unittest.TestCase):
             aaa = 7
 
         with Root(prod, [prod, pp]) as cr:
-            cr.freeze()
             XBuilder()
 
         ok (cr.x.number) == 7
+
+    @test("ConfigBuilder - access to contained_in from with-block")
+    def _l4b(self):
+        @named_as('x')
+        class X(ConfigItem):
+            pass
+
+        class XBuilder(ConfigBuilder):
+            def build(self):
+                X()
+
+        @nested_repeatables('xses')
+        class Root(ConfigRoot):
+            aaa = 7
+
+        with Root(prod, [prod, pp]) as cr:
+            with XBuilder() as xb:
+                parent = xb.contained_in
+
+        ok (parent) == cr
+
+    @test("ConfigBuilder - access to contained_in from built item. Must give parent of Builder.")
+    def _l4c(self):
+        @named_as('x')
+        class X(ConfigItem):
+            def __init__(self, **kwargs):
+                super(X, self).__init__(**kwargs)
+                self.init_parent = self.contained_in
+
+            def validate(self):
+                self.validate_parent = self.contained_in
+
+        class XBuilder(ConfigBuilder):
+            def __init__(self):
+                super(XBuilder, self).__init__()
+                self.number = self.contained_in.aaa
+
+            def build(self):
+                with X(number=self.number):
+                    pass
+
+        @nested_repeatables('xses')
+        class Root(ConfigRoot):
+            aaa = 7
+
+        with Root(prod, [prod, pp]) as cr:
+            XBuilder()
+
+        ok (cr.x.number) == 7
+        ok (cr.x.init_parent) == cr
+        ok (cr.x.validate_parent) == cr
 
     @test("ConfigBuilder - Nested Items")
     def _l5(self):
@@ -451,6 +500,37 @@ class MulticonfTest(unittest.TestCase):
                 index += 1
             ok (index) == 12
 
+    @test("ConfigBuilder - Nested Items - Access to contained_in")
+    def _l5b(self):
+        class XBuilder(ConfigBuilder):
+            def __init__(self):
+                super(XBuilder, self).__init__()
+                self.number = self.contained_in.aaa
+        
+            def build(self):
+                for num in xrange(1, self.number+1):
+                    with Xses(name='server%d' % num, server_num=num) as c:
+                        c.setattr('something', prod=1, pp=2)
+        
+        @nested_repeatables('xses')
+        class Root(ConfigRoot):
+            aaa = 2
+        
+        with Root(prod, [prod, pp]) as cr:
+            with XBuilder() as xb:
+                xb.b = 27
+                with XChild(a=10) as x1:
+                    with_root = x1.contained_in
+                XChild(a=11)
+        
+        ok (len(cr.xses)) == 2
+        for server in 'server1', 'server2':
+            index = 10
+            for x_child in cr.xses[server].x_children.values():
+                ok (x_child.a) == index
+                index += 1
+            ok (index) == 12
+        ok (with_root) == cr
 
     @test("ConfigBuilder - repeated")
     def _l6(self):
