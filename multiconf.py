@@ -160,7 +160,6 @@ class _ConfigBase(object):
         try:
             self._may_freeze_validate = True
             self.freeze()
-            self.__class__._nested.pop()
         except Exception as ex:
             if not exc_type:
                 if _debug_exc:
@@ -169,6 +168,8 @@ class _ConfigBase(object):
 
             print >> sys.stderr, "Exception in __exit__:", repr(ex)
             print >> sys.stderr, "Exception in with block will be raised"
+        finally:
+            self.__class__._nested.pop()
 
     def __setattr__(self, name, value):
         if name[0] == '_':
@@ -327,7 +328,7 @@ class _ConfigBase(object):
         while 1:
             if not isinstance(contained_in, ConfigBuilder):                
                 return contained_in
-            contained_in = contained_in.contained_in
+            contained_in = contained_in._contained_in
 
     @property
     def root_conf(self):
@@ -535,8 +536,7 @@ class ConfigBuilder(ConfigItem):
                 existing_attributes = self._attributes.copy()
 
                 # We need to allow the same nested repeatables as the parent item
-                self.__class__._deco_nested_repeatables = self._contained_in.__class__._deco_nested_repeatables
-                for key in self.__class__._deco_nested_repeatables:
+                for key in self.contained_in.__class__._deco_nested_repeatables:
                     self._attributes[key] = OrderedDict()
 
                 self._in_build = True
@@ -564,16 +564,15 @@ class ConfigBuilder(ConfigItem):
                     # Merge repeatable items in to parent
                     if isinstance(value, OrderedDict):
                         for obj_key, ovalue in value.iteritems():
-                            if obj_key in self._contained_in.attributes[key]:
+                            if obj_key in self.contained_in.attributes[key]:
                                 raise ConfigException("Nested repeatable from 'build', key: " + repr(obj_key) + ", value: " + repr(ovalue) +
                                                       " overwrites existing entry in parent: " + repr(self._contained_in))
-                            self._contained_in.attributes[key][obj_key] = ovalue
+                            self.contained_in.attributes[key][obj_key] = ovalue
                         continue
 
                     # TODO validation
-                    self._contained_in._attributes[key] = value
+                    self._contained_in.attributes[key] = value
             finally:
-                self.__class__._deco_nested_repeatables = []
                 self._in_build = False
         self._freezing = False
         return self

@@ -532,6 +532,47 @@ class MulticonfTest(unittest.TestCase):
             ok (index) == 12
         ok (with_root) == cr
 
+    @test("ConfigBuilder - Multilevel Nested Items - Access to contained_in")
+    def _l5c(self):
+        class XBuilder(ConfigBuilder):
+            def __init__(self, start=1):
+                super(XBuilder, self).__init__()
+                self.start = start
+                self.number = self.contained_in.aaa
+        
+            def build(self):
+                for num in xrange(self.start, self.start + self.number):
+                    with Xses(name='server%d' % num, server_num=num) as c:
+                        c.setattr('something', prod=1, pp=2)
+        
+        @nested_repeatables('xses')
+        class ItemWithXses(ConfigItem):
+            aaa = 2
+        
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            with ItemWithXses() as item:
+                with XBuilder() as xb1:
+                    xb1.b = 27
+                    with XChild(a=10) as x1:
+                        xb1_with_item = x1.contained_in
+                    with XBuilder(start=3) as xb2:
+                        xb2.c = 28
+                        with XChild(a=11) as x2:
+                            xb2_with_item = x2.contained_in
+                        XChild(a=12)
+
+
+        ok (len(item.xses)) == 4
+        total = 0
+        for server in 'server1', 'server2', 'server3', 'server4':
+            for x_child in item.xses[server].x_children.values():
+                print x_child.a
+                total += x_child.a
+        ok (total) == 66
+        
+        ok (xb1_with_item) == item
+        ok (xb2_with_item) == item
+
     @test("ConfigBuilder - repeated")
     def _l6(self):
         class XBuilder(ConfigBuilder):
