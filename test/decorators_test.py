@@ -4,7 +4,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import test
 
 from .utils import config_error, replace_ids
 
@@ -44,8 +43,7 @@ _g_expected = """{
 }"""
 
 class DecoratorsTest(unittest.TestCase):
-    @test("required attributes - configroot")
-    def _a(self):
+    def required_attributes_for_configroot_test(self):
         @required('anattr, anotherattr')
         class root(ConfigRoot):
             pass
@@ -56,8 +54,7 @@ class DecoratorsTest(unittest.TestCase):
         assert cr.anattr == 1
         assert cr.anotherattr == 2
 
-    @test("required attributes - configitem")
-    def _b(self):
+    def required_attributes_for_configitem_test(self):
         class root(ConfigRoot):
             pass
 
@@ -74,8 +71,7 @@ class DecoratorsTest(unittest.TestCase):
         assert cr.item.b == 2
 
 
-    @test("required attributes - accept override of single property")
-    def _c(self):
+    def required_attributes_accept_override_of_single_property_test(self):
         class root(ConfigRoot):
             pass
 
@@ -92,8 +88,7 @@ class DecoratorsTest(unittest.TestCase):
         assert cr.item.b == 2
 
 
-    @test("required_if attributes - condition true (prod) and condition unset (dev2ct)")
-    def _d(self):
+    def required_if_attributes_condition_true_prod_and_condition_unset_dev2ct_test(self):
         @required_if('a', 'b, c')
         class root(ConfigRoot):
             pass
@@ -115,8 +110,7 @@ class DecoratorsTest(unittest.TestCase):
             assert val == (index + 1) * 10
             index += 1
 
-    @test("required_if attributes - condition false")
-    def _e(self):
+    def required_if_attributes_condition_false_test(self):
         @required_if('a', 'b, c')
         class root(ConfigRoot):
             pass
@@ -136,8 +130,7 @@ class DecoratorsTest(unittest.TestCase):
             assert val == index * 10
             index += 1
 
-    @test("optional attribute")
-    def _f(self):
+    def optional_attribute_test(self):
         @optional('a')
         class root(ConfigRoot):
             pass
@@ -150,8 +143,7 @@ class DecoratorsTest(unittest.TestCase):
             cr.setattr('a', prod=17)
         assert cr.a == 17
 
-    @test("named_as")
-    def _g(self):
+    def named_as_test(self):
         @named_as('project')
         class root(ConfigRoot):
             pass
@@ -160,8 +152,7 @@ class DecoratorsTest(unittest.TestCase):
             pass
         assert replace_ids(repr(proj), named_as=False) == _g_expected
 
-    @test("required attributes - inherited, ok")
-    def _h(self):
+    def required_attributes_inherited_ok_test(self):
         @required('anattr, anotherattr')
         class root(ConfigRoot):
             pass

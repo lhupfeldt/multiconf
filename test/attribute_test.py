@@ -4,16 +4,13 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import test
 
 from ..attribute import Attribute
 from ..config_errors import _user_file_line
 
 
 class AttributeTest(unittest.TestCase):
-
-    @test("Attribute - repr")
-    def _a(self):
+    def attribute_repr_test(self):
         class Container(object):
             attributes = {}
         ac = Attribute(attribute_name='some_name1')

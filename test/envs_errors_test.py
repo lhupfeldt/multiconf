@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import test, fail, dummy
+from oktest import fail, dummy
 
 from .utils import config_error, lineno
 
@@ -17,8 +17,7 @@ def ce(line_num, *lines):
 
 class EnvsTest(unittest.TestCase):
 
-    @test("env member with same name as self")
-    def _c1(self):
+    def env_member_with_same_name_as_self_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 cc11 = ef.Env('cc11')
@@ -30,8 +29,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Can't have a member with my own name: 'cc11', members:  [Env('cc11')]"
 
-    @test("group member with same name as self")
-    def _c2(self):
+    def group_member_with_same_name_as_self_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 cc21 = ef.Env('cc21')
@@ -44,8 +42,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Can't have a member with my own name: 'cc22', members:  [EnvGroup('cc22') {\n     Env('cc21')\n}]"
 
-    @test("repeated direct env member")
-    def _f(self):
+    def repeated_direct_env_member_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 ff1 = ef.Env('ff1')
@@ -57,8 +54,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Repeated group member: Env('ff1') in EnvGroup('ff2') {\n\n}"
 
-    @test("repeated direct group member")
-    def _g(self):
+    def repeated_direct_group_member_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 gg1 = ef.Env('gg1')
@@ -71,8 +67,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Repeated group member: EnvGroup('gg2') {\n     Env('gg1')\n} in EnvGroup('gg3') {\n\n}"
 
-    @test("repeated nested env member")
-    def _h(self):
+    def repeated_nested_env_member_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 hh1 = ef.Env('hh1')
@@ -85,8 +80,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Repeated group member: Env('hh1') in EnvGroup('hh3') {\n\n}"
 
-    @test("repeated nested env member reversed")
-    def _i(self):
+    def repeated_nested_env_member_reversed_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 ii1 = ef.Env('ii1')
@@ -99,8 +93,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Repeated group member: Env('ii1') in EnvGroup('ii3') {\n\n}"
 
-    @test("repeated nested group member")
-    def _j(self):
+    def repeated_nested_group_member_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 jj1 = ef.Env('jj1')
@@ -114,8 +107,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Repeated group member: EnvGroup('jj2') {\n     Env('jj1')\n} in EnvGroup('jj4') {\n\n}"
 
-    @test("repeated nested group member reversed")
-    def _k(self):
+    def repeated_nested_group_member_reversed_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 jj1 = ef.Env('jj1')
@@ -129,32 +121,28 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Repeated group member: EnvGroup('jj2') {\n     Env('jj1')\n} in EnvGroup('jj4') {\n\n}"
 
-    @test("env from string - undefined")
-    def _l(self):
+    def env_from_string_undefined_test(self):
         try:
             ef.env("undefined")
             fail ("Expected exception")
         except EnvException as ex:
             assert ex.message == "No such Env: 'undefined'"
 
-    @test("group from string - undefined")
-    def _m(self):
+    def group_from_string__undefined_test(self):
         try:
             ef.group("undefined")
             fail ("Expected exception")
         except EnvException as ex:
             assert ex.message == "No such EnvGroup: 'undefined'"
 
-    @test("env_or_group from string - undefined")
-    def _n(self):
+    def env_or_group_from_string_undefined_test(self):
         try:
             ef.env_or_group("undefined")
             fail ("Expected exception")
         except EnvException as ex:
             assert ex.message == "No such Env or EnvGroup: 'undefined'"
 
-    @test("env - name is not a str")
-    def _o(self):
+    def env_name_is_not_a_str_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 _e1 = ef.Env(1)
@@ -164,8 +152,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Env: 'name' must be instance of str, found: int"
 
-    @test("env - name is empty")
-    def _o1(self):
+    def env_name_is_empty_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 _e1 = ef.Env("")
@@ -176,8 +163,7 @@ class EnvsTest(unittest.TestCase):
             assert ex.message == "Env: 'name' must not be empty"
 
 
-    @test("env - name starts with '_'")
-    def _o2(self):
+    def env_name_startswith_underscore_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 _e1 = ef.Env("_a")
@@ -187,8 +173,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Env: 'name' must not start with '_', got: '_a'"
 
-    @test("env - name == 'default'")
-    def _o3(self):
+    def env_name_eq_default_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 _e1 = ef.Env("default")
@@ -198,8 +183,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "Env: 'default' is a reserved name"
 
-    @test("group - name == 'default'")
-    def _o4(self):
+    def group_name_eq_default_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 e1 = ef.Env("e1")
@@ -210,8 +194,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "EnvGroup: 'default' is a reserved name"
 
-    @test("no group members")
-    def _o5(self):
+    def no_group_members_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 gg2 = ef.EnvGroup('gg')
@@ -221,9 +204,7 @@ class EnvsTest(unittest.TestCase):
             #assert serr == ce(errorline, "TODO")
             assert ex.message == "EnvGroup: No group members specified"
 
-
-    @test("group - member is not instanceof Env")
-    def _o6(self):
+    def group_member_is_not_instanceof_env_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 _g = ef.EnvGroup('gg', 1)

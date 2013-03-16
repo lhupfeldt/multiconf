@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import test, fail, dummy
+from oktest import fail, dummy
 
 from .utils import config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
 
@@ -168,54 +168,47 @@ class RepeatableItem(ConfigItem):
 
 
 class MultiConfDefinitionErrorsTest(unittest.TestCase):
-    @test("non-env for instantiatiation env")
-    def _config_root_args1(self):
+    def non_env_for_instantiatiation_env_test(self):
         try:
             project('Why?', [prod])
             fail ("Expected exception")
         except ConfigException as ex:
             assert ex.message == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
 
-    @test("non-env in valid_envs")
-    def _config_root_args2(self):
+    def non_env_in_valid_envs_test(self):
         try:
             project(prod, [prod, 'Why?'])
             fail ("Expected exception")
         except ConfigException as ex:
             assert ex.message == "project: valid_envs items must be instance of 'Env' or 'EnvGroup'; found a 'str': 'Why?'"
 
-    @test("valid_envs is not a sequence")
-    def _config_root_args3(self):
+    def valid_envs_is_not_a_sequence_test(self):
         try:
             project(prod, 1)
             fail ("Expected exception")
         except ConfigException as ex:
             assert ex.message == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
 
-    @test("valid_envs is a str")
-    def _config_root_args4(self):
+    def valid_envs_is_a_str_test(self):
         try:
             project(prod, 'Why?')
             fail ("Expected exception")
         except ConfigException as ex:
             assert ex.message == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
 
-    @test("valid_envs arg as EnvGroup")
-    def _config_root_args5(self):
+    def valid_envs_arg_as_envgroup_test(self):
         try:
             ConfigRoot(prod, valid_envs)
         except ConfigException as ex:
             pass
 
-    @test("selected_conf not in valid_envs")
-    def _config_root_args6(self):
+    def selected_conf_not_in_valid_envs_test(self):
         try:
             ConfigRoot(prod, [dev3ct, dev3st])
         except ConfigException as ex:
             pass
 
-    @test("assign to undefine env")
-    def _e(self):
+    def assign_to_undefine_env_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod]) as cr:
@@ -227,8 +220,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             assert serr == ce(errorline, "No such Env or EnvGroup: 'pros'")
             assert replace_ids(ex.message, False) == _e_expected
 
-    @test("value not assigned to all envs")
-    def _f(self):
+    def value_not_assigned_to_all_envs_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod, pp]) as cr:
@@ -241,8 +233,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             assert replace_ids(ex.message, False) == _f_expected
 
     # TODO handle this error output format in test
-    # @test("attribute defined with different types")
-    # def _g(self):
+    # def attribute_defined_with_different_types(self):
     #     try:
     #         with dummy.dummy_io('stdin not used') as d_io:
     #             with ConfigRoot(prod, [prod, pp]) as cr:
@@ -254,8 +245,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     #         assert serr == ce(errorline, "ConfigError: Found different value types for property 'a' for different envs")
     #         assert replace_ids(ex.message, False) == _g_expected
 
-    @test("attribute redefinition attempt")
-    def _h(self):
+    def attribute_redefinition_attempt_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 with ConfigRoot(prod, [prod]) as cr:
@@ -268,8 +258,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             assert serr == ce(errorline, _h_expected)
             assert replace_ids(ex.message, named_as=False) == _h_expected_ex
 
-    @test("nested item overrides simple attribute")
-    def _i(self):
+    def nested_item_overrides_simple_attribute_test(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
                 cr.setattr('ConfigItem', prod="hello")
@@ -278,8 +267,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert replace_ids(ex.message, named_as=False) == _i_expected
 
-    @test("nested repeatable item not defined as repeatable in contained in class")
-    def _j(self):
+    def nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class_test(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
                 RepeatableItem()
@@ -287,8 +275,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert replace_ids(ex.message, named_as=False) == _j_expected
 
-    @test("nested repeatable item overrides simple attribute - not contained in repeatable")
-    def _k1(self):
+    def nested_repeatable_item_overrides_simple_attribute_not_contained_in_repeatable_test(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
                 # cr.RepeatableItems is just an attribute named like an item
@@ -298,8 +285,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert replace_ids(ex.message, named_as=False) == _k1_expected
 
-    @test("nested repeatable item shadowed by default attribute")
-    def _k2(self):
+    def nested_repeatable_item_shadowed_by_default_attribute_test(self):
         try:
             # RepeatableItems is just an attribute named like an item
             with project(prod, [prod], RepeatableItems=1) as cr:
@@ -308,9 +294,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert replace_ids(ex.message, named_as=False) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
 
-    # @test("nested repeatable item overrides simple attribute - contained in repeatable")
+    # def nested_repeatable_item_overrides_simple_attribute_contained_in_repeatable(self):
     # @todo
-    # def _k3(self):
     #     try:
     #         @nested_repeatables('children')
     #         class root(ConfigRoot):
@@ -328,8 +313,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     #     except ConfigException as ex:
     #         assert ex.message == "'children' is defined both as simple value and a contained item: children {\n}"
 
-    @test("non-repeatable but container expects repeatable")
-    def _k4(self):
+    def non_repeatable_but_container_expects_repeatable_test(self):
         try:
             # The following class in not repeatable!
             class RepeatableItems(ConfigItem):
@@ -341,8 +325,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert replace_ids(ex.message, named_as=False) == _k4_expected
 
-    @test("simple attribute attempt to override contained item")
-    def _l(self):
+    def simple_attribute_attempt_to_override_contained_item_test(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
                 ConfigItem()
@@ -352,8 +335,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except TypeError as ex:
             assert ex.message == "'ConfigItem' object is not callable"
 
-    @test("repeated non-repeatable item")
-    def _m(self):
+    def repeated_non_repeatable_item_test(self):
         try:
             with ConfigRoot(prod, [prod]) as cr:
                 ConfigItem()
@@ -363,8 +345,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert ex.message == "Repeated non repeatable conf item: 'ConfigItem'"
 
-    @test("nested repeatable items with repeated name")
-    def _n(self):
+    def nested_repeatable_items_with_repeated_name_test(self):
         try:
             with project(prod, [prod]) as cr:
                 RepeatableItem(id='my_name')
@@ -373,8 +354,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert ex.message == "Re-used id/name 'my_name' in nested objects"
 
-    @test("value defined through multiple groups")
-    def _o(self):
+    def value_defined_through_multiple_groups_test(self):
         try:
             g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct)
 
@@ -388,8 +368,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             assert replace_user_file_line_tuple(serr) == ce(errorline, _o_expected)
             assert replace_ids(ex.message, False) == _o_expected_ex
 
-    @test("value defined through multiple groups")
-    def _p(self):
+    def value_defined_through_multiple_groups2_test(self):
         try:
             g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct, dev3ct)
 
@@ -403,18 +382,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             assert replace_user_file_line_tuple(serr) == ce(errorline, _p_expected)
             assert replace_ids(ex.message, False) == _p_expected_ex
 
-    @test("nested repeatable items with repeated name")
-    def _q(self):
-        try:
-            with project(prod, [prod]) as cr:
-                RepeatableItem(id='my_name')
-                RepeatableItem(id='my_name')
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert ex.message == "Re-used id/name 'my_name' in nested objects"
-
-    @test("assigning owerwrites attribute - root")
-    def _r1(self):
+    def assigning_owerwrites_attribute_root_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 with project(prod, [prod]) as cr:
@@ -427,8 +395,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             assert serr == ce(errorline, _r_expected)
             assert replace_ids(ex.message, named_as=False) == _r1_expected_ex
 
-    @test("assigning owerwrites attribute - nested item")
-    def _r2(self):
+    def assigning_owerwrites_attribute_nested_item_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 with project(prod, [prod]) as cr:
@@ -442,24 +409,21 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             assert serr == ce(errorline, _r_expected)
             assert replace_ids(ex.message, named_as=False) == _r2_expected_ex
 
-    @test("ConfigItem outside of root")
-    def _t(self):
+    def configitem_outside_of_root_test(self):
         try:
             ConfigItem()
             fail ("Expected exception")
         except ConfigException as ex:
             assert ex.message == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
 
-    @test("using group for selected env")
-    def _group_for_selected_env(self):
+    def using_group_for_selected_env_test(self):
         try:
             project(g_dev3, [g_dev3])
             fail ("Expected exception")
         except ConfigException as ex:
             assert ex.message == _group_for_selected_env_expected
 
-    @test("exception in __exit__ must print ex info and raise original exception if any pending")
-    def _exception_in_exit(self):
+    def exception_in___exit___must_print_ex_info_and_raise_original_exception_if_any_pending_test(self):
         try:
             class root(ConfigRoot):
                 pass
@@ -479,8 +443,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             assert serr == "Exception in __exit__: Exception('in build',)\nException in with block will be raised\n"
             assert ex.message == 'in with'
 
-    @test("builder does not accept nested_repeatables decorator")
-    def _builder_no_nested_repeatable(self):
+    def builder_does_not_accept_nested_repeatables_decorator_test(self):
         try:
             with dummy.dummy_io('stdin not used') as d_io:
                 @nested_repeatables('a')

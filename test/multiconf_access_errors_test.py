@@ -40,8 +40,7 @@ _a2_expected_repr = """{
 
 
 class MultiConfAccessErrorsTest(unittest.TestCase):
-    @test("access undefined attribute")
-    def _a(self):
+    def access_undefined_attribute_test(self):
         with ConfigRoot(prod, [prod]) as cr:
             pass
 
@@ -51,8 +50,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
         except AttributeError as ex:
             assert replace_ids(ex.message, named_as=False) == _a1_expected_repr
 
-    @test("access undefined attribute - but has repeatable? attribute with attribute name+s")
-    def _a2(self):
+    def access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s_test(self):
         with ConfigRoot(prod, [prod]) as cr:
             cr.setattr('bs', prod=4)
 
@@ -62,8 +60,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
         except AttributeError as ex:
             assert replace_ids(ex.message, named_as=False) == _a2_expected_repr
 
-    @test("find_contained_in(named_as) - not found")
-    def _b(self):
+    def find_contained_in_named_as_not_found_test(self):
         @named_as('someitems')
         @nested_repeatables('someitems')
         @repeat()
@@ -104,8 +101,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
             assert ex.message == "Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root']"
 
 
-    @test("find_attribute(attribute_name) - not found")
-    def _k(self):
+    def find_attribute_with_attribute_name_not_found_test(self):
         @named_as('someitems')
         @nested_repeatables('someitems')
         @repeat()
@@ -142,8 +138,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
             assert ex.message == "Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"
 
     # TODO
-    #@test("error in property method implementation")
-    #def _l(self):
+    #def error_in_property_method_implementation_test(self):
     #    class root(ConfigRoot):
     #        pass
     #

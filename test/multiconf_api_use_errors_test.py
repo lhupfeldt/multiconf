@@ -52,8 +52,7 @@ class RepeatableItem(ConfigItem):
 
 
 class MultiConfApiUseErrorsTest(unittest.TestCase):
-    @test("find_contained_in called before parent __init__")
-    def _method_call_before_init(self):
+    def find_contained_in_called_before_parent___init___test(self):
         try:
             class root(ConfigRoot):
                 pass
@@ -76,8 +75,7 @@ class MultiConfApiUseErrorsTest(unittest.TestCase):
             assert serr == capie(inner_errorline, eex + _extra_stderr)
             assert ex.message == eex
 
-    @test("@property called before parent __init__")
-    def _property_call_before_init(self):
+    def property_method_called_before_parent___init___test(self):
         try:
             class root(ConfigRoot):
                 pass
@@ -100,8 +98,7 @@ class MultiConfApiUseErrorsTest(unittest.TestCase):
             assert serr == capie(inner_errorline, eex + _extra_stderr)
             assert ex.message == eex
 
-    @test("undefined method called before parent __init__")
-    def _undef_method_call_before_init(self):
+    def undefined_method_called_before_parent___init___test(self):
         try:
             class root(ConfigRoot):
                 pass
@@ -123,8 +120,7 @@ class MultiConfApiUseErrorsTest(unittest.TestCase):
             assert serr == capie(inner_errorline, eex + _extra_stderr)
             assert ex.message == eex
 
-    @test("undefined @property called before parent __init__")
-    def _undef_property_method_call_before_init(self):
+    def undefined_property_method_called_before_parent___init___test(self):
         try:
             class root(ConfigRoot):
                 pass

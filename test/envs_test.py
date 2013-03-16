@@ -4,7 +4,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import test
 
 from ..envs import EnvFactory
 
@@ -56,12 +55,10 @@ EnvGroup('g_all') {
 
 class EnvsTest(unittest.TestCase):
 
-    @test("repr of valid_envs")
-    def _0(self):
+    def repr_of_valid_envs_test(self):
         assert repr(valid_envs) == valid_envs_repr.strip()
 
-    @test("Membership")
-    def _1(self):
+    def membership_test(self):
         # Env is in itself
         assert prod in prod
         # Group is in itself
@@ -76,45 +73,37 @@ class EnvsTest(unittest.TestCase):
         assert g_dev2 in g_dev
         assert g_dev not in g_dev2
 
-    @test("Iterating envs only")
-    def _2(self):
+    def iterating_envs_only_test(self):
         envs = []
         for env in valid_envs.envs():
             envs.append(env)
         assert envs == envs_only
 
-
-    @test("Iterating Groups only")
-    def _3(self):
+    def iterating_groups_only_test(self):
         groups = []
         for group in valid_envs.groups():
             groups.append(group)
         assert groups == groups_only
 
-    @test("Iterating Groups and Envs")
-    def _4(self):
+    def iterating_groups_and_envs_test(self):
         envs = []
         for env in valid_envs.all():
             envs.append(env)
         assert envs == all_envs
 
-    @test("As key")
-    def _5(self):
+    def as_key_test(self):
         envs = {}
         for env in valid_envs.all():
             envs[env] = True
         for env in valid_envs.all():
             assert envs[env] == True
 
-    @test("env from string")
-    def _l(self):
+    def env_from_string_test(self):
         assert ef.env("dev2CT").name == "dev2CT"
 
-    @test("group from string")
-    def _m(self):
+    def group_from_string_test(self):
         assert ef.group("g_dev2").name == "g_dev2"
 
-    @test("env_or_group from string")
-    def _n(self):
+    def env_or_group_from_string_test(self):
         assert ef.env_or_group("dev2CT").name == "dev2CT"
         assert ef.env_or_group("g_dev2").name == "g_dev2"

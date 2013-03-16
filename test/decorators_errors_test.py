@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import test, fail, dummy
+from oktest import fail, dummy
 from .utils import config_error, config_warning, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
@@ -36,8 +36,7 @@ def cw(line_num, *lines):
     return config_warning(__file__, line_num, *lines)
 
 class DecoratorsErrorsTest(unittest.TestCase):
-    @test("required attributes missing - configroot")
-    def _a(self):
+    def required_attributes_missing_for_configroot_test(self):
         try:
             @required('someattr1, someattr2')
             class root(ConfigRoot):
@@ -49,8 +48,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert ex.message == "No value given for required attributes: ['someattr1', 'someattr2']"
 
-    @test("required attributes missing - configitem")
-    def _b(self):
+    def required_attributes_missing_for_configitem_test(self):
         try:
             class root(ConfigRoot):
                 pass
@@ -67,9 +65,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert ex.message == "No value given for required attributes: ['abcd', 'ijkl']"
 
-
-    @test("required_if - optional attributes missing")
-    def _c(self):
+    def required_if_optional_attributes_missing_test(self):
         try:
             class root(ConfigRoot):
                 pass
@@ -86,8 +82,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert ex.message == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"
 
-    @test("required_if - condition attribute missing")
-    def _c2(self):
+    def required_if_condition_attribute_missing_test(self):
         class root(ConfigRoot):
             pass
 
@@ -100,8 +95,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         # The above code is valid, the condition attribute i not mandatory
         assert 1 == 1
 
-    @test("optional attribute accessed for env where not specified")
-    def _d(self):
+    def optional_attribute_accessed_for_env_where_not_specified_test(self):
         @optional('a')
         class root(ConfigRoot):
             pass
@@ -115,8 +109,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         except NoAttributeException  as ex:
             assert ex.message == "Attribute 'a' undefined for env Env('prod')"
 
-    @test("decorator arg not a valid identifier - required")
-    def _e(self):
+    def decorator_arg_not_a_valid_identifier_in_required_decorator_test(self):
         try:
             @required('a, a-b, b, 99')
             class root(ConfigRoot):
@@ -125,8 +118,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         except ConfigDefinitionException  as ex:
             assert ex.message == "['a-b', '99'] are not valid identifiers"
 
-    @test("decorator arg is keyword - nested_repeatables")
-    def _e2(self):
+    def decorator_arg_is_keyword_in_nested_repeatables_decorator_test(self):
         try:
             @nested_repeatables('a, b, def, c')
             class root(ConfigRoot):
@@ -135,8 +127,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         except ConfigDefinitionException  as ex:
             assert ex.message == "'def' is not a valid identifier"
 
-    @test("decorator args are keywords - required")
-    def _e3(self):
+    def decorator_args_are_keywords_in_required_decorator_test(self):
         try:
             @required('a, class, b, 99')
             class root(ConfigRoot):
@@ -145,8 +136,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         except ConfigDefinitionException  as ex:
             assert ex.message == "['class', '99'] are not valid identifiers"
 
-    @test("decorator arg not a valid identifier - required_if")
-    def _f(self):
+    def decorator_arg_not_a_valid_identifier_in_required_if_decorator_test(self):
         try:
             @required_if('-a', 'a, a-b, b, 99')
             class root(ConfigRoot):
@@ -155,9 +145,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         except ConfigDefinitionException  as ex:
             assert ex.message == "['-a', 'a-b', '99'] are not valid identifiers"
 
-
-    @test("required attributes - inherited, missing")
-    def _g(self):
+    def required_attributes_inherited_missing_test(self):
         @required('anattr, anotherattr')
         class root(ConfigRoot):
             pass
@@ -175,8 +163,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         except ConfigException as ex:
             assert ex.message == "No value given for required attributes: ['anotherattr']"
 
-    @test("required attributes - inherited, redefined")
-    def _h(self):
+    def required_attributes_inherited_redefined_test(self):
         with dummy.dummy_io('stdin not used') as d_io:
             @required('anattr, anotherattr')
             class root(ConfigRoot):
