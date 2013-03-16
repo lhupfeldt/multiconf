@@ -4,9 +4,9 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, fail, dummy
+from oktest import test, fail, dummy
 
-from .utils import lazy, config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
+from .utils import config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
 from ..decorators import nested_repeatables, repeat, named_as
@@ -174,7 +174,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             project('Why?', [prod])
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
+            assert ex.message == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
 
     @test("non-env in valid_envs")
     def _config_root_args2(self):
@@ -182,7 +182,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             project(prod, [prod, 'Why?'])
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "project: valid_envs items must be instance of 'Env' or 'EnvGroup'; found a 'str': 'Why?'"
+            assert ex.message == "project: valid_envs items must be instance of 'Env' or 'EnvGroup'; found a 'str': 'Why?'"
 
     @test("valid_envs is not a sequence")
     def _config_root_args3(self):
@@ -190,7 +190,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             project(prod, 1)
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
+            assert ex.message == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
 
     @test("valid_envs is a str")
     def _config_root_args4(self):
@@ -198,15 +198,21 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             project(prod, 'Why?')
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
+            assert ex.message == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
 
     @test("valid_envs arg as EnvGroup")
     def _config_root_args5(self):
-        ok (lazy(ConfigRoot, prod, valid_envs)).raises(ConfigException)
+        try:
+            ConfigRoot(prod, valid_envs)
+        except ConfigException as ex:
+            pass
 
     @test("selected_conf not in valid_envs")
     def _config_root_args6(self):
-        ok (lazy(ConfigRoot, prod, [dev3ct, dev3st])).raises(ConfigException)
+        try:
+            ConfigRoot(prod, [dev3ct, dev3st])
+        except ConfigException as ex:
+            pass
 
     @test("assign to undefine env")
     def _e(self):
@@ -218,8 +224,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
-            ok (serr) == ce(errorline, "No such Env or EnvGroup: 'pros'")
-            ok (replace_ids(ex.message, False)) == _e_expected
+            assert serr == ce(errorline, "No such Env or EnvGroup: 'pros'")
+            assert replace_ids(ex.message, False) == _e_expected
 
     @test("value not assigned to all envs")
     def _f(self):
@@ -231,8 +237,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
-            ok (serr) == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
-            ok (replace_ids(ex.message, False)) == _f_expected
+            assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
+            assert replace_ids(ex.message, False) == _f_expected
 
     # TODO handle this error output format in test
     # @test("attribute defined with different types")
@@ -245,8 +251,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     #             fail ("Expected exception")
     #     except ConfigException as ex:
     #         _sout, serr = d_io
-    #         ok (serr) == ce(errorline, "ConfigError: Found different value types for property 'a' for different envs")
-    #         ok (replace_ids(ex.message, False)) == _g_expected
+    #         assert serr == ce(errorline, "ConfigError: Found different value types for property 'a' for different envs")
+    #         assert replace_ids(ex.message, False) == _g_expected
 
     @test("attribute redefinition attempt")
     def _h(self):
@@ -259,8 +265,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                     fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
-            ok (serr) == ce(errorline, _h_expected)
-            ok (replace_ids(ex.message, named_as=False)) == _h_expected_ex
+            assert serr == ce(errorline, _h_expected)
+            assert replace_ids(ex.message, named_as=False) == _h_expected_ex
 
     @test("nested item overrides simple attribute")
     def _i(self):
@@ -270,7 +276,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 ConfigItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (replace_ids(ex.message, named_as=False)) == _i_expected
+            assert replace_ids(ex.message, named_as=False) == _i_expected
 
     @test("nested repeatable item not defined as repeatable in contained in class")
     def _j(self):
@@ -279,7 +285,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 RepeatableItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (replace_ids(ex.message, named_as=False)) == _j_expected
+            assert replace_ids(ex.message, named_as=False) == _j_expected
 
     @test("nested repeatable item overrides simple attribute - not contained in repeatable")
     def _k1(self):
@@ -290,7 +296,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 RepeatableItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (replace_ids(ex.message, named_as=False)) == _k1_expected
+            assert replace_ids(ex.message, named_as=False) == _k1_expected
 
     @test("nested repeatable item shadowed by default attribute")
     def _k2(self):
@@ -300,7 +306,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 RepeatableItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (replace_ids(ex.message, named_as=False)) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
+            assert replace_ids(ex.message, named_as=False) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
 
     # @test("nested repeatable item overrides simple attribute - contained in repeatable")
     # @todo
@@ -320,7 +326,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
     #             rchild()
     #         fail ("Expected exception")
     #     except ConfigException as ex:
-    #         ok (ex.message) == "'children' is defined both as simple value and a contained item: children {\n}"
+    #         assert ex.message == "'children' is defined both as simple value and a contained item: children {\n}"
 
     @test("non-repeatable but container expects repeatable")
     def _k4(self):
@@ -333,7 +339,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 RepeatableItems()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (replace_ids(ex.message, named_as=False)) == _k4_expected
+            assert replace_ids(ex.message, named_as=False) == _k4_expected
 
     @test("simple attribute attempt to override contained item")
     def _l(self):
@@ -344,7 +350,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 cr.ConfigItem(prod="hello")
             fail ("Expected exception")
         except TypeError as ex:
-            ok (ex.message) == "'ConfigItem' object is not callable"
+            assert ex.message == "'ConfigItem' object is not callable"
 
     @test("repeated non-repeatable item")
     def _m(self):
@@ -355,7 +361,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 ConfigItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "Repeated non repeatable conf item: 'ConfigItem'"
+            assert ex.message == "Repeated non repeatable conf item: 'ConfigItem'"
 
     @test("nested repeatable items with repeated name")
     def _n(self):
@@ -365,7 +371,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 RepeatableItem(id='my_name')
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "Re-used id/name 'my_name' in nested objects"
+            assert ex.message == "Re-used id/name 'my_name' in nested objects"
 
     @test("value defined through multiple groups")
     def _o(self):
@@ -379,8 +385,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
-            ok (replace_user_file_line_tuple(serr)) == ce(errorline, _o_expected)
-            ok (replace_ids(ex.message, False)) == _o_expected_ex
+            assert replace_user_file_line_tuple(serr) == ce(errorline, _o_expected)
+            assert replace_ids(ex.message, False) == _o_expected_ex
 
     @test("value defined through multiple groups")
     def _p(self):
@@ -394,8 +400,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
-            ok (replace_user_file_line_tuple(serr)) == ce(errorline, _p_expected)
-            ok (replace_ids(ex.message, False)) == _p_expected_ex
+            assert replace_user_file_line_tuple(serr) == ce(errorline, _p_expected)
+            assert replace_ids(ex.message, False) == _p_expected_ex
 
     @test("nested repeatable items with repeated name")
     def _q(self):
@@ -405,7 +411,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 RepeatableItem(id='my_name')
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "Re-used id/name 'my_name' in nested objects"
+            assert ex.message == "Re-used id/name 'my_name' in nested objects"
 
     @test("assigning owerwrites attribute - root")
     def _r1(self):
@@ -418,8 +424,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
-            ok (serr) == ce(errorline, _r_expected)
-            ok (replace_ids(ex.message, named_as=False)) == _r1_expected_ex
+            assert serr == ce(errorline, _r_expected)
+            assert replace_ids(ex.message, named_as=False) == _r1_expected_ex
 
     @test("assigning owerwrites attribute - nested item")
     def _r2(self):
@@ -433,8 +439,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
                 fail ("Expected exception")
         except ConfigException as ex:
             _sout, serr = d_io
-            ok (serr) == ce(errorline, _r_expected)
-            ok (replace_ids(ex.message, named_as=False)) == _r2_expected_ex
+            assert serr == ce(errorline, _r_expected)
+            assert replace_ids(ex.message, named_as=False) == _r2_expected_ex
 
     @test("ConfigItem outside of root")
     def _t(self):
@@ -442,7 +448,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             ConfigItem()
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
+            assert ex.message == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
 
     @test("using group for selected env")
     def _group_for_selected_env(self):
@@ -450,7 +456,7 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             project(g_dev3, [g_dev3])
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == _group_for_selected_env_expected
+            assert ex.message == _group_for_selected_env_expected
 
     @test("exception in __exit__ must print ex info and raise original exception if any pending")
     def _exception_in_exit(self):
@@ -470,8 +476,8 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
             fail ("Expected exception")
         except Exception as ex:
             _sout, serr = d_io
-            ok (serr) == "Exception in __exit__: Exception('in build',)\nException in with block will be raised\n"
-            ok (ex.message) == 'in with'
+            assert serr == "Exception in __exit__: Exception('in build',)\nException in with block will be raised\n"
+            assert ex.message == 'in with'
 
     @test("builder does not accept nested_repeatables decorator")
     def _builder_no_nested_repeatable(self):
@@ -486,5 +492,5 @@ class MultiConfDefinitionErrorsTest(unittest.TestCase):
         except ConfigDefinitionException as ex:
             _sout, serr = d_io
             err_msg = "File \"fake_dir/multiconf_definition_errors_test.py\", line 999\nConfigError: Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder.\n"
-            ok (replace_user_file_line_msg(serr)) == err_msg
-            ok (ex.message) == "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."
+            assert replace_user_file_line_msg(serr) == err_msg
+            assert ex.message == "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."

@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, dummy, fail
+from oktest import test, dummy, fail
 from .utils import replace_ids, to_compact
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException
@@ -413,8 +413,8 @@ class MulticonfTest(unittest.TestCase):
                 NestedRepeatable(id='c-level2', something=2)
             NestedRepeatable(id='c-level1', something=3)
 
-        ok (replace_ids(cr.json())) == _a_expected_json_output
-        ok (replace_ids(cr.json(compact=True))) == to_compact(_a_expected_json_output)
+        assert replace_ids(cr.json()) == _a_expected_json_output
+        assert replace_ids(cr.json(compact=True)) == to_compact(_a_expected_json_output)
 
     @test("json dump - cyclic references in conf items")
     def _b(self):
@@ -433,7 +433,7 @@ class MulticonfTest(unittest.TestCase):
             with AnXItem(something=3) as last_item:
                 last_item.setattr('ref', pp=ref_obj1, prod=ref_obj2)
 
-        ok (replace_ids(cr.json())) == _b_expected_json_output
+        assert replace_ids(cr.json()) == _b_expected_json_output
 
 
     @test("json dump - cyclic references between conf items and other objects")
@@ -445,7 +445,7 @@ class MulticonfTest(unittest.TestCase):
                 pass
             cycler['cyclic_item_ref'] = ref_obj2
 
-        ok (replace_ids(cr.json())) == _c_expected_json_output
+        assert replace_ids(cr.json()) == _c_expected_json_output
 
     @test("json dump - property method")
     def _d(self):
@@ -458,8 +458,8 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             Nested()
 
-        ok (replace_ids(cr.json())) == _d_expected_json_output
-        ok (replace_ids(cr.json(compact=True))) == to_compact(_d_expected_json_output)
+        assert replace_ids(cr.json()) == _d_expected_json_output
+        assert replace_ids(cr.json(compact=True)) == to_compact(_d_expected_json_output)
 
     @test("json dump - property method raises InvalidUsageException")
     def _e(self):
@@ -472,7 +472,7 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             Nested()
 
-        ok (replace_ids(cr.json())) == _e_expected_json_output
+        assert replace_ids(cr.json()) == _e_expected_json_output
 
     @test("json dump - property method raises Exception")
     def _e2(self):
@@ -489,9 +489,9 @@ class MulticonfTest(unittest.TestCase):
         except Exception as ex:
             _sout, serr = d_io
             # TODO
-            ok (serr) == ''
-            ok (replace_ids(cr.json())) == _e2_expected_json_output
-            ok (ex.message) == "Something is wrong"
+            assert serr == ''
+            assert replace_ids(cr.json()) == _e2_expected_json_output
+            assert ex.message == "Something is wrong"
 
     @test("json dump - property method raises ConfigException")
     def _e2b(self):
@@ -508,9 +508,9 @@ class MulticonfTest(unittest.TestCase):
         except ConfigException as ex:
             _sout, serr = d_io
             # TODO
-            ok (serr) == ''
-            ok (replace_ids(cr.json())) == _e2b_expected_json_output
-            ok (ex.message) == "Something is wrong"
+            assert serr == ''
+            assert replace_ids(cr.json()) == _e2b_expected_json_output
+            assert ex.message == "Something is wrong"
 
     @test("json dump - property method returns self")
     def _e3(self):
@@ -526,8 +526,8 @@ class MulticonfTest(unittest.TestCase):
 
         _sout, serr = d_io
         # TODO
-        ok (serr) == ''
-        ok (replace_ids(cr.json())) == _e3_expected_json_output
+        assert serr == ''
+        assert replace_ids(cr.json()) == _e3_expected_json_output
 
     @test("json dump - property method returns already seen conf item")
     def _e4(self):
@@ -548,8 +548,8 @@ class MulticonfTest(unittest.TestCase):
 
         _sout, serr = d_io
         # TODO
-        ok (serr) == ''
-        ok (replace_ids(cr.json())) == _e4_expected_json_output
+        assert serr == ''
+        assert replace_ids(cr.json()) == _e4_expected_json_output
 
 
     @test("json dump - property method calls json")
@@ -567,8 +567,8 @@ class MulticonfTest(unittest.TestCase):
 
         finally:
             _sout, serr = d_io
-            # TODO ok (serr) == "Encoder json_output.default: type(obj) <class 'multiconf.test.json_output_test.Nested'>"
-            ok (replace_ids(cr.json())) == _e5_expected_json_output
+            # TODO assert serr == "Encoder json_output.default: type(obj) <class 'multiconf.test.json_output_test.Nested'>"
+            assert replace_ids(cr.json()) == _e5_expected_json_output
 
     @test("json dump - non conf item not json-serializable")
     def _f(self):
@@ -579,7 +579,7 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             SimpleItem(b={Key():2})
 
-        ok (replace_ids(cr.json())) == _f_expected_json_output
+        assert replace_ids(cr.json()) == _f_expected_json_output
 
     @test("json dump - non conf item")
     def _g(self):
@@ -591,10 +591,10 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             SimpleItem(a=SomeClass())
 
-        ok (replace_ids(cr.json())) == _g_expected_json_output
+        assert replace_ids(cr.json()) == _g_expected_json_output
         # to_compact will not handle conversion of non-multiconf object representation, an extra '#as...' is inserted,
         # we remove it again
-        ok (replace_ids(cr.json(compact=True))) == to_compact(_g_expected_json_output).replace("SomeClass #as: 'xxxx', id", 'SomeClass #id')
+        assert replace_ids(cr.json(compact=True)) == to_compact(_g_expected_json_output).replace("SomeClass #as: 'xxxx', id", 'SomeClass #id')
 
     @test("json dump - unhandled item (function ref)")
     def _h(self):
@@ -604,7 +604,7 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp]) as cr:
             SimpleItem(func=fff)
 
-        ok (replace_ids(cr.json())) == _h_expected_json_output
+        assert replace_ids(cr.json()) == _h_expected_json_output
 
     @test("json dump - iterable")
     def _i(self):
@@ -615,7 +615,7 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, [prod, pp]) as cr:
             SimpleItem(a=MyIterable())
 
-        ok (replace_ids(cr.json())) == _i_expected_json_output
+        assert replace_ids(cr.json()) == _i_expected_json_output
 
     @test("json dump - uplevel reference while dumping from lower nesting level")
     def _uplevel_ref(self):
@@ -624,7 +624,7 @@ class MulticonfTest(unittest.TestCase):
                 with NestedRepeatable(id='n2', c=2) as n2:
                     NestedRepeatable(id='n3', uplevel_ref=n1, d=3)
 
-        ok (replace_ids(n2.json())) == _uplevel_ref_expected_json_output
+        assert replace_ids(n2.json()) == _uplevel_ref_expected_json_output
 
     @test("json dump - user defined attribute filter")
     def _filter(self):
@@ -647,5 +647,5 @@ class MulticonfTest(unittest.TestCase):
 
         _sout, serr = d_io
         # TODO
-        ok (serr) == ''
-        ok (replace_ids(cr.json())) == _filter_expected_json_output
+        assert serr == ''
+        assert replace_ids(cr.json()) == _filter_expected_json_output

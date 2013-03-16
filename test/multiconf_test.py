@@ -6,7 +6,7 @@
 from collections import OrderedDict
 
 import unittest
-from oktest import ok, test, fail
+from oktest import test
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import nested_repeatables, named_as, repeat, required
@@ -61,16 +61,16 @@ class MulticonfTest(unittest.TestCase):
     @test("contained_in, root_conf")
     def _a(self):
         with ConfigRoot(prod, [prod]) as conf:
-            ok (conf.root_conf) == conf
-            ok (conf.contained_in) == None
+            assert conf.root_conf == conf
+            assert conf.contained_in == None
 
             with ConfigItem() as c1:
-                ok (c1.root_conf) == conf
-                ok (c1.contained_in) == conf
+                assert c1.root_conf == conf
+                assert c1.contained_in == conf
 
                 with ConfigItem() as c2:
-                    ok (c2.root_conf) == conf
-                    ok (c2.contained_in) == c1
+                    assert c2.root_conf == conf
+                    assert c2.contained_in == c1
 
     @test("nested repeatable items")
     def _nested_repeatable1(self):
@@ -85,13 +85,13 @@ class MulticonfTest(unittest.TestCase):
                 ci.setattr('aa', prod=5, pp=18)
                 ci.setattr('bb', prod=3, pp=19)
 
-        ok (cr.children['first'].bb) == 1
-        ok (cr.children['second'].bb) == 2
-        ok (cr.children['third'].bb) == 3
+        assert cr.children['first'].bb == 1
+        assert cr.children['second'].bb == 2
+        assert cr.children['third'].bb == 3
 
         index = 3
         for ci in cr.children.values():
-            ok (ci.aa) == index
+            assert ci.aa == index
             index += 1
 
     @test("empty nested repeatable items")
@@ -109,7 +109,7 @@ class MulticonfTest(unittest.TestCase):
                 ci.setattr('aa', prod=3)
             ci_id = id(ci)
 
-        ok (cr.children[ci_id].aa) == 3
+        assert cr.children[ci_id].aa == 3
 
     @test("unnamed nested repeatable item (no default 'name' or 'id')")
     def _nested_repeatable4(self):
@@ -118,8 +118,8 @@ class MulticonfTest(unittest.TestCase):
                 ci.setattr('name', prod='somevalue', pp='another')
             ci_id = id(ci)
 
-        ok (cr.children[ci_id].aa) == 1
-        ok (cr.children[ci_id].name) == 'somevalue'
+        assert cr.children[ci_id].aa == 1
+        assert cr.children[ci_id].name == 'somevalue'
             
 
     @test("iteritems - root, attributes")
@@ -130,8 +130,8 @@ class MulticonfTest(unittest.TestCase):
         for exp, actual in zip([('a', 1), ('b', 2)], list(cr.iteritems())):
             exp_key, exp_value = exp
             key, value = actual
-            ok (exp_key) == key
-            ok (exp_value) == value
+            assert exp_key == key
+            assert exp_value == value
 
     @test("iteritems - item, attributes")
     def _e(self):
@@ -142,33 +142,33 @@ class MulticonfTest(unittest.TestCase):
         for exp, actual in zip([('a', 1), ('b', 2)], list(ci.iteritems())):
             exp_key, exp_value = exp
             key, value = actual
-            ok (exp_key) == key
-            ok (exp_value) == value
+            assert exp_key == key
+            assert exp_value == value
 
     @test("property defined with same type and None")
     def _g1(self):
         with ConfigRoot(prod, [prod, pp], a=None) as cr:
             cr.setattr('a', prod=1, pp=2)
-        ok (cr.a) == 1
+        assert cr.a == 1
 
     @test("property defined with None and same type")
     def _g2(self):
         with ConfigRoot(prod, [prod, pp], a=1) as cr:
             cr.setattr('a', prod=None, pp=2)
-        ok (cr.a) == None
+        assert cr.a == None
 
     @test("automatic freeze of child on exit")
     def _freeze0(self):
         with ConfigRoot(prod, [prod, pp], a=0) as cr:
             ConfigItem(something=1)
-        ok (cr.ConfigItem.something) == 1
+        assert cr.ConfigItem.something == 1
 
     @test("automatic freeze of previous sibling")
     def _freeze1(self):
         class X(ConfigItem):
             def __init__(self):
                 super(X, self).__init__()
-                ok (self.contained_in.children['a'].x) == 18
+                assert self.contained_in.children['a'].x == 18
 
         with root(prod, [prod, pp], a=0):
             rchild(id='a', x=18)
@@ -192,33 +192,33 @@ class MulticonfTest(unittest.TestCase):
                 NestedRepeatable(id='c', something=2)
             NestedRepeatable(id='c', something=3)
 
-        ok (len(cr.recursive_items['a'].recursive_items)) == 0
-        ok (len(cr.recursive_items['b'].recursive_items)) == 3
-        ok (len(cr.recursive_items['c'].recursive_items)) == 0
+        assert len(cr.recursive_items['a'].recursive_items) == 0
+        assert len(cr.recursive_items['b'].recursive_items) == 3
+        assert len(cr.recursive_items['c'].recursive_items) == 0
 
         ids = ['a', 'b', 'c']
         index = 0
         for item_id, item in cr.recursive_items['b'].recursive_items.iteritems():
-            ok (item.id) == ids[index]
-            ok (item_id) == ids[index]
+            assert item.id == ids[index]
+            assert item_id == ids[index]
             index += 1
-        ok (index) == 3
+        assert index == 3
 
-        ok (cr.recursive_items['b'].recursive_items['b'].recursive_items['b'].a) == 1
+        assert cr.recursive_items['b'].recursive_items['b'].recursive_items['b'].a == 1
 
     @test("automatic freeze of property defined in with_statement")
     def _freeze3(self):
         with root(prod, [prod, pp], a=0):
             with rchild(id='a') as rc:
                 rc.setattr('y', prod=1, pp=2)
-                ok (rc.y) == 1
+                assert rc.y == 1
 
     @test("automatic freeze of property overridden in with_statement")
     def _freeze4(self):
         with root(prod, [prod, pp], a=0):
             with rchild(id='a', y=18) as rc:
                 rc.setattr('y', prod=7, pp=2)
-                ok (rc.y) == 7
+                assert rc.y == 7
 
     @test("explicit freeze of all defined properties")
     def _freeze5(self):
@@ -227,19 +227,19 @@ class MulticonfTest(unittest.TestCase):
                 rc.setattr('y', prod=7, pp=2)
                 rc.setattr('z', pp=3)
 
-                ok (rc.y) == 7
-                ok (rc.x) == 17
-                ok (rc.z) == 18
+                assert rc.y == 7
+                assert rc.x == 17
+                assert rc.z == 18
 
     @test("explicit freeze of single property")
     def _freeze6(self):
         with root(prod, [prod, pp], a=0):
             with rchild(id='a', x=19, z=20) as rc:
                 rc.setattr('y', prod=7, pp=2)
-                ok (rc.y) == 7
+                assert rc.y == 7
                 rc.setattr('z', pp=3)
-                ok (rc.z) == 20
-                ok (rc.x) == 19
+                assert rc.z == 20
+                assert rc.x == 19
 
 
     # TODO: allow this (while inside with statement only)
@@ -248,12 +248,12 @@ class MulticonfTest(unittest.TestCase):
     #    with root(prod, [prod, pp], a=0):
     #        with rchild(id='a', x=19, z=20) as rc:
     #            rc.setattr('y', prod=7, pp=2)
-    #            ok (rc.y) == 7
+    #            assert rc.y == 7
     #            rc.setattr('z', pp=3)
-    #            ok (rc.z) == 20
-    #            ok (rc.x) == 19
+    #            assert rc.z == 20
+    #            assert rc.x == 19
     #            rc.a(prod=3, pp=4)
-    #            ok (rc.a) == 3
+    #            assert rc.a == 3
 
     @test("find_contained_in(named_as)")
     def _j(self):
@@ -284,10 +284,10 @@ class MulticonfTest(unittest.TestCase):
                             with Y() as ci:
                                 ci.setattr('a', prod=3, pp=2)
                     
-        ok (cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='x').a) == 1
-        ok (cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='root').a) == 0
-        ok (cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='recursive_items').a) == 2
-        ok (cr.x.recursive_items['b'].x.find_contained_in(named_as='x').a) == 0
+        assert cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='x').a == 1
+        assert cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='root').a == 0
+        assert cr.x.recursive_items['b'].x.recursive_items['d'].y.find_contained_in(named_as='recursive_items').a == 2
+        assert cr.x.recursive_items['b'].x.find_contained_in(named_as='x').a == 0
 
     @test("find_attribute(attribute_name)")
     def _k(self):
@@ -314,11 +314,11 @@ class MulticonfTest(unittest.TestCase):
                             with X() as ci:
                                 ci.setattr('a', prod=3, pp=23)
                     
-        ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('a')) == 3
-        ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('b')) == 'b1'
-        ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('recursive_items')['d'].a) == 2
-        ok (cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('q')) == 'q0'
-        ok (cr.x.recursive_items['b'].x.find_attribute(attribute_name='a')) == 0
+        assert cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('a') == 3
+        assert cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('b') == 'b1'
+        assert cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('recursive_items')['d'].a == 2
+        assert cr.x.recursive_items['b'].x.recursive_items['d'].x.find_attribute('q') == 'q0'
+        assert cr.x.recursive_items['b'].x.find_attribute(attribute_name='a') == 0
 
     @test("ConfigBuilder - override")
     def _l(self):
@@ -341,15 +341,15 @@ class MulticonfTest(unittest.TestCase):
                 xb.setattr('num_servers', pp=2)
                 xb.setattr('b', prod=3, pp=4)
                     
-        ok (len(cr.xses)) == 4
-        ok (cr.xses['server1'].a) == 1
-        ok (cr.xses['server2'].b) == 3
-        ok (cr.xses['server4'].b) == 3
-        ok (cr.xses['server1'].something) == 7
-        ok (cr.xses['server4'].something) == 7
-        ok (cr.xses['server1'].server_num) == 1
-        ok (cr.xses['server3'].server_num) == 3
-        ok (cr.xses['server4'].server_num) == 4
+        assert len(cr.xses) == 4
+        assert cr.xses['server1'].a == 1
+        assert cr.xses['server2'].b == 3
+        assert cr.xses['server4'].b == 3
+        assert cr.xses['server1'].something == 7
+        assert cr.xses['server4'].something == 7
+        assert cr.xses['server1'].server_num == 1
+        assert cr.xses['server3'].server_num == 3
+        assert cr.xses['server4'].server_num == 4
         # TODO: override of conditional attributes (required_if)
 
     @test("ConfigBuilder - build at freeze")
@@ -370,10 +370,10 @@ class MulticonfTest(unittest.TestCase):
         with Root(prod, [prod, pp]) as cr:
             XBuilder(a=1)
                     
-        ok (len(cr.xses)) == 4
+        assert len(cr.xses) == 4
         for ii in 1, 2, 3, 4:
             name = 'server' + repr(ii)
-            ok (cr.xses[name].name) == name
+            assert cr.xses[name].name == name
 
     @test("ConfigBuilder - access to contained_in from build")
     def _l3(self):
@@ -393,7 +393,7 @@ class MulticonfTest(unittest.TestCase):
         with Root(prod, [prod, pp]) as cr:
             YBuilder()
                     
-        ok (cr.y.number) == 7
+        assert cr.y.number == 7
 
     @test("ConfigBuilder - access to contained_in from __init__")
     def _l4(self):
@@ -417,7 +417,7 @@ class MulticonfTest(unittest.TestCase):
         with Root(prod, [prod, pp]) as cr:
             XBuilder()
 
-        ok (cr.x.number) == 7
+        assert cr.x.number == 7
 
     @test("ConfigBuilder - access to contained_in from with-block")
     def _l4b(self):
@@ -437,7 +437,7 @@ class MulticonfTest(unittest.TestCase):
             with XBuilder() as xb:
                 parent = xb.contained_in
 
-        ok (parent) == cr
+        assert parent == cr
 
     @test("ConfigBuilder - access to contained_in from built item. Must give parent of Builder.")
     def _l4c(self):
@@ -466,9 +466,9 @@ class MulticonfTest(unittest.TestCase):
         with Root(prod, [prod, pp]) as cr:
             XBuilder()
 
-        ok (cr.x.number) == 7
-        ok (cr.x.init_parent) == cr
-        ok (cr.x.validate_parent) == cr
+        assert cr.x.number == 7
+        assert cr.x.init_parent == cr
+        assert cr.x.validate_parent == cr
 
     @test("ConfigBuilder - Nested Items")
     def _l5(self):
@@ -492,13 +492,13 @@ class MulticonfTest(unittest.TestCase):
                 XChild(a=10)
                 XChild(a=11)
         
-        ok (len(cr.xses)) == 2
+        assert len(cr.xses) == 2
         for server in 'server1', 'server2':
             index = 10
             for x_child in cr.xses[server].x_children.values():
-                ok (x_child.a) == index
+                assert x_child.a == index
                 index += 1
-            ok (index) == 12
+            assert index == 12
 
     @test("ConfigBuilder - Nested Items - Access to contained_in")
     def _l5b(self):
@@ -523,14 +523,14 @@ class MulticonfTest(unittest.TestCase):
                     with_root = x1.contained_in
                 XChild(a=11)
         
-        ok (len(cr.xses)) == 2
+        assert len(cr.xses) == 2
         for server in 'server1', 'server2':
             index = 10
             for x_child in cr.xses[server].x_children.values():
-                ok (x_child.a) == index
+                assert x_child.a == index
                 index += 1
-            ok (index) == 12
-        ok (with_root) == cr
+            assert index == 12
+        assert with_root == cr
 
     @test("ConfigBuilder - Multilevel Nested Items - Access to contained_in")
     def _l5c(self):
@@ -562,16 +562,16 @@ class MulticonfTest(unittest.TestCase):
                         XChild(a=12)
 
 
-        ok (len(item.xses)) == 4
+        assert len(item.xses) == 4
         total = 0
         for server in 'server1', 'server2', 'server3', 'server4':
             for x_child in item.xses[server].x_children.values():
                 print x_child.a
                 total += x_child.a
-        ok (total) == 66
+        assert total == 66
         
-        ok (xb1_with_item) == item
-        ok (xb2_with_item) == item
+        assert xb1_with_item == item
+        assert xb2_with_item == item
 
     @test("ConfigBuilder - repeated")
     def _l6(self):
@@ -599,24 +599,24 @@ class MulticonfTest(unittest.TestCase):
                 xb2.last = 3
                 XChild(a=10)
         
-        ok (len(cr.xses)) == 3
+        assert len(cr.xses) == 3
         total_children = 0
         for server in 'server1', 'server2', 'server3':
             index = 10
             for x_child in cr.xses[server].x_children.values():
-                ok (x_child.a) == index
+                assert x_child.a == index
                 index += 1
                 total_children += 1
-        ok (total_children) == 5        
+        assert total_children == 5        
 
-        ok (len(xb1.what_built())) == 2
-        ok (isinstance(xb1.what_built(), OrderedDict)) == True
-        ok (xb1.what_built()['q']) == 2
+        assert len(xb1.what_built()) == 2
+        assert isinstance(xb1.what_built(), OrderedDict) == True
+        assert xb1.what_built()['q'] == 2
 
-        ok (len(xb1.what_built())) == 2
-        ok (isinstance(xb2.what_built(), OrderedDict)) == True
-        ok (xb2.what_built()['xses']['server3'].something) == 1
-        ok (xb2.what_built()['q']) == 3
+        assert len(xb1.what_built()) == 2
+        assert isinstance(xb2.what_built(), OrderedDict) == True
+        assert xb2.what_built()['xses']['server3'].something == 1
+        assert xb2.what_built()['q'] == 3
 
     # TODO not yet implemented 'partial' feature
     # @test("ConfigBuilder - Nested Items - override values, extend envs")
@@ -645,10 +645,10 @@ class MulticonfTest(unittest.TestCase):
     #             XChild(a=10)
     #             XChild(a=11)
     #     
-    #     ok (len(cr.xses)) == 2
+    #     assert len(cr.xses) == 2
     #     index = 10
     #     for x_child in cr.xses['server1'].x_children.values():
-    #         ok (x_child.a) == index
+    #         assert x_child.a == index
     #         index += 1
 
     @test("env value overrides group value")
@@ -658,8 +658,8 @@ class MulticonfTest(unittest.TestCase):
                 ci.setattr('aa', prod=1, g_prod_like=2)
                 ci.setattr('bb', g_prod_like=2, prod=3)
 
-        ok (cr1.ConfigItem.aa) == 1
-        ok (cr1.ConfigItem.bb) == 3
+        assert cr1.ConfigItem.aa == 1
+        assert cr1.ConfigItem.bb == 3
 
     @test("group value overrides default value - from init")
     def _n1(self):
@@ -668,8 +668,8 @@ class MulticonfTest(unittest.TestCase):
                 ci.setattr('aa', g_prod_like=2)
                 ci.setattr('bb', pp=4)
 
-        ok (cr1.ConfigItem.aa) == 2
-        ok (cr1.ConfigItem.bb) == 3
+        assert cr1.ConfigItem.aa == 2
+        assert cr1.ConfigItem.bb == 3
 
     @test("group value overrides default value - from setattr")
     def _n2(self):
@@ -677,7 +677,7 @@ class MulticonfTest(unittest.TestCase):
             with ConfigItem() as ci:
                 ci.setattr('aa', default=1, g_prod_like=2)
 
-        ok (cr1.ConfigItem.aa) == 2
+        assert cr1.ConfigItem.aa == 2
 
     @test("assigned default value overrides default value from init")
     def _n3(self):
@@ -685,7 +685,7 @@ class MulticonfTest(unittest.TestCase):
             with ConfigItem(aa=1) as ci:
                 ci.aa = 2
 
-        ok (cr1.ConfigItem.aa) == 2
+        assert cr1.ConfigItem.aa == 2
 
     @test("default value from setattr overrides default value from init")
     def _n4(self):
@@ -693,7 +693,7 @@ class MulticonfTest(unittest.TestCase):
             with ConfigItem(aa=1) as ci:
                 ci.setattr('aa', default=2, pp=3)
 
-        ok (cr1.ConfigItem.aa) == 2
+        assert cr1.ConfigItem.aa == 2
 
     @test("env value overrides default value")
     def _o(self):
@@ -702,8 +702,8 @@ class MulticonfTest(unittest.TestCase):
                 ci.setattr('aa', prod=2)
                 ci.setattr('bb', pp=4)
 
-        ok (cr1.ConfigItem.aa) == 2
-        ok (cr1.ConfigItem.bb) == 3
+        assert cr1.ConfigItem.aa == 2
+        assert cr1.ConfigItem.bb == 3
 
     @test("env value overrides group value and default value")
     def _p(self):
@@ -712,8 +712,8 @@ class MulticonfTest(unittest.TestCase):
                 ci.setattr('aa', prod=1, g_prod_like=2)
                 ci.setattr('bb', g_prod_like=2, prod=3)
 
-        ok (cr1.ConfigItem.aa) == 1
-        ok (cr1.ConfigItem.bb) == 3
+        assert cr1.ConfigItem.aa == 1
+        assert cr1.ConfigItem.bb == 3
 
     @test("attribute is an OrderedDict")
     def _q(self):
@@ -725,7 +725,7 @@ class MulticonfTest(unittest.TestCase):
             od = OrderedDict(((None, 1), ('foo', x)))
             ConfigItem(aa=od)
 
-        ok (cr1.ConfigItem.aa) == od
+        assert cr1.ConfigItem.aa == od
 
     @test("attribute is a Sequence")
     def _q2(self):
@@ -733,7 +733,7 @@ class MulticonfTest(unittest.TestCase):
             seq = []
             ConfigItem(aa=seq)
 
-        ok (cr1.ConfigItem.aa) == seq
+        assert cr1.ConfigItem.aa == seq
 
     @test("get valid_envs")
     def _r(self):
@@ -741,8 +741,8 @@ class MulticonfTest(unittest.TestCase):
         with ConfigRoot(prod, ve) as cr:
             ConfigItem()
 
-        ok (cr.valid_envs) == ve
-        ok (cr.ConfigItem.valid_envs) == ve
+        assert cr.valid_envs == ve
+        assert cr.ConfigItem.valid_envs == ve
 
     @test("required attributes - not required on imtermediate freeze - configroot")
     def _freeze_validation1(self):
@@ -752,9 +752,9 @@ class MulticonfTest(unittest.TestCase):
 
         with root(prod, [prod]) as cr:
             cr.setattr('anattr', prod=1)
-            ok (cr.anattr) == 1
+            assert cr.anattr == 1
             cr.setattr('anotherattr', prod=2)
-            ok (cr.anotherattr) == 2
+            assert cr.anotherattr == 2
 
     @test("required attributes - not required on imtermediate freeze - configitem")
     def _freeze_validation2(self):
@@ -768,9 +768,9 @@ class MulticonfTest(unittest.TestCase):
         with root(prod, [prod]) as cr:
             with item() as ii:
                 ii.setattr('a', prod=1)
-                ok (cr.item.a) == 1
+                assert cr.item.a == 1
                 ii.setattr('b', prod=2)
-                ok (cr.item.b) == 2
+                assert cr.item.b == 2
 
 
     @test("hasattr")
@@ -782,22 +782,22 @@ class MulticonfTest(unittest.TestCase):
             with ConfigItem(a=1) as ii:
                 ii.b = 2
                 ii.setattr('c', prod=3)
-                ok (hasattr(ii, 'd')) == False
+                assert hasattr(ii, 'd') == False
         
-            ok (hasattr(ii, 'a')) == True
-            ok (hasattr(ii, 'b')) == True
-            ok (hasattr(ii, 'c')) == True
-            ok (hasattr(ii, 'd')) == False
+            assert hasattr(ii, 'a') == True
+            assert hasattr(ii, 'b') == True
+            assert hasattr(ii, 'c') == True
+            assert hasattr(ii, 'd') == False
 
     @test("assigning to attribute - root")
     def _r1(self):
         with root(prod, [prod]) as cr:
             cr.a = 7
-        ok (cr.a) == 7
+        assert cr.a == 7
 
     @test("assigning to attribute - nested item")
     def _r2(self):
         with root(prod, [prod]) as cr:
             with ConfigItem() as ci:
                 ci.a = 1
-        ok (ci.a) == 1
+        assert ci.a == 1

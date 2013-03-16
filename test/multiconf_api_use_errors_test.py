@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, fail, dummy
+from oktest import test, fail, dummy
 
 from .utils import lazy, api_error, lineno, replace_ids
 
@@ -73,8 +73,8 @@ class MultiConfApiUseErrorsTest(unittest.TestCase):
         except ConfigApiException as ex:
             _sout, serr = d_io
             eex = _expected_ex_msg % '_contained_in'
-            ok (serr) == capie(inner_errorline, eex + _extra_stderr)
-            ok (ex.message) == eex
+            assert serr == capie(inner_errorline, eex + _extra_stderr)
+            assert ex.message == eex
 
     @test("@property called before parent __init__")
     def _property_call_before_init(self):
@@ -97,8 +97,8 @@ class MultiConfApiUseErrorsTest(unittest.TestCase):
         except ConfigApiException as ex:
             _sout, serr = d_io
             eex = _expected_ex_msg % '_root_conf'
-            ok (serr) == capie(inner_errorline, eex + _extra_stderr)
-            ok (ex.message) == eex
+            assert serr == capie(inner_errorline, eex + _extra_stderr)
+            assert ex.message == eex
 
     @test("undefined method called before parent __init__")
     def _undef_method_call_before_init(self):
@@ -120,8 +120,8 @@ class MultiConfApiUseErrorsTest(unittest.TestCase):
         except ConfigApiException as ex:
             _sout, serr = d_io
             eex = _expected_ex_msg % '_attributes'
-            ok (serr) == capie(inner_errorline, eex + _extra_stderr)
-            ok (ex.message) == eex
+            assert serr == capie(inner_errorline, eex + _extra_stderr)
+            assert ex.message == eex
 
     @test("undefined @property called before parent __init__")
     def _undef_property_method_call_before_init(self):
@@ -143,5 +143,5 @@ class MultiConfApiUseErrorsTest(unittest.TestCase):
         except ConfigApiException as ex:
             _sout, serr = d_io
             eex = _expected_ex_msg % '_attributes'
-            ok (serr) == capie(inner_errorline, eex + _extra_stderr)
-            ok (ex.message) == eex
+            assert serr == capie(inner_errorline, eex + _extra_stderr)
+            assert ex.message == eex

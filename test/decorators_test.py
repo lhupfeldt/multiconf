@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test
+from oktest import test
 
 from .utils import config_error, replace_ids
 
@@ -53,8 +53,8 @@ class DecoratorsTest(unittest.TestCase):
         with root(prod, [prod]) as cr:
             cr.setattr('anattr',prod=1)
             cr.setattr('anotherattr', prod=2)
-        ok (cr.anattr) == 1
-        ok (cr.anotherattr) == 2
+        assert cr.anattr == 1
+        assert cr.anotherattr == 2
 
     @test("required attributes - configitem")
     def _b(self):
@@ -70,8 +70,8 @@ class DecoratorsTest(unittest.TestCase):
                 ii.setattr('a', prod=1)
                 ii.setattr('b', prod=2)
 
-        ok (cr.item.a) == 1
-        ok (cr.item.b) == 2
+        assert cr.item.a == 1
+        assert cr.item.b == 2
 
 
     @test("required attributes - accept override of single property")
@@ -88,8 +88,8 @@ class DecoratorsTest(unittest.TestCase):
             with item(a=1, b=1) as ii:
                 ii.setattr('b', prod=2)
 
-        ok (cr.item.a) == 1
-        ok (cr.item.b) == 2
+        assert cr.item.a == 1
+        assert cr.item.b == 2
 
 
     @test("required_if attributes - condition true (prod) and condition unset (dev2ct)")
@@ -103,16 +103,16 @@ class DecoratorsTest(unittest.TestCase):
             cr.setattr('b', prod=20)
             cr.setattr('c', prod=30)
 
-        ok (cr.a) == 10
-        ok (cr.b) == 20
-        ok (cr.c) == 30
+        assert cr.a == 10
+        assert cr.b == 20
+        assert cr.c == 30
 
         # Test iteritems
         expected_keys = ['a', 'b', 'c']
         index = 0
         for key, val in cr.iteritems():
-            ok (key) == expected_keys[index]
-            ok (val) == (index + 1) * 10
+            assert key == expected_keys[index]
+            assert val == (index + 1) * 10
             index += 1
 
     @test("required_if attributes - condition false")
@@ -125,15 +125,15 @@ class DecoratorsTest(unittest.TestCase):
             cr.setattr('a', prod=0)
             cr.setattr('b', prod=10)
 
-        ok (cr.a) == 0
-        ok (cr.b) == 10
+        assert cr.a == 0
+        assert cr.b == 10
 
         # Test iteritems
         expected_keys = ['a', 'b']
         index = 0
         for key, val in cr.iteritems():
-            ok (key) == expected_keys[index]
-            ok (val) == index * 10
+            assert key == expected_keys[index]
+            assert val == index * 10
             index += 1
 
     @test("optional attribute")
@@ -144,11 +144,11 @@ class DecoratorsTest(unittest.TestCase):
 
         with root(prod, [prod, dev2ct]) as cr:
             cr.setattr('a', dev2ct=18)
-        ok ("no-exception") == "no-exception"
+        assert "no-exception" == "no-exception"
 
         with root(prod, [prod, dev2ct]) as cr:
             cr.setattr('a', prod=17)
-        ok (cr.a) == 17
+        assert cr.a == 17
 
     @test("named_as")
     def _g(self):
@@ -158,7 +158,7 @@ class DecoratorsTest(unittest.TestCase):
 
         with root(prod, [prod, dev2ct], name='abc') as proj:
             pass
-        ok (replace_ids(repr(proj), named_as=False)) == _g_expected
+        assert replace_ids(repr(proj), named_as=False) == _g_expected
 
     @test("required attributes - inherited, ok")
     def _h(self):
@@ -175,7 +175,7 @@ class DecoratorsTest(unittest.TestCase):
             cr.setattr('anotherattr', prod=2)
             cr.setattr('someattr2', prod=3)
             cr.setattr('someotherattr2', prod=4)
-        ok (cr.anattr) == 1
-        ok (cr.anotherattr) == 2
-        ok (cr.someattr2) == 3
-        ok (cr.someotherattr2) == 4
+        assert cr.anattr == 1
+        assert cr.anotherattr == 2
+        assert cr.someattr2 == 3
+        assert cr.someotherattr2 == 4

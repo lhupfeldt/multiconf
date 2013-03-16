@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, fail
+from oktest import test, fail
 
 from .utils import config_error, replace_ids
 
@@ -49,7 +49,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
             print cr.b
             fail ("Expected exception")
         except AttributeError as ex:
-            ok (replace_ids(ex.message, named_as=False)) == _a1_expected_repr
+            assert replace_ids(ex.message, named_as=False) == _a1_expected_repr
 
     @test("access undefined attribute - but has repeatable? attribute with attribute name+s")
     def _a2(self):
@@ -60,7 +60,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
             print cr.b
             fail ("Expected exception")
         except AttributeError as ex:
-            ok (replace_ids(ex.message, named_as=False)) == _a2_expected_repr
+            assert replace_ids(ex.message, named_as=False) == _a2_expected_repr
 
     @test("find_contained_in(named_as) - not found")
     def _b(self):
@@ -101,7 +101,7 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
             cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root']"
+            assert ex.message == "Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root']"
 
 
     @test("find_attribute(attribute_name) - not found")
@@ -136,10 +136,10 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
                                 ci.setattr('a', prod=3)
                     
         try:
-            ok (cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e')) == 3
+            assert cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e') == 3
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"
+            assert ex.message == "Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"
 
     # TODO
     #@test("error in property method implementation")
@@ -162,5 +162,5 @@ class MultiConfAccessErrorsTest(unittest.TestCase):
     #        a = cr.x.method
     #        fail ("Expected exception, but a " + repr(a) + " got a value")
     #    except ConfigException as ex:
-    #        ok (ex.message) == ""
+    #        assert ex.message == ""
 

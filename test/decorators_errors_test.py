@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import unittest
-from oktest import ok, test, fail, dummy
+from oktest import test, fail, dummy
 from .utils import config_error, config_warning, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
@@ -47,7 +47,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
                 pass
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "No value given for required attributes: ['someattr1', 'someattr2']"
+            assert ex.message == "No value given for required attributes: ['someattr1', 'someattr2']"
 
     @test("required attributes missing - configitem")
     def _b(self):
@@ -65,7 +65,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
 
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "No value given for required attributes: ['abcd', 'ijkl']"
+            assert ex.message == "No value given for required attributes: ['abcd', 'ijkl']"
 
 
     @test("required_if - optional attributes missing")
@@ -84,7 +84,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
 
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"
+            assert ex.message == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"
 
     @test("required_if - condition attribute missing")
     def _c2(self):
@@ -98,7 +98,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
         with root(prod, [prod]):
             item()
         # The above code is valid, the condition attribute i not mandatory
-        ok (1) == 1
+        assert 1 == 1
 
     @test("optional attribute accessed for env where not specified")
     def _d(self):
@@ -113,7 +113,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
             print cr.a
             fail ("Expected exception")
         except NoAttributeException  as ex:
-            ok (ex.message) == "Attribute 'a' undefined for env Env('prod')"
+            assert ex.message == "Attribute 'a' undefined for env Env('prod')"
 
     @test("decorator arg not a valid identifier - required")
     def _e(self):
@@ -123,7 +123,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
                 pass
             fail ("Expected exception")
         except ConfigDefinitionException  as ex:
-            ok (ex.message) == "['a-b', '99'] are not valid identifiers"
+            assert ex.message == "['a-b', '99'] are not valid identifiers"
 
     @test("decorator arg is keyword - nested_repeatables")
     def _e2(self):
@@ -133,17 +133,17 @@ class DecoratorsErrorsTest(unittest.TestCase):
                 pass
             fail ("Expected exception")
         except ConfigDefinitionException  as ex:
-            ok (ex.message) == "'def' is not a valid identifier"
+            assert ex.message == "'def' is not a valid identifier"
 
     @test("decorator args are keywords - required")
-    def _e2(self):
+    def _e3(self):
         try:
             @required('a, class, b, 99')
             class root(ConfigRoot):
                 pass
             fail ("Expected exception")
         except ConfigDefinitionException  as ex:
-            ok (ex.message) == "['class', '99'] are not valid identifiers"
+            assert ex.message == "['class', '99'] are not valid identifiers"
 
     @test("decorator arg not a valid identifier - required_if")
     def _f(self):
@@ -153,7 +153,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
                 pass
             fail ("Expected exception")
         except ConfigDefinitionException  as ex:
-            ok (ex.message) == "['-a', 'a-b', '99'] are not valid identifiers"
+            assert ex.message == "['-a', 'a-b', '99'] are not valid identifiers"
 
 
     @test("required attributes - inherited, missing")
@@ -173,7 +173,7 @@ class DecoratorsErrorsTest(unittest.TestCase):
                 cr.setattr('someotherattr2', prod=4)
             fail ("Expected exception")
         except ConfigException as ex:
-            ok (ex.message) == "No value given for required attributes: ['anotherattr']"
+            assert ex.message == "No value given for required attributes: ['anotherattr']"
 
     @test("required attributes - inherited, redefined")
     def _h(self):
@@ -188,4 +188,4 @@ class DecoratorsErrorsTest(unittest.TestCase):
                 pass
 
         _sout, serr = d_io
-        ok (serr) == cw(errorline, "Attribute name: 'anattr' re-specified as 'required' on class: 'root2' , was already inherited from a super class.")
+        assert serr == cw(errorline, "Attribute name: 'anattr' re-specified as 'required' on class: 'root2' , was already inherited from a super class.")
