@@ -532,48 +532,46 @@ class ConfigBuilder(ConfigItem):
 
         super(ConfigBuilder, self).freeze()
         if self._may_freeze_validate:
-            try:
-                existing_attributes = self._attributes.copy()
+            existing_attributes = self._attributes.copy()
 
-                # We need to allow the same nested repeatables as the parent item
-                for key in self.contained_in.__class__._deco_nested_repeatables:
-                    self._attributes[key] = OrderedDict()
+            # We need to allow the same nested repeatables as the parent item
+            for key in self.contained_in.__class__._deco_nested_repeatables:
+                self._attributes[key] = OrderedDict()
 
-                self._in_build = True
-                self.build()
+            self._in_build = True
+            self.build()
+            self._in_build = False
 
-                # Attributes/Items on builder are copied to items created in build
-                # Loop over attributes created in build
-                for build_key, build_value in self._attributes.iteritems():
-                    if build_key in existing_attributes:
-                        continue
-                    self._what_built[build_key] = build_value.value(self.env) if isinstance(build_value, Attribute) else build_value
+            # Attributes/Items on builder are copied to items created in build
+            # Loop over attributes created in build
+            for build_key, build_value in self._attributes.iteritems():
+                if build_key in existing_attributes:
+                    continue
+                self._what_built[build_key] = build_value.value(self.env) if isinstance(build_value, Attribute) else build_value
 
-                    if isinstance(build_value, OrderedDict):
-                        for key, value in build_value.iteritems():
-                            override(value, existing_attributes)
-                        continue
+                if isinstance(build_value, OrderedDict):
+                    for key, value in build_value.iteritems():
+                        override(value, existing_attributes)
+                    continue
 
-                    override(build_value, existing_attributes)
+                override(build_value, existing_attributes)
 
-                # Items and attributes created in 'build' goes into parent
-                for key, value in self._attributes.iteritems():
-                    if key in existing_attributes:
-                        continue
+            # Items and attributes created in 'build' goes into parent
+            for key, value in self._attributes.iteritems():
+                if key in existing_attributes:
+                    continue
 
-                    # Merge repeatable items in to parent
-                    if isinstance(value, OrderedDict):
-                        for obj_key, ovalue in value.iteritems():
-                            if obj_key in self.contained_in.attributes[key]:
-                                raise ConfigException("Nested repeatable from 'build', key: " + repr(obj_key) + ", value: " + repr(ovalue) +
-                                                      " overwrites existing entry in parent: " + repr(self._contained_in))
-                            self.contained_in.attributes[key][obj_key] = ovalue
-                        continue
+                # Merge repeatable items in to parent
+                if isinstance(value, OrderedDict):
+                    for obj_key, ovalue in value.iteritems():
+                        if obj_key in self.contained_in.attributes[key]:
+                            raise ConfigException("Nested repeatable from 'build', key: " + repr(obj_key) + ", value: " + repr(ovalue) +
+                                                  " overwrites existing entry in parent: " + repr(self._contained_in))
+                        self.contained_in.attributes[key][obj_key] = ovalue
+                    continue
 
-                    # TODO validation
-                    self._contained_in.attributes[key] = value
-            finally:
-                self._in_build = False
+                # TODO validation
+                self._contained_in.attributes[key] = value
         self._freezing = False
         return self
 
