@@ -14,6 +14,13 @@ def _isidentifier(name):
     return re.match(r'^[a-z_][a-z0-9_]*$', name, re.I) is not None
 
 
+def _not_config_builder(cls, decorator_name):
+    if issubclass(cls, ConfigBuilder):
+        msg = "Decorator '@" + decorator_name + "' is not allowed on instance of ConfigBuilder."
+        error(0, msg)
+        raise ConfigDefinitionException(msg)
+
+
 def _check_valid_identifiers(names):
     invalid = []
     for name in names:
@@ -41,6 +48,7 @@ def _add_super_list_deco_values(cls, attr_names_str, deco_attr_name):
 
 def named_as(insert_as_name):
     def deco(cls):
+        _not_config_builder(cls, 'named_as')
         _check_valid_identifiers((insert_as_name,))
         cls._deco_named_as = insert_as_name
         return cls
@@ -50,6 +58,7 @@ def named_as(insert_as_name):
 
 def repeat():
     def deco(cls):
+        _not_config_builder(cls, 'repeat')
         cls._deco_repeatable = True
         return cls
 
@@ -58,10 +67,7 @@ def repeat():
 
 def nested_repeatables(attr_names):
     def deco(cls):
-        if issubclass(cls, ConfigBuilder):
-            msg = "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."
-            error(0, msg)
-            raise ConfigDefinitionException(msg)
+        _not_config_builder(cls, 'nested_repeatables')
         cls._deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
         return cls
 
