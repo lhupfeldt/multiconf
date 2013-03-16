@@ -9,6 +9,7 @@ import json
 
 from .envs import BaseEnv, Env, EnvGroup, EnvException
 from .attribute import Attribute
+from .repeatable import Repeatable
 from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _error_msg, _api_error_msg, _user_file_line
 import json_output
 
@@ -31,7 +32,7 @@ class _ConfigBase(object):
     def __init__(self, json_filter=None, **attr):
         self._json_filter = json_filter
         self._root_conf = None
-        self._attributes = OrderedDict()
+        self._attributes = Repeatable()
         self._frozen = False
         self._may_freeze_validate = True
         self._in_build = False
@@ -47,7 +48,7 @@ class _ConfigBase(object):
             self._attributes[key] = attribute
 
         for key in self.__class__._deco_nested_repeatables:
-            self._attributes[key] = OrderedDict()
+            self._attributes[key] = Repeatable()
 
     def named_as(self):
         if self.__class__._deco_named_as:
@@ -128,7 +129,7 @@ class _ConfigBase(object):
         then self will be frozen and validated
         """
         for _child_name, child_value in self._attributes.iteritems():
-            if isinstance(child_value, OrderedDict):
+            if isinstance(child_value, Repeatable):
                 for item in child_value.itervalues():
                     if not item._frozen:
                         item.freeze()
@@ -289,7 +290,7 @@ class _ConfigBase(object):
         raise ConfigException("The env " + repr(env) + " must be in the (nested) list of valid_envs " + repr(valid_envs))
 
     def _env_specific_value(self, attr, env):
-        if isinstance(attr, ConfigItem) or isinstance(attr, OrderedDict):
+        if isinstance(attr, ConfigItem) or isinstance(attr, Repeatable):
             return attr
         return attr.value(env)
 
@@ -398,7 +399,7 @@ class _ConfigBase(object):
         self._user_validated = True
 
         for _child_name, child_value in self.iteritems():
-            if isinstance(child_value, OrderedDict):
+            if isinstance(child_value, Repeatable):
                 for dict_entry in child_value.values():
                     if isinstance(dict_entry, _ConfigBase):
                         dict_entry._user_validate_recursively()
@@ -476,7 +477,7 @@ class ConfigItem(_ConfigBase):
                 if isinstance(self._contained_in, ConfigBuilder):
                     # Builders don't declare nested repeatables, since the items are ultimately to be assigned to the built items
                     if not my_key in self._contained_in.attributes:
-                        self._contained_in.attributes[my_key] = OrderedDict()
+                        self._contained_in.attributes[my_key] = Repeatable()
                 else:
                     msg = repr(my_key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
                         repr(self._contained_in.named_as())
@@ -505,7 +506,7 @@ class ConfigItem(_ConfigBase):
         if my_key in self._contained_in.attributes:
             if isinstance(self._contained_in.attributes[my_key], ConfigItem):
                 raise ConfigException("Repeated non repeatable conf item: " + repr(my_key))
-            if isinstance(self._contained_in.attributes[my_key], OrderedDict):
+            if isinstance(self._contained_in.attributes[my_key], Repeatable):
                 msg = repr(my_key) + ': ' + repr(self) + ' is defined as non-repeatable, but the containing object has repeatable items with the same name: ' + \
                     repr(self._contained_in)
                 raise ConfigException(msg)
@@ -536,7 +537,7 @@ class ConfigBuilder(ConfigItem):
 
             # We need to allow the same nested repeatables as the parent item
             for key in self.contained_in.__class__._deco_nested_repeatables:
-                self._attributes[key] = OrderedDict()
+                self._attributes[key] = Repeatable()
 
             self._in_build = True
             self.build()
@@ -549,7 +550,7 @@ class ConfigBuilder(ConfigItem):
                     continue
                 self._what_built[build_key] = build_value.value(self.env) if isinstance(build_value, Attribute) else build_value
 
-                if isinstance(build_value, OrderedDict):
+                if isinstance(build_value, Repeatable):
                     for key, value in build_value.iteritems():
                         override(value, existing_attributes)
                     continue
@@ -562,7 +563,7 @@ class ConfigBuilder(ConfigItem):
                     continue
 
                 # Merge repeatable items in to parent
-                if isinstance(value, OrderedDict):
+                if isinstance(value, Repeatable):
                     for obj_key, ovalue in value.iteritems():
                         if obj_key in self.contained_in.attributes[key]:
                             raise ConfigException("Nested repeatable from 'build', key: " + repr(obj_key) + ", value: " + repr(ovalue) +
