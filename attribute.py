@@ -33,9 +33,6 @@ class Attribute(object):
                 return self.env_values[default_key]
         raise Exception('No default value')
 
-    def env_value(self, env):
-        return self.env_values[env]
-
     def freeze(self):
         self._frozen = True
 

@@ -283,11 +283,6 @@ class _ConfigBase(object):
                 return
         raise ConfigException("The env " + repr(env) + " must be in the (nested) list of valid_envs " + repr(valid_envs))
 
-    def _env_specific_value(self, attr, env):
-        if isinstance(attr, ConfigItem) or isinstance(attr, Repeatable):
-            return attr
-        return attr.value(env)
-
     def __getattr__(self, name):
         if name.startswith('__'):
             super(_ConfigBase, self).__getattr__(name)
@@ -307,12 +302,12 @@ class _ConfigBase(object):
             if self._attributes.get(repeatable_name):
                 error_message = ", but found attribute " + repr(repeatable_name)
             raise AttributeError(repr(self) + " has no attribute " + repr(name) + error_message)
-        return self._env_specific_value(attr, self.env)
+        return attr.value(self.env)
 
     def iteritems(self):
-        for key, value in self._attributes.iteritems():
+        for key, item in self._attributes.iteritems():
             try:
-                yield key, self._env_specific_value(value, self.env)
+                yield key, item.value(self.env)
             except NoAttributeException:
                 # This should only happen in case of  a conditional attribute
                 pass
@@ -398,6 +393,9 @@ class _ConfigBase(object):
     def validate(self):
         """Can be overridden to provide post-frozen validation"""
         pass
+
+    def value(self, env):
+        return self
 
 
 class ConfigRoot(_ConfigBase):
@@ -536,7 +534,7 @@ class ConfigBuilder(ConfigItem):
             for build_key, build_value in self._attributes.iteritems():
                 if build_key in existing_attributes:
                     continue
-                self._what_built[build_key] = build_value.value(self.env) if isinstance(build_value, Attribute) else build_value
+                self._what_built[build_key] = build_value.value(self.env)
 
                 if isinstance(build_value, Repeatable):
                     for key, value in build_value.iteritems():

@@ -12,3 +12,7 @@ class Repeatable(OrderedDict):
     def _user_validate_recursively(self):
         for dict_entry in self.values():
             dict_entry._user_validate_recursively()
+
+
+    def value(self, env):
+        return self
