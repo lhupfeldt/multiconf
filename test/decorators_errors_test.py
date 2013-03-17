@@ -67,49 +67,6 @@ def test_required_attributes_missing_for_configitem():
         assert ex.message == "No value given for required attributes: ['abcd', 'ijkl']"
 
 
-def test_required_if_optional_attributes_missing():
-    try:
-        class root(ConfigRoot):
-            pass
-
-        @required_if('abcd', 'efgh, ijkl')
-        class item(ConfigItem):
-            pass
-
-        with root(prod, [prod]):
-            with item() as ii:
-                ii.setattr('abcd', prod=1)
-
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"
-
-
-_expected_regular_attributes_missing_when_required_if_used_ex = """There were 1 errors when defining attribute 'x' on object: {
-    "__class__": "item #as: 'xxxx', id: 0000, not-frozen", 
-    "abcd": 0
-}"""
-
-def test_regular_attributes_missing_when_required_if_used():
-    try:
-        class root(ConfigRoot):
-            pass
-
-        @required_if('abcd', 'efgh, ijkl')
-        class item(ConfigItem):
-            pass
-
-        with root(prod, [prod, dev2ct]):
-            with item() as ii:
-                ii.setattr('abcd', prod=0)
-                ii.setattr('x', dev2ct=0)
-                ii.setattr('y', prod=0)
-
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert replace_ids(ex.message) == _expected_regular_attributes_missing_when_required_if_used_ex
-
-
 def test_optional_attribute_accessed_for_env_where_not_specified():
     @optional('a')
     class root(ConfigRoot):
@@ -121,7 +78,7 @@ def test_optional_attribute_accessed_for_env_where_not_specified():
 
         print cr.a
         fail ("Expected exception")
-    except NoAttributeException  as ex:
+    except AttributeError  as ex:
         assert ex.message == "Attribute 'a' undefined for env Env('prod')"
 
 def test_decorator_arg_not_a_valid_identifier_in_required_decorator():

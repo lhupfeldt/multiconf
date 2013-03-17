@@ -10,7 +10,7 @@ import json
 from .envs import BaseEnv, Env, EnvGroup, EnvException
 from .attribute import Attribute
 from .repeatable import Repeatable
-from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _error_msg, _api_error_msg, _user_file_line
+from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _api_error_msg, _user_file_line
 import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
@@ -102,20 +102,34 @@ class _ConfigBase(object):
             return
 
         try:
-            required_if = self._attributes[required_if_key].value(self.env)
-            if not required_if:
+            required_if_condition_attr = self._attributes[required_if_key]
+            if not required_if_condition_attr:
                 return
         except KeyError:
             return
-        except NoAttributeException:
-            return
 
         missing = []
-        for req in self.__class__._deco_required_if[1]:
-            if not req in self._attributes:
-                missing.append(req)
+        for eg in self.root_conf._valid_envs:
+            env_missing = []
+            for req in self.__class__._deco_required_if[1]:
+                if not req in self._attributes:
+                    for env in eg.envs():
+                        try:
+                            required_if_condition = required_if_condition_attr.value(env)
+                        except NoAttributeException:
+                            continue
+                        if required_if_condition:
+                            env_missing.append(req)
+                else:
+                    attr = self._attributes[req]
+                    if isinstance(attr, Attribute):
+                        # Avoid double errors
+                        if not attr.num_errors:
+                            self.check_attr_fully_defined(attr)
+            if env_missing:
+                missing.append('Env:' + env.name + '; condition value:' + repr(required_if_condition) + ', missing attributes: ' + repr(env_missing))
         if missing:
-            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + "==" +  repr(required_if) + ", missing: " + repr(missing))
+            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + ", missing: " + repr(missing))
 
     def freeze_validation(self):
         """Override this method if you need special checks"""
@@ -181,13 +195,11 @@ class _ConfigBase(object):
         # For error messages
         ufl = _user_file_line()
         eg_from = {}
-        def error(msg):
-            attribute.num_errors = _error_msg(attribute.num_errors, msg)
 
         attribute = self._attributes.setdefault(name, Attribute(name))
         if attribute._frozen:
             msg = "The attribute " + repr(name) + " is already fully defined"
-            error(msg)
+            attribute.error(msg)
             raise ConfigException(msg + " on object " + repr(self))
 
         if not self._in_init and not ('default' in kwargs and len(kwargs) == 1):
@@ -218,18 +230,27 @@ class _ConfigBase(object):
                     new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
                     prev_eg_msg = repr(eg_from[env])
                     msg = "A value is already specified for: " + new_eg_msg + '=' + repr(v_ufl) + ", previous value: " + prev_eg_msg + '=' + repr(attribute.env_values[env])
-                    error(msg)
+                    attribute.error(msg)
 
             except EnvException as ex:
-                error(ex.message)
+                attribute.error(ex.message)
+
+        self.check_attr_fully_defined(attribute)
+
+    def check_attr_fully_defined(self, attribute):
+        name = attribute.attribute_name
 
         if not attribute.has_default():
             # Check whether we need to check for conditionally required attributes
             required_if_key = self.__class__._deco_required_if[0]
             if required_if_key:
-                required_if_attributes = self.__class__._deco_required_if[1]
+                # A required_if CONDITION attribute is optional, so it is ok if it is not set or not set for all environments
+                if name == required_if_key:
+                    return
+
                 try:
-                    required_if = self.attributes[required_if_key]
+                    required_if_condition_attr = self.attributes[required_if_key]
+                    required_if_attribute_names = self.__class__._deco_required_if[1]
                 except KeyError:
                     # The condition property was not specified, so the conditional properties are not required
                     required_if_key = False
@@ -242,24 +263,17 @@ class _ConfigBase(object):
                         # The attribute is set with an env specific value
                         continue
 
-                    # Check for required_if, the required_if atributes are optional if required_if is false or not specified for the env
-                    if required_if_key:
-                        if name == required_if_key:
-                            # A required_if CONDITION attribute is optional, so it is ok that it is not set for all environments
+                    # Check for required_if, the required_if atributes are optional if required_if_condition value is false or not specified for the env
+                    try:
+                        if required_if_key and not required_if_condition_attr.value(env) and name in required_if_attribute_names:
                             continue
-
-                        required_if_env_value = False
-                        try:
-                            required_if_env_value = attribute.env_values[env]
-                        except KeyError:
-                            pass
-                        if not required_if_env_value and name in required_if_attributes:
-                            continue
+                    except NoAttributeException:
+                        continue
 
                     attribute.all_envs_initialized = False
                     group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
                     msg = "Attribute: " + repr(name) + " did not receive a value for env " + repr(env)
-                    error(msg + group_msg)
+                    attribute.error(msg + group_msg)
 
                     # ci = container
                     # while ci != None:
@@ -302,7 +316,11 @@ class _ConfigBase(object):
             if self._attributes.get(repeatable_name):
                 error_message = ", but found attribute " + repr(repeatable_name)
             raise AttributeError(repr(self) + " has no attribute " + repr(name) + error_message)
-        return attr.value(self.env)
+
+        try:
+            return attr.value(self.env)
+        except NoAttributeException as ex:
+            raise AttributeError(ex.message)
 
     def iteritems(self):
         for key, item in self._attributes.iteritems():
