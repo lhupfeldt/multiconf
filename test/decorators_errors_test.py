@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from oktest import fail
-from .utils import config_error, config_warning, lineno
+from .utils import config_error, config_warning, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
 from ..decorators import required, required_if, optional, nested_repeatables, ConfigDefinitionException
@@ -84,18 +84,29 @@ def test_required_if_optional_attributes_missing():
         assert ex.message == "Missing required_if attributes. Condition attribute: 'abcd'==1, missing: ['efgh', 'ijkl']"
 
 
-def test_required_if_condition_attribute_missing():
-    class root(ConfigRoot):
-        pass
+_expected_regular_attributes_missing_when_required_if_used_ex = """There were 1 errors when defining attribute 'x' on object: {
+    "__class__": "item #as: 'xxxx', id: 0000, not-frozen", 
+    "abcd": 0
+}"""
 
-    @required_if('abcd', 'efgh, ijkl')
-    class item(ConfigItem):
-        pass
+def test_regular_attributes_missing_when_required_if_used():
+    try:
+        class root(ConfigRoot):
+            pass
 
-    with root(prod, [prod]):
-        item()
-    # The above code is valid, the condition attribute i not mandatory
-    assert 1 == 1
+        @required_if('abcd', 'efgh, ijkl')
+        class item(ConfigItem):
+            pass
+
+        with root(prod, [prod, dev2ct]):
+            with item() as ii:
+                ii.setattr('abcd', prod=0)
+                ii.setattr('x', dev2ct=0)
+                ii.setattr('y', prod=0)
+
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert replace_ids(ex.message) == _expected_regular_attributes_missing_when_required_if_used_ex
 
 
 def test_optional_attribute_accessed_for_env_where_not_specified():

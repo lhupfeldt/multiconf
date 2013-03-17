@@ -102,7 +102,7 @@ class _ConfigBase(object):
             return
 
         try:
-            required_if = self._attributes[required_if_key].env_values[self.env][0]
+            required_if = self._attributes[required_if_key].value(self.env)
             if not required_if:
                 return
         except KeyError:

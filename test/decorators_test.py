@@ -95,19 +95,22 @@ def test_required_if_attributes_condition_true_prod_and_condition_unset_dev2ct()
     with root(prod, [prod, dev2ct]) as cr:
         cr.setattr('a', prod=10)
         cr.setattr('b', prod=20)
-        cr.setattr('c', prod=30)
+        cr.setattr('c', prod=30)        
+        cr.setattr('d', prod=40, dev2ct=41)
 
     assert cr.a == 10
     assert cr.b == 20
     assert cr.c == 30
+    assert cr.d == 40
 
     # Test iteritems
-    expected_keys = ['a', 'b', 'c']
+    expected_keys = ['a', 'b', 'c', 'd']
     index = 0
     for key, val in cr.iteritems():
         assert key == expected_keys[index]
         assert val == (index + 1) * 10
         index += 1
+    assert index == 4
 
 
 def test_required_if_attributes_condition_false():
@@ -129,6 +132,20 @@ def test_required_if_attributes_condition_false():
         assert key == expected_keys[index]
         assert val == index * 10
         index += 1
+
+
+def test_required_if_condition_attribute_missing():
+    class root(ConfigRoot):
+        pass
+
+    @required_if('abcd', 'efgh, ijkl')
+    class item(ConfigItem):
+        pass
+
+    with root(prod, [prod]):
+        item()
+    # The above code is valid, the condition attribute i not mandatory
+    assert 1 == 1
 
 
 def test_optional_attribute():
