@@ -3,13 +3,12 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import unittest
-from oktest import test, fail, dummy
+from oktest import fail
 
-from .utils import lazy, api_error, lineno, replace_ids
+from .utils import api_error, lineno
 
-from .. import ConfigRoot, ConfigItem, ConfigException, ConfigApiException
-from ..decorators import nested_repeatables, repeat, named_as
+from .. import ConfigRoot, ConfigItem, ConfigApiException
+from ..decorators import nested_repeatables, repeat
 from ..envs import EnvFactory
 
 ef = EnvFactory()
@@ -51,93 +50,91 @@ class RepeatableItem(ConfigItem):
     pass
 
 
-class MultiConfApiUseErrorsTest(unittest.TestCase):
-    def find_contained_in_called_before_parent___init___test(self):
-        try:
-            class root(ConfigRoot):
-                pass
-            
-            class inner(ConfigItem):
-                def __init__(self, **kwargs):
-                    global inner_errorline
-                    # Error: find_contained_in must not be called before parent __init__
-                    inner_errorline = lineno() + 1
-                    self.find_contained_in('a')
+def test_find_contained_in_called_before_parent___init__(capsys):
+    try:
+        class root(ConfigRoot):
+            pass
+        
+        class inner(ConfigItem):
+            def __init__(self, **kwargs):
+                global inner_errorline
+                # Error: find_contained_in must not be called before parent __init__
+                inner_errorline = lineno() + 1
+                self.find_contained_in('a')
 
-            with dummy.dummy_io('stdin not used') as d_io:
-                with root(prod, [prod, pp], a=0):
-                    inner(id='n1', b=1)
-            
-            fail ("Expected exception")
-        except ConfigApiException as ex:
-            _sout, serr = d_io
-            eex = _expected_ex_msg % '_contained_in'
-            assert serr == capie(inner_errorline, eex + _extra_stderr)
-            assert ex.message == eex
+        with root(prod, [prod, pp], a=0):
+            inner(id='n1', b=1)
+    
+        fail ("Expected exception")
+    except ConfigApiException as ex:
+        _sout, serr = capsys.readouterr()
+        eex = _expected_ex_msg % '_contained_in'
+        assert serr == capie(inner_errorline, eex + _extra_stderr)
+        assert ex.message == eex
 
-    def property_method_called_before_parent___init___test(self):
-        try:
-            class root(ConfigRoot):
-                pass
-            
-            class inner(ConfigItem):
-                def __init__(self, **kwargs):
-                    global inner_errorline
-                    # Error: env must not be called before parent __init__
-                    inner_errorline = lineno() + 1
-                    print self.env
 
-            with dummy.dummy_io('stdin not used') as d_io:
-                with root(prod, [prod, pp], a=0):
-                    inner(id='n1', b=1)
-            
-            fail ("Expected exception")
-        except ConfigApiException as ex:
-            _sout, serr = d_io
-            eex = _expected_ex_msg % '_root_conf'
-            assert serr == capie(inner_errorline, eex + _extra_stderr)
-            assert ex.message == eex
+def test_property_method_called_before_parent___init__(capsys):
+    try:
+        class root(ConfigRoot):
+            pass
+        
+        class inner(ConfigItem):
+            def __init__(self, **kwargs):
+                global inner_errorline
+                # Error: env must not be called before parent __init__
+                inner_errorline = lineno() + 1
+                print self.env
 
-    def undefined_method_called_before_parent___init___test(self):
-        try:
-            class root(ConfigRoot):
-                pass
-            
-            class inner(ConfigItem):
-                def __init__(self, **kwargs):
-                    global inner_errorline
-                    inner_errorline = lineno() + 1
-                    self.ttt('')
+        with root(prod, [prod, pp], a=0):
+            inner(id='n1', b=1)
+    
+        fail ("Expected exception")
+    except ConfigApiException as ex:
+        _sout, serr = capsys.readouterr()
+        eex = _expected_ex_msg % '_root_conf'
+        assert serr == capie(inner_errorline, eex + _extra_stderr)
+        assert ex.message == eex
 
-            with dummy.dummy_io('stdin not used') as d_io:
-                with root(prod, [prod, pp], a=0):
-                    inner(id='n1', b=1)
-            
-            fail ("Expected exception")
-        except ConfigApiException as ex:
-            _sout, serr = d_io
-            eex = _expected_ex_msg % '_attributes'
-            assert serr == capie(inner_errorline, eex + _extra_stderr)
-            assert ex.message == eex
 
-    def undefined_property_method_called_before_parent___init___test(self):
-        try:
-            class root(ConfigRoot):
-                pass
-            
-            class inner(ConfigItem):
-                def __init__(self, **kwargs):
-                    global inner_errorline
-                    inner_errorline = lineno() + 1
-                    self.ttt
+def test_undefined_method_called_before_parent___init__(capsys):
+    try:
+        class root(ConfigRoot):
+            pass
+        
+        class inner(ConfigItem):
+            def __init__(self, **kwargs):
+                global inner_errorline
+                inner_errorline = lineno() + 1
+                self.ttt('')
 
-            with dummy.dummy_io('stdin not used') as d_io:
-                with root(prod, [prod, pp], a=0):
-                    inner(id='n1', b=1)
-            
-            fail ("Expected exception")
-        except ConfigApiException as ex:
-            _sout, serr = d_io
-            eex = _expected_ex_msg % '_attributes'
-            assert serr == capie(inner_errorline, eex + _extra_stderr)
-            assert ex.message == eex
+        with root(prod, [prod, pp], a=0):
+            inner(id='n1', b=1)
+        
+        fail ("Expected exception")
+    except ConfigApiException as ex:
+        _sout, serr = capsys.readouterr()
+        eex = _expected_ex_msg % '_attributes'
+        assert serr == capie(inner_errorline, eex + _extra_stderr)
+        assert ex.message == eex
+
+
+def test_undefined_property_method_called_before_parent___init__(capsys):
+    try:
+        class root(ConfigRoot):
+            pass
+        
+        class inner(ConfigItem):
+            def __init__(self, **kwargs):
+                global inner_errorline
+                inner_errorline = lineno() + 1
+                self.ttt
+
+        with root(prod, [prod, pp], a=0):
+            inner(id='n1', b=1)
+        
+        fail ("Expected exception")
+    except ConfigApiException as ex:
+        _sout, serr = capsys.readouterr()
+        eex = _expected_ex_msg % '_attributes'
+        assert serr == capie(inner_errorline, eex + _extra_stderr)
+        assert ex.message == eex

@@ -3,13 +3,12 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import unittest
-from oktest import fail, dummy
+from oktest import fail
 
 from .utils import config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
-from ..decorators import nested_repeatables, repeat, named_as
+from ..decorators import nested_repeatables, repeat
 from ..envs import EnvFactory
 
 ef = EnvFactory()
@@ -167,293 +166,307 @@ class RepeatableItem(ConfigItem):
     pass
 
 
-class MultiConfDefinitionErrorsTest(unittest.TestCase):
-    def non_env_for_instantiatiation_env_test(self):
-        try:
-            project('Why?', [prod])
+
+def test_non_env_for_instantiatiation_env(capsys):
+    try:
+        project('Why?', [prod])
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
+
+
+def test_non_env_in_valid_envs(capsys):
+    try:
+        project(prod, [prod, 'Why?'])
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == "project: valid_envs items must be instance of 'Env' or 'EnvGroup'; found a 'str': 'Why?'"
+
+
+def test_valid_envs_is_not_a_sequence(capsys):
+    try:
+        project(prod, 1)
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
+
+
+def test_valid_envs_is_a_str(capsys):
+    try:
+        project(prod, 'Why?')
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
+
+
+def test_valid_envs_arg_as_envgroup(capsys):
+    try:
+        ConfigRoot(prod, valid_envs)
+    except ConfigException as ex:
+        pass
+
+
+def test_selected_conf_not_in_valid_envs(capsys):
+    try:
+        ConfigRoot(prod, [dev3ct, dev3st])
+    except ConfigException as ex:
+        pass
+
+
+def test_assign_to_undefine_env(capsys):
+    try:
+        with ConfigRoot(prod, [prod]) as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', pros="hello", prod="hi")
+        fail ("Expected exception")
+    except ConfigException as ex:
+        _sout, serr = capsys.readouterr()
+        assert serr == ce(errorline, "No such Env or EnvGroup: 'pros'")
+        assert replace_ids(ex.message, False) == _e_expected
+
+
+def test_value_not_assigned_to_all_envs(capsys):
+    try:
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', prod="hello")
+        fail ("Expected exception")
+    except ConfigException as ex:
+        _sout, serr = capsys.readouterr()
+        assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
+        assert replace_ids(ex.message, False) == _f_expected
+
+# TODO handle this error output format in test
+# def attribute_defined_with_different_types(self):
+#     try:
+#         with ConfigRoot(prod, [prod, pp]) as cr:
+#             errorline = lineno() + 1
+#             cr.setattr('a', prod=1, pp="hello")
+#         fail ("Expected exception")
+#     except ConfigException as ex:
+#         _sout, serr = capsys.readouterr()
+#         assert serr == ce(errorline, "ConfigError: Found different value types for property 'a' for different envs")
+#         assert replace_ids(ex.message, False) == _g_expected
+
+
+def test_attribute_redefinition_attempt(capsys):
+    try:
+        with ConfigRoot(prod, [prod]) as cr:
+            cr.setattr('a', prod=1)
+            errorline = lineno() + 1
+            cr.setattr('a', prod=2)
             fail ("Expected exception")
-        except ConfigException as ex:
-            assert ex.message == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
+    except ConfigException as ex:
+        _sout, serr = capsys.readouterr()
+        assert serr == ce(errorline, _h_expected)
+        assert replace_ids(ex.message, named_as=False) == _h_expected_ex
 
-    def non_env_in_valid_envs_test(self):
-        try:
-            project(prod, [prod, 'Why?'])
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert ex.message == "project: valid_envs items must be instance of 'Env' or 'EnvGroup'; found a 'str': 'Why?'"
 
-    def valid_envs_is_not_a_sequence_test(self):
-        try:
-            project(prod, 1)
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert ex.message == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
-
-    def valid_envs_is_a_str_test(self):
-        try:
-            project(prod, 'Why?')
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert ex.message == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
-
-    def valid_envs_arg_as_envgroup_test(self):
-        try:
-            ConfigRoot(prod, valid_envs)
-        except ConfigException as ex:
-            pass
-
-    def selected_conf_not_in_valid_envs_test(self):
-        try:
-            ConfigRoot(prod, [dev3ct, dev3st])
-        except ConfigException as ex:
-            pass
-
-    def assign_to_undefine_env_test(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                with ConfigRoot(prod, [prod]) as cr:
-                    errorline = lineno() + 1
-                    cr.setattr('a', pros="hello", prod="hi")
-                fail ("Expected exception")
-        except ConfigException as ex:
-            _sout, serr = d_io
-            assert serr == ce(errorline, "No such Env or EnvGroup: 'pros'")
-            assert replace_ids(ex.message, False) == _e_expected
-
-    def value_not_assigned_to_all_envs_test(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                with ConfigRoot(prod, [prod, pp]) as cr:
-                    errorline = lineno() + 1
-                    cr.setattr('a', prod="hello")
-                fail ("Expected exception")
-        except ConfigException as ex:
-            _sout, serr = d_io
-            assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
-            assert replace_ids(ex.message, False) == _f_expected
-
-    # TODO handle this error output format in test
-    # def attribute_defined_with_different_types(self):
-    #     try:
-    #         with dummy.dummy_io('stdin not used') as d_io:
-    #             with ConfigRoot(prod, [prod, pp]) as cr:
-    #                 errorline = lineno() + 1
-    #                 cr.setattr('a', prod=1, pp="hello")
-    #             fail ("Expected exception")
-    #     except ConfigException as ex:
-    #         _sout, serr = d_io
-    #         assert serr == ce(errorline, "ConfigError: Found different value types for property 'a' for different envs")
-    #         assert replace_ids(ex.message, False) == _g_expected
-
-    def attribute_redefinition_attempt_test(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                with ConfigRoot(prod, [prod]) as cr:
-                    cr.setattr('a', prod=1)
-                    errorline = lineno() + 1
-                    cr.setattr('a', prod=2)
-                    fail ("Expected exception")
-        except ConfigException as ex:
-            _sout, serr = d_io
-            assert serr == ce(errorline, _h_expected)
-            assert replace_ids(ex.message, named_as=False) == _h_expected_ex
-
-    def nested_item_overrides_simple_attribute_test(self):
-        try:
-            with ConfigRoot(prod, [prod]) as cr:
-                cr.setattr('ConfigItem', prod="hello")
-                ConfigItem()
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert replace_ids(ex.message, named_as=False) == _i_expected
-
-    def nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class_test(self):
-        try:
-            with ConfigRoot(prod, [prod]) as cr:
-                RepeatableItem()
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert replace_ids(ex.message, named_as=False) == _j_expected
-
-    def nested_repeatable_item_overrides_simple_attribute_not_contained_in_repeatable_test(self):
-        try:
-            with ConfigRoot(prod, [prod]) as cr:
-                # cr.RepeatableItems is just an attribute named like an item
-                cr.setattr('RepeatableItems', prod="hello")
-                RepeatableItem()
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert replace_ids(ex.message, named_as=False) == _k1_expected
-
-    def nested_repeatable_item_shadowed_by_default_attribute_test(self):
-        try:
-            # RepeatableItems is just an attribute named like an item
-            with project(prod, [prod], RepeatableItems=1) as cr:
-                RepeatableItem()
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert replace_ids(ex.message, named_as=False) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
-
-    # def nested_repeatable_item_overrides_simple_attribute_contained_in_repeatable(self):
-    # @todo
-    #     try:
-    #         @nested_repeatables('children')
-    #         class root(ConfigRoot):
-    #             pass
-    #
-    #         @named_as('children')
-    #         class rchild(RepeatableItem):
-    #             pass
-    #
-    #         with root(prod, [prod]) as cr:
-                  # TODO: 'cr' is an OrderedDict, so this call is not possible, which is fine, but the error message is not good
-    #             cr.children(prod="hello")
-    #             rchild()
-    #         fail ("Expected exception")
-    #     except ConfigException as ex:
-    #         assert ex.message == "'children' is defined both as simple value and a contained item: children {\n}"
-
-    def non_repeatable_but_container_expects_repeatable_test(self):
-        try:
-            # The following class in not repeatable!
-            class RepeatableItems(ConfigItem):
-                pass
-
-            with project(prod, [prod]) as cr:
-                RepeatableItems()
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert replace_ids(ex.message, named_as=False) == _k4_expected
-
-    def simple_attribute_attempt_to_override_contained_item_test(self):
-        try:
-            with ConfigRoot(prod, [prod]) as cr:
-                ConfigItem()
-                errorline = lineno() + 1
-                cr.ConfigItem(prod="hello")
-            fail ("Expected exception")
-        except TypeError as ex:
-            assert ex.message == "'ConfigItem' object is not callable"
-
-    def repeated_non_repeatable_item_test(self):
-        try:
-            with ConfigRoot(prod, [prod]) as cr:
-                ConfigItem()
-                errorline = lineno() + 1
-                ConfigItem()
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert ex.message == "Repeated non repeatable conf item: 'ConfigItem'"
-
-    def nested_repeatable_items_with_repeated_name_test(self):
-        try:
-            with project(prod, [prod]) as cr:
-                RepeatableItem(id='my_name')
-                RepeatableItem(id='my_name')
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert ex.message == "Re-used id/name 'my_name' in nested objects"
-
-    def value_defined_through_multiple_groups_test(self):
-        try:
-            g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct)
-
-            with dummy.dummy_io('stdin not used') as d_io:
-                with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
-                    errorline = lineno() + 1
-                    cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
-                fail ("Expected exception")
-        except ConfigException as ex:
-            _sout, serr = d_io
-            assert replace_user_file_line_tuple(serr) == ce(errorline, _o_expected)
-            assert replace_ids(ex.message, False) == _o_expected_ex
-
-    def value_defined_through_multiple_groups2_test(self):
-        try:
-            g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct, dev3ct)
-
-            with dummy.dummy_io('stdin not used') as d_io:
-                with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
-                    errorline = lineno() + 1
-                    cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
-                fail ("Expected exception")
-        except ConfigException as ex:
-            _sout, serr = d_io
-            assert replace_user_file_line_tuple(serr) == ce(errorline, _p_expected)
-            assert replace_ids(ex.message, False) == _p_expected_ex
-
-    def assigning_owerwrites_attribute_root_test(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                with project(prod, [prod]) as cr:
-                    cr.setattr('a', prod=1)
-                    errorline = lineno() + 1
-                    cr.a = 2
-                fail ("Expected exception")
-        except ConfigException as ex:
-            _sout, serr = d_io
-            assert serr == ce(errorline, _r_expected)
-            assert replace_ids(ex.message, named_as=False) == _r1_expected_ex
-
-    def assigning_owerwrites_attribute_nested_item_test(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                with project(prod, [prod]) as cr:
-                    with ConfigItem() as ci:
-                        ci.setattr('a', prod=1)
-                        errorline = lineno() + 1
-                        ci.a = 1
-                fail ("Expected exception")
-        except ConfigException as ex:
-            _sout, serr = d_io
-            assert serr == ce(errorline, _r_expected)
-            assert replace_ids(ex.message, named_as=False) == _r2_expected_ex
-
-    def configitem_outside_of_root_test(self):
-        try:
+def test_nested_item_overrides_simple_attribute(capsys):
+    try:
+        with ConfigRoot(prod, [prod]) as cr:
+            cr.setattr('ConfigItem', prod="hello")
             ConfigItem()
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert ex.message == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert replace_ids(ex.message, named_as=False) == _i_expected
 
-    def using_group_for_selected_env_test(self):
-        try:
-            project(g_dev3, [g_dev3])
-            fail ("Expected exception")
-        except ConfigException as ex:
-            assert ex.message == _group_for_selected_env_expected
 
-    def exception_in___exit___must_print_ex_info_and_raise_original_exception_if_any_pending_test(self):
-        try:
-            class root(ConfigRoot):
-                pass
+def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class(capsys):
+    try:
+        with ConfigRoot(prod, [prod]) as cr:
+            RepeatableItem()
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert replace_ids(ex.message, named_as=False) == _j_expected
 
-            class inner(ConfigBuilder):
-                def build(self):
-                    raise Exception("in build")
 
-            with dummy.dummy_io('stdin not used') as d_io:
-                with root(prod, [prod, pp], a=0):
-                    with inner(id='n1', b=1):
-                        raise Exception("in with")
+def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repeatable(capsys):
+    try:
+        with ConfigRoot(prod, [prod]) as cr:
+            # cr.RepeatableItems is just an attribute named like an item
+            cr.setattr('RepeatableItems', prod="hello")
+            RepeatableItem()
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert replace_ids(ex.message, named_as=False) == _k1_expected
 
-            fail ("Expected exception")
-        except Exception as ex:
-            _sout, serr = d_io
-            assert serr == "Exception in __exit__: Exception('in build',)\nException in with block will be raised\n"
-            assert ex.message == 'in with'
 
-    def builder_does_not_accept_nested_repeatables_decorator_test(self):
-        try:
-            with dummy.dummy_io('stdin not used') as d_io:
-                @nested_repeatables('a')
-                class _inner(ConfigBuilder):
-                    def build(self):
-                        _a = 1
+def test_nested_repeatable_item_shadowed_by_default_attribute(capsys):
+    try:
+        # RepeatableItems is just an attribute named like an item
+        with project(prod, [prod], RepeatableItems=1) as cr:
+            RepeatableItem()
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert replace_ids(ex.message, named_as=False) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
 
-            fail ("Expected exception")
-        except ConfigDefinitionException as ex:
-            _sout, serr = d_io
-            err_msg = "File \"fake_dir/multiconf_definition_errors_test.py\", line 999\nConfigError: Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder.\n"
-            assert replace_user_file_line_msg(serr) == err_msg
-            assert ex.message == "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."
+# def nested_repeatable_item_overrides_simple_attribute_contained_in_repeatable(self):
+# @todo
+#     try:
+#         @nested_repeatables('children')
+#         class root(ConfigRoot):
+#             pass
+#
+#         @named_as('children')
+#         class rchild(RepeatableItem):
+#             pass
+#
+#         with root(prod, [prod]) as cr:
+              # TODO: 'cr' is an OrderedDict, so this call is not possible, which is fine, but the error message is not good
+#             cr.children(prod="hello")
+#             rchild()
+#         fail ("Expected exception")
+#     except ConfigException as ex:
+#         assert ex.message == "'children' is defined both as simple value and a contained item: children {\n}"
+
+
+def test_non_repeatable_but_container_expects_repeatable(capsys):
+    try:
+        # The following class in not repeatable!
+        class RepeatableItems(ConfigItem):
+            pass
+
+        with project(prod, [prod]) as cr:
+            RepeatableItems()
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert replace_ids(ex.message, named_as=False) == _k4_expected
+
+
+def test_simple_attribute_attempt_to_override_contained_item(capsys):
+    try:
+        with ConfigRoot(prod, [prod]) as cr:
+            ConfigItem()
+            errorline = lineno() + 1
+            cr.ConfigItem(prod="hello")
+        fail ("Expected exception")
+    except TypeError as ex:
+        assert ex.message == "'ConfigItem' object is not callable"
+
+
+def test_repeated_non_repeatable_item(capsys):
+    try:
+        with ConfigRoot(prod, [prod]) as cr:
+            ConfigItem()
+            errorline = lineno() + 1
+            ConfigItem()
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == "Repeated non repeatable conf item: 'ConfigItem'"
+
+
+def test_nested_repeatable_items_with_repeated_name(capsys):
+    try:
+        with project(prod, [prod]) as cr:
+            RepeatableItem(id='my_name')
+            RepeatableItem(id='my_name')
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == "Re-used id/name 'my_name' in nested objects"
+
+
+def test_value_defined_through_multiple_groups(capsys):
+    try:
+        g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct)
+
+        with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
+        fail ("Expected exception")
+    except ConfigException as ex:
+        _sout, serr = capsys.readouterr()
+        assert replace_user_file_line_tuple(serr) == ce(errorline, _o_expected)
+        assert replace_ids(ex.message, False) == _o_expected_ex
+
+
+def test_value_defined_through_multiple_groups2(capsys):
+    try:
+        g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct, dev3ct)
+
+        with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
+        fail ("Expected exception")
+    except ConfigException as ex:
+        _sout, serr = capsys.readouterr()
+        assert replace_user_file_line_tuple(serr) == ce(errorline, _p_expected)
+        assert replace_ids(ex.message, False) == _p_expected_ex
+
+
+def test_assigning_owerwrites_attribute_root(capsys):
+    try:
+        with project(prod, [prod]) as cr:
+            cr.setattr('a', prod=1)
+            errorline = lineno() + 1
+            cr.a = 2
+        fail ("Expected exception")
+    except ConfigException as ex:
+        _sout, serr = capsys.readouterr()
+        assert serr == ce(errorline, _r_expected)
+        assert replace_ids(ex.message, named_as=False) == _r1_expected_ex
+
+
+def test_assigning_owerwrites_attribute_nested_item(capsys):
+    try:
+        with project(prod, [prod]) as cr:
+            with ConfigItem() as ci:
+                ci.setattr('a', prod=1)
+                errorline = lineno() + 1
+                ci.a = 1
+        fail ("Expected exception")
+    except ConfigException as ex:
+        _sout, serr = capsys.readouterr()
+        assert serr == ce(errorline, _r_expected)
+        assert replace_ids(ex.message, named_as=False) == _r2_expected_ex
+
+
+def test_configitem_outside_of_root(capsys):
+    try:
+        ConfigItem()
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
+
+
+def test_using_group_for_selected_env(capsys):
+    try:
+        project(g_dev3, [g_dev3])
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == _group_for_selected_env_expected
+
+
+def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_if_any_pending(capsys):
+    try:
+        class root(ConfigRoot):
+            pass
+
+        class inner(ConfigBuilder):
+            def build(self):
+                raise Exception("in build")
+
+        with root(prod, [prod, pp], a=0):
+            with inner(id='n1', b=1):
+                raise Exception("in with")
+
+        fail ("Expected exception")
+    except Exception as ex:
+        _sout, serr = capsys.readouterr()
+        assert serr == "Exception in __exit__: Exception('in build',)\nException in with block will be raised\n"
+        assert ex.message == 'in with'
+
+
+def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
+    try:
+        @nested_repeatables('a')
+        class _inner(ConfigBuilder):
+            def build(self):
+                _a = 1
+
+        fail ("Expected exception")
+    except ConfigDefinitionException as ex:
+        _sout, serr = capsys.readouterr()
+        err_msg = "File \"fake_dir/multiconf_definition_errors_test.py\", line 999\nConfigError: Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder.\n"
+        assert replace_user_file_line_msg(serr) == err_msg
+        assert ex.message == "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."

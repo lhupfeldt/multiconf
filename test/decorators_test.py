@@ -3,12 +3,10 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import unittest
-
 from .utils import config_error, replace_ids
 
 from .. import ConfigRoot, ConfigItem
-from ..decorators import  required, required_if, nested_repeatables, named_as, repeat, optional
+from ..decorators import  required, required_if, named_as, optional
 
 from ..envs import EnvFactory
 
@@ -42,131 +40,136 @@ _g_expected = """{
     "name": "abc"
 }"""
 
-class DecoratorsTest(unittest.TestCase):
-    def required_attributes_for_configroot_test(self):
-        @required('anattr, anotherattr')
-        class root(ConfigRoot):
-            pass
 
-        with root(prod, [prod]) as cr:
-            cr.setattr('anattr',prod=1)
-            cr.setattr('anotherattr', prod=2)
-        assert cr.anattr == 1
-        assert cr.anotherattr == 2
+def test_required_attributes_for_configroot():
+    @required('anattr, anotherattr')
+    class root(ConfigRoot):
+        pass
 
-    def required_attributes_for_configitem_test(self):
-        class root(ConfigRoot):
-            pass
-
-        @required('a, b')
-        class item(ConfigItem):
-            pass
-
-        with root(prod, [prod]) as cr:
-            with item() as ii:
-                ii.setattr('a', prod=1)
-                ii.setattr('b', prod=2)
-
-        assert cr.item.a == 1
-        assert cr.item.b == 2
+    with root(prod, [prod]) as cr:
+        cr.setattr('anattr',prod=1)
+        cr.setattr('anotherattr', prod=2)
+    assert cr.anattr == 1
+    assert cr.anotherattr == 2
 
 
-    def required_attributes_accept_override_of_single_property_test(self):
-        class root(ConfigRoot):
-            pass
+def test_required_attributes_for_configitem():
+    class root(ConfigRoot):
+        pass
 
-        @required('a, b')
-        class item(ConfigItem):
-            def __init__(self, a, b):
-                super(item, self).__init__(a=a, b=b)
+    @required('a, b')
+    class item(ConfigItem):
+        pass
 
-        with root(prod, [prod]) as cr:
-            with item(a=1, b=1) as ii:
-                ii.setattr('b', prod=2)
+    with root(prod, [prod]) as cr:
+        with item() as ii:
+            ii.setattr('a', prod=1)
+            ii.setattr('b', prod=2)
 
-        assert cr.item.a == 1
-        assert cr.item.b == 2
+    assert cr.item.a == 1
+    assert cr.item.b == 2
 
 
-    def required_if_attributes_condition_true_prod_and_condition_unset_dev2ct_test(self):
-        @required_if('a', 'b, c')
-        class root(ConfigRoot):
-            pass
+def test_required_attributes_accept_override_of_single_property():
+    class root(ConfigRoot):
+        pass
 
-        with root(prod, [prod, dev2ct]) as cr:
-            cr.setattr('a', prod=10)
-            cr.setattr('b', prod=20)
-            cr.setattr('c', prod=30)
+    @required('a, b')
+    class item(ConfigItem):
+        def __init__(self, a, b):
+            super(item, self).__init__(a=a, b=b)
 
-        assert cr.a == 10
-        assert cr.b == 20
-        assert cr.c == 30
+    with root(prod, [prod]) as cr:
+        with item(a=1, b=1) as ii:
+            ii.setattr('b', prod=2)
 
-        # Test iteritems
-        expected_keys = ['a', 'b', 'c']
-        index = 0
-        for key, val in cr.iteritems():
-            assert key == expected_keys[index]
-            assert val == (index + 1) * 10
-            index += 1
+    assert cr.item.a == 1
+    assert cr.item.b == 2
 
-    def required_if_attributes_condition_false_test(self):
-        @required_if('a', 'b, c')
-        class root(ConfigRoot):
-            pass
 
-        with root(prod, [prod]) as cr:
-            cr.setattr('a', prod=0)
-            cr.setattr('b', prod=10)
+def test_required_if_attributes_condition_true_prod_and_condition_unset_dev2ct():
+    @required_if('a', 'b, c')
+    class root(ConfigRoot):
+        pass
 
-        assert cr.a == 0
-        assert cr.b == 10
+    with root(prod, [prod, dev2ct]) as cr:
+        cr.setattr('a', prod=10)
+        cr.setattr('b', prod=20)
+        cr.setattr('c', prod=30)
 
-        # Test iteritems
-        expected_keys = ['a', 'b']
-        index = 0
-        for key, val in cr.iteritems():
-            assert key == expected_keys[index]
-            assert val == index * 10
-            index += 1
+    assert cr.a == 10
+    assert cr.b == 20
+    assert cr.c == 30
 
-    def optional_attribute_test(self):
-        @optional('a')
-        class root(ConfigRoot):
-            pass
+    # Test iteritems
+    expected_keys = ['a', 'b', 'c']
+    index = 0
+    for key, val in cr.iteritems():
+        assert key == expected_keys[index]
+        assert val == (index + 1) * 10
+        index += 1
 
-        with root(prod, [prod, dev2ct]) as cr:
-            cr.setattr('a', dev2ct=18)
-        assert "no-exception" == "no-exception"
 
-        with root(prod, [prod, dev2ct]) as cr:
-            cr.setattr('a', prod=17)
-        assert cr.a == 17
+def test_required_if_attributes_condition_false():
+    @required_if('a', 'b, c')
+    class root(ConfigRoot):
+        pass
 
-    def named_as_test(self):
-        @named_as('project')
-        class root(ConfigRoot):
-            pass
+    with root(prod, [prod]) as cr:
+        cr.setattr('a', prod=0)
+        cr.setattr('b', prod=10)
 
-        with root(prod, [prod, dev2ct], name='abc') as proj:
-            pass
-        assert replace_ids(repr(proj), named_as=False) == _g_expected
+    assert cr.a == 0
+    assert cr.b == 10
 
-    def required_attributes_inherited_ok_test(self):
-        @required('anattr, anotherattr')
-        class root(ConfigRoot):
-            pass
+    # Test iteritems
+    expected_keys = ['a', 'b']
+    index = 0
+    for key, val in cr.iteritems():
+        assert key == expected_keys[index]
+        assert val == index * 10
+        index += 1
 
-        @required('someattr2, someotherattr2')
-        class root2(root):
-            pass
 
-        with root2(prod, [prod]) as cr:
-            cr.setattr('anattr', prod=1)
-            cr.setattr('anotherattr', prod=2)
-            cr.setattr('someattr2', prod=3)
-            cr.setattr('someotherattr2', prod=4)
-        assert cr.anattr == 1
-        assert cr.anotherattr == 2
-        assert cr.someattr2 == 3
-        assert cr.someotherattr2 == 4
+def test_optional_attribute():
+    @optional('a')
+    class root(ConfigRoot):
+        pass
+
+    with root(prod, [prod, dev2ct]) as cr:
+        cr.setattr('a', dev2ct=18)
+    assert "no-exception" == "no-exception"
+
+    with root(prod, [prod, dev2ct]) as cr:
+        cr.setattr('a', prod=17)
+    assert cr.a == 17
+
+
+def test_named_as():
+    @named_as('project')
+    class root(ConfigRoot):
+        pass
+
+    with root(prod, [prod, dev2ct], name='abc') as proj:
+        pass
+    assert replace_ids(repr(proj), named_as=False) == _g_expected
+
+
+def test_required_attributes_inherited_ok():
+    @required('anattr, anotherattr')
+    class root(ConfigRoot):
+        pass
+
+    @required('someattr2, someotherattr2')
+    class root2(root):
+        pass
+
+    with root2(prod, [prod]) as cr:
+        cr.setattr('anattr', prod=1)
+        cr.setattr('anotherattr', prod=2)
+        cr.setattr('someattr2', prod=3)
+        cr.setattr('someotherattr2', prod=4)
+    assert cr.anattr == 1
+    assert cr.anotherattr == 2
+    assert cr.someattr2 == 3
+    assert cr.someotherattr2 == 4
