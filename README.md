@@ -39,7 +39,21 @@ What Multiconf is not
 * Multiconf doesn't know how to create any of the environment's components
 * Multiconf has nothing to execute
 
+Running the demo:
+=====================
+Execute ./demo/demo.py --env <env> (or 'python demo/demo.py ...'), e.g:
+
+  ./demo/demo.py --env prod
+
+If run without args it will print a usage message
+The valide environments are those specified at the top of demo/config.py
+
+Running the test suite:
+=====================
+Execute: ./test/test.py
+This executes the test suite and the demo
+
 Requirements
 =====================
-Python 2.7.3
-To run the test suite install: nose oktest coverage (pip install nose oktest coverage)
+Multiconf: Python 2.7.3
+Test Suite: pytest, logilab-devtools (pip install -U pytest logilab-devtools)

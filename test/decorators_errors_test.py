@@ -3,7 +3,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from oktest import fail
+# pylint: disable=E0611
+from pytest import fail
 from .utils import config_error, config_warning, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException

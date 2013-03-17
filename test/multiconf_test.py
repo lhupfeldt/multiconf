@@ -4,7 +4,8 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from collections import OrderedDict
-from oktest import fail
+# pylint: disable=E0611
+from pytest import fail
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import nested_repeatables, named_as, repeat, required
