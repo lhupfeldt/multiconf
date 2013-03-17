@@ -39,6 +39,9 @@ class Attribute(object):
     def freeze(self):
         self._frozen = True
 
+    def _user_validate_recursively(self):
+        pass
+
     def value(self, env):
         self.freeze()
 

@@ -129,12 +129,6 @@ class _ConfigBase(object):
         then self will be frozen and validated
         """
         for _child_name, child_value in self._attributes.iteritems():
-            if isinstance(child_value, Repeatable):
-                for item in child_value.itervalues():
-                    if not item._frozen:
-                        item.freeze()
-                continue
-
             if not child_value._frozen:
                 child_value.freeze()
 
@@ -398,14 +392,8 @@ class _ConfigBase(object):
         self.validate()
         self._user_validated = True
 
-        for _child_name, child_value in self.iteritems():
-            if isinstance(child_value, Repeatable):
-                for dict_entry in child_value.values():
-                    if isinstance(dict_entry, _ConfigBase):
-                        dict_entry._user_validate_recursively()
-
-            if isinstance(child_value, _ConfigBase):
-                child_value._user_validate_recursively()
+        for child_value in self._attributes.values():
+            child_value._user_validate_recursively()
 
     def validate(self):
         """Can be overridden to provide post-frozen validation"""
