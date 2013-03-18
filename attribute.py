@@ -41,6 +41,7 @@ class Attribute(object):
         pass
 
     def value(self, env):
+        """This is only guaranteed to return a correct value for the currently instantiated env!"""
         self.freeze()
 
         if env in self.env_values:

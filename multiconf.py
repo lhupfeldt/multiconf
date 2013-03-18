@@ -109,27 +109,22 @@ class _ConfigBase(object):
             return
 
         missing = []
-        for eg in self.root_conf._valid_envs:
-            env_missing = []
-            for req in self.__class__._deco_required_if[1]:
-                if not req in self._attributes:
-                    for env in eg.envs():
-                        try:
-                            required_if_condition = required_if_condition_attr.value(env)
-                        except NoAttributeException:
-                            continue
-                        if required_if_condition:
-                            env_missing.append(req)
-                else:
-                    attr = self._attributes[req]
-                    if isinstance(attr, Attribute):
-                        # Avoid double errors
-                        if not attr.num_errors:
-                            self.check_attr_fully_defined(attr)
-            if env_missing:
-                missing.append('Env:' + env.name + '; condition value:' + repr(required_if_condition) + ', missing attributes: ' + repr(env_missing))
+        for req in self.__class__._deco_required_if[1]:
+            if not req in self._attributes:
+                try:
+                    required_if_condition = required_if_condition_attr.value(self.env)
+                except NoAttributeException:
+                    continue
+                if required_if_condition:
+                    missing.append(req)
+            else:
+                attr = self._attributes[req]
+                if isinstance(attr, Attribute):
+                    # Avoid double errors
+                    if not attr.num_errors:
+                        self.check_attr_fully_defined(attr)
         if missing:
-            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + ", missing: " + repr(missing))
+            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + " == " + repr(required_if_condition) + ", missing attributes: " + repr(missing))
 
     def freeze_validation(self):
         """Override this method if you need special checks"""

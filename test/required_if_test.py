@@ -121,7 +121,7 @@ def test_required_if_condition_attribute_missing():
     assert 1 == 1
 
 
-_missing_fully_expected = """Missing required_if attributes. Condition attribute: 'abcd', missing: ["Env:prod; condition value:1, missing attributes: ['efgh', 'ijkl']"]"""
+_missing_fully_expected = """Missing required_if attributes. Condition attribute: 'abcd' == 1, missing attributes: ['efgh', 'ijkl']"""
 
 def test_required_if_optional_attributes_missing_fully_instantiated_env():
     try:
@@ -142,23 +142,25 @@ def test_required_if_optional_attributes_missing_fully_instantiated_env():
         assert ex.message == _missing_fully_expected
 
 
-def test_required_if_optional_attributes_missing_fully_other_env():
-    try:
-        class root(ConfigRoot):
-            pass
-
-        @required_if('abcd', 'efgh, ijkl')
-        class item(ConfigItem):
-            pass
-
-        with root(dev2ct, [prod, dev2ct]):
-            with item() as ii:
-                ii.setattr('abcd', prod=1, dev2ct=0)
-                ii.setattr('ihasit', prod=7, dev2ct=8)
-
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == _missing_fully_expected
+# NOTE: This cannot be reliably determined and may cause false errors in case of derived attributes
+# required_if can only be validated for instantiated env
+#def test_required_if_optional_attributes_missing_fully_other_env():
+#    try:
+#        class root(ConfigRoot):
+#            pass
+#
+#        @required_if('abcd', 'efgh, ijkl')
+#        class item(ConfigItem):
+#            pass
+#
+#        with root(dev2ct, [prod, dev2ct]):
+#            with item() as ii:
+#                ii.setattr('abcd', prod=1, dev2ct=0)
+#                ii.setattr('ihasit', prod=7, dev2ct=8)
+#
+#        fail ("Expected exception")
+#    except ConfigException as ex:
+#        assert ex.message == _missing_fully_expected
 
 
 def test_required_if_optional_attributes_missing_some_env_instantiated_env():
