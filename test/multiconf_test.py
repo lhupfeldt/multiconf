@@ -523,44 +523,73 @@ def test_configbuilder_nested_items_access_to_contained_in():
 
 
 def test_configbuilder_multilevel_nested_items_access_to_contained_in():
-    class XBuilder(ConfigBuilder):
+    ybuilder_in_init_contained_in = []
+    ybuilder_in_build_contained_in = []
+    ys_in_init_contained_in = []
+
+    class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(XBuilder, self).__init__()
+            super(YBuilder, self).__init__()
+            ybuilder_in_init_contained_in.append(self.contained_in)
             self.start = start
             self.number = self.contained_in.aaa
 
         def build(self):
+            ybuilder_in_build_contained_in.append(self.contained_in)
             for num in xrange(self.start, self.start + self.number):
-                with Xses(name='server%d' % num, server_num=num) as c:
+                with Ys(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
 
-    @nested_repeatables('xses')
-    class ItemWithXses(ConfigItem):
+    @nested_repeatables('ys')
+    class ItemWithYs(ConfigItem):
         aaa = 2
 
+    @named_as('ys')
+    @repeat()
+    class Ys(ConfigItem):
+        def __init__(self, **kwarg):
+            super(Ys, self).__init__(**kwarg)
+            ys_in_init_contained_in.append(self.contained_in)
+
+    @named_as('y_children')
+    @repeat()
+    class YChild(ConfigItem):
+        pass
+
     with ConfigRoot(prod, [prod, pp]) as cr:
-        with ItemWithXses() as item:
-            with XBuilder() as xb1:
-                xb1.b = 27
-                with XChild(a=10) as x1:
-                    xb1_with_item = x1.contained_in
-                with XBuilder(start=3) as xb2:
-                    xb2.c = 28
-                    with XChild(a=11) as x2:
-                        xb2_with_item = x2.contained_in
-                    XChild(a=12)
+        with ItemWithYs() as item:
+            with YBuilder() as yb1:
+                yb1.b = 27
+                with YChild(a=10) as y1:
+                    yb1_with_item = y1.contained_in
+                with YBuilder(start=3) as yb2:
+                    yb2.c = 28
+                    with YChild(a=11) as y2:
+                        yb2_with_item = y2.contained_in
+                    YChild(a=12)
 
-
-    assert len(item.xses) == 4
+    assert len(item.ys) == 4
     total = 0
     for server in 'server1', 'server2', 'server3', 'server4':
-        for x_child in item.xses[server].x_children.values():
-            print x_child.a
-            total += x_child.a
+        for y_child in item.ys[server].y_children.values():
+            print y_child.a
+            total += y_child.a
     assert total == 66
 
-    assert xb1_with_item == item
-    assert xb2_with_item == item
+    assert yb1_with_item == item
+    assert yb2_with_item == item
+
+    assert len(ybuilder_in_build_contained_in) == 2
+    for ci in ybuilder_in_build_contained_in:
+        assert ci == item
+
+    assert len(ybuilder_in_init_contained_in) == 2
+    for ci in ybuilder_in_init_contained_in:
+        assert ci == item
+
+    assert len(ys_in_init_contained_in) == 4
+    for ci in ys_in_init_contained_in:
+        assert ci == item
 
 
 def test_configbuilder_repeated():
