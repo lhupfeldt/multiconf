@@ -1,15 +1,12 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import re
-import inspect
-from collections import namedtuple
-
-_Traceback = namedtuple('Traceback', 'filename, lineno, function, code_context, index')
+import sys, re
 
 
 def lineno():
-    return _Traceback(*inspect.stack()[1][1:]).lineno
+    frame = sys._getframe(1)
+    return frame.f_lineno
 
 
 def lazy(*args):
