@@ -183,9 +183,9 @@ class _ConfigBase(object):
         self.setattr(name, default=value)
 
     def setattr(self, name, **kwargs):
-        if name[0] == '_':
-            raise ConfigException("Trying to set an attribute starting with '_' " + repr(name) +
-                                  " on a config item. Atributes starting with '_' are reserved for multiconf internal usage")
+        if name.startswith('_mc'):
+            raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " + 
+                                  "Atributes starting with '_mc' are reserved for multiconf internal usage.")
 
         # For error messages
         ufl = _user_file_line()
@@ -296,9 +296,9 @@ class _ConfigBase(object):
         if name.startswith('__'):
             super(_ConfigBase, self).__getattr__(name)
 
-        if name.startswith('_'):
+        if name.startswith('_mc'):
             ex_msg = "An error was detected trying to get attribute " + repr(name) + " on class " + repr(self.__class__.__name__)
-            msg  = "\n    - Attributes starting with '_' are reserved for internal MultiConf usage. You probably tried to use the"
+            msg  = "\n    - Attributes starting with '_mc' are reserved for internal MultiConf usage. You probably tried to use the"
             msg += "\n      MultiConf API in a derived class __init__ before calling the parent class __init__"
             _api_error_msg(1, ex_msg + msg)
             raise ConfigApiException(ex_msg)

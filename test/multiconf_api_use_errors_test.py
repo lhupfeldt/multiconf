@@ -8,7 +8,7 @@ from pytest import fail
 
 from .utils import api_error, lineno
 
-from .. import ConfigRoot, ConfigItem, ConfigApiException
+from .. import ConfigRoot, ConfigItem, ConfigApiException, ConfigException
 from ..decorators import nested_repeatables, repeat
 from ..envs import EnvFactory
 
@@ -33,7 +33,7 @@ valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
 _expected_ex_msg = "An error was detected trying to get attribute '%s' on class 'inner'"
 _extra_stderr = """
-    - Attributes starting with '_' are reserved for internal MultiConf usage. You probably tried to use the
+    - Attributes starting with '_mc' are reserved for internal MultiConf usage. You probably tried to use the
       MultiConf API in a derived class __init__ before calling the parent class __init__"""
 
 
@@ -139,3 +139,32 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
         eex = _expected_ex_msg % '_mc_attributes'
         assert serr == capie(inner_errorline, eex + _extra_stderr)
         assert ex.message == eex
+
+
+def test_setattr_multiconf_private_attribute():
+    class root(ConfigRoot):
+        pass
+        
+    class inner(ConfigItem):
+        pass
+
+    ex_msg = """Trying to set attribute '_mc_whatever' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
+
+    try:
+        with root(prod, [prod, pp], a=0) as cr:
+            errorline = lineno() + 1
+            cr.setattr('_mc_whatever', default=1)
+        
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == ex_msg
+
+    try:
+        with root(prod, [prod, pp], a=0) as cr:
+            with inner(id='n1', b=1) as ci:
+                inner_errorline = lineno() + 1
+                ci.setattr('_mc_whatever', default=1)
+        
+        fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == ex_msg
