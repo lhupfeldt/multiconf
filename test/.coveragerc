@@ -9,6 +9,4 @@ exclude_lines =
 
     if _debug_exc:
 
-omit = 
-    *_test.py
-    test/*
+omit = ./*
