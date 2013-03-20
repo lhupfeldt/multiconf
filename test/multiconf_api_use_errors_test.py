@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-from pytest import fail
+from pytest import fail, raises
 
 from .utils import api_error, lineno
 
@@ -52,7 +52,7 @@ class RepeatableItem(ConfigItem):
 
 
 def test_find_contained_in_called_before_parent___init__(capsys):
-    try:
+    with raises(ConfigApiException) as exinfo:
         class root(ConfigRoot):
             pass
         
@@ -66,16 +66,14 @@ def test_find_contained_in_called_before_parent___init__(capsys):
         with root(prod, [prod, pp], a=0):
             inner(id='n1', b=1)
     
-        fail ("Expected exception")
-    except ConfigApiException as ex:
-        _sout, serr = capsys.readouterr()
-        eex = _expected_ex_msg % '_mc_contained_in'
-        assert serr == capie(inner_errorline, eex + _extra_stderr)
-        assert ex.message == eex
+    _sout, serr = capsys.readouterr()
+    eex = _expected_ex_msg % '_mc_contained_in'
+    assert serr == capie(inner_errorline, eex + _extra_stderr)
+    assert exinfo.value.message == eex
 
 
 def test_property_method_called_before_parent___init__(capsys):
-    try:
+    with raises(ConfigApiException) as exinfo:
         class root(ConfigRoot):
             pass
         
@@ -89,16 +87,14 @@ def test_property_method_called_before_parent___init__(capsys):
         with root(prod, [prod, pp], a=0):
             inner(id='n1', b=1)
     
-        fail ("Expected exception")
-    except ConfigApiException as ex:
-        _sout, serr = capsys.readouterr()
-        eex = _expected_ex_msg % '_mc_root_conf'
-        assert serr == capie(inner_errorline, eex + _extra_stderr)
-        assert ex.message == eex
+    _sout, serr = capsys.readouterr()
+    eex = _expected_ex_msg % '_mc_root_conf'
+    assert serr == capie(inner_errorline, eex + _extra_stderr)
+    assert exinfo.value.message == eex
 
 
 def test_undefined_method_called_before_parent___init__(capsys):
-    try:
+    with raises(ConfigApiException) as exinfo:
         class root(ConfigRoot):
             pass
         
@@ -111,16 +107,14 @@ def test_undefined_method_called_before_parent___init__(capsys):
         with root(prod, [prod, pp], a=0):
             inner(id='n1', b=1)
         
-        fail ("Expected exception")
-    except ConfigApiException as ex:
-        _sout, serr = capsys.readouterr()
-        eex = _expected_ex_msg % '_mc_attributes'
-        assert serr == capie(inner_errorline, eex + _extra_stderr)
-        assert ex.message == eex
+    _sout, serr = capsys.readouterr()
+    eex = _expected_ex_msg % '_mc_attributes'
+    assert serr == capie(inner_errorline, eex + _extra_stderr)
+    assert exinfo.value.message == eex
 
 
 def test_undefined_property_method_called_before_parent___init__(capsys):
-    try:
+    with raises(ConfigApiException) as exinfo:
         class root(ConfigRoot):
             pass
         
@@ -133,12 +127,10 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
         with root(prod, [prod, pp], a=0):
             inner(id='n1', b=1)
         
-        fail ("Expected exception")
-    except ConfigApiException as ex:
-        _sout, serr = capsys.readouterr()
-        eex = _expected_ex_msg % '_mc_attributes'
-        assert serr == capie(inner_errorline, eex + _extra_stderr)
-        assert ex.message == eex
+    _sout, serr = capsys.readouterr()
+    eex = _expected_ex_msg % '_mc_attributes'
+    assert serr == capie(inner_errorline, eex + _extra_stderr)
+    assert exinfo.value.message == eex
 
 
 def test_setattr_multiconf_private_attribute():
@@ -150,31 +142,25 @@ def test_setattr_multiconf_private_attribute():
 
     ex_msg = """Trying to set attribute '_mc_whatever' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
 
-    try:
+    with raises(ConfigException) as exinfo:
         with root(prod, [prod, pp], a=0) as cr:
-            errorline = lineno() + 1
             cr.setattr('_mc_whatever', default=1)
-        
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == ex_msg
 
-    try:
+    assert exinfo.value.message == ex_msg        
+
+    with raises(ConfigException) as exinfo:
         with root(prod, [prod, pp], a=0) as cr:
             with inner(id='n1', b=1) as ci:
-                errorline = lineno() + 1
                 ci.setattr('_mc_whatever', default=1)
-        
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == ex_msg
+
+    assert exinfo.value.message == ex_msg
 
 
 def test_setattr_to_attribute_underscore_attribute():
     ex_msg = """Trying to set attribute '_b' on a config item. Atributes starting with '_' can not be set using item.setattr. Use assignment instead."""
-    try:
+    with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, [prod]):
             with ConfigItem() as ci:
                 ci.setattr('_b', default=7)
-    except ConfigException as ex:
-        assert ex.message == ex_msg
+
+    assert exinfo.value.message == ex_msg

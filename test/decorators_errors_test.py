@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-from pytest import fail
+from pytest import raises
 from .utils import config_error, config_warning, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
@@ -37,20 +37,19 @@ def cw(line_num, *lines):
 
 
 def test_required_attributes_missing_for_configroot():
-    try:
+    with raises(ConfigException) as exinfo:
         @required('someattr1, someattr2')
         class root(ConfigRoot):
             pass
 
         with root(prod, [prod]):
             pass
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == "No value given for required attributes: ['someattr1', 'someattr2']"
+
+    assert exinfo.value.message == "No value given for required attributes: ['someattr1', 'someattr2']"
 
 
 def test_required_attributes_missing_for_configitem():
-    try:
+    with raises(ConfigException) as exinfo:
         class root(ConfigRoot):
             pass
 
@@ -62,9 +61,7 @@ def test_required_attributes_missing_for_configitem():
             with item() as ii:
                 ii.setattr('efgh', prod=7)
 
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == "No value given for required attributes: ['abcd', 'ijkl']"
+    assert exinfo.value.message == "No value given for required attributes: ['abcd', 'ijkl']"
 
 
 def test_optional_attribute_accessed_for_env_where_not_specified():
@@ -72,52 +69,47 @@ def test_optional_attribute_accessed_for_env_where_not_specified():
     class root(ConfigRoot):
         pass
 
-    try:
+    with raises(AttributeError) as exinfo:
         with root(prod, [prod, dev2ct]) as cr:
             cr.setattr('a', dev2ct=18)
 
         print cr.a
-        fail ("Expected exception")
-    except AttributeError  as ex:
-        assert ex.message == "Attribute 'a' undefined for env Env('prod')"
+
+    assert exinfo.value.message == "Attribute 'a' undefined for env Env('prod')"
 
 def test_decorator_arg_not_a_valid_identifier_in_required_decorator():
-    try:
+    with raises(ConfigDefinitionException) as exinfo:
         @required('a, a-b, b, 99')
         class root(ConfigRoot):
             pass
-        fail ("Expected exception")
-    except ConfigDefinitionException  as ex:
-        assert ex.message == "['a-b', '99'] are not valid identifiers"
+
+    assert exinfo.value.message == "['a-b', '99'] are not valid identifiers"
 
 
 def test_decorator_arg_is_keyword_in_nested_repeatables_decorator():
-    try:
+    with raises(ConfigDefinitionException) as exinfo:
         @nested_repeatables('a, b, def, c')
         class root(ConfigRoot):
             pass
-        fail ("Expected exception")
-    except ConfigDefinitionException  as ex:
-        assert ex.message == "'def' is not a valid identifier"
+    
+    assert exinfo.value.message == "'def' is not a valid identifier"
 
 def test_decorator_args_are_keywords_in_required_decorator():
-    try:
+    with raises(ConfigDefinitionException) as exinfo:
         @required('a, class, b, 99')
         class root(ConfigRoot):
             pass
-        fail ("Expected exception")
-    except ConfigDefinitionException  as ex:
-        assert ex.message == "['class', '99'] are not valid identifiers"
+
+    assert exinfo.value.message == "['class', '99'] are not valid identifiers"
 
 
 def test_decorator_arg_not_a_valid_identifier_in_required_if_decorator():
-    try:
+    with raises(ConfigDefinitionException) as exinfo:
         @required_if('-a', 'a, a-b, b, 99')
         class root(ConfigRoot):
             pass
-        fail ("Expected exception")
-    except ConfigDefinitionException  as ex:
-        assert ex.message == "['-a', 'a-b', '99'] are not valid identifiers"
+
+    assert exinfo.value.message == "['-a', 'a-b', '99'] are not valid identifiers"
 
 
 def test_required_attributes_inherited_missing():
@@ -129,14 +121,13 @@ def test_required_attributes_inherited_missing():
     class root2(root):
         pass
 
-    try:
+    with raises(ConfigException) as exinfo:
         with root2(prod, [prod]) as cr:
             cr.setattr('anattr', prod=1)
             cr.setattr('someattr2', prod=3)
             cr.setattr('someotherattr2', prod=4)
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == "No value given for required attributes: ['anotherattr']"
+
+    assert exinfo.value.message == "No value given for required attributes: ['anotherattr']"
 
 
 def test_required_attributes_inherited_redefined(capsys):
