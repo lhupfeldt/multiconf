@@ -37,7 +37,7 @@ def _add_super_list_deco_values(cls, attr_names_str, deco_attr_name):
     attr_names = [attr.strip() for attr in attr_names_str.split(',')]
     _check_valid_identifiers(attr_names)
 
-    super_names = getattr(super(cls, cls), '_deco_' + deco_attr_name)
+    super_names = getattr(super(cls, cls), '_mc_deco_' + deco_attr_name)
     for attr in super_names:
         if attr in attr_names:
             warn(0, "Attribute name: " + repr(attr) + " re-specified as " + repr(deco_attr_name) + " on class: " + repr(cls.__name__) + " , was already inherited from a super class.",
@@ -50,7 +50,7 @@ def named_as(insert_as_name):
     def deco(cls):
         _not_config_builder(cls, 'named_as')
         _check_valid_identifiers((insert_as_name,))
-        cls._deco_named_as = insert_as_name
+        cls._mc_deco_named_as = insert_as_name
         return cls
 
     return deco
@@ -59,7 +59,7 @@ def named_as(insert_as_name):
 def repeat():
     def deco(cls):
         _not_config_builder(cls, 'repeat')
-        cls._deco_repeatable = True
+        cls._mc_deco_repeatable = True
         return cls
 
     return deco
@@ -68,7 +68,7 @@ def repeat():
 def nested_repeatables(attr_names):
     def deco(cls):
         _not_config_builder(cls, 'nested_repeatables')
-        cls._deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
+        cls._mc_deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
         return cls
 
     return deco
@@ -76,7 +76,7 @@ def nested_repeatables(attr_names):
 
 def required(attr_names):
     def deco(cls):
-        cls._deco_required = _add_super_list_deco_values(cls, attr_names, 'required')
+        cls._mc_deco_required = _add_super_list_deco_values(cls, attr_names, 'required')
         return cls
 
     return deco
@@ -86,7 +86,7 @@ def required_if(attr_name, attr_names):
     def deco(cls):
         attributes = [attr.strip() for attr in attr_names.split(',')]
         _check_valid_identifiers([attr_name] + attributes)
-        cls._deco_required_if = attr_name, attributes
+        cls._mc_deco_required_if = attr_name, attributes
         return cls
 
     return deco

@@ -69,7 +69,7 @@ def test_find_contained_in_called_before_parent___init__(capsys):
         fail ("Expected exception")
     except ConfigApiException as ex:
         _sout, serr = capsys.readouterr()
-        eex = _expected_ex_msg % '_contained_in'
+        eex = _expected_ex_msg % '_mc_contained_in'
         assert serr == capie(inner_errorline, eex + _extra_stderr)
         assert ex.message == eex
 
@@ -92,7 +92,7 @@ def test_property_method_called_before_parent___init__(capsys):
         fail ("Expected exception")
     except ConfigApiException as ex:
         _sout, serr = capsys.readouterr()
-        eex = _expected_ex_msg % '_root_conf'
+        eex = _expected_ex_msg % '_mc_root_conf'
         assert serr == capie(inner_errorline, eex + _extra_stderr)
         assert ex.message == eex
 
@@ -114,7 +114,7 @@ def test_undefined_method_called_before_parent___init__(capsys):
         fail ("Expected exception")
     except ConfigApiException as ex:
         _sout, serr = capsys.readouterr()
-        eex = _expected_ex_msg % '_attributes'
+        eex = _expected_ex_msg % '_mc_attributes'
         assert serr == capie(inner_errorline, eex + _extra_stderr)
         assert ex.message == eex
 
@@ -136,6 +136,6 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
         fail ("Expected exception")
     except ConfigApiException as ex:
         _sout, serr = capsys.readouterr()
-        eex = _expected_ex_msg % '_attributes'
+        eex = _expected_ex_msg % '_mc_attributes'
         assert serr == capie(inner_errorline, eex + _extra_stderr)
         assert ex.message == eex

@@ -2,11 +2,11 @@ from collections import OrderedDict
 
 
 class Repeatable(OrderedDict):
-    _frozen = False
+    _mc_frozen = False
 
     def freeze(self):
         for item in self.itervalues():
-            if not item._frozen:
+            if not item._mc_frozen:
                 item.freeze()
 
     def _user_validate_recursively(self):

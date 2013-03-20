@@ -63,7 +63,7 @@ class ConfigItemEncoder(json.JSONEncoder):
             return child_obj
 
         if isinstance(child_obj, multiconf._ConfigBase):
-            if child_obj._nesting_level <= current_nesting_level:
+            if child_obj._mc_nesting_level <= current_nesting_level:
                 id_msg = ": id: " + repr(child_obj.id) if hasattr(child_obj, 'id') else ''
                 name_msg = ", name: " + repr(child_obj.name) if hasattr(child_obj, 'name') else ''
                 child_obj = "#outside-ref: " + child_obj.__class__.__name__ + id_msg + name_msg
@@ -105,7 +105,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                         key, val = self.user_filter_callable(obj, key, val)
                         if key is False:
                             continue
-                    dd[key] = self._check_nesting_level(obj._nesting_level, val)
+                    dd[key] = self._check_nesting_level(obj._mc_nesting_level, val)
 
                 if not self.property_methods:
                     return dd
@@ -137,7 +137,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                             key, val = self.user_filter_callable(obj, key, val)
                             if key is False:
                                 continue
-                        dd[key] = self._check_nesting_level(obj._nesting_level, val)
+                        dd[key] = self._check_nesting_level(obj._mc_nesting_level, val)
                         if self.compact:
                             dd[key] = str(dd[key]) + ' #calculated'
                             continue

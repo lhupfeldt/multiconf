@@ -11,5 +11,5 @@ def test_attribute_repr():
         attributes = {}
     ac = Attribute(attribute_name='some_name1')
     assert repr(ac) == "Attribute: 'some_name1':not-frozen not-all-envs-initialized, values: {}"
-    ac._frozen = True
+    ac._mc_frozen = True
     assert repr(ac) == "Attribute: 'some_name1':frozen not-all-envs-initialized, values: {}"

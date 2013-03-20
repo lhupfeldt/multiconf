@@ -9,7 +9,7 @@ class Attribute(object):
         self.attribute_name = attribute_name
         self.env_values = {}
         self.num_errors = 0
-        self._frozen = False
+        self._mc_frozen = False
         self.all_envs_initialized = False
 
     def validate_types(self, env_name, value):
@@ -35,7 +35,7 @@ class Attribute(object):
         raise Exception('No default value')
 
     def freeze(self):
-        self._frozen = True
+        self._mc_frozen = True
 
     def _user_validate_recursively(self):
         pass
@@ -56,5 +56,5 @@ class Attribute(object):
         self.num_errors = _error_msg(self.num_errors, msg)
 
     def __repr__(self):
-        return self.__class__.__name__ + ': ' + repr(self.attribute_name) + ':' + ('frozen' if self._frozen else 'not-frozen') + ' ' \
+        return self.__class__.__name__ + ': ' + repr(self.attribute_name) + ':' + ('frozen' if self._mc_frozen else 'not-frozen') + ' ' \
             + ('all-envs-initialized' if self.all_envs_initialized else 'not-all-envs-initialized') + ", values: " + repr(self.env_values)
