@@ -445,3 +445,10 @@ def test_assigning_to_attribute_nested_item():
         with ConfigItem() as ci:
             ci.a = 1
     assert ci.a == 1
+
+
+def test_assigning_to_attribute_underscore_attribute():
+    with root(prod, [prod]) as cr:
+        with ConfigItem() as ci:
+            ci._a = 1
+    assert ci._a == 1

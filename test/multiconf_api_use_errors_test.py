@@ -162,9 +162,19 @@ def test_setattr_multiconf_private_attribute():
     try:
         with root(prod, [prod, pp], a=0) as cr:
             with inner(id='n1', b=1) as ci:
-                inner_errorline = lineno() + 1
+                errorline = lineno() + 1
                 ci.setattr('_mc_whatever', default=1)
         
         fail ("Expected exception")
+    except ConfigException as ex:
+        assert ex.message == ex_msg
+
+
+def test_setattr_to_attribute_underscore_attribute():
+    ex_msg = """Trying to set attribute '_b' on a config item. Atributes starting with '_' can not be set using item.setattr. Use assignment instead."""
+    try:
+        with ConfigRoot(prod, [prod]):
+            with ConfigItem() as ci:
+                ci.setattr('_b', default=7)
     except ConfigException as ex:
         assert ex.message == ex_msg

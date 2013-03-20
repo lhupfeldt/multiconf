@@ -183,9 +183,13 @@ class _ConfigBase(object):
         self.setattr(name, default=value)
 
     def setattr(self, name, **kwargs):
-        if name.startswith('_mc'):
+        if name[0] == '_':
+            if name.startswith('_mc'):
+                raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " + 
+                                      "Atributes starting with '_mc' are reserved for multiconf internal usage.")
+
             raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " + 
-                                  "Atributes starting with '_mc' are reserved for multiconf internal usage.")
+                                  "Atributes starting with '_' can not be set using item.setattr. Use assignment instead.")
 
         # For error messages
         ufl = _user_file_line()
