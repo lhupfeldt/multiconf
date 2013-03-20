@@ -4,7 +4,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from ..attribute import Attribute
-from ..config_errors import _user_file_line
 
 
 def test_attribute_repr():
