@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-from pytest import fail, raises
+from pytest import raises
 
 from .utils import api_error, lineno
 

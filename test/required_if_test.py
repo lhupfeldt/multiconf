@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-from pytest import fail
+from pytest import raises
 from .utils import config_error, config_warning, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigException
@@ -124,7 +124,7 @@ def test_required_if_condition_attribute_missing():
 _missing_fully_expected = """Missing required_if attributes. Condition attribute: 'abcd' == 1, missing attributes: ['efgh', 'ijkl']"""
 
 def test_required_if_optional_attributes_missing_fully_instantiated_env():
-    try:
+    with raises(ConfigException) as exinfo:
         class root(ConfigRoot):
             pass
 
@@ -137,15 +137,13 @@ def test_required_if_optional_attributes_missing_fully_instantiated_env():
                 ii.setattr('abcd', prod=1, dev2ct=0)
                 ii.setattr('ihasit', prod=7, dev2ct=8)
 
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == _missing_fully_expected
+    assert exinfo.value.message == _missing_fully_expected
 
 
 # NOTE: This cannot be reliably determined and may cause false errors in case of derived attributes
 # required_if can only be validated for instantiated env
 #def test_required_if_optional_attributes_missing_fully_other_env():
-#    try:
+#    with raises(ConfigException) as exinfo:
 #        class root(ConfigRoot):
 #            pass
 #
@@ -158,13 +156,11 @@ def test_required_if_optional_attributes_missing_fully_instantiated_env():
 #                ii.setattr('abcd', prod=1, dev2ct=0)
 #                ii.setattr('ihasit', prod=7, dev2ct=8)
 #
-#        fail ("Expected exception")
-#    except ConfigException as ex:
-#        assert ex.message == _missing_fully_expected
+#    assert exinfo.value.message == _missing_fully_expected
 
 
 def test_required_if_optional_attributes_missing_some_env_instantiated_env():
-    try:
+    with raises(ConfigException) as exinfo:
         class root(ConfigRoot):
             pass
 
@@ -179,14 +175,12 @@ def test_required_if_optional_attributes_missing_some_env_instantiated_env():
                 ii.setattr('ijkl', dev2ct=3)
                 ii.setattr('ihasit', prod=7, dev2ct=8)
 
-        fail ("Expected exception")
-    except ConfigException as ex:
-        # TODO improve error message
-        assert True
+    # TODO improve error message
+    assert True
 
 
 def test_required_if_optional_attributes_missing_some_env_other_env():
-    try:
+    with raises(ConfigException) as exinfo:
         class root(ConfigRoot):
             pass
 
@@ -201,10 +195,8 @@ def test_required_if_optional_attributes_missing_some_env_other_env():
                 ii.setattr('ijkl', dev2ct=3)
                 ii.setattr('ihasit', prod=7, dev2ct=8)
 
-        fail ("Expected exception")
-    except ConfigException as ex:
-        # TODO improve error message
-        assert True
+    # TODO improve error message
+    assert True
 
 
 _expected_regular_attributes_missing_when_required_if_used_ex = """There were 1 errors when defining attribute 'x' on object: {
@@ -213,7 +205,7 @@ _expected_regular_attributes_missing_when_required_if_used_ex = """There were 1 
 }"""
 
 def test_regular_attributes_missing_when_required_if_used():
-    try:
+    with raises(ConfigException) as exinfo:
         class root(ConfigRoot):
             pass
 
@@ -227,6 +219,4 @@ def test_regular_attributes_missing_when_required_if_used():
                 ii.setattr('x', dev2ct=0)
                 ii.setattr('y', prod=0)
 
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert replace_ids(ex.message) == _expected_regular_attributes_missing_when_required_if_used_ex
+    assert replace_ids(exinfo.value.message) == _expected_regular_attributes_missing_when_required_if_used_ex

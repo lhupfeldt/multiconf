@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-from pytest import fail
+from pytest import raises
 
 from .utils import config_error, replace_ids
 
@@ -20,7 +20,7 @@ def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
 
-_a1_expected_repr = """{
+_test_access_undefined_attribute_expected_repr = """{
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000", 
     "env": {
         "__class__": "Env", 
@@ -28,8 +28,17 @@ _a1_expected_repr = """{
     }
 } has no attribute 'b'"""
 
+def test_access_undefined_attribute():
+    with ConfigRoot(prod, [prod]) as cr:
+        pass
 
-_a2_expected_repr = """{
+    with raises(AttributeError) as exinfo:
+        print cr.b
+
+    assert replace_ids(exinfo.value.message, named_as=False) == _test_access_undefined_attribute_expected_repr
+
+
+_t2_expected_repr = """{
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000", 
     "env": {
         "__class__": "Env", 
@@ -38,27 +47,14 @@ _a2_expected_repr = """{
     "bs": 4
 } has no attribute 'b', but found attribute 'bs'"""
 
-
-def test_access_undefined_attribute():
-    with ConfigRoot(prod, [prod]) as cr:
-        pass
-
-    try:
-        print cr.b
-        fail ("Expected exception")
-    except AttributeError as ex:
-        assert replace_ids(ex.message, named_as=False) == _a1_expected_repr
-
-
 def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s():
     with ConfigRoot(prod, [prod]) as cr:
         cr.setattr('bs', prod=4)
 
-    try:
+    with raises(AttributeError) as exinfo:
         print cr.b
-        fail ("Expected exception")
-    except AttributeError as ex:
-        assert replace_ids(ex.message, named_as=False) == _a2_expected_repr
+
+    assert replace_ids(exinfo.value.message, named_as=False) == _t2_expected_repr
 
 
 def test_find_contained_in_named_as_not_found():
@@ -95,11 +91,10 @@ def test_find_contained_in_named_as_not_found():
                         with Y() as ci:
                             ci.setattr('a', prod=3)
 
-    try:
+    with raises(ConfigException) as exinfo:
         cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == "Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root']"
+    
+    assert exinfo.value.message == "Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root']"
 
 
 def test_find_attribute_with_attribute_name_not_found():
@@ -132,11 +127,10 @@ def test_find_attribute_with_attribute_name_not_found():
                         with X() as ci:
                             ci.setattr('a', prod=3)
                 
-    try:
+    with raises(ConfigException) as exinfo:
         assert cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e') == 3
-        fail ("Expected exception")
-    except ConfigException as ex:
-        assert ex.message == "Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"
+    
+    assert exinfo.value.message == "Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"
 
 
 # TODO
@@ -155,8 +149,7 @@ def test_find_attribute_with_attribute_name_not_found():
 #    with root(prod, [prod]) as cr:
 #        X()
 #                
-#    try:
+#    with raises(ConfigException) as exinfo:
 #        a = cr.x.method
-#        fail ("Expected exception, but a " + repr(a) + " got a value")
-#    except ConfigException as ex:
-#        assert ex.message == ""
+#
+#    assert exinfo.value.message == ""

@@ -5,7 +5,6 @@
 
 from collections import OrderedDict
 # pylint: disable=E0611
-from pytest import fail
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import nested_repeatables, named_as, repeat, required
