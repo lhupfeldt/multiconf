@@ -25,16 +25,16 @@ def _config_msg(error_type, file_name, line_num, *lines):
     return emsg
     
 
-def config_error(file_name, line_num, line):
-    return _config_msg('ConfigError', file_name, line_num, *[line])
+def config_error(file_name, line_num, *line):
+    return _config_msg('ConfigError', file_name, line_num, *line)
 
 
-def config_warning(file_name, line_num, line):
-    return _config_msg('ConfigWarning', file_name, line_num, *[line])
+def config_warning(file_name, line_num, *line):
+    return _config_msg('ConfigWarning', file_name, line_num, *line)
 
 
-def api_error(file_name, line_num, line):
-    return _config_msg('MultiConfApiError', file_name, line_num, *[line])
+def api_error(file_name, line_num, *line):
+    return _config_msg('MultiConfApiError', file_name, line_num, *line)
 
 
 # Handle variable ids and source file line numbers in json/repr output

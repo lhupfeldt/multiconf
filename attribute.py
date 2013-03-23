@@ -34,23 +34,23 @@ class Attribute(object):
                 return self.env_values[default_key]
         raise Exception('No default value')
 
-    def freeze(self):
+    def _mc_freeze(self):
         self._mc_frozen = True
 
     def _user_validate_recursively(self):
         pass
 
-    def value(self, env):
+    def _mc_value(self, current_env):
         """This is only guaranteed to return a correct value for the currently instantiated env!"""
-        self.freeze()
+        self._mc_freeze()
 
-        if env in self.env_values:
-            return self.env_values[env][0]
+        if current_env in self.env_values:
+            return self.env_values[current_env][0]
 
         if self.has_default():
             return self.default_value()[0]
 
-        raise NoAttributeException("Attribute " + repr(self.attribute_name) + " undefined for env " + repr(env))
+        raise NoAttributeException("Attribute " + repr(self.attribute_name) + " undefined for env " + repr(current_env))
 
     def error(self, msg):
         self.num_errors = _error_msg(self.num_errors, msg)

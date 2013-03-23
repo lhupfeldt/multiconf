@@ -35,9 +35,9 @@ class _ConfigBase(object):
         self._mc_attributes = Repeatable()
         self._mc_frozen = False
         self._mc_may_freeze_validate = True
+        self._mc_in_init = True
         self._mc_in_build = False
         self._mc_user_validated = False
-        self._mc_in_init = True
 
         # Prepare collectors with default values
         for key, value in attr.iteritems():
@@ -51,6 +51,7 @@ class _ConfigBase(object):
             self._mc_attributes[key] = Repeatable()
 
     def named_as(self):
+        """Return the named_as property set by the @named_as decorator"""
         if self.__class__._mc_deco_named_as:
             return self.__class__._mc_deco_named_as
         if self.__class__._mc_deco_repeatable:
@@ -74,6 +75,7 @@ class _ConfigBase(object):
         # return self.irepr(len(self.__class__._mc_nested) -1)
 
     def json(self, compact=False, property_methods=True, skipkeys=True):
+        """See json_output.ConfigItemEncoder for parameters"""
         filter_callable = self.json_filter_callable()
         class Encoder(json_output.ConfigItemEncoder):
             def __init__(self, **kwargs):
@@ -112,7 +114,7 @@ class _ConfigBase(object):
         for req in self.__class__._mc_deco_required_if[1]:
             if not req in self._mc_attributes:
                 try:
-                    required_if_condition = required_if_condition_attr.value(self.env)
+                    required_if_condition = required_if_condition_attr._mc_value(self.env)
                 except NoAttributeException:
                     continue
                 if required_if_condition:
@@ -131,7 +133,7 @@ class _ConfigBase(object):
         self.freeze_validate_required()
         self.freeze_validate_required_if()
 
-    def freeze(self):
+    def _mc_freeze(self):
         """
         Recursively freeze contained items bottom up.
         If self is ready to be validated (exit from with_statement or not declared in a with_statement),
@@ -139,21 +141,14 @@ class _ConfigBase(object):
         """
         for _child_name, child_value in self._mc_attributes.iteritems():
             if not child_value._mc_frozen:
-                child_value.freeze()
+                child_value._mc_freeze()
 
         if not self._mc_may_freeze_validate:
             return self
 
         # Freeze item
         self._mc_frozen = True
-        try:
-            self.freeze_validation()
-            return self
-        except ConfigBaseException as ex:
-            if _debug_exc:
-                raise
-            # Strip stack
-            raise ex
+        self.freeze_validation()
 
     @property
     def frozen(self):
@@ -163,10 +158,10 @@ class _ConfigBase(object):
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             self._mc_may_freeze_validate = True
-            self.freeze()
+            self._mc_freeze()
         except Exception as ex:
             if not exc_type:
-                if _debug_exc:
+                if hasattr(ex, '_mc_in_user_code') or _debug_exc:
                     raise
                 raise ex
 
@@ -183,58 +178,64 @@ class _ConfigBase(object):
         self.setattr(name, default=value)
 
     def setattr(self, name, **kwargs):
-        if name[0] == '_':
-            if name.startswith('_mc'):
-                raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " + 
-                                      "Atributes starting with '_mc' are reserved for multiconf internal usage.")
+        """Set attributes with environment specific values"""
+        try:
+            if name[0] == '_':
+                if name.startswith('_mc'):
+                    raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " +
+                                          "Atributes starting with '_mc' are reserved for multiconf internal usage.")
 
-            raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " + 
-                                  "Atributes starting with '_' can not be set using item.setattr. Use assignment instead.")
+                raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " +
+                                      "Atributes starting with '_' can not be set using item.setattr. Use assignment instead.")
 
-        # For error messages
-        ufl = _user_file_line()
-        eg_from = {}
+            # For error messages
+            ufl = _user_file_line()
+            eg_from = {}
 
-        attribute = self._mc_attributes.setdefault(name, Attribute(name))
-        if attribute._mc_frozen:
-            msg = "The attribute " + repr(name) + " is already fully defined"
-            attribute.error(msg)
-            raise ConfigException(msg + " on object " + repr(self))
+            attribute = self._mc_attributes.setdefault(name, Attribute(name))
+            if attribute._mc_frozen:
+                msg = "The attribute " + repr(name) + " is already fully defined"
+                attribute.error(msg)
+                raise ConfigException(msg + " on object " + repr(self))
 
-        if not self._mc_in_init and not ('default' in kwargs and len(kwargs) == 1):
-            attribute._mc_frozen = True
+            if not self._mc_in_init and not ('default' in kwargs and len(kwargs) == 1):
+                attribute._mc_frozen = True
 
-        # Validate and assign given env values
-        for eg_name, value in kwargs.iteritems():
-            v_ufl = (value, ufl)
-            try:
-                attribute.validate_types(eg_name, v_ufl)
+            # Validate and assign given env values
+            for eg_name, value in kwargs.iteritems():
+                v_ufl = (value, ufl)
+                try:
+                    attribute.validate_types(eg_name, v_ufl)
 
-                if eg_name == 'default':
-                    attribute.env_values['default'] = v_ufl
-                    continue
-
-                eg = self.env.factory.env_or_group(eg_name)
-                for env in eg.envs():
-                    # If env == eg then this is a direct env specification, allow overwriting value previously specified through a group
-                    if env not in attribute.env_values or (isinstance(eg_from[env], EnvGroup) and (env == eg)):
-                        attribute.env_values[env] = v_ufl
-                        eg_from[env] = eg
+                    if eg_name == 'default':
+                        attribute.env_values['default'] = v_ufl
                         continue
 
-                    # If env != eg then this is specified through a group, if it was previously specified directly, just ignore
-                    if (not isinstance(eg_from[env], EnvGroup)) and (env != eg):
-                        continue
+                    eg = self.env.factory.env_or_group(eg_name)
+                    for env in eg.envs():
+                        # If env == eg then this is a direct env specification, allow overwriting value previously specified through a group
+                        if env not in attribute.env_values or (isinstance(eg_from[env], EnvGroup) and (env == eg)):
+                            attribute.env_values[env] = v_ufl
+                            eg_from[env] = eg
+                            continue
 
-                    new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
-                    prev_eg_msg = repr(eg_from[env])
-                    msg = "A value is already specified for: " + new_eg_msg + '=' + repr(v_ufl) + ", previous value: " + prev_eg_msg + '=' + repr(attribute.env_values[env])
-                    attribute.error(msg)
+                        # If env != eg then this is specified through a group, if it was previously specified directly, just ignore
+                        if (not isinstance(eg_from[env], EnvGroup)) and (env != eg):
+                            continue
 
-            except EnvException as ex:
-                attribute.error(ex.message)
+                        new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
+                        prev_eg_msg = repr(eg_from[env])
+                        msg = "A value is already specified for: " + new_eg_msg + '=' + repr(v_ufl) + ", previous value: " + prev_eg_msg + '=' + repr(attribute.env_values[env])
+                        attribute.error(msg)
 
-        self.check_attr_fully_defined(attribute)
+                except EnvException as ex:
+                    attribute.error(ex.message)
+
+            self.check_attr_fully_defined(attribute)
+        except ConfigBaseException as ex:
+            if _debug_exc:
+                raise
+            raise ex
 
     def check_attr_fully_defined(self, attribute):
         name = attribute.attribute_name
@@ -264,7 +265,7 @@ class _ConfigBase(object):
 
                     # Check for required_if, the required_if atributes are optional if required_if_condition value is false or not specified for the env
                     try:
-                        if required_if_key and not required_if_condition_attr.value(env) and name in required_if_attribute_names:
+                        if required_if_key and not required_if_condition_attr._mc_value(env) and name in required_if_attribute_names:
                             continue
                     except NoAttributeException:
                         continue
@@ -317,14 +318,14 @@ class _ConfigBase(object):
             raise AttributeError(repr(self) + " has no attribute " + repr(name) + error_message)
 
         try:
-            return attr.value(self.env)
+            return attr._mc_value(self.env)
         except NoAttributeException as ex:
             raise AttributeError(ex.message)
 
     def iteritems(self):
         for key, item in self._mc_attributes.iteritems():
             try:
-                yield key, item.value(self.env)
+                yield key, item._mc_value(self.env)
             except NoAttributeException:
                 # This should only happen in case of  a conditional attribute
                 pass
@@ -333,7 +334,7 @@ class _ConfigBase(object):
     def contained_in(self):
         contained_in = self._mc_contained_in
         while 1:
-            if not isinstance(contained_in, ConfigBuilder):                
+            if not isinstance(contained_in, ConfigBuilder):
                 return contained_in
             contained_in = contained_in._mc_contained_in
 
@@ -401,8 +402,13 @@ class _ConfigBase(object):
         if self._mc_user_validated:
             return
 
-        self.validate()
-        self._mc_user_validated = True
+        try:
+            self.validate()
+        except Exception as ex:
+            ex._mc_in_user_code = True
+            raise
+        finally:
+            self._mc_user_validated = True
 
         for child_value in self._mc_attributes.values():
             child_value._user_validate_recursively()
@@ -411,7 +417,7 @@ class _ConfigBase(object):
         """Can be overridden to provide post-frozen validation"""
         pass
 
-    def value(self, env):
+    def _mc_value(self, env):
         return self
 
 
@@ -441,10 +447,12 @@ class ConfigRoot(_ConfigBase):
             self._user_validate_recursively()
         except Exception as ex:
             if not exc_type:
-                raise
-            print >> sys.stderr, "Exception in validate:", ex
-            print >> sys.stderr, "Exception in with block will be raised"
+                if hasattr(ex, '_mc_in_user_code') or _debug_exc:
+                    raise
+                raise ex
 
+            print >> sys.stderr, "Exception in __exit__:", repr(ex)
+            print >> sys.stderr, "Exception in with block will be raised"
 
     @property
     def valid_envs(self):
@@ -465,7 +473,7 @@ class ConfigItem(_ConfigBase):
 
         # Freeze attributes on parent-container and previously defined siblings
         try:
-            self._mc_contained_in.freeze()
+            self._mc_contained_in._mc_freeze()
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
@@ -524,7 +532,7 @@ class ConfigBuilder(ConfigItem):
         self._mc_what_built = OrderedDict()
         self._mc_freezing = False
 
-    def freeze(self):
+    def _mc_freeze(self):
         if self._mc_freezing:
             return
         self._mc_freezing = True
@@ -534,7 +542,7 @@ class ConfigBuilder(ConfigItem):
                 for override_key, override_value in attributes.iteritems():
                     item._mc_attributes[override_key] = override_value
 
-        super(ConfigBuilder, self).freeze()
+        super(ConfigBuilder, self)._mc_freeze()
         if self._mc_may_freeze_validate:
             existing_attributes = self._mc_attributes.copy()
 
@@ -543,15 +551,20 @@ class ConfigBuilder(ConfigItem):
                 self._mc_attributes[key] = Repeatable()
 
             self._mc_in_build = True
-            self.build()
-            self._mc_in_build = False
+            try:
+                self.build()
+            except Exception as ex:
+                ex._mc_in_user_code = True
+                raise
+            finally:
+                self._mc_in_build = False
 
             # Attributes/Items on builder are copied to items created in build
             # Loop over attributes created in build
             for build_key, build_value in self._mc_attributes.iteritems():
                 if build_key in existing_attributes:
                     continue
-                self._mc_what_built[build_key] = build_value.value(self.env)
+                self._mc_what_built[build_key] = build_value._mc_value(self.env)
 
                 if isinstance(build_value, Repeatable):
                     for key, value in build_value.iteritems():
