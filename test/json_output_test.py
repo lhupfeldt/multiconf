@@ -1,6 +1,13 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+try:    
+    import demjson
+    decode = demjson.JSON(strict=True).decode
+except ImportError:
+    def decode(_string):
+        pass
+
 from .utils import replace_ids, replace_ids_builder, to_compact
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
@@ -780,5 +787,8 @@ def test_json_dump_configbuilder():
                 YChild(name='Hanna', a=11)
                 YChild(name='Herbert', a=12)
 
+    assert decode(_test_json_dump_configbuilder_expected_json_full)
     assert replace_ids_builder(cr.json(compact=True), named_as=False) == _test_json_dump_configbuilder_expected_json_full
+
+    assert decode(_test_json_dump_configbuilder_expected_json_repeatable_item)
     assert replace_ids_builder(cr.ys['server2'].json(compact=True), named_as=False) == _test_json_dump_configbuilder_expected_json_repeatable_item
