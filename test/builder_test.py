@@ -4,24 +4,15 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from collections import OrderedDict
-# pylint: disable=E0611
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import nested_repeatables, named_as, repeat, required
 from ..envs import EnvFactory
 
+
 ef = EnvFactory()
-
-dev1 = ef.Env('dev1')
-dev2 = ef.Env('dev2')
-g_dev = ef.EnvGroup('g_dev', dev1, dev2)
-
-tst = ef.Env('tst')
-
 pp = ef.Env('pp')
 prod = ef.Env('prod')
-
-g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
 
 
 @named_as('xses')
@@ -220,6 +211,8 @@ def test_configbuilder_nested_items_access_to_contained_in():
     class XBuilder(ConfigBuilder):
         def __init__(self):
             super(XBuilder, self).__init__()
+            # Access to contained_in is allowed here depneding on where the object
+            # is created, so it is discouraged to use contained_in from init
             self.number = self.contained_in.aaa
 
         def build(self):
@@ -235,7 +228,8 @@ def test_configbuilder_nested_items_access_to_contained_in():
         with XBuilder() as xb:
             xb.b = 27
             with XChild(a=10) as x1:
-                with_root = x1.contained_in
+                with ConfigItem() as ci:
+                    assert ci.contained_in == x1
             XChild(a=11)
 
     assert len(cr.xses) == 2
@@ -245,25 +239,21 @@ def test_configbuilder_nested_items_access_to_contained_in():
             assert x_child.a == index
             index += 1
         assert index == 12
-    assert with_root == cr
 
 
 def test_configbuilder_multilevel_nested_items_access_to_contained_in():
-    ybuilder_in_init_contained_in = []
     ybuilder_in_build_contained_in = []
     ys_in_init_contained_in = []
 
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
             super(YBuilder, self).__init__()
-            ybuilder_in_init_contained_in.append(self.contained_in)
             self.start = start
-            self.number = self.contained_in.aaa
 
         def build(self):
             ybuilder_in_build_contained_in.append(self.contained_in)
-            for num in xrange(self.start, self.start + self.number):
-                with Ys(name='server%d' % num, server_num=num) as c:
+            for num in xrange(self.start, self.start + self.contained_in.aaa):
+                with Y(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
 
     @nested_repeatables('ys')
@@ -272,9 +262,9 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
 
     @named_as('ys')
     @repeat()
-    class Ys(ConfigItem):
+    class Y(ConfigItem):
         def __init__(self, **kwarg):
-            super(Ys, self).__init__(**kwarg)
+            super(Y, self).__init__(**kwarg)
             ys_in_init_contained_in.append(self.contained_in)
 
     @named_as('y_children')
@@ -287,11 +277,11 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
             with YBuilder() as yb1:
                 yb1.b = 27
                 with YChild(a=10) as y1:
-                    yb1_with_item = y1.contained_in
+                    pass
                 with YBuilder(start=3) as yb2:
                     yb2.c = 28
                     with YChild(a=11) as y2:
-                        yb2_with_item = y2.contained_in
+                        pass
                     YChild(a=12)
 
     assert len(item.ys) == 4
@@ -302,15 +292,13 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
             total += y_child.a
     assert total == 66
 
-    assert yb1_with_item == item
-    assert yb2_with_item == item
+    assert type(y1.contained_in) == Y
+    assert y1.contained_in.start == 1
+    assert type(y2.contained_in) == Y
+    assert y2.contained_in.start == 3
 
     assert len(ybuilder_in_build_contained_in) == 2
     for ci in ybuilder_in_build_contained_in:
-        assert ci == item
-
-    assert len(ybuilder_in_init_contained_in) == 2
-    for ci in ybuilder_in_init_contained_in:
         assert ci == item
 
     assert len(ys_in_init_contained_in) == 4
@@ -369,10 +357,9 @@ def test_configbuilder_repeated():
 #     class XBuilder(ConfigBuilder):
 #         def __init__(self):
 #             super(XBuilder, self).__init__()
-#             self.number = self.contained_in.aaa
 #
 #         def build(self):
-#             for num in xrange(1, self.number+1):
+#             for num in xrange(1, self.contained_in.aaa + 1):
 #                 with Xses(name='server%d' % num, server_num=num) as c:
 #                     # This does not list all envs
 #                     c.something(prod=1)

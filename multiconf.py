@@ -332,11 +332,11 @@ class _ConfigBase(object):
 
     @property
     def contained_in(self):
-        contained_in = self._mc_contained_in
-        while 1:
-            if not isinstance(contained_in, ConfigBuilder):
-                return contained_in
-            contained_in = contained_in._mc_contained_in
+        if not isinstance(self._mc_contained_in, ConfigBuilder):
+            return self._mc_contained_in
+        if self._mc_in_build or self._mc_contained_in._mc_in_build:
+            return self._mc_contained_in.contained_in            
+        raise ConfigApiException("Use of 'contained_in' in not allowed in object while under a ConfigBuilder")
 
     @property
     def root_conf(self):
@@ -537,27 +537,35 @@ class ConfigBuilder(ConfigItem):
             return
         self._mc_freezing = True
 
-        def override(item, attributes):
-            if isinstance(item, ConfigItem):
-                for override_key, override_value in attributes.iteritems():
-                    item._mc_attributes[override_key] = override_value
+        def override(item_from_build, attributes_from_with_block):
+            if isinstance(item_from_build, ConfigItem):
+                for override_key, override_value in attributes_from_with_block.iteritems():
+                    item_from_build._mc_attributes[override_key] = override_value
+
+                    if isinstance(override_value, ConfigItem):
+                        override_value._mc_contained_in = item_from_build
+                        continue
+
+                    if isinstance(override_value, Repeatable):
+                        for repeatable_override_key, repeatable_override_value in override_value.iteritems():
+                            if isinstance(repeatable_override_value, ConfigItem):
+                                repeatable_override_value._mc_contained_in = item_from_build
 
         super(ConfigBuilder, self)._mc_freeze()
         if self._mc_may_freeze_validate:
             existing_attributes = self._mc_attributes.copy()
 
+            self._mc_in_build = True
+
             # We need to allow the same nested repeatables as the parent item
             for key in self.contained_in.__class__._mc_deco_nested_repeatables:
                 self._mc_attributes[key] = Repeatable()
 
-            self._mc_in_build = True
             try:
                 self.build()
             except Exception as ex:
                 ex._mc_in_user_code = True
                 raise
-            finally:
-                self._mc_in_build = False
 
             # Attributes/Items on builder are copied to items created in build
             # Loop over attributes created in build
@@ -589,6 +597,8 @@ class ConfigBuilder(ConfigItem):
 
                 # TODO validation
                 self._mc_contained_in.attributes[key] = value
+
+            self._mc_in_build = False
         self._mc_freezing = False
         return self
 
