@@ -10,6 +10,7 @@ sys.path.append(jp(here, '../..'))
 from multiconf import ConfigRoot, ConfigItem, ConfigBuilder
 from multiconf.decorators import nested_repeatables, repeat, required
 
+
 # Here we define what can be repeated within the configuration item. In this case
 # we will have many managed servers and datasources
 @nested_repeatables('managed_servers, datasources')
