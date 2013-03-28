@@ -539,6 +539,8 @@ class ConfigBuilder(ConfigItem):
 
         def override(item_from_build, attributes_from_with_block):
             if isinstance(item_from_build, ConfigItem):
+                item_from_build._mc_contained_in = self.contained_in
+
                 for override_key, override_value in attributes_from_with_block.iteritems():
                     item_from_build._mc_attributes[override_key] = override_value
 
