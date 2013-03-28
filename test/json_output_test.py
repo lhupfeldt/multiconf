@@ -1,9 +1,9 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .utils import replace_ids, to_compact
+from .utils import replace_ids, replace_ids_builder, to_compact
 
-from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException
+from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
 
 from ..decorators import nested_repeatables, named_as, repeat
 from ..envs import EnvFactory
@@ -637,3 +637,148 @@ def test_json_dump_user_defined_attribute_filter(capsys):
     # TODO
     assert serr == ''
     assert replace_ids(cr.json()) == _filter_expected_json_output
+
+
+_test_json_dump_configbuilder_expected_json_full = """{
+    "__class__": "ItemWithYs #as: 'ItemWithYs', id: 0000", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "ys": {
+        "server3": {
+            "__class__": "Y #as: 'ys', id: 0000", 
+            "name": "server3", 
+            "server_num": 3, 
+            "start": 3, 
+            "c": 28, 
+            "y_children": {
+                "Hanna": {
+                    "__class__": "YChild #as: 'y_children', id: 0000", 
+                    "a": 11, 
+                    "name": "Hanna"
+                }, 
+                "Herbert": {
+                    "__class__": "YChild #as: 'y_children', id: 0000", 
+                    "a": 12, 
+                    "name": "Herbert"
+                }
+            }
+        }, 
+        "server4": {
+            "__class__": "Y #as: 'ys', id: 0000", 
+            "name": "server4", 
+            "server_num": 4, 
+            "start": 3, 
+            "c": 28, 
+            "y_children": {
+                "Hanna": "#ref id: 0000", 
+                "Herbert": "#ref id: 0000"
+            }
+        }, 
+        "server1": {
+            "__class__": "Y #as: 'ys', id: 0000", 
+            "name": "server1", 
+            "server_num": 1, 
+            "start": 1, 
+            "b": 27, 
+            "y_children": {
+                "Hugo": {
+                    "__class__": "YChild #as: 'y_children', id: 0000", 
+                    "a": 10, 
+                    "name": "Hugo"
+                }
+            }, 
+            "YBuilder.builder.0000": "#outside-ref: YBuilder"
+        }, 
+        "server2": {
+            "__class__": "Y #as: 'ys', id: 0000", 
+            "name": "server2", 
+            "server_num": 2, 
+            "start": 1, 
+            "b": 27, 
+            "y_children": {
+                "Hugo": "#ref id: 0000"
+            }, 
+            "YBuilder.builder.0000": "#outside-ref: YBuilder"
+        }
+    }, 
+    "YBuilder.builder.0000": {
+        "__class__": "YBuilder #as: 'YBuilder.builder.0000', id: 0000", 
+        "start": 1, 
+        "b": 27, 
+        "y_children": {
+            "Hugo": "#ref id: 0000"
+        }, 
+        "YBuilder.builder.0000": {
+            "__class__": "YBuilder #as: 'YBuilder.builder.0000', id: 0000", 
+            "start": 3, 
+            "c": 28, 
+            "y_children": {
+                "Hanna": "#ref id: 0000", 
+                "Herbert": "#ref id: 0000"
+            }, 
+            "ys": {
+                "server3": "#ref id: 0000", 
+                "server4": "#ref id: 0000"
+            }
+        }, 
+        "ys": {
+            "server1": "#ref id: 0000", 
+            "server2": "#ref id: 0000"
+        }
+    }, 
+    "aaa": "2 #calculated"
+}"""
+
+_test_json_dump_configbuilder_expected_json_repeatable_item = """{
+    "__class__": "Y #as: 'ys', id: 0000", 
+    "name": "server2", 
+    "server_num": 2, 
+    "start": 1, 
+    "b": 27, 
+    "y_children": {
+        "Hugo": {
+            "__class__": "YChild #as: 'y_children', id: 0000", 
+            "a": 10, 
+            "name": "Hugo"
+        }
+    }, 
+    "YBuilder.builder.0000": "#outside-ref: YBuilder"
+}"""
+
+def test_json_dump_configbuilder():
+    class YBuilder(ConfigBuilder):
+        def __init__(self, start=1):
+            super(YBuilder, self).__init__()
+            self.start = start
+
+        def build(self):
+            for num in xrange(self.start, self.start + self.contained_in.aaa):
+                Y(name='server%d' % num, server_num=num)
+
+    @nested_repeatables('ys')
+    class ItemWithYs(ConfigRoot):
+        aaa = 2
+
+    @named_as('ys')
+    @repeat()
+    class Y(ConfigItem):
+        pass
+
+    @named_as('y_children')
+    @repeat()
+    class YChild(ConfigItem):
+        pass
+
+    with ItemWithYs(prod, [prod, pp]) as cr:
+        with YBuilder() as yb1:
+            yb1.b = 27
+            YChild(name='Hugo', a=10)
+            with YBuilder(start=3) as yb2:
+                yb2.c = 28
+                YChild(name='Hanna', a=11)
+                YChild(name='Herbert', a=12)
+
+    assert replace_ids_builder(cr.json(compact=True), named_as=False) == _test_json_dump_configbuilder_expected_json_full
+    assert replace_ids_builder(cr.ys['server2'].json(compact=True), named_as=False) == _test_json_dump_configbuilder_expected_json_repeatable_item

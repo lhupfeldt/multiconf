@@ -60,6 +60,12 @@ def replace_ids(json_string, named_as=True):
     return _replace_refs_regex.sub(r'": "#ref id: 0000"', json_string)
 
 
+_replace_builder_ids_regex = re.compile(r"""\.builder\.[0-9]+(["'])""")
+def replace_ids_builder(json_string, named_as=True):
+    json_string = _replace_builder_ids_regex.sub(r'.builder.0000\1', json_string)
+    return replace_ids(json_string, named_as)
+
+
 _compact_ids_regex = re.compile(r'("), \n *"__id__": ([0-9]+),')
 _compact_calculated_regex = re.compile(r': ([^ ]+)"?, \n *"([a-zA-Z0-9]*) #calculated": true')
 def to_compact(json_string):
