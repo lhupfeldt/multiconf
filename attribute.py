@@ -29,10 +29,11 @@ class Attribute(object):
         return 'default' in self.env_values or '__init__' in self.env_values
 
     def default_value(self):
+        """Must not be called unless 'has_default' is true"""
         for default_key in 'default', '__init__':
             if default_key in self.env_values:
                 return self.env_values[default_key]
-        raise Exception('No default value')
+        raise Exception('Internal error')
 
     def _mc_freeze(self):
         self._mc_frozen = True
