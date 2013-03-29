@@ -23,7 +23,7 @@ def _config_msg(error_type, file_name, line_num, *lines):
         emsg += 'File "{file_name}", line {line_num}'.format(file_name=file_name, line_num=line_num) + '\n'
         emsg += error_type + ': ' + line + '\n'
     return emsg
-    
+
 
 def config_error(file_name, line_num, *line):
     return _config_msg('ConfigError', file_name, line_num, *line)
@@ -35,6 +35,27 @@ def config_warning(file_name, line_num, *line):
 
 def api_error(file_name, line_num, *line):
     return _config_msg('MultiConfApiError', file_name, line_num, *line)
+
+
+def _multi_file_single_config_msg(error_type, msg, *file_line_msg):
+    """
+    file_line_msg: tuple of (filename, lineni, linemsg)
+    msg: overall error message
+    """
+
+    emsg = ""
+    for file_name, line_num, line_msg in file_line_msg:
+        if not file_name.endswith('.py'):
+            # file_name  may end in .pyc!
+            file_name = file_name[:-1]
+
+        emsg += 'File "{file_name}", line {line_num}'.format(file_name=file_name, line_num=line_num) + ', ' + line_msg + '\n'
+    emsg += msg + '\n'
+    return emsg
+
+
+def multi_file_single_config_error(msg, *file_line_msg):
+    return _multi_file_single_config_msg('ConfigError', msg, *file_line_msg)
 
 
 # Handle variable ids and source file line numbers in json/repr output

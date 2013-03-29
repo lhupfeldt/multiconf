@@ -6,7 +6,7 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils import config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
+from .utils import config_error, multi_file_single_config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
 from ..decorators import nested_repeatables, repeat
@@ -34,6 +34,12 @@ valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
+
+def mfsce_local(msg, line_num, *line_msgs):
+    lines_info = [(__file__, line_num, line_msg) for line_msg in line_msgs]
+    return multi_file_single_config_error(msg, *lines_info)
+
+
 _e_expected = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
     "env": {
@@ -51,15 +57,6 @@ _f_expected = """There were 1 errors when defining attribute 'a' on object: {
         "name": "prod"
     }, 
     "a": "hello"
-}"""
-
-_g_expected = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
-    "env": {
-        "__class__": "Env", 
-        "name": "prod"
-    }, 
-    "a": 1
 }"""
 
 _h_expected = """The attribute 'a' is already fully defined"""
@@ -148,12 +145,6 @@ _r1_expected_ex = _r_expected + """ on object {
 _r2_expected_ex = _r_expected + """ on object {
     "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen", 
     "a": 1
-}"""
-
-
-_group_for_selected_env_expected = """project: env must be instance of 'Env'; found type 'EnvGroup': EnvGroup('g_dev3') {
-     Env('dev3ct'),
-     Env('dev3st')
 }"""
 
 
@@ -249,16 +240,25 @@ def test_value_not_assigned_to_all_envs(capsys):
     assert replace_ids(exinfo.value.message, False) == _f_expected
 
 
-# TODO handle this error output format in test
-# def attribute_defined_with_different_types(self):
-#     with raises(ConfigException) as exinfo:
-#         with ConfigRoot(prod, [prod, pp]) as cr:
-#             errorline = lineno() + 1
-#             cr.setattr('a', prod=1, pp="hello")
-#
-#     _sout, serr = capsys.readouterr()
-#     assert serr == ce(errorline, "ConfigError: Found different value types for property 'a' for different envs")
-#     assert replace_ids(exinfo.value.message, False) == _g_expected
+_test_attribute_defined_with_different_types_expected = "ConfigError: Found different value types for property 'a' for different envs"
+_test_attribute_defined_with_different_types_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 1
+}"""
+
+def test_attribute_defined_with_different_types(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', prod=1, pp="hello")
+
+    _sout, serr = capsys.readouterr()
+    assert serr == mfsce_local(_test_attribute_defined_with_different_types_expected, errorline, "prod <type 'int'>", "pp <type 'str'>")
+    assert replace_ids(exinfo.value.message, False) == _test_attribute_defined_with_different_types_expected_ex
 
 
 def test_attribute_redefinition_attempt(capsys):
@@ -425,6 +425,11 @@ def test_configitem_outside_of_root(capsys):
 
     assert exinfo.value.message == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
 
+
+_group_for_selected_env_expected = """project: env must be instance of 'Env'; found type 'EnvGroup': EnvGroup('g_dev3') {
+     Env('dev3ct'),
+     Env('dev3st')
+}"""
 
 def test_using_group_for_selected_env(capsys):
     with raises(ConfigException) as exinfo:
