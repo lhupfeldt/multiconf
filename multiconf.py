@@ -105,7 +105,11 @@ class _ConfigBase(object):
 
         try:
             required_if_condition_attr = self._mc_attributes[required_if_key]
-            if not required_if_condition_attr:
+            try:
+                required_if_condition = required_if_condition_attr._mc_value(self.env)
+                if not required_if_condition:
+                    return
+            except NoAttributeException:
                 return
         except KeyError:
             return
@@ -113,12 +117,7 @@ class _ConfigBase(object):
         missing = []
         for req in self.__class__._mc_deco_required_if[1]:
             if not req in self._mc_attributes:
-                try:
-                    required_if_condition = required_if_condition_attr._mc_value(self.env)
-                except NoAttributeException:
-                    continue
-                if required_if_condition:
-                    missing.append(req)
+                missing.append(req)
             else:
                 attr = self._mc_attributes[req]
                 if isinstance(attr, Attribute):
