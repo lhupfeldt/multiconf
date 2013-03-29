@@ -7,7 +7,10 @@ here = os.path.abspath(os.path.dirname(__file__))
 os.chdir(here)
 
 print "Running tests"
-rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing'))
+if len(sys.argv) > 1:
+    sys.exit(subprocess.call(['py.test', '--capture=sys'] + sys.argv[1:]))
+else:
+    rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing'))
 #rc = subprocess.call(('nosetests', '--with-coverage', '--cover-branches', '--cover-package=multiconf'))
 
 print "Validating demo for all envs"

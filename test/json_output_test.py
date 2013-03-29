@@ -1,6 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import re
 try:    
     import demjson
     decode = demjson.JSON(strict=True).decode
@@ -8,7 +9,7 @@ except ImportError:
     def decode(_string):
         pass
 
-from .utils import replace_ids, replace_ids_builder, to_compact
+from .utils import replace_ids, lineno, replace_ids_builder, to_compact
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
 
@@ -331,24 +332,6 @@ _uplevel_ref_expected_json_output = """{
 }"""
 
 
-_filter_expected_json_output = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
-    "env": {
-        "__class__": "Env", 
-        "name": "prod"
-    }, 
-    "a": 0, 
-    "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "b": 2, 
-        "a": 1, 
-        "a #calculated": true
-    }
-}"""
-
-
 @nested_repeatables('someitems')
 class root(ConfigRoot):
     pass
@@ -632,8 +615,25 @@ def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
     assert replace_ids(n2.json()) == _uplevel_ref_expected_json_output
 
 
+_filter_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "b": 2, 
+        "a": 1, 
+        "a #calculated": true
+    }
+}"""
+
 def test_json_dump_user_defined_attribute_filter():
-    def json_filter(obj, key, value):
+    def json_filter(_obj, key, value):
         return (False, None) if (key == 'hide_me1' or key == 'hide_me2') else (key, value)
 
     @named_as('someitem')
@@ -650,6 +650,54 @@ def test_json_dump_user_defined_attribute_filter():
         Nested(b=2, hide_me1=7)
 
     assert replace_ids(cr.json()) == _filter_expected_json_output
+
+
+_test_json_dump_dir_error_expected_stderr = """Error in json generation:
+Traceback (most recent call last):
+  File "/home/lhn/src/multiconf/json_output.py", line 0000, in default
+    entries = dir(obj)
+  File "/home/lhn/src/multiconf/test/json_output_test.py", line %s, in __dir__
+    raise Exception('Error in dir()')
+Exception: Error in dir()
+"""
+
+_test_json_dump_dir_error_expected = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included": "Exception('Error in dir()',)", 
+        "b": 2
+    }
+}"""
+
+def test_json_dump_dir_error(capsys):
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        _errorline = 0
+        def __dir__(self):
+            self._errorline = lineno() + 1
+            raise Exception('Error in dir()')
+
+        @property
+        def c(self):
+            return "will-not-show"
+        
+    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+        Nested(b=2)
+
+    json = cr.json()
+    mc_regexp = re.compile('json_output.py", line [0-9]*')
+    _sout, serr = capsys.readouterr()    
+    # pylint: disable=W0212
+    assert mc_regexp.sub('json_output.py", line 0000', serr) == _test_json_dump_dir_error_expected_stderr % cr.someitem._errorline
+    assert replace_ids(json) == _test_json_dump_dir_error_expected
 
 
 _test_json_dump_configbuilder_expected_json_full = """{

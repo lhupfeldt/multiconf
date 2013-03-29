@@ -1,4 +1,4 @@
-import sys, threading
+import sys, threading, traceback
 from collections import OrderedDict
 import json
 import types
@@ -92,10 +92,16 @@ class ConfigItemEncoder(json.JSONEncoder):
             self._set_already_dumped(obj)
 
             if isinstance(obj, multiconf._ConfigBase):
-                entries = dir(obj)
-
                 #print "# Handle ConfigItems", type(obj)
                 dd = self._mc_class_dict(obj)
+
+                entries = ()
+                try:
+                    entries = dir(obj)
+                except Exception as ex:
+                    print >> sys.stderr, "Error in json generation:"
+                    traceback.print_exception(*sys.exc_info())
+                    dd['__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included'] = repr(ex)
 
                 # Order 'env' first on root object
                 if isinstance(obj, multiconf.ConfigRoot):
@@ -118,45 +124,34 @@ class ConfigItemEncoder(json.JSONEncoder):
                     return dd
 
                 # Handle @property methods (defined in subclasses)
-                try:
-                    for key in entries:
-                        if key.startswith('_') or key in self.filter_out_keys:
-                            continue
+                for key in entries:
+                    if key.startswith('_') or key in self.filter_out_keys:
+                        continue
 
-                        try:
-                            val = getattr(obj, key)
-                        except InvalidUsageException as ex:
-                            dd[key + ' #invalid usage context'] = repr(ex)
-                            continue
-                        except RuntimeError:
-                            raise
-                        except:
-                            # TODO
-                            #print >> sys.stderr, "Error in json generation:"
-                            #print >> sys.stderr, traceback.format_exc()
-                            dd[repr(key) + ' # json_error trying to handle property method'] = repr(sys.exc_info()[1])
-                            continue
+                    try:
+                        val = getattr(obj, key)
+                    except InvalidUsageException as ex:
+                        dd[key + ' #invalid usage context'] = repr(ex)
+                        continue
+                    except Exception as ex:
+                        print >> sys.stderr, "Error in json generation:"
+                        traceback.print_exception(*sys.exc_info())
+                        dd[repr(key) + ' # json_error trying to handle property method'] = repr(ex)
+                        continue
 
-                        if type(val) == types.MethodType:
-                            continue
+                    if type(val) == types.MethodType:
+                        continue
 
-                        if self.user_filter_callable:
-                            key, val = self.user_filter_callable(obj, key, val)
-                            if key is False:
-                                continue
-                        dd[key] = self._check_nesting_level(obj._mc_nesting_level, val)
-                        if self.compact:
-                            dd[key] = str(dd[key]) + ' #calculated'
+                    if self.user_filter_callable:
+                        key, val = self.user_filter_callable(obj, key, val)
+                        if key is False:
                             continue
-                        dd[key + ' #calculated'] = True
-                    return dd
-                except RuntimeError:
-                    raise
-                except:
-                    #print >> sys.stderr, "Error in json generation:"
-                    #print >> sys.stderr, traceback.format_exc()
-                    dd['__json_error__ # trying to handle property methods'] = repr(sys.exc_info()[1])
-                    return dd
+                    dd[key] = self._check_nesting_level(obj._mc_nesting_level, val)
+                    if self.compact:
+                        dd[key] = str(dd[key]) + ' #calculated'
+                        continue
+                    dd[key + ' #calculated'] = True
+                return dd
 
             if isinstance(obj, envs.BaseEnv):
                 #print "# Handle Env objects", type(obj)
