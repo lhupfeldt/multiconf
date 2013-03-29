@@ -73,6 +73,16 @@ def test_repeated_nested_env_member(capsys):
     #assert serr == ce(errorline, "TODO")
     assert exinfo.value.message == "Repeated group member: Env('hh1') in EnvGroup('hh3') {\n\n}"
 
+def test_repeated_direct_group_member_name(capsys):
+    with raises(EnvException) as exinfo:
+        ee1 = ef.Env('ee1')
+        ee1x = ef.Env('ee1')
+        errorline = lineno() + 1
+        gg1 = ef.EnvGroup('gg1', ee1, ee1x)
+
+    sout, serr = capsys.readouterr()
+    #assert serr == ce(errorline, "TODO")
+    assert exinfo.value.message == "Repeated group member: Env('ee1') in EnvGroup('gg1') {\n\n}"
 
 def test_repeated_nested_env_member_reversed(capsys):
     with raises(EnvException) as exinfo:

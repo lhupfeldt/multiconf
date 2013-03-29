@@ -75,22 +75,18 @@ class EnvGroup(BaseEnv, Container):
 
         # Check for doublets
         seen_envs = set()
-        seen_names = {}
         def check_doublets(envs):
             for cfg in envs:
                 if cfg in seen_envs:
                     raise EnvException("Repeated group member: " + repr(cfg) + " in " + repr(self))
                 seen_envs.add(cfg)
-                if cfg.name in seen_names:
-                    raise EnvException("Repeated group member name: " + repr(cfg) + " in " + repr(self))
-                seen_names[cfg.name] = cfg
 
                 # Check children
                 check_doublets(cfg.members)
 
         check_doublets(members)
 
-        if self.name in seen_names:
+        if self in seen_envs:
             raise EnvException("Can't have a member with my own name: " + repr(name) + ", members:  " + repr(list(members)))
 
         # All good
