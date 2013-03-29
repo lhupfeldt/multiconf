@@ -171,23 +171,6 @@ _c_expected_json_output = """{
 }"""
 
 
-_d_expected_json_output = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
-    "env": {
-        "__class__": "Env", 
-        "name": "prod"
-    }, 
-    "a": 0, 
-    "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "m": 1, 
-        "m #calculated": true
-    }
-}"""
-
-
 _e_expected_json_output = """{
     "__class__": "ConfigRoot", 
     "__id__": 0000, 
@@ -202,25 +185,6 @@ _e_expected_json_output = """{
         "m #invalid usage context": "InvalidUsageException('No m now',)"
     }
 }"""
-
-
-_e2_expected_json_output = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
-    "env": {
-        "__class__": "Env", 
-        "name": "prod"
-    }, 
-    "a": 0, 
-    "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "'m' # json_error trying to handle property method": "Exception('Something is wrong',)"
-    }
-}"""
-
-
-_e2b_expected_json_output = _e2_expected_json_output.replace('Exception', 'ConfigException')
 
 
 _e3_expected_json_output = """{
@@ -403,7 +367,7 @@ class SimpleItem(ConfigItem):
         super(SimpleItem, self).__init__(**kwargs)
 
 
-def test_json_dump_simple(capsys):
+def test_json_dump_simple():
     with root(prod, [prod, pp], a=0) as cr:
         NestedRepeatable(id='a-level1')
         with NestedRepeatable(id='b-level1') as ci:
@@ -420,7 +384,7 @@ def test_json_dump_simple(capsys):
     assert replace_ids(cr.json(compact=True)) == to_compact(_a_expected_json_output)
 
 
-def test_json_dump_cyclic_references_in_conf_items(capsys):
+def test_json_dump_cyclic_references_in_conf_items():
     @named_as('anitem')
     class AnXItem(ConfigItem):
         pass
@@ -439,7 +403,7 @@ def test_json_dump_cyclic_references_in_conf_items(capsys):
     assert replace_ids(cr.json()) == _b_expected_json_output
 
 
-def test_json_dump_cyclic_references_between_conf_items_and_other_objects(capsys):
+def test_json_dump_cyclic_references_between_conf_items_and_other_objects():
     cycler = {}
 
     with ConfigRoot(prod, [prod, pp], a=0) as cr:
@@ -450,7 +414,23 @@ def test_json_dump_cyclic_references_between_conf_items_and_other_objects(capsys
     assert replace_ids(cr.json()) == _c_expected_json_output
 
 
-def test_json_dump_property_method(capsys):
+_test_json_dump_property_method_expected = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "m": 1, 
+        "m #calculated": true
+    }
+}"""
+
+def test_json_dump_property_method():
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
@@ -460,11 +440,43 @@ def test_json_dump_property_method(capsys):
     with ConfigRoot(prod, [prod, pp], a=0) as cr:
         Nested()
 
-    assert replace_ids(cr.json()) == _d_expected_json_output
-    assert replace_ids(cr.json(compact=True)) == to_compact(_d_expected_json_output)
+    assert replace_ids(cr.json()) == _test_json_dump_property_method_expected
+    assert replace_ids(cr.json(compact=True)) == to_compact(_test_json_dump_property_method_expected)
 
 
-def test_json_dump_property_method_raises_InvalidUsageException(capsys):
+_test_json_dump_property_method_shadows_attribute_expected = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "m #shadowed": 7, 
+        "m": 1, 
+        "m #calculated": true
+    }
+}"""
+
+def test_json_dump_property_method_shadows_attribute():
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def m(self):
+            return 1
+
+    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+        Nested(m=7)
+
+    assert replace_ids(cr.json()) == _test_json_dump_property_method_shadows_attribute_expected
+    assert replace_ids(cr.json(compact=True)) == to_compact(_test_json_dump_property_method_shadows_attribute_expected)
+    assert cr.someitem.m == 1
+
+
+def test_json_dump_property_method_raises_InvalidUsageException():
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
@@ -477,43 +489,50 @@ def test_json_dump_property_method_raises_InvalidUsageException(capsys):
     assert replace_ids(cr.json()) == _e_expected_json_output
 
 
-def test_json_dump_property_method_raises_Exception(capsys):
-    try:
-        @named_as('someitem')
-        class Nested(ConfigItem):
-            @property
-            def m(self):
-                raise Exception("Something is wrong")
+_e2_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "someitem": {
+        "__class__": "Nested", 
+        "__id__": 0000, 
+        "'m' # json_error trying to handle property method": "Exception('Something is wrong',)"
+    }
+}"""
 
-        with ConfigRoot(prod, [prod, pp], a=0) as cr:
-            Nested()
-    except Exception as ex:
-        _sout, serr = capsys.readouterr()
-        # TODO
-        assert serr == ''
-        assert replace_ids(cr.json()) == _e2_expected_json_output
-        assert ex.message == "Something is wrong"
+def test_json_dump_property_method_raises_Exception():
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def m(self):
+            raise Exception("Something is wrong")
 
+    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+        Nested()
 
-def test_json_dump_property_method_raises_ConfigException(capsys):
-    try:
-        @named_as('someitem')
-        class Nested(ConfigItem):
-            @property
-            def m(self):
-                raise ConfigException("Something is wrong")
-
-        with ConfigRoot(prod, [prod, pp], a=0) as cr:
-            Nested()
-    except ConfigException as ex:
-        _sout, serr = capsys.readouterr()
-        # TODO
-        assert serr == ''
-        assert replace_ids(cr.json()) == _e2b_expected_json_output
-        assert ex.message == "Something is wrong"
+    assert replace_ids(cr.json()) == _e2_expected_json_output
 
 
-def test_json_dump_property_method_returns_self(capsys):
+_e2b_expected_json_output = _e2_expected_json_output.replace('Exception', 'ConfigException')
+
+def test_json_dump_property_method_raises_ConfigException():
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def m(self):
+            raise ConfigException("Something is wrong")
+
+    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+        Nested()
+
+    assert replace_ids(cr.json()) == _e2b_expected_json_output
+
+
+def test_json_dump_property_method_returns_self():
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
@@ -523,13 +542,10 @@ def test_json_dump_property_method_returns_self(capsys):
     with ConfigRoot(prod, [prod, pp], a=0) as cr:
         Nested()
 
-    _sout, serr = capsys.readouterr()
-    # TODO
-    assert serr == ''
     assert replace_ids(cr.json()) == _e3_expected_json_output
 
 
-def test_json_dump_property_method_returns_already_seen_conf_item(capsys):
+def test_json_dump_property_method_returns_already_seen_conf_item():
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
@@ -544,30 +560,23 @@ def test_json_dump_property_method_returns_already_seen_conf_item(capsys):
         X(a=0)
         Nested()
 
-    _sout, serr = capsys.readouterr()
-    # TODO
-    assert serr == ''
     assert replace_ids(cr.json()) == _e4_expected_json_output
 
 
-def test_json_dump_property_method_calls_json(capsys):
-    try:
-        @named_as('someitem')
-        class Nested(ConfigItem):
-            @property
-            def other_conf_item(self):
-                print self.json()
+def test_json_dump_property_method_calls_json():
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def other_conf_item(self):
+            print self.json()
 
-        with ConfigRoot(prod, [prod, pp], a=0) as cr:
-            Nested()
+    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+        Nested()
 
-    finally:
-        _sout, serr = capsys.readouterr()
-        # TODO assert serr == "Encoder json_output.default: type(obj) <class 'multiconf.test.json_output_test.Nested'>"
-        assert replace_ids(cr.json()) == _e5_expected_json_output
+    assert replace_ids(cr.json()) == _e5_expected_json_output
 
 
-def test_json_dump_non_conf_item_not_json_serializable(capsys):
+def test_json_dump_non_conf_item_not_json_serializable():
     class Key():
         def __repr__(self):
             return "<Key object>"
@@ -578,7 +587,7 @@ def test_json_dump_non_conf_item_not_json_serializable(capsys):
     assert replace_ids(cr.json()) == _f_expected_json_output
 
 
-def test_json_dump_non_conf_item(capsys):
+def test_json_dump_non_conf_item():
     # This is an old style class
     class SomeClass():
         def __init__(self):
@@ -593,7 +602,7 @@ def test_json_dump_non_conf_item(capsys):
     assert replace_ids(cr.json(compact=True)) == to_compact(_g_expected_json_output).replace("SomeClass #as: 'xxxx', id", 'SomeClass #id')
 
 
-def test_json_dump_unhandled_item_function_ref(capsys):
+def test_json_dump_unhandled_item_function_ref():
     def fff():
         pass
 
@@ -603,7 +612,7 @@ def test_json_dump_unhandled_item_function_ref(capsys):
     assert replace_ids(cr.json()) == _h_expected_json_output
 
 
-def test_json_dump_iterable(capsys):
+def test_json_dump_iterable():
     class MyIterable(object):
         def __iter__(self):
             yield 1
@@ -614,7 +623,7 @@ def test_json_dump_iterable(capsys):
     assert replace_ids(cr.json()) == _i_expected_json_output
 
 
-def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level(capsys):
+def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
     with root(prod, [prod, pp], a=0):
         with NestedRepeatable(id='n1', name='Number 1', b=1) as n1:
             with NestedRepeatable(id='n2', c=2) as n2:
@@ -623,7 +632,7 @@ def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level(caps
     assert replace_ids(n2.json()) == _uplevel_ref_expected_json_output
 
 
-def test_json_dump_user_defined_attribute_filter(capsys):
+def test_json_dump_user_defined_attribute_filter():
     def json_filter(obj, key, value):
         return (False, None) if (key == 'hide_me1' or key == 'hide_me2') else (key, value)
 
@@ -640,9 +649,6 @@ def test_json_dump_user_defined_attribute_filter(capsys):
     with ConfigRoot(prod, [prod, pp], json_filter=json_filter, a=0, hide_me1='FAILED') as cr:
         Nested(b=2, hide_me1=7)
 
-    _sout, serr = capsys.readouterr()
-    # TODO
-    assert serr == ''
     assert replace_ids(cr.json()) == _filter_expected_json_output
 
 

@@ -92,6 +92,8 @@ class ConfigItemEncoder(json.JSONEncoder):
             self._set_already_dumped(obj)
 
             if isinstance(obj, multiconf._ConfigBase):
+                entries = dir(obj)
+
                 #print "# Handle ConfigItems", type(obj)
                 dd = self._mc_class_dict(obj)
 
@@ -105,15 +107,20 @@ class ConfigItemEncoder(json.JSONEncoder):
                         key, val = self.user_filter_callable(obj, key, val)
                         if key is False:
                             continue
-                    dd[key] = self._check_nesting_level(obj._mc_nesting_level, val)
+
+                    val = self._check_nesting_level(obj._mc_nesting_level, val)
+                    if key in entries:
+                        dd[key + ' #shadowed'] = val
+                        continue
+                    dd[key] = val
 
                 if not self.property_methods:
                     return dd
 
                 # Handle @property methods (defined in subclasses)
                 try:
-                    for key in dir(obj):
-                        if key.startswith('_') or key in self.filter_out_keys or key in obj.attributes:
+                    for key in entries:
+                        if key.startswith('_') or key in self.filter_out_keys:
                             continue
 
                         try:
