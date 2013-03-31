@@ -116,6 +116,36 @@ def test_required_if_condition_attribute_missing():
         pass
 
     with root(prod, [prod]):
+        with item() as it:
+            it.setattr('a', prod=2)
+            
+    # The above code is valid, the condition attribute i not mandatory
+    assert 1 == 1
+
+
+def test_required_if_condition_attribute_missing_other_attribute_default_value():
+    class root(ConfigRoot):
+        pass
+
+    @required_if('abcd', 'efgh, ijkl')
+    class item(ConfigItem):
+        pass
+
+    with root(prod, [prod]):
+        item(a=1)
+    # The above code is valid, the condition attribute i not mandatory
+    assert 1 == 1
+
+
+def test_required_if_condition_attribute_missing_no_other_attributes():
+    class root(ConfigRoot):
+        pass
+
+    @required_if('abcd', 'efgh, ijkl')
+    class item(ConfigItem):
+        pass
+
+    with root(prod, [prod]):
         item()
     # The above code is valid, the condition attribute i not mandatory
     assert 1 == 1
