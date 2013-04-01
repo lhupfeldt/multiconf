@@ -199,25 +199,11 @@ def test_automatic_freeze_of_property_overridden_in_with_statement():
             assert rc.y == 7
 
 
-def test_explicit_freeze_of_all_defined_properties():
-    with root(prod, [prod, pp], a=0):
-        with rchild(id='a', x=17, z=18) as rc:
-            rc.setattr('y', prod=7, pp=2)
-            rc.setattr('z', pp=3)
-
-            assert rc.y == 7
-            assert rc.x == 17
-            assert rc.z == 18
-
-
-def test_explicit_freeze_of_single_property():
+def test_freeze_of_property_at_access():
     with root(prod, [prod, pp], a=0):
         with rchild(id='a', x=19, z=20) as rc:
-            rc.setattr('y', prod=7, pp=2)
-            assert rc.y == 7
-            rc.setattr('z', pp=3)
-            assert rc.z == 20
             assert rc.x == 19
+
 
 # TODO: allow this (while inside with statement only)
 #def define new attribute after freeze_test(self):
