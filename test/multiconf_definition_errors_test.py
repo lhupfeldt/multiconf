@@ -9,7 +9,7 @@ from pytest import raises
 from .utils import config_error, multi_file_single_config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
-from ..decorators import nested_repeatables, repeat
+from ..decorators import nested_repeatables, repeat, required
 from ..envs import EnvFactory
 
 ef = EnvFactory()
@@ -438,7 +438,11 @@ def test_using_group_for_selected_env(capsys):
     assert exinfo.value.message == _group_for_selected_env_expected
 
 
-def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_if_any_pending(capsys):
+_test_exception_in___exit___and_build = """Exception in __exit__: Exception('in build',)
+Exception in with block will be raised
+"""
+
+def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_if_any_pending_builder(capsys):
     with raises(Exception) as exinfo:
         class root(ConfigRoot):
             pass
@@ -452,8 +456,26 @@ def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_i
                 raise Exception("in with")
 
     _sout, serr = capsys.readouterr()
-    assert serr == "Exception in __exit__: Exception('in build',)\nException in with block will be raised\n"
+    assert serr == _test_exception_in___exit___and_build
     assert exinfo.value.message == 'in with'
+
+
+_test_double_error_for_configroot_expected_stderr = """Exception in __exit__: ConfigException("No value given for required attributes: ['someattr1', 'someattr2']",)
+Exception in with block will be raised
+"""
+
+def test_double_error_for_configroot(capsys):
+    with raises(Exception) as exinfo:
+        @required('someattr1, someattr2')
+        class root(ConfigRoot):
+            pass
+
+        with root(prod, [prod]):
+            raise Exception("Error in root with block")
+
+    _sout, serr = capsys.readouterr()
+    assert replace_user_file_line_msg(serr) == _test_double_error_for_configroot_expected_stderr
+    assert exinfo.value.message == "Error in root with block"
 
 
 def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
@@ -467,3 +489,11 @@ def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
     err_msg = "File \"fake_dir/multiconf_definition_errors_test.py\", line 999\nConfigError: Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder.\n"
     assert replace_user_file_line_msg(serr) == err_msg
     assert exinfo.value.message == "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."
+
+
+def test_root_attribute_exception_in_with_block():
+    with raises(Exception) as exinfo:
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            raise Exception("Error in root with block")
+
+    assert exinfo.value.message == "Error in root with block"

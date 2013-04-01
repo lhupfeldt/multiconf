@@ -441,17 +441,14 @@ class ConfigRoot(_ConfigBase):
         self._mc_nesting_level = 0
 
     def __exit__(self, exc_type, exc_value, traceback):
-        super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
         try:
+            super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
             self._user_validate_recursively()
         except Exception as ex:
             if not exc_type:
                 if hasattr(ex, '_mc_in_user_code') or _debug_exc:
                     raise
                 raise ex
-
-            print >> sys.stderr, "Exception in __exit__:", repr(ex)
-            print >> sys.stderr, "Exception in with block will be raised"
 
     @property
     def valid_envs(self):
