@@ -416,6 +416,10 @@ class _ConfigBase(object):
         """Can be overridden to provide post-frozen validation"""
         pass
 
+    def build(self):
+        """Can be overridden in derived classes to instantiate default child objects"""
+        pass
+
     def _mc_value(self, env):
         return self
 
@@ -527,6 +531,8 @@ class ConfigItem(_ConfigBase):
 
 
 class ConfigBuilder(ConfigItem):
+    __metaclass__ = abc.ABCMeta
+
     def __init__(self, json_filter=None, **attr):
         super(ConfigBuilder, self).__init__(json_filter=json_filter, **attr)
         self._mc_what_built = OrderedDict()

@@ -524,7 +524,7 @@ def test_error_freezing_previous_sibling__build(capsys):
 
 def test_error_freezing_previous_sibling__validation(capsys):
     @required('a')
-    class inner(ConfigBuilder):
+    class inner(ConfigItem):
         pass
 
     with raises(Exception) as exinfo:

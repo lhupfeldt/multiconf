@@ -139,4 +139,4 @@ def test_configbuilder_without_build():
         with ConfigRoot(prod, [prod, pp]):
             ABuilder()
 
-    assert exinfo.value.message == "AbstractNotImplemented"
+    assert exinfo.value.message == "Can't instantiate abstract class ABuilder with abstract methods build"
