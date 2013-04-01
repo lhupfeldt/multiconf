@@ -14,7 +14,7 @@ ef = EnvFactory()
 prod = ef.Env('prod')
 
 
-def test_root_validate_error():
+def test_root_user_validate_error():
     class root(ConfigRoot):
         def validate(self):
             raise Exception("Error in root validate")
@@ -26,7 +26,7 @@ def test_root_validate_error():
     assert exinfo.value.message == "Error in root validate"
 
 
-def test_item_validate_error():
+def test_item_user_validate_error():
     class item(ConfigItem):
         def validate(self):
             raise Exception("Error in item validate")
@@ -38,7 +38,7 @@ def test_item_validate_error():
     assert exinfo.value.message == "Error in item validate"
 
 
-def test_builder_validate_error():
+def test_builder_user_validate_error():
     class builder(ConfigBuilder):
         def build(self):
             pass
