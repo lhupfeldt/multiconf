@@ -6,9 +6,9 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils import config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
+from .utils import config_error, lineno, replace_ids, replace_ids_builder
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigApiException
+from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigApiException, ConfigException
 from ..decorators import nested_repeatables, named_as, repeat
 from ..envs import EnvFactory
 
@@ -20,6 +20,11 @@ def ce(line_num, *lines):
 ef = EnvFactory()
 pp = ef.Env('pp')
 prod = ef.Env('prod')
+
+@named_as('xses')
+@repeat()
+class Xses(ConfigItem):
+    pass
 
 
 def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_scope(capsys):
@@ -61,3 +66,66 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
     _sout, serr = capsys.readouterr()
     # assert serr == ce(errorline, '')
     assert replace_ids(exinfo.value.message, False) == "Use of 'contained_in' in not allowed in object while under a ConfigBuilder"
+
+
+_test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Nested repeatable from 'build', key: 'server1', value: {
+    "__class__": "Xses #as: 'xses', id: 0000", 
+    "name": "server1", 
+    "server_num": 1, 
+    "something": 1, 
+    "num_servers": 2
+} overwrites existing entry in parent: {
+    "__class__": "Root #as: 'Root', id: 0000, not-frozen", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "xses": {
+        "server1": {
+            "__class__": "Xses #as: 'xses', id: 0000", 
+            "name": "server1"
+        }
+    }, 
+    "XBuilder.builder.0000": {
+        "__class__": "XBuilder #as: 'XBuilder.builder.0000', id: 0000", 
+        "num_servers": 2, 
+        "xses": {
+            "server1": {
+                "__class__": "Xses #as: 'xses', id: 0000", 
+                "name": "server1", 
+                "server_num": 1, 
+                "something": 1, 
+                "num_servers": 2
+            }, 
+            "server2": {
+                "__class__": "Xses #as: 'xses', id: 0000", 
+                "name": "server2", 
+                "server_num": 2, 
+                "something": 1, 
+                "num_servers": 2
+            }
+        }
+    }
+}"""
+
+def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item():
+    class XBuilder(ConfigBuilder):
+        def __init__(self, num_servers=2):
+            super(XBuilder, self).__init__(num_servers=num_servers)
+
+        def build(self):
+            for server_num in xrange(1, self.num_servers+1):
+                with Xses(name='server%d' % server_num, server_num=server_num) as c:
+                    c.setattr('something', prod=1, pp=2)
+
+    @nested_repeatables('xses')
+    class Root(ConfigRoot):
+        pass
+
+    with raises(ConfigException) as exinfo:
+        with Root(prod, [prod, pp]):
+            Xses(name='server1')
+            with XBuilder():
+                pass
+
+    assert replace_ids_builder(exinfo.value.message, False) == _test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
