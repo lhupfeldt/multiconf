@@ -470,8 +470,13 @@ class ConfigItem(_ConfigBase):
         # Freeze attributes on parent-container and previously defined siblings
         try:
             self._mc_contained_in._mc_freeze()
-        except ConfigBaseException as ex:
-            if _debug_exc:
+        except Exception as ex:
+            print >> sys.stderr, "Exception validating previously defined object, stack trace will be misleading!"
+            print >> sys.stderr, "This happens if there is an error (e.g. missing required attributes) in an object that was not"
+            print >> sys.stderr, "directly enclosed in a with statement. Objects that are not arguments to a with statement will"
+            print >> sys.stderr, "not be validated until the next ConfigItem is declared or an outer with statement is exited."
+
+            if hasattr(ex, '_mc_in_user_code') or _debug_exc:
                 raise
             raise ex
 
@@ -584,7 +589,7 @@ class ConfigBuilder(ConfigItem):
                 if key in existing_attributes:
                     continue
 
-                # Merge repeatable items in to parent
+                # Merge repeatable items into parent
                 if isinstance(value, Repeatable):
                     for obj_key, ovalue in value.iteritems():
                         if obj_key in self.contained_in.attributes[key]:
