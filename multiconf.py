@@ -416,9 +416,9 @@ class _ConfigBase(object):
         """Can be overridden to provide post-frozen validation"""
         pass
 
-    def build(self):
-        """Can be overridden in derived classes to instantiate default child objects"""
-        pass
+    # def build(self):
+    #     """Can be overridden in derived classes to instantiate default child objects"""
+    #     pass
 
     def _mc_value(self, env):
         return self
