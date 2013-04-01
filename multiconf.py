@@ -496,14 +496,13 @@ class ConfigItem(_ConfigBase):
                     raise ConfigException(msg)
                     # TODO?: type check of list items (isinstance(ConfigItem). Same type?
 
-            # Insert in Ordered dict by 'id' or 'name', 'id' is preferred if given
+            # Insert in Ordered dict by 'obj.id' or 'obj.name', 'id' is preferred if given
+            # If neither is given use id(obj)
             try:
                 try:
                     obj_key = self._mc_attributes['id']
                 except KeyError:
                     obj_key = self._mc_attributes['name']
-                if not obj_key.has_default():
-                    raise KeyError()
                 obj_key = obj_key.default_value()[0]
 
                 # Check that we are not replacing an object with the same id/name
@@ -593,6 +592,7 @@ class ConfigBuilder(ConfigItem):
                 if isinstance(value, Repeatable):
                     for obj_key, ovalue in value.iteritems():
                         if obj_key in self.contained_in.attributes[key]:
+                            # TODO: Silently skip insert instead (optional warning)?
                             raise ConfigException("Nested repeatable from 'build', key: " + repr(obj_key) + ", value: " + repr(ovalue) +
                                                   " overwrites existing entry in parent: " + repr(self._mc_contained_in))
                         self.contained_in.attributes[key][obj_key] = ovalue
