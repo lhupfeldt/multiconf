@@ -129,3 +129,14 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
                 pass
 
     assert replace_ids_builder(exinfo.value.message, False) == _test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
+
+
+def test_configbuilder_without_build():
+    class ABuilder(ConfigBuilder):
+        pass
+
+    with raises(Exception) as exinfo:
+        with ConfigRoot(prod, [prod, pp]):
+            ABuilder()
+
+    assert exinfo.value.message == "AbstractNotImplemented"
