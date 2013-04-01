@@ -497,3 +497,43 @@ def test_root_attribute_exception_in_with_block():
             raise Exception("Error in root with block")
 
     assert exinfo.value.message == "Error in root with block"
+
+
+_exception_previous_object_expected_stderr = """Exception validating previously defined object, stack trace will be misleading!
+This happens if there is an error (e.g. missing required attributes) in an object that was not
+directly enclosed in a with statement. Objects that are not arguments to a with statement will
+not be validated until the next ConfigItem is declared or an outer with statement is exited.
+"""
+
+def test_error_freezing_previous_sibling__build(capsys):
+    class inner(ConfigBuilder):
+        def build(self):
+            raise Exception("Error in build")
+
+    with raises(Exception) as exinfo:
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            inner()
+            # It would be nice if errorline would be previous line, but that is not really possible
+            errorline = lineno() + 1
+            inner()
+
+    _sout, serr = capsys.readouterr()
+    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr
+    assert exinfo.value.message == "Error in build"
+
+
+def test_error_freezing_previous_sibling__validation(capsys):
+    @required('a')
+    class inner(ConfigBuilder):
+        pass
+
+    with raises(Exception) as exinfo:
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            inner()
+            # It would be nice if errorline would be previous line, but that is not really possible
+            errorline = lineno() + 1
+            inner()
+
+    _sout, serr = capsys.readouterr()
+    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr
+    assert exinfo.value.message == "No value given for required attributes: ['a']"
