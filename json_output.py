@@ -146,10 +146,12 @@ class ConfigItemEncoder(json.JSONEncoder):
                         key, val = self.user_filter_callable(obj, key, val)
                         if key is False:
                             continue
-                    dd[key] = self._check_nesting_level(obj._mc_nesting_level, val)
-                    if self.compact:
-                        dd[key] = str(dd[key]) + ' #calculated'
+                    val = self._check_nesting_level(obj._mc_nesting_level, val)
+                    if self.compact and isinstance(val, (str, int, long, float)):
+                        dd[key] = str(val) + ' #calculated'
                         continue
+
+                    dd[key] = val
                     dd[key + ' #calculated'] = True
                 return dd
 
