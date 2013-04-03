@@ -163,6 +163,14 @@ class ConfigItemEncoder(json.JSONEncoder):
                         dd[key + ' #calculated'] = True
                         continue
 
+                    if isinstance(val, dict):
+                        new_dict = OrderedDict()
+                        for item_key, item in val.iteritems():
+                            new_dict[item_key] = self._check_nesting(item)
+                        dd[key] = new_dict
+                        dd[key + ' #calculated'] = True
+                        continue
+
                     dd[key] = val
                     dd[key + ' #calculated'] = True
                 return dd
