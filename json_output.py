@@ -1,5 +1,5 @@
 import sys, threading, traceback
-from collections import OrderedDict
+from collections import OrderedDict, Sequence
 import json
 import types
 
@@ -33,6 +33,7 @@ class ConfigItemEncoder(json.JSONEncoder):
         self.compact = compact
         self.property_methods = property_methods
         self.seen = {}
+        self.start_obj = None
 
     def _class_dict(self, obj):
         if self.compact:
@@ -54,7 +55,7 @@ class ConfigItemEncoder(json.JSONEncoder):
     def _set_already_dumped(self, obj):
         self.seen[id(obj)] = obj
 
-    def _check_nesting_level(self, current_nesting_level, child_obj):
+    def _check_nesting(self, child_obj):
         # Returns (new)val, done
         # Check for reference to parent or sibling object (in case we dump from a lower level than root)
         # We dont want to display an outer/sibling object as nested under an inner object
@@ -63,7 +64,7 @@ class ConfigItemEncoder(json.JSONEncoder):
             return child_obj
 
         if isinstance(child_obj, multiconf._ConfigBase):
-            if child_obj._mc_nesting_level <= current_nesting_level:
+            if child_obj._mc_nesting_level <= self.start_obj._mc_nesting_level:
                 id_msg = ": id: " + repr(child_obj.id) if hasattr(child_obj, 'id') else ''
                 name_msg = ", name: " + repr(child_obj.name) if hasattr(child_obj, 'name') else ''
                 child_obj = "#outside-ref: " + child_obj.__class__.__name__ + id_msg + name_msg
@@ -85,6 +86,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                 # print >> sys.stderr, self.__class__.__name__, "json_output.default: type(obj)", type(obj)
                 raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
             ConfigItemEncoder.recursion_check.in_default = True
+            self.start_obj = obj
 
             obj, dumped = self._check_already_dumped(obj)
             if dumped:
@@ -114,7 +116,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                         if key is False:
                             continue
 
-                    val = self._check_nesting_level(obj._mc_nesting_level, val)
+                    val = self._check_nesting(val)
                     if key in entries:
                         dd[key + ' #shadowed'] = val
                         continue
@@ -146,9 +148,19 @@ class ConfigItemEncoder(json.JSONEncoder):
                         key, val = self.user_filter_callable(obj, key, val)
                         if key is False:
                             continue
-                    val = self._check_nesting_level(obj._mc_nesting_level, val)
+
+                    val = self._check_nesting(val)
+
                     if self.compact and isinstance(val, (str, int, long, float)):
                         dd[key] = str(val) + ' #calculated'
+                        continue
+
+                    if isinstance(val, list):
+                        new_list = []
+                        for item in val:
+                            new_list.append(self._check_nesting(item))
+                        dd[key] = new_list
+                        dd[key + ' #calculated'] = True
                         continue
 
                     dd[key] = val

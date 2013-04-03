@@ -838,6 +838,7 @@ def test_json_dump_configbuilder():
     assert replace_ids_builder(cr.ys['server2'].json(compact=True), named_as=False) == _test_json_dump_configbuilder_expected_json_repeatable_item
 
 
+# TODO: Not absolutely correct output (not outside ref)
 _json_dump_property_method_returns_later_confitem_same_level_expected_json = """{
     "__class__": "root", 
     "__id__": 0000, 
@@ -886,3 +887,73 @@ def test_json_dump_property_method_returns_later_confitem_same_level():
         NamedNestedRepeatable(name='two')
 
     compare_json(cr, _json_dump_property_method_returns_later_confitem_same_level_expected_json)
+
+
+# TODO: Not absolutely correct output (not outside refs) but better than before
+_json_dump_property_method_returns_later_confitem_list_same_level_expected_json = """{
+    "__class__": "root", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "someitems": {
+        "one": {
+            "__class__": "NamedNestedRepeatable", 
+            "__id__": 0000, 
+            "name": "one", 
+            "someitems": {}, 
+            "x": 3, 
+            "m": [
+                "#outside-ref: NamedNestedRepeatable, name: 'two'", 
+                "#outside-ref: NamedNestedRepeatable, name: 'three'"
+            ], 
+            "m #calculated": true
+        }, 
+        "two": {
+            "__class__": "NamedNestedRepeatable", 
+            "__id__": 0000, 
+            "name": "two", 
+            "someitems": {}, 
+            "x": 3, 
+            "m": [
+                "#ref id: 0000", 
+                "#outside-ref: NamedNestedRepeatable, name: 'three'"
+            ], 
+            "m #calculated": true
+        }, 
+        "three": {
+            "__class__": "NamedNestedRepeatable", 
+            "__id__": 0000, 
+            "name": "three", 
+            "someitems": {}, 
+            "x": 3, 
+            "m": [
+                "#ref id: 0000", 
+                "#ref id: 0000"
+            ], 
+            "m #calculated": true
+        }
+    }
+}"""
+
+def test_json_dump_property_method_returns_later_confitem_list_same_level():
+    @named_as('someitems')
+    @nested_repeatables('someitems')
+    @repeat()
+    class NamedNestedRepeatable(ConfigItem):
+        def __init__(self, name):
+            super(NamedNestedRepeatable, self).__init__(name=name)
+            self.x = 3
+        
+        @property
+        def m(self):
+            return [self.contained_in.someitems['two'], self.contained_in.someitems['three']]
+
+    with root(prod, [prod, pp], a=0) as cr:
+        NamedNestedRepeatable(name='one')
+        NamedNestedRepeatable(name='two')
+        NamedNestedRepeatable(name='three')
+
+    compare_json(cr, _json_dump_property_method_returns_later_confitem_list_same_level_expected_json)
