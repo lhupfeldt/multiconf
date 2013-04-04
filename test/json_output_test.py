@@ -961,6 +961,21 @@ def test_json_dump_property_method_returns_later_confitem_list_same_level():
 
     compare_json(cr, _json_dump_property_method_returns_later_confitem_list_same_level_expected_json)
 
+
+def test_json_dump_property_method_returns_later_confitem_tuple_same_level():
+    class NamedNestedRepeatable(_NamedNestedRepeatable):
+        @property
+        def m(self):
+            return self.contained_in.someitems['two'], self.contained_in.someitems['three']
+
+    with root(prod, [prod, pp], a=0) as cr:
+        NamedNestedRepeatable(name='one')
+        NamedNestedRepeatable(name='two')
+        NamedNestedRepeatable(name='three')
+
+    compare_json(cr, _json_dump_property_method_returns_later_confitem_list_same_level_expected_json)
+
+
 _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json = """{
     "__class__": "root", 
     "__id__": 0000, 

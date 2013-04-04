@@ -155,7 +155,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                         dd[key] = str(val) + ' #calculated'
                         continue
 
-                    if isinstance(val, list):
+                    if isinstance(val, (list, tuple)):
                         new_list = []
                         for item in val:
                             new_list.append(self._check_nesting(item))
