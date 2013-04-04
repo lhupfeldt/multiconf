@@ -544,20 +544,24 @@ class ConfigBuilder(ConfigItem):
         self._mc_freezing = True
 
         def override(item_from_build, attributes_from_with_block):
-            if isinstance(item_from_build, ConfigItem):
-                item_from_build._mc_contained_in = self.contained_in
+            for override_key, override_value in attributes_from_with_block.iteritems():
+                if override_value._mc_value(self.env) == None:
+                    continue
 
-                for override_key, override_value in attributes_from_with_block.iteritems():
-                    item_from_build._mc_attributes[override_key] = override_value
+                item_from_build._mc_attributes[override_key] = override_value
 
-                    if isinstance(override_value, ConfigItem):
-                        override_value._mc_contained_in = item_from_build
-                        continue
+                if isinstance(override_value, ConfigItem):
+                    override_value._mc_contained_in = item_from_build
+                    continue
 
-                    if isinstance(override_value, Repeatable):
-                        for repeatable_override_key, repeatable_override_value in override_value.iteritems():
-                            if isinstance(repeatable_override_value, ConfigItem):
-                                repeatable_override_value._mc_contained_in = item_from_build
+                if isinstance(override_value, Repeatable):
+                    for repeatable_override_key, repeatable_override_value in override_value.iteritems():
+                        # TODO: is this relevant?
+                        #if repeatable_override_value._mc_value(self.env) == None:
+                        #    continue
+
+                        if isinstance(repeatable_override_value, ConfigItem):
+                            repeatable_override_value._mc_contained_in = item_from_build
 
         super(ConfigBuilder, self)._mc_freeze()
         if self._mc_may_freeze_validate:
@@ -584,25 +588,32 @@ class ConfigBuilder(ConfigItem):
 
                 if isinstance(build_value, Repeatable):
                     for key, value in build_value.iteritems():
-                        override(value, existing_attributes)
+                        if isinstance(value, ConfigItem):
+                            override(value, existing_attributes)
                     continue
 
-                override(build_value, existing_attributes)
+                if isinstance(build_value, ConfigItem):
+                    override(build_value, existing_attributes)
 
             # Items and attributes created in 'build' goes into parent
             for key, value in self._mc_attributes.iteritems():
                 if key in existing_attributes:
                     continue
 
-                # Merge repeatable items into parent
+                # Merge repeatable items into parent and update the contained_in ref to point to parent
                 if isinstance(value, Repeatable):
                     for obj_key, ovalue in value.iteritems():
                         if obj_key in self.contained_in.attributes[key]:
                             # TODO: Silently skip insert instead (optional warning)?
                             raise ConfigException("Nested repeatable from 'build', key: " + repr(obj_key) + ", value: " + repr(ovalue) +
                                                   " overwrites existing entry in parent: " + repr(self._mc_contained_in))
+                        if isinstance(ovalue, ConfigItem):
+                            ovalue._mc_contained_in = self.contained_in
                         self.contained_in.attributes[key][obj_key] = ovalue
                     continue
+
+                if isinstance(value, ConfigItem):
+                    value._mc_contained_in = self.contained_in
 
                 # TODO validation
                 self._mc_contained_in.attributes[key] = value

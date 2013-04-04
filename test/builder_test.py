@@ -37,6 +37,7 @@ def test_configbuilder_override():
             for server_num in xrange(1, self.num_servers+1):
                 with Xses(name='server%d' % server_num, server_num=server_num) as c:
                     c.setattr('something', prod=1, pp=2)
+                    c.none_is_not_used = False
 
     @nested_repeatables('xses')
     class Root(ConfigRoot):
@@ -46,6 +47,7 @@ def test_configbuilder_override():
         with XBuilder(a=1, something=7) as xb:
             xb.setattr('num_servers', pp=2)
             xb.setattr('b', prod=3, pp=4)
+            xb.none_is_not_used = None
 
     assert len(cr.xses) == 4
     assert cr.xses['server1'].a == 1
@@ -56,6 +58,7 @@ def test_configbuilder_override():
     assert cr.xses['server1'].server_num == 1
     assert cr.xses['server3'].server_num == 3
     assert cr.xses['server4'].server_num == 4
+    assert cr.xses['server4'].none_is_not_used == False
     # TODO: override of conditional attributes (required_if)
 
 
