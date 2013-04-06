@@ -72,13 +72,13 @@ def replace_user_file_line_msg(string):
 
 
 _replace_ids_regex = re.compile(r'("__id__"|, id| #id): [0-9]+("?),')
-_replace_refs_regex = re.compile(r'"#ref id: [0-9]+')
+_replace_refs_regex = re.compile(r'"#ref (self, |later, |)id: [0-9]+')
 _replace_named_as_regex = re.compile(r" #as: '[^,]+',")
 def replace_ids(json_string, named_as=True):
     json_string = _replace_ids_regex.sub(r'\1: 0000\2,', json_string)
     if named_as:
         json_string = _replace_named_as_regex.sub(r" #as: 'xxxx',", json_string)
-    return _replace_refs_regex.sub(r'"#ref id: 0000', json_string)
+    return _replace_refs_regex.sub(r'"#ref \1id: 0000', json_string)
 
 
 _replace_builder_ids_regex = re.compile(r"""\.builder\.[0-9]+(["'])""")

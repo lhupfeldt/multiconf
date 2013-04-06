@@ -55,16 +55,26 @@ class ConfigItemEncoder(json.JSONEncoder):
     def _set_already_dumped(self, obj):
         self.seen[id(obj)] = obj
 
-    def _check_nesting(self, child_obj):
-        # Returns (new)val, done
-        # Check for reference to parent or sibling object (in case we dump from a lower level than root)
+    def _check_nesting(self, obj, child_obj):
+        # Returns (new)val
+        # Check that object being dumped is actually contained in self
         # We dont want to display an outer/sibling object as nested under an inner object
-        child_obj, done = self._check_already_dumped(child_obj)
-        if done:
-            return child_obj
+        # Check for reference to parent or sibling object (in case we dump from a lower level than root)
+        if child_obj is obj:
+            return "#ref self, id: " + repr(id(child_obj))
 
-        if isinstance(child_obj, multiconf._ConfigBase):
-            if child_obj._mc_nesting_level <= self.start_obj._mc_nesting_level:
+        child_obj, done = self._check_already_dumped(child_obj)
+
+        if not done and isinstance(child_obj, multiconf._ConfigBase):
+            contained_in = child_obj.contained_in
+            if contained_in is obj:
+                return child_obj
+
+            while contained_in:
+                if contained_in is self.start_obj:
+                    return "#ref later, id: " + repr(id(child_obj))
+                contained_in = contained_in.contained_in
+            else:
                 id_msg = ": id: " + repr(child_obj.id) if hasattr(child_obj, 'id') else ''
                 name_msg = ", name: " + repr(child_obj.name) if hasattr(child_obj, 'name') else ''
                 child_obj = "#outside-ref: " + child_obj.__class__.__name__ + id_msg + name_msg
@@ -81,12 +91,14 @@ class ConfigItemEncoder(json.JSONEncoder):
 
     # pylint: disable=E0202
     def default(self, obj):
+        if ConfigItemEncoder.recursion_check.in_default:
+            # print >> sys.stderr, self.__class__.__name__, "json_output.default: type(obj)", type(obj)
+            raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
+
         try:
-            if ConfigItemEncoder.recursion_check.in_default:
-                # print >> sys.stderr, self.__class__.__name__, "json_output.default: type(obj)", type(obj)
-                raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
             ConfigItemEncoder.recursion_check.in_default = True
-            self.start_obj = obj
+            if not self.start_obj:
+                self.start_obj = obj
 
             obj, dumped = self._check_already_dumped(obj)
             if dumped:
@@ -116,7 +128,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                         if key is False:
                             continue
 
-                    val = self._check_nesting(val)
+                    val = self._check_nesting(obj, val)
                     if key in entries:
                         dd[key + ' #shadowed'] = val
                         continue
@@ -149,7 +161,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                         if key is False:
                             continue
 
-                    val = self._check_nesting(val)
+                    val = self._check_nesting(obj, val)
 
                     if self.compact and isinstance(val, (str, int, long, float)):
                         dd[key] = str(val) + ' #calculated'
@@ -158,7 +170,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if isinstance(val, (list, tuple)):
                         new_list = []
                         for item in val:
-                            new_list.append(self._check_nesting(item))
+                            new_list.append(self._check_nesting(obj, item))
                         dd[key] = new_list
                         dd[key + ' #calculated'] = True
                         continue
@@ -166,7 +178,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if isinstance(val, dict):
                         new_dict = OrderedDict()
                         for item_key, item in val.iteritems():
-                            new_dict[item_key] = self._check_nesting(item)
+                            new_dict[item_key] = self._check_nesting(obj, item)
                         dd[key] = new_dict
                         dd[key + ' #calculated'] = True
                         continue

@@ -33,9 +33,42 @@ prod = ef.Env('prod')
 g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
 
 
-def compare_json(item, expected_json):
-    assert replace_ids(item.json(compact=True)) == to_compact(expected_json)
-    assert replace_ids(item.json()) == expected_json
+def compare_json(item, expected_json, builders=False, test_decode=False):
+    try:
+        compact_json = item.json(compact=True)
+        full_json = item.json()
+
+        if not builders:
+            assert replace_ids(compact_json) == to_compact(expected_json)
+            assert replace_ids(full_json) == expected_json
+        else:
+            assert replace_ids_builder(compact_json) == to_compact(expected_json)
+            assert replace_ids_builder(full_json) == expected_json
+
+        if test_decode:
+            assert decode(compact_json)
+            assert decode(full_json)
+
+    except:
+        print '--- compact ---'
+        print item.json(compact=True)
+
+        print '--- compact ids replaced ---'
+        print replace_ids(item.json(compact=True))
+
+        print '--- compact expected ---'
+        print to_compact(expected_json)
+
+        print '--- full ---'
+        print item.json()
+
+        print '--- full ids replaced ---'
+        print replace_ids(item.json())
+
+        print '--- full expected ---'
+        print expected_json
+
+        raise
 
 
 @nested_repeatables('someitems')
@@ -382,7 +415,7 @@ _json_dump_property_method_returns_self_expected_json = """{
     "someitem": {
         "__class__": "Nested", 
         "__id__": 0000, 
-        "m": "#ref id: 0000", 
+        "m": "#ref self, id: 0000", 
         "m #calculated": true
     }
 }"""
@@ -693,33 +726,38 @@ def test_json_dump_dir_error(capsys):
 
 
 _test_json_dump_configbuilder_expected_json_full = """{
-    "__class__": "ItemWithYs #as: 'ItemWithYs', id: 0000", 
+    "__class__": "ItemWithYs", 
+    "__id__": 0000, 
     "env": {
         "__class__": "Env", 
         "name": "prod"
     }, 
     "ys": {
         "server3": {
-            "__class__": "Y #as: 'ys', id: 0000", 
+            "__class__": "Y", 
+            "__id__": 0000, 
             "name": "server3", 
             "server_num": 3, 
             "start": 3, 
             "c": 28, 
             "y_children": {
                 "Hanna": {
-                    "__class__": "YChild #as: 'y_children', id: 0000", 
+                    "__class__": "YChild", 
+                    "__id__": 0000, 
                     "a": 11, 
                     "name": "Hanna"
                 }, 
                 "Herbert": {
-                    "__class__": "YChild #as: 'y_children', id: 0000", 
+                    "__class__": "YChild", 
+                    "__id__": 0000, 
                     "a": 12, 
                     "name": "Herbert"
                 }
             }
         }, 
         "server4": {
-            "__class__": "Y #as: 'ys', id: 0000", 
+            "__class__": "Y", 
+            "__id__": 0000, 
             "name": "server4", 
             "server_num": 4, 
             "start": 3, 
@@ -730,22 +768,25 @@ _test_json_dump_configbuilder_expected_json_full = """{
             }
         }, 
         "server1": {
-            "__class__": "Y #as: 'ys', id: 0000", 
+            "__class__": "Y", 
+            "__id__": 0000, 
             "name": "server1", 
             "server_num": 1, 
             "start": 1, 
             "b": 27, 
             "y_children": {
                 "Hugo": {
-                    "__class__": "YChild #as: 'y_children', id: 0000", 
+                    "__class__": "YChild", 
+                    "__id__": 0000, 
                     "a": 10, 
                     "name": "Hugo"
                 }
             }, 
-            "YBuilder.builder.0000": "#outside-ref: YBuilder"
+            "YBuilder.builder.0000": "#ref later, id: 0000"
         }, 
         "server2": {
-            "__class__": "Y #as: 'ys', id: 0000", 
+            "__class__": "Y", 
+            "__id__": 0000, 
             "name": "server2", 
             "server_num": 2, 
             "start": 1, 
@@ -753,51 +794,101 @@ _test_json_dump_configbuilder_expected_json_full = """{
             "y_children": {
                 "Hugo": "#ref id: 0000"
             }, 
-            "YBuilder.builder.0000": "#outside-ref: YBuilder"
+            "YBuilder.builder.0000": {
+                "__class__": "YBuilder", 
+                "__id__": 0000, 
+                "start": 3, 
+                "c": 28, 
+                "y_children": {
+                    "Hanna": "#ref id: 0000", 
+                    "Herbert": "#ref id: 0000"
+                }, 
+                "ys": {
+                    "server3": "#ref id: 0000", 
+                    "server4": "#ref id: 0000"
+                }
+            }
         }
     }, 
     "YBuilder.builder.0000": {
-        "__class__": "YBuilder #as: 'YBuilder.builder.0000', id: 0000", 
+        "__class__": "YBuilder", 
+        "__id__": 0000, 
         "start": 1, 
         "b": 27, 
         "y_children": {
             "Hugo": "#ref id: 0000"
         }, 
-        "YBuilder.builder.0000": {
-            "__class__": "YBuilder #as: 'YBuilder.builder.0000', id: 0000", 
-            "start": 3, 
-            "c": 28, 
-            "y_children": {
-                "Hanna": "#ref id: 0000", 
-                "Herbert": "#ref id: 0000"
-            }, 
-            "ys": {
-                "server3": "#ref id: 0000", 
-                "server4": "#ref id: 0000"
-            }
-        }, 
+        "YBuilder.builder.0000": "#ref id: 0000", 
         "ys": {
             "server1": "#ref id: 0000", 
             "server2": "#ref id: 0000"
         }
     }, 
-    "aaa": "2 #calculated"
+    "aaa": 2, 
+    "aaa #calculated": true
 }"""
 
 _test_json_dump_configbuilder_expected_json_repeatable_item = """{
-    "__class__": "Y #as: 'ys', id: 0000", 
+    "__class__": "Y", 
+    "__id__": 0000, 
     "name": "server2", 
     "server_num": 2, 
     "start": 1, 
     "b": 27, 
     "y_children": {
         "Hugo": {
-            "__class__": "YChild #as: 'y_children', id: 0000", 
+            "__class__": "YChild", 
+            "__id__": 0000, 
             "a": 10, 
             "name": "Hugo"
         }
     }, 
-    "YBuilder.builder.0000": "#outside-ref: YBuilder"
+    "YBuilder.builder.0000": {
+        "__class__": "YBuilder", 
+        "__id__": 0000, 
+        "start": 3, 
+        "c": 28, 
+        "y_children": {
+            "Hanna": {
+                "__class__": "YChild", 
+                "__id__": 0000, 
+                "a": 11, 
+                "name": "Hanna"
+            }, 
+            "Herbert": {
+                "__class__": "YChild", 
+                "__id__": 0000, 
+                "a": 12, 
+                "name": "Herbert"
+            }
+        }, 
+        "ys": {
+            "server3": {
+                "__class__": "Y", 
+                "__id__": 0000, 
+                "name": "server3", 
+                "server_num": 3, 
+                "start": 3, 
+                "c": 28, 
+                "y_children": {
+                    "Hanna": "#ref id: 0000", 
+                    "Herbert": "#ref id: 0000"
+                }
+            }, 
+            "server4": {
+                "__class__": "Y", 
+                "__id__": 0000, 
+                "name": "server4", 
+                "server_num": 4, 
+                "start": 3, 
+                "c": 28, 
+                "y_children": {
+                    "Hanna": "#ref id: 0000", 
+                    "Herbert": "#ref id: 0000"
+                }
+            }
+        }
+    }
 }"""
 
 def test_json_dump_configbuilder():
@@ -833,11 +924,8 @@ def test_json_dump_configbuilder():
                 YChild(name='Hanna', a=11)
                 YChild(name='Herbert', a=12)
 
-    assert decode(_test_json_dump_configbuilder_expected_json_full)
-    assert replace_ids_builder(cr.json(compact=True), named_as=False) == _test_json_dump_configbuilder_expected_json_full
-
-    assert decode(_test_json_dump_configbuilder_expected_json_repeatable_item)
-    assert replace_ids_builder(cr.ys['server2'].json(compact=True), named_as=False) == _test_json_dump_configbuilder_expected_json_repeatable_item
+    compare_json(cr, _test_json_dump_configbuilder_expected_json_full, builders=True, test_decode=True)
+    compare_json(cr.ys['server2'], _test_json_dump_configbuilder_expected_json_repeatable_item, builders=True, test_decode=True)
 
 
 @named_as('someitems')
@@ -871,7 +959,7 @@ _json_dump_property_method_returns_later_confitem_same_level_expected_json = """
             "name": "one", 
             "someitems": {}, 
             "x": 3, 
-            "m": "#outside-ref: NamedNestedRepeatable, name: 'two'", 
+            "m": "#ref later, id: 0000", 
             "m #calculated": true
         }, 
         "two": {
@@ -880,7 +968,7 @@ _json_dump_property_method_returns_later_confitem_same_level_expected_json = """
             "name": "two", 
             "someitems": {}, 
             "x": 3, 
-            "m": "#ref id: 0000", 
+            "m": "#ref self, id: 0000", 
             "m #calculated": true
         }
     }
@@ -899,7 +987,6 @@ def test_json_dump_property_method_returns_later_confitem_same_level():
     compare_json(cr, _json_dump_property_method_returns_later_confitem_same_level_expected_json)
 
 
-# TODO: Not absolutely correct output (not outside refs) but better than before
 _json_dump_property_method_returns_later_confitem_list_same_level_expected_json = """{
     "__class__": "root", 
     "__id__": 0000, 
@@ -916,8 +1003,8 @@ _json_dump_property_method_returns_later_confitem_list_same_level_expected_json 
             "someitems": {}, 
             "x": 3, 
             "m": [
-                "#outside-ref: NamedNestedRepeatable, name: 'two'", 
-                "#outside-ref: NamedNestedRepeatable, name: 'three'"
+                "#ref later, id: 0000", 
+                "#ref later, id: 0000"
             ], 
             "m #calculated": true
         }, 
@@ -928,8 +1015,8 @@ _json_dump_property_method_returns_later_confitem_list_same_level_expected_json 
             "someitems": {}, 
             "x": 3, 
             "m": [
-                "#ref id: 0000", 
-                "#outside-ref: NamedNestedRepeatable, name: 'three'"
+                "#ref self, id: 0000", 
+                "#ref later, id: 0000"
             ], 
             "m #calculated": true
         }, 
@@ -941,7 +1028,7 @@ _json_dump_property_method_returns_later_confitem_list_same_level_expected_json 
             "x": 3, 
             "m": [
                 "#ref id: 0000", 
-                "#ref id: 0000"
+                "#ref self, id: 0000"
             ], 
             "m #calculated": true
         }
@@ -992,8 +1079,8 @@ _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json 
             "someitems": {}, 
             "x": 3, 
             "m": {
-                "a": "#outside-ref: NamedNestedRepeatable, name: 'two'", 
-                "b": "#outside-ref: NamedNestedRepeatable, name: 'three'"
+                "a": "#ref later, id: 0000", 
+                "b": "#ref later, id: 0000"
             }, 
             "m #calculated": true
         }, 
@@ -1004,8 +1091,8 @@ _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json 
             "someitems": {}, 
             "x": 3, 
             "m": {
-                "a": "#ref id: 0000", 
-                "b": "#outside-ref: NamedNestedRepeatable, name: 'three'"
+                "a": "#ref self, id: 0000", 
+                "b": "#ref later, id: 0000"
             }, 
             "m #calculated": true
         }, 
@@ -1017,7 +1104,7 @@ _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json 
             "x": 3, 
             "m": {
                 "a": "#ref id: 0000", 
-                "b": "#ref id: 0000"
+                "b": "#ref self, id: 0000"
             }, 
             "m #calculated": true
         }
@@ -1035,7 +1122,7 @@ def test_json_dump_property_method_returns_later_confitem_dict_same_level():
         NamedNestedRepeatable(name='two')
         NamedNestedRepeatable(name='three')
 
-    compare_json(cr, _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json)
+    compare_json(cr, _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json, test_decode=True)
 
 
 def test_json_dump_property_method_returns_later_confitem_ordereddict_same_level():
