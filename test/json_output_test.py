@@ -33,15 +33,15 @@ prod = ef.Env('prod')
 g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
 
 
-def compare_json(item, expected_json, builders=False, test_decode=False):
+def compare_json(item, expected_json, replace_builders=False, dump_builders=True, test_decode=False):
     try:
-        compact_json = item.json(compact=True)
-        full_json = item.json()
+        compact_json = item.json(compact=True, builders=dump_builders)
+        full_json = item.json(builders=dump_builders)
 
-        if not builders:
+        if not replace_builders:
             assert replace_ids(compact_json) == to_compact(expected_json)
             assert replace_ids(full_json) == expected_json
-        else:
+        else:            
             assert replace_ids_builder(compact_json) == to_compact(expected_json)
             assert replace_ids_builder(full_json) == expected_json
 
@@ -891,6 +891,97 @@ _test_json_dump_configbuilder_expected_json_repeatable_item = """{
     }
 }"""
 
+_test_json_dump_configbuilder_dont_dump_expected_json_full = """{
+    "__class__": "ItemWithYs", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "ys": {
+        "server3": {
+            "__class__": "Y", 
+            "__id__": 0000, 
+            "name": "server3", 
+            "server_num": 3, 
+            "start": 3, 
+            "c": 28, 
+            "y_children": {
+                "Hanna": {
+                    "__class__": "YChild", 
+                    "__id__": 0000, 
+                    "a": 11, 
+                    "name": "Hanna"
+                }, 
+                "Herbert": {
+                    "__class__": "YChild", 
+                    "__id__": 0000, 
+                    "a": 12, 
+                    "name": "Herbert"
+                }
+            }
+        }, 
+        "server4": {
+            "__class__": "Y", 
+            "__id__": 0000, 
+            "name": "server4", 
+            "server_num": 4, 
+            "start": 3, 
+            "c": 28, 
+            "y_children": {
+                "Hanna": "#ref id: 0000", 
+                "Herbert": "#ref id: 0000"
+            }
+        }, 
+        "server1": {
+            "__class__": "Y", 
+            "__id__": 0000, 
+            "name": "server1", 
+            "server_num": 1, 
+            "start": 1, 
+            "b": 27, 
+            "y_children": {
+                "Hugo": {
+                    "__class__": "YChild", 
+                    "__id__": 0000, 
+                    "a": 10, 
+                    "name": "Hugo"
+                }
+            }
+        }, 
+        "server2": {
+            "__class__": "Y", 
+            "__id__": 0000, 
+            "name": "server2", 
+            "server_num": 2, 
+            "start": 1, 
+            "b": 27, 
+            "y_children": {
+                "Hugo": "#ref id: 0000"
+            }
+        }
+    }, 
+    "aaa": 2, 
+    "aaa #calculated": true
+}"""
+
+_test_json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
+    "__class__": "Y", 
+    "__id__": 0000, 
+    "name": "server2", 
+    "server_num": 2, 
+    "start": 1, 
+    "b": 27, 
+    "y_children": {
+        "Hugo": {
+            "__class__": "YChild", 
+            "__id__": 0000, 
+            "a": 10, 
+            "name": "Hugo"
+        }
+    }
+}"""
+
 def test_json_dump_configbuilder():
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
@@ -924,8 +1015,11 @@ def test_json_dump_configbuilder():
                 YChild(name='Hanna', a=11)
                 YChild(name='Herbert', a=12)
 
-    compare_json(cr, _test_json_dump_configbuilder_expected_json_full, builders=True, test_decode=True)
-    compare_json(cr.ys['server2'], _test_json_dump_configbuilder_expected_json_repeatable_item, builders=True, test_decode=True)
+    compare_json(cr, _test_json_dump_configbuilder_expected_json_full, replace_builders=True, test_decode=True)
+    compare_json(cr.ys['server2'], _test_json_dump_configbuilder_expected_json_repeatable_item, replace_builders=True, test_decode=True)
+
+    compare_json(cr, _test_json_dump_configbuilder_dont_dump_expected_json_full, replace_builders=False, dump_builders=False, test_decode=True)
+    compare_json(cr.ys['server2'], _test_json_dump_configbuilder_dont_dump_expected_json_repeatable_item, replace_builders=False, dump_builders=False, test_decode=True)
 
 
 @named_as('someitems')

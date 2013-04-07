@@ -70,16 +70,16 @@ class _ConfigBase(object):
 
     def __repr__(self):
         # Don't call property methods i repr, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
-        return self.json(compact=True, property_methods=False)
+        return self.json(compact=True, property_methods=False, builders=True)
         # TODO proper pythonic repr, but until indentation is fixed, json is better
         # return self.irepr(len(self.__class__._mc_nested) -1)
 
-    def json(self, compact=False, property_methods=True, skipkeys=True):
+    def json(self, compact=False, property_methods=True, builders=False, skipkeys=True):
         """See json_output.ConfigItemEncoder for parameters"""
         filter_callable = self.json_filter_callable()
         class Encoder(json_output.ConfigItemEncoder):
             def __init__(self, **kwargs):
-                super(Encoder, self).__init__(filter_callable=filter_callable, compact=compact, property_methods=property_methods, **kwargs)
+                super(Encoder, self).__init__(filter_callable=filter_callable, compact=compact, property_methods=property_methods, builders=builders, **kwargs)
 
         return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=False, sort_keys=False, indent=4)
 

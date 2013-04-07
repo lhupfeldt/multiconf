@@ -1,5 +1,5 @@
 import sys, threading, traceback
-from collections import OrderedDict, Sequence
+from collections import OrderedDict
 import json
 import types
 
@@ -19,7 +19,7 @@ class ConfigItemEncoder(json.JSONEncoder):
     recursion_check = threading.local()
     recursion_check.in_default = False
 
-    def __init__(self, filter_callable=None, compact=False, property_methods=True, **kwargs):
+    def __init__(self, filter_callable=None, compact=False, property_methods=True, builders=False, **kwargs):
         """
         filter_callable: func(obj, key, value)
         - filter_callable is called for each key/value pair of attributes on each ConfigItem obj.
@@ -34,6 +34,7 @@ class ConfigItemEncoder(json.JSONEncoder):
         self.property_methods = property_methods
         self.seen = {}
         self.start_obj = None
+        self.builders = builders
 
     def _class_dict(self, obj):
         if self.compact:
@@ -128,6 +129,9 @@ class ConfigItemEncoder(json.JSONEncoder):
                         if key is False:
                             continue
 
+                    if not self.builders and isinstance(val, multiconf.ConfigBuilder):
+                        continue
+
                     val = self._check_nesting(obj, val)
                     if key in entries:
                         dd[key + ' #shadowed'] = val
@@ -156,6 +160,9 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if type(val) == types.MethodType:
                         continue
 
+                    if not self.builders and isinstance(val, multiconf.ConfigBuilder):
+                        continue
+
                     if self.user_filter_callable:
                         key, val = self.user_filter_callable(obj, key, val)
                         if key is False:
@@ -170,6 +177,8 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if isinstance(val, (list, tuple)):
                         new_list = []
                         for item in val:
+                            if not self.builders and isinstance(item, multiconf.ConfigBuilder):
+                                continue
                             new_list.append(self._check_nesting(obj, item))
                         dd[key] = new_list
                         dd[key + ' #calculated'] = True
@@ -178,6 +187,8 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if isinstance(val, dict):
                         new_dict = OrderedDict()
                         for item_key, item in val.iteritems():
+                            if not self.builders and isinstance(item, multiconf.ConfigBuilder):
+                                continue
                             new_dict[item_key] = self._check_nesting(obj, item)
                         dd[key] = new_dict
                         dd[key + ' #calculated'] = True
