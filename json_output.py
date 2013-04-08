@@ -160,9 +160,6 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if type(val) == types.MethodType:
                         continue
 
-                    if not self.builders and isinstance(val, multiconf.ConfigBuilder):
-                        continue
-
                     if self.user_filter_callable:
                         key, val = self.user_filter_callable(obj, key, val)
                         if key is False:
@@ -177,8 +174,6 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if isinstance(val, (list, tuple)):
                         new_list = []
                         for item in val:
-                            if not self.builders and isinstance(item, multiconf.ConfigBuilder):
-                                continue
                             new_list.append(self._check_nesting(obj, item))
                         dd[key] = new_list
                         dd[key + ' #calculated'] = True
@@ -187,8 +182,6 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if isinstance(val, dict):
                         new_dict = OrderedDict()
                         for item_key, item in val.iteritems():
-                            if not self.builders and isinstance(item, multiconf.ConfigBuilder):
-                                continue
                             new_dict[item_key] = self._check_nesting(obj, item)
                         dd[key] = new_dict
                         dd[key + ' #calculated'] = True
