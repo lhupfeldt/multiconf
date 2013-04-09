@@ -7,7 +7,7 @@ from collections import OrderedDict
 # pylint: disable=E0611
 from pytest import fail
 
-from .. import ConfigRoot, ConfigItem
+from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import nested_repeatables, named_as, repeat, required
 from ..envs import EnvFactory
 
@@ -151,6 +151,42 @@ def test_automatic_freeze_of_previous_sibling():
     with root(prod, [prod, pp], a=0) as rt:
         rchild(id='a', x=18)
         assert rt.children['a'].x == 18
+
+
+def test_automatic_freeze_call_of_validate_root():
+    @nested_repeatables('children')
+    class root(ConfigRoot):
+        def validate(self):
+            self.y = 7
+
+    with root(prod, [prod, pp], a=0) as rt:
+        pass
+    assert rt.y == 7
+
+
+def test_automatic_freeze_call_of_validate_item():
+    class item(ConfigItem):
+        def validate(self):
+            self.y = 7
+
+    with root(prod, [prod, pp], a=0):
+        ii = item()
+
+    assert ii.y == 7
+
+
+def test_automatic_freeze_call_of_validate_builder():
+    class builder(ConfigBuilder):
+        def validate(self):
+            self.y = 7
+
+        def build(self):
+            pass
+
+    with root(prod, [prod, pp], a=0):
+        ii = builder()
+
+    assert ii.y == 7
 
 
 def test_automatic_contained_item_freeze_on_exit():

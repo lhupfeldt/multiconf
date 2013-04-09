@@ -499,7 +499,9 @@ def test_root_attribute_exception_in_with_block():
     assert exinfo.value.message == "Error in root with block"
 
 
-_exception_previous_object_expected_stderr = """Exception validating previously defined object, stack trace will be misleading!
+_exception_previous_object_expected_stderr = """Exception validating previously defined object -
+  type: <class 'multiconf.test.multiconf_definition_errors_test.inner'>
+Stack trace will be misleading!
 This happens if there is an error (e.g. missing required attributes) in an object that was not
 directly enclosed in a with statement. Objects that are not arguments to a with statement will
 not be validated until the next ConfigItem is declared or an outer with statement is exited.
