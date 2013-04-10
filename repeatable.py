@@ -6,8 +6,9 @@ class Repeatable(OrderedDict):
 
     def _mc_freeze(self):
         for item in self.itervalues():
-            if not item._mc_frozen:
-                item._mc_freeze()
+            item._mc_freeze()
+
+        self._mc_frozen = True
 
     def _user_validate_recursively(self):
         for dict_entry in self.values():
