@@ -35,7 +35,7 @@ class _ConfigBase(object):
         self._mc_attributes = Repeatable()
         self._mc_frozen = False
         self._mc_in_init = True
-        self._mc_in_build = False
+        self._mc_in_proxy_build = False
         self._mc_user_validated = False
         self._mc_currently_last_child = None
 
@@ -268,10 +268,10 @@ class _ConfigBase(object):
 
                     # ci = container
                     # while ci != None:
-                    #     print ci._nesting_level, ci._mc_in_build
+                    #     print ci._nesting_level, ci._mc_in_proxy_build
                     #     ci = ci._mc_contained_in
                     #
-                    # if not container.contained_in._mc_in_build:
+                    # if not container.contained_in._mc_in_proxy_build:
                     #     attribute.num_errors = error(attribute.num_errors, msg + group_msg)
                     # else:
                     #     warning(msg + group_msg)
@@ -325,7 +325,7 @@ class _ConfigBase(object):
     def contained_in(self):
         if not isinstance(self._mc_contained_in, ConfigBuilder):
             return self._mc_contained_in
-        if self._mc_in_build or self._mc_contained_in._mc_in_build:
+        if self._mc_in_proxy_build or self._mc_contained_in._mc_in_proxy_build:
             return self._mc_contained_in.contained_in            
         raise ConfigApiException("Use of 'contained_in' in not allowed in object while under a ConfigBuilder")
 
@@ -560,7 +560,7 @@ class ConfigBuilder(ConfigItem):
         super(ConfigBuilder, self)._mc_freeze()
         existing_attributes = self._mc_attributes.copy()
 
-        self._mc_in_build = True
+        self._mc_in_proxy_build = True
 
         # We need to allow the same nested repeatables as the parent item
         for key in self.contained_in.__class__._mc_deco_nested_repeatables:
@@ -611,7 +611,7 @@ class ConfigBuilder(ConfigItem):
             # TODO validation
             self._mc_contained_in.attributes[key] = value
 
-        self._mc_in_build = False
+        self._mc_in_proxy_build = False
         return self
 
     @abc.abstractmethod
