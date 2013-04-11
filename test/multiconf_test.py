@@ -474,3 +474,149 @@ def test_assigning_to_attribute_underscore_attribute():
         with ConfigItem() as ci:
             ci._a = 1
     assert ci._a == 1
+
+
+def test_build_simple_items():
+    class X(ConfigItem):
+        def build(self):
+            self.a = 1
+            self.b = 1
+            ConfigItem(a=1, b=1)
+
+    with ConfigRoot(prod, [prod, pp]) as cr:
+        with X() as x:
+            x.a = 2
+            ConfigItem(a=2)            
+
+    assert cr.X.a == 2
+    assert cr.X.b == 1
+    assert cr.X.ConfigItem.a == 2
+    assert not hasattr(cr.X.ConfigItem, 'b')
+
+    with ConfigRoot(prod, [prod, pp]) as cr:
+        X()
+
+    assert cr.X.a == 1
+    assert cr.X.b == 1
+    assert cr.X.ConfigItem.a == 1
+    assert cr.X.ConfigItem.b == 1
+
+
+def test_build_repeatable_items():
+    @repeat()
+    class X(ConfigItem):
+        pass
+
+    @nested_repeatables('Xs')
+    class Y(ConfigItem):
+        def build(self):
+            self.a = 1
+            self.b = 1
+            with X(id='a', a=1, b=1) as x:
+                x.setattr('a', prod=7)
+            X(id='b', a=1, b=1)
+
+    with ConfigRoot(prod, [prod, pp]) as cr:
+        with Y() as y:
+            y.a = 3
+            with X(name='a') as x:
+                x.a = 3
+
+    assert cr.Y.a == 3
+    assert cr.Y.Xs['a'].a == 3
+    assert not hasattr(cr.Y.Xs['a'], 'b')
+    assert cr.Y.Xs['b'].a == 1
+    assert cr.Y.Xs['b'].b == 1
+
+
+def test_build_root():
+    class RootX(ConfigRoot):
+        def build(self):
+            self.a = 1
+            self.b = 1
+            ConfigItem(a=1, b=1)
+
+    with RootX(prod, [prod, pp]) as cr:
+        cr.a = 2
+        ConfigItem(a=2)            
+
+    assert cr.a == 2
+    assert cr.b == 1
+    assert cr.ConfigItem.a == 2
+    assert not hasattr(cr.ConfigItem, 'b')
+
+    with RootX(prod, [prod, pp]) as cr:
+        cr.a = 2
+
+    assert cr.a == 2
+    assert cr.b == 1
+    assert cr.ConfigItem.a == 1
+    assert cr.ConfigItem.b == 1
+
+
+def test_nested_build_simple_items():
+    class X1(ConfigItem):
+        def build(self):
+            self.a = 11
+            self.b = 11
+            ConfigItem(a=11, b=11)
+
+    class X2(ConfigItem):
+        def build(self):
+            self.a = 12
+            self.b = 12
+            ConfigItem(a=12, b=12)
+
+    class X3(ConfigItem):
+        def build(self):
+            self.a = 13
+            self.b = 13
+            ConfigItem(a=13, b=13)
+
+    with ConfigRoot(prod, [prod, pp]) as cr:
+        with X1() as x:
+            x.a = 1
+            ConfigItem(a=1)
+            with X2() as x:
+                x.a = 2
+                ConfigItem(a=2)
+                with X3() as x:
+                    x.a = 3
+                    ConfigItem(a=3)
+
+    assert cr.X1.a == 1
+    assert cr.X1.b == 11
+    assert cr.X1.ConfigItem.a == 1
+    assert not hasattr(cr.X1.ConfigItem, 'b')
+
+    assert cr.X1.X2.a == 2
+    assert cr.X1.X2.b == 12
+    assert cr.X1.X2.ConfigItem.a == 2
+    assert not hasattr(cr.X1.X2.ConfigItem, 'b')
+
+    assert cr.X1.X2.X3.a == 3
+    assert cr.X1.X2.X3.b == 13
+    assert cr.X1.X2.X3.ConfigItem.a == 3
+    assert not hasattr(cr.X1.X2.X3.ConfigItem, 'b')
+
+    with ConfigRoot(prod, [prod, pp]) as cr:
+        with X1() as x:
+            x.a = 1
+            with X2() as x:
+                x.a = 2
+                X3()
+
+    assert cr.X1.a == 1
+    assert cr.X1.b == 11
+    assert cr.X1.ConfigItem.a == 11
+    assert cr.X1.ConfigItem.b == 11
+
+    assert cr.X1.X2.a == 2
+    assert cr.X1.X2.b == 12
+    assert cr.X1.X2.ConfigItem.a == 12
+    assert cr.X1.X2.ConfigItem.b == 12
+
+    assert cr.X1.X2.X3.a == 13
+    assert cr.X1.X2.X3.b == 13
+    assert cr.X1.X2.X3.ConfigItem.a == 13
+    assert cr.X1.X2.X3.ConfigItem.b == 13
