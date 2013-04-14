@@ -17,13 +17,7 @@ def ce(line_num, *lines):
 
 dev2ct = ef.Env('dev2ct')
 dev2st = ef.Env('dev2st')
-g_dev2 = ef.EnvGroup('g_dev2', dev2ct, dev2st)
-
-dev3ct = ef.Env('dev3ct')
-dev3st = ef.Env('dev3st')
-g_dev3 = ef.EnvGroup('g_dev3', dev3ct, dev3st)
-
-g_dev = ef.EnvGroup('g_dev', g_dev2, g_dev3)
+g_dev = ef.EnvGroup('g_dev', dev2ct, dev2st)
 
 pp = ef.Env('pp')
 prod = ef.Env('prod')
