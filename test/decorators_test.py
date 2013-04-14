@@ -47,7 +47,7 @@ def test_required_attributes_for_configroot():
         pass
 
     with root(prod, [prod]) as cr:
-        cr.setattr('anattr',prod=1)
+        cr.setattr('anattr', prod=1)
         cr.setattr('anotherattr', prod=2)
     assert cr.anattr == 1
     assert cr.anotherattr == 2
