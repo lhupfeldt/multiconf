@@ -95,3 +95,11 @@ def required_if(attr_name, attr_names):
 def optional(attr_name):
     # TODO: Implement this cleanly so the a reasonable error message will be given
     return required_if(attr_name, attr_name)
+
+
+def unchecked():
+    def deco(cls):
+        cls._mc_deco_unchecked = cls
+        return cls
+
+    return deco

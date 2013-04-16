@@ -28,6 +28,7 @@ class _ConfigBase(object):
     _mc_deco_nested_repeatables = []
     _mc_deco_required = []
     _mc_deco_required_if = (None, ())
+    _mc_deco_unchecked = None
 
     def __init__(self, json_filter=None, **attr):
         self._mc_json_filter = json_filter
@@ -40,7 +41,7 @@ class _ConfigBase(object):
         self._mc_user_validated = False
         self._mc_currently_last_child = None
 
-        # Prepare collectors with default values
+        # Prepare attributes with default values
         for key, value in attr.iteritems():
             if key in self.__class__._mc_deco_nested_repeatables:
                 raise ConfigException(repr(key) + ' defined as default value shadows a nested-repeatable')
@@ -91,6 +92,14 @@ class _ConfigBase(object):
         return self
 
     def _mc_freeze_validation(self):
+        if self._mc_deco_unchecked == self.__class__:
+            return
+
+        # Validate all unfrozen attributes
+        for attr in self._mc_attributes.itervalues():
+            if not attr._mc_frozen and isinstance(attr, Attribute):
+                self.check_attr_fully_defined(attr)
+
         # Validate @required
         missing = []
         for req in self.__class__._mc_deco_required:
@@ -128,7 +137,7 @@ class _ConfigBase(object):
         if missing:
             raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + " == " + repr(required_if_condition) + ", missing attributes: " + repr(missing))
 
-    def _mc_freeze(self):
+    def _mc_freeze(self, _checked=True):
         """
         Recursively freeze contained items bottom up.
         If self is ready to be validated (exit from with_statement or not declared in a with_statement),
@@ -137,11 +146,10 @@ class _ConfigBase(object):
         if self._mc_frozen:
             return
 
+        check = self._mc_deco_unchecked != self.__class__ and self._mc_deco_unchecked not in self.__class__.__bases__
         for _child_name, child_value in self._mc_attributes.iteritems():
-            child_value._mc_freeze()
-
-        self._mc_frozen = True
-        self._mc_freeze_validation()
+            child_value._mc_freeze(check)
+        self._mc_frozen = check
 
         must_pop = False
         self._mc_in_init = False
@@ -159,6 +167,8 @@ class _ConfigBase(object):
             if must_pop:
                 self._mc_nested.pop()
 
+        self._mc_freeze_validation()
+
     @property
     def frozen(self):
         """Return frozen state"""
@@ -168,13 +178,15 @@ class _ConfigBase(object):
         try:
             self._mc_freeze()
         except Exception as ex:
+            ex._mc_in_exit = True
             if not exc_type:
                 if hasattr(ex, '_mc_in_user_code') or _debug_exc:
                     raise
                 raise ex
 
-            print >> sys.stderr, "Exception in __exit__:", repr(ex)
-            print >> sys.stderr, "Exception in with block will be raised"
+            if not hasattr(exc_value, '_mc_in_exit') or hasattr(ex, '_mc_in_user_code'):
+                print >> sys.stderr, "Exception in __exit__:", repr(ex)
+                print >> sys.stderr, "Exception in with block will be raised"
         finally:
             self.__class__._mc_nested.pop()
 
@@ -199,6 +211,7 @@ class _ConfigBase(object):
             # For error messages
             ufl = _user_file_line()
             eg_from = {}
+            local = {}
 
             attribute = self._mc_attributes.setdefault(name, Attribute(name))
             if attribute._mc_frozen:
@@ -210,7 +223,8 @@ class _ConfigBase(object):
                 attribute.error(msg)
                 raise ConfigException(msg + " on object " + repr(self))
 
-            if not self._mc_in_init and not ('default' in kwargs and len(kwargs) == 1):
+            check = self._mc_deco_unchecked != self.__class__ and self._mc_deco_unchecked not in self.__class__.__bases__
+            if not self._mc_in_init and not ('default' in kwargs and len(kwargs) == 1) and check:
                 attribute._mc_frozen = True
 
             # Validate and assign given env values
@@ -225,6 +239,17 @@ class _ConfigBase(object):
 
                     eg = self.env.factory.env_or_group(eg_name)
                     for env in eg.envs():
+                        # Make sure an attribute set in build does not override an attribute set in with statement block
+                        if env in attribute.env_values and self._mc_in_build:
+                            continue
+
+                        # Locally set attribute alway overwrite previously set 'unchecked'
+                        if env not in local and not self._mc_in_build:
+                            attribute.env_values[env] = v_ufl
+                            local[env] = True
+                            eg_from[env] = eg
+                            continue
+
                         # If env == eg then this is a direct env specification, allow overwriting value previously specified through a group
                         if env not in attribute.env_values or (isinstance(eg_from[env], EnvGroup) and (env == eg)):
                             attribute.env_values[env] = v_ufl
@@ -243,7 +268,8 @@ class _ConfigBase(object):
                 except EnvException as ex:
                     attribute.error(ex.message)
 
-            self.check_attr_fully_defined(attribute)
+            if check:
+                self.check_attr_fully_defined(attribute)
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
@@ -252,7 +278,7 @@ class _ConfigBase(object):
     def check_attr_fully_defined(self, attribute):
         name = attribute.attribute_name
 
-        if not attribute.has_default():
+        if not attribute.has_default() and not hasattr(attribute, 'already_checked'):
             # Check whether we need to check for conditionally required attributes
             required_if_key = self.__class__._mc_deco_required_if[0]
             if required_if_key:
@@ -268,7 +294,6 @@ class _ConfigBase(object):
                     required_if_key = False
 
             # Validate that the attribute is defined for all envs
-            attribute.all_envs_initialized = True
             for eg in self.root_conf._mc_valid_envs:
                 for env in eg.envs():
                     if env in attribute.env_values:
@@ -282,22 +307,12 @@ class _ConfigBase(object):
                     except NoAttributeException:
                         continue
 
-                    attribute.all_envs_initialized = False
                     group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
                     msg = "Attribute: " + repr(name) + " did not receive a value for env " + repr(env)
                     attribute.error(msg + group_msg)
 
-                    # ci = container
-                    # while ci != None:
-                    #     print ci._nesting_level, ci._mc_in_proxy_build
-                    #     ci = ci._mc_contained_in
-                    #
-                    # if not container.contained_in._mc_in_proxy_build:
-                    #     attribute.num_errors = error(attribute.num_errors, msg + group_msg)
-                    # else:
-                    #     warning(msg + group_msg)
-
         if attribute.num_errors:
+            attribute.already_checked = True
             raise ConfigException("There were " + repr(attribute.num_errors) + " errors when defining attribute " + repr(name) + " on object: " + repr(self))
 
     def _check_valid_env(self, env, valid_envs):
@@ -559,7 +574,7 @@ class ConfigBuilder(ConfigItem):
         super(ConfigBuilder, self).__init__(json_filter=json_filter, **attr)
         self._mc_what_built = OrderedDict()
 
-    def _mc_freeze(self):
+    def _mc_freeze(self, _checked=True):
         if self._mc_frozen:
             return
 

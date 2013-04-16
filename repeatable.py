@@ -4,9 +4,9 @@ from collections import OrderedDict
 class Repeatable(OrderedDict):
     _mc_frozen = False
 
-    def _mc_freeze(self):
+    def _mc_freeze(self, checked):
         for item in self.itervalues():
-            item._mc_freeze()
+            item._mc_freeze(checked)
 
         self._mc_frozen = True
 

@@ -10,7 +10,6 @@ class Attribute(object):
         self.env_values = {}
         self.num_errors = 0
         self._mc_frozen = False
-        self.all_envs_initialized = False
 
     def validate_types(self, env_name, value):
         # Validate that an attribute has the same type for all envs
@@ -35,15 +34,15 @@ class Attribute(object):
                 return self.env_values[default_key]
         raise Exception('Internal error')
 
-    def _mc_freeze(self):
-        self._mc_frozen = True
+    def _mc_freeze(self, checked):
+        self._mc_frozen = checked
 
     def _user_validate_recursively(self):
         pass
 
     def _mc_value(self, current_env):
         """This is only guaranteed to return a correct value for the currently instantiated env!"""
-        self._mc_freeze()
+        self._mc_freeze(True)
 
         if current_env in self.env_values:
             return self.env_values[current_env][0]
@@ -57,5 +56,4 @@ class Attribute(object):
         self.num_errors = _error_msg(self.num_errors, msg)
 
     def __repr__(self):
-        return self.__class__.__name__ + ': ' + repr(self.attribute_name) + ':' + ('frozen' if self._mc_frozen else 'not-frozen') + ' ' \
-            + ('all-envs-initialized' if self.all_envs_initialized else 'not-all-envs-initialized') + ", values: " + repr(self.env_values)
+        return self.__class__.__name__ + ': ' + repr(self.attribute_name) + ':' + ('frozen' if self._mc_frozen else 'not-frozen') + ", values: " + repr(self.env_values)
