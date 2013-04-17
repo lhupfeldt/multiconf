@@ -239,6 +239,8 @@ class _ConfigBase(object):
 
                     eg = self.env.factory.env_or_group(eg_name)
                     for env in eg.envs():
+                        self._check_env_is_valid(env, self.valid_envs)
+
                         # Make sure an attribute set in build does not override an attribute set in with statement block
                         if env in attribute.env_values and self._mc_in_build:
                             continue
@@ -315,14 +317,18 @@ class _ConfigBase(object):
             attribute.already_checked = True
             raise ConfigException("There were " + repr(attribute.num_errors) + " errors when defining attribute " + repr(name) + " on object: " + repr(self))
 
-    def _check_valid_env(self, env, valid_envs):
-        if not isinstance(env, Env):
-            raise ConfigException(self.__class__.__name__ + ': env must be instance of ' + repr(Env.__name__) + '; found type ' + repr(env.__class__.__name__) + ': ' + repr(env))
-
+    def _check_env_is_valid(self, env, valid_envs):
+        """Expects env to be of type env"""
         for valid_env in valid_envs:
             if env in valid_env:
                 return
         raise ConfigException("The env " + repr(env) + " must be in the (nested) list of valid_envs " + repr(valid_envs))
+
+    def _check_valid_env(self, env, valid_envs):
+        if not isinstance(env, Env):
+            raise ConfigException(self.__class__.__name__ + ': env must be instance of ' + repr(Env.__name__) + '; found type ' + repr(env.__class__.__name__) + ': ' + repr(env))
+        
+        return self._check_env_is_valid(env, valid_envs)
 
     def __getattr__(self, name):
         if name.startswith('__'):
