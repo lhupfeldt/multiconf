@@ -31,6 +31,7 @@ g_prod = ef.EnvGroup('g_prod', pp, prod)
 valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
 oops = ef.Env('declared_not_valid_env')
+g_oops = ef.EnvGroup('declared_not_valid_group', prod, oops)
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -548,4 +549,14 @@ def test_setattr_ref_declared_not_valid_env(capsys):
             with ConfigItem() as it:
                 it.setattr('a', declared_not_valid_env=1)
 
+    assert exinfo.value.message ==  """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
+
+
+def test_setattr_ref_declared_not_valid_group(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, valid_envs=[prod]):
+            with ConfigItem() as it:
+                it.setattr('a', declared_not_valid_group=1)
+
+    # TODO: Improve error message
     assert exinfo.value.message ==  """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
