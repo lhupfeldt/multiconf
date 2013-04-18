@@ -4,6 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
+import re
 from pytest import raises
 
 from .utils import config_error, lineno, replace_ids, replace_ids_builder
@@ -140,3 +141,30 @@ def test_configbuilder_without_build():
             ABuilder()
 
     assert exinfo.value.message == "Can't instantiate abstract class ABuilder with abstract methods build"
+
+
+_unexpected_repeatable_child_builder_expected_ex = """'RepeatableChilds': {
+    "__class__": "UnexpectedRepeatableChildBuilder #as: 'UnexpectedRepeatableChildBuilder.builder.0000', id: 0000", 
+    "RepeatableChilds": {
+        "0000": {
+            "__class__": "RepeatableChild #as: 'RepeatableChilds', id: 0000, not-frozen"
+        }
+    }
+} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"""
+
+def test_unexpected_repeatable_child_builder():
+    @repeat()
+    class RepeatableChild(ConfigItem):
+        pass
+    
+    class UnexpectedRepeatableChildBuilder(ConfigBuilder):
+        def build(self):
+            RepeatableChild()
+    
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, valid_envs=[prod]):
+            UnexpectedRepeatableChildBuilder()
+
+    _replace_key_ids_regex = re.compile(r"""\"[0-9]+\": {""")
+    ex_msg = _replace_key_ids_regex.sub(r'"0000": {', exinfo.value.message)
+    assert replace_ids_builder(ex_msg, False) == _unexpected_repeatable_child_builder_expected_ex

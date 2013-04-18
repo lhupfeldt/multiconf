@@ -534,9 +534,7 @@ class ConfigItem(_ConfigBase):
                     if not my_key in self._mc_contained_in.attributes:
                         self._mc_contained_in.attributes[my_key] = Repeatable()
                 else:
-                    msg = repr(my_key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
-                        repr(self._mc_contained_in.named_as())
-                    raise ConfigException(msg)
+                    raise ConfigException(self._error_msg_not_repeatable_in_container(my_key))
                     # TODO?: type check of list items (isinstance(ConfigItem). Same type?
 
             # Insert in Ordered dict by 'obj.id' or 'obj.name', 'id' is preferred if given
@@ -571,6 +569,11 @@ class ConfigItem(_ConfigBase):
             raise ConfigException(repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self))
 
         self._mc_contained_in.attributes[my_key] = self
+
+    def _error_msg_not_repeatable_in_container(self, key):
+        return repr(key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
+            repr(self._mc_contained_in.named_as())
+
 
 
 class ConfigBuilder(ConfigItem):
@@ -637,6 +640,9 @@ class ConfigBuilder(ConfigItem):
 
             # Merge repeatable items into parent and update the contained_in ref to point to parent
             if isinstance(value, Repeatable):
+                if not key in self.contained_in.__class__._mc_deco_nested_repeatables:
+                    raise ConfigException(self._error_msg_not_repeatable_in_container(key))
+
                 for obj_key, ovalue in value.iteritems():
                     if obj_key in self.contained_in.attributes[key]:
                         # TODO: Silently skip insert instead (optional warning)?
