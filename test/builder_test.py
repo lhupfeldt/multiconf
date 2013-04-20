@@ -214,7 +214,7 @@ def test_configbuilder_nested_items_access_to_contained_in():
     class XBuilder(ConfigBuilder):
         def __init__(self):
             super(XBuilder, self).__init__()
-            # Access to contained_in is allowed here depneding on where the object
+            # Access to contained_in is allowed here depending on where the object
             # is created, so it is discouraged to use contained_in from init
             self.number = self.contained_in.aaa
 
