@@ -143,17 +143,13 @@ def test_configbuilder_without_build():
     assert exinfo.value.message == "Can't instantiate abstract class ABuilder with abstract methods build"
 
 
-_unexpected_repeatable_child_builder_expected_ex = """'RepeatableChilds': {
-    "__class__": "UnexpectedRepeatableChildBuilder #as: 'UnexpectedRepeatableChildBuilder.builder.0000', id: 0000", 
-    "RepeatableChilds": {
-        "0000": {
-            "__class__": "RepeatableChild #as: 'RepeatableChilds', id: 0000, not-frozen"
-        }
-    }
+_unexpected_repeatable_child_builder_expected_ex = """'r': {
+    "__class__": "RepeatableChild #as: 'r', id: 0000, not-frozen"
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"""
 
 def test_unexpected_repeatable_child_builder():
     @repeat()
+    @named_as('r')
     class RepeatableChild(ConfigItem):
         pass
     
@@ -168,3 +164,41 @@ def test_unexpected_repeatable_child_builder():
     _replace_key_ids_regex = re.compile(r"""\"[0-9]+\": {""")
     ex_msg = _replace_key_ids_regex.sub(r'"0000": {', exinfo.value.message)
     assert replace_ids_builder(ex_msg, False) == _unexpected_repeatable_child_builder_expected_ex
+
+
+_unexpected_repeatable_child_nested_builders_expected_ex = """'arepeatable': {
+    "__class__": "Repeatable #as: 'arepeatable', id: 0000, not-frozen", 
+    "name": "a"
+} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ItemWithoutARepeatable'"""
+
+def test_unexpected_repeatable_child_nested_builders():
+    @repeat()
+    @named_as('arepeatable')
+    class Repeatable(ConfigItem):
+        def __init__(self):
+            super(Repeatable, self).__init__(name='a')
+
+    class InnerBuilder(ConfigBuilder):
+        def build(self):
+            Repeatable()
+
+    class MiddleBuilder(ConfigBuilder):
+        def build(self):
+            pass
+
+    class OuterBuilder(ConfigBuilder):
+        def build(self):
+            with MiddleBuilder():
+                InnerBuilder()
+
+    class ItemWithoutARepeatable(ConfigItem):
+        pass
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, valid_envs=[prod]):
+            with ItemWithoutARepeatable():
+                OuterBuilder()
+
+    _replace_key_ids_regex = re.compile(r"""\"[0-9]+\": {""")
+    ex_msg = _replace_key_ids_regex.sub(r'"0000": {', exinfo.value.message)
+    assert replace_ids_builder(ex_msg, False) == _unexpected_repeatable_child_nested_builders_expected_ex

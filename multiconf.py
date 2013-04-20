@@ -572,7 +572,7 @@ class ConfigItem(_ConfigBase):
 
     def _error_msg_not_repeatable_in_container(self, key):
         return repr(key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
-            repr(self._mc_contained_in.named_as())
+            repr(self.contained_in.named_as())
 
 
 
@@ -640,10 +640,10 @@ class ConfigBuilder(ConfigItem):
 
             # Merge repeatable items into parent and update the contained_in ref to point to parent
             if isinstance(value, Repeatable):
-                if not key in self.contained_in.__class__._mc_deco_nested_repeatables:
-                    raise ConfigException(self._error_msg_not_repeatable_in_container(key))
-
                 for obj_key, ovalue in value.iteritems():
+                    if not key in self.contained_in.__class__._mc_deco_nested_repeatables:
+                        raise ConfigException(ovalue._error_msg_not_repeatable_in_container(key))
+
                     if obj_key in self.contained_in.attributes[key]:
                         # TODO: Silently skip insert instead (optional warning)?
                         raise ConfigException("Nested repeatable from 'build', key: " + repr(obj_key) + ", value: " + repr(ovalue) +
