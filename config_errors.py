@@ -2,7 +2,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import sys, os.path
-from collections import namedtuple
 
 
 class ConfigBaseException(Exception):
