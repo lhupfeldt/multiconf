@@ -17,6 +17,7 @@ prod = ef.Env('prod')
 
 @named_as('xses')
 @repeat()
+@nested_repeatables('x_children')
 class Xses(ConfigItem):
     pass
 
@@ -265,6 +266,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
 
     @named_as('ys')
     @repeat()
+    @nested_repeatables('y_children')
     class Y(ConfigItem):
         def __init__(self, **kwarg):
             super(Y, self).__init__(**kwarg)
@@ -354,38 +356,6 @@ def test_configbuilder_repeated():
     assert xb2.what_built()['q'] == 3
 
 
-# TODO not yet implemented 'partial' feature
-# def test_configbuilder_nested_items_override_values_extend_envs():
-#     @nested_repeatables('xses, x_children')
-#     class XBuilder(ConfigBuilder):
-#         def __init__(self):
-#             super(XBuilder, self).__init__()
-#
-#         def build(self):
-#             for num in xrange(1, self.contained_in.aaa + 1):
-#                 with Xses(name='server%d' % num, server_num=num) as c:
-#                     # This does not list all envs
-#                     c.something(prod=1)
-#
-#     @nested_repeatables('xses')
-#     class Root(ConfigRoot):
-#         aaa = 2
-#
-#     with Root(prod, [prod, pp]) as cr:
-#         with XBuilder() as xb:
-#             xb.b = 27)
-#             # Here we finalize the setting of 'something' which was started in the 'build' method
-#             xb.something(pp=2)
-#             XChild(a=10)
-#             XChild(a=11)
-#
-#     assert len(cr.xses) == 2
-#     index = 10
-#     for x_child in cr.xses['server1'].x_children.values():
-#         assert x_child.a == index
-#         index += 1
-
-
 def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder():
     @required('a, b')
     class builder(ConfigBuilder):
@@ -398,3 +368,45 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder()
             assert ii.a == 1
             ii.setattr('b', prod=2)
             assert ii.b == 2
+
+
+def test_configbuilder_child_with_nested_repeatables():
+    class XBuilder(ConfigBuilder):
+        def __init__(self):
+            super(XBuilder, self).__init__()
+
+        def build(self):
+            with Xses():
+                XChild()
+
+    @nested_repeatables('xses')
+    class Root(ConfigRoot):
+        pass
+
+    with Root(prod, [prod, pp]) as cr:
+        XBuilder()
+
+    assert len(cr.xses) == 1
+    for x in cr.xses.values():
+        assert len(x.x_children) == 1
+
+
+def test_configbuilder_child_with_declared_but_not_defined_nested_repeatables():
+    class XBuilder(ConfigBuilder):
+        def __init__(self):
+            super(XBuilder, self).__init__()
+
+        def build(self):
+            Xses()
+
+    @nested_repeatables('xses')
+    class Root(ConfigRoot):
+        pass
+
+    with Root(prod, [prod, pp]) as cr:
+        XBuilder()
+
+    assert len(cr.xses) == 1
+    for x in cr.xses.values():
+        assert isinstance(x.x_children, OrderedDict)
+        assert len(x.x_children) == 0

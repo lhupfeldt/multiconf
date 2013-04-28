@@ -210,11 +210,11 @@ def test_unexpected_repeatable_child_nested_builders():
     assert replace_ids_builder(ex_msg, False) == _unexpected_repeatable_child_nested_builders_expected_ex
 
 
-_configbuilder_child_with_nested_repeatables_undeclared_expected_ex = """'x_children': {
+_configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex = """'x_children': {
     "__class__": "XChild #as: 'x_children', id: 0000, not-frozen"
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'xses'"""
 
-def test_configbuilder_child_with_nested_repeatables_undeclared():
+def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
     class XBuilder(ConfigBuilder):
         def __init__(self):
             super(XBuilder, self).__init__()
@@ -231,4 +231,30 @@ def test_configbuilder_child_with_nested_repeatables_undeclared():
         with Root(prod, [prod, pp]):
             XBuilder()
 
-    assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_child_with_nested_repeatables_undeclared_expected_ex
+    assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex
+
+
+_configbuilder_child_with_nested_repeatables_undeclared_in_with_expected_ex = """'x_children': {
+    "__class__": "XChild #as: 'x_children', id: 0000", 
+    "a": 10
+} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'xses'"""
+
+def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
+    class XBuilder(ConfigBuilder):
+        def __init__(self):
+            super(XBuilder, self).__init__()
+
+        def build(self):
+            Xses()
+
+    @nested_repeatables('xses')
+    class Root(ConfigRoot):
+        aaa = 2
+
+    with raises(ConfigException) as exinfo:
+        with Root(prod, [prod, pp]) as cr:
+            with XBuilder() as xb:
+                xb.b = 27
+                XChild(a=10)
+
+    assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_child_with_nested_repeatables_undeclared_in_with_expected_ex

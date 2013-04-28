@@ -592,20 +592,26 @@ class ConfigBuilder(ConfigItem):
                 if override_value._mc_value(self.env) == None:
                     continue
 
-                item_from_build._mc_attributes[override_key] = override_value
-
-                if isinstance(override_value, ConfigItem):
-                    override_value._mc_contained_in = item_from_build
-                    continue
-
                 if isinstance(override_value, Repeatable):
                     for repeatable_override_key, repeatable_override_value in override_value.iteritems():
+                        repeatable_override_value._mc_contained_in = item_from_build
+                        if not override_key in item_from_build.__class__._mc_deco_nested_repeatables:
+                            raise ConfigException(repeatable_override_value._error_msg_not_repeatable_in_container(override_key))
+
                         # TODO: is this relevant?
                         #if repeatable_override_value._mc_value(self.env) == None:
                         #    continue
 
-                        if isinstance(repeatable_override_value, ConfigItem):
-                            repeatable_override_value._mc_contained_in = item_from_build
+                        item_from_build._mc_attributes[override_key][repeatable_override_key] = repeatable_override_value
+
+                    continue
+
+                if isinstance(override_value, ConfigItem):
+                    item_from_build._mc_attributes[override_key] = override_value
+                    override_value._mc_contained_in = item_from_build
+                    continue
+
+                item_from_build._mc_attributes[override_key] = override_value
 
         existing_attributes = self._mc_attributes.copy()
 
