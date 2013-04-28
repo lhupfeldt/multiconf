@@ -28,6 +28,12 @@ class Xses(ConfigItem):
     pass
 
 
+@named_as('x_children')
+@repeat()
+class XChild(ConfigItem):
+    pass
+
+
 def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_scope(capsys):
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
@@ -202,3 +208,27 @@ def test_unexpected_repeatable_child_nested_builders():
     _replace_key_ids_regex = re.compile(r"""\"[0-9]+\": {""")
     ex_msg = _replace_key_ids_regex.sub(r'"0000": {', exinfo.value.message)
     assert replace_ids_builder(ex_msg, False) == _unexpected_repeatable_child_nested_builders_expected_ex
+
+
+_configbuilder_child_with_nested_repeatables_undeclared_expected_ex = """'x_children': {
+    "__class__": "XChild #as: 'x_children', id: 0000, not-frozen"
+} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'xses'"""
+
+def test_configbuilder_child_with_nested_repeatables_undeclared():
+    class XBuilder(ConfigBuilder):
+        def __init__(self):
+            super(XBuilder, self).__init__()
+
+        def build(self):
+            with Xses():
+                XChild()
+
+    @nested_repeatables('xses')
+    class Root(ConfigRoot):
+        pass
+
+    with raises(ConfigException) as exinfo:
+        with Root(prod, [prod, pp]):
+            XBuilder()
+
+    assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_child_with_nested_repeatables_undeclared_expected_ex
