@@ -56,4 +56,5 @@ This executes the test suite and the demo
 Requirements
 =====================
 Multiconf: Python 2.7.3
-Test Suite: pytest, logilab-devtools (pip install -U pytest logilab-devtools)
+Test Suite: pytest, pytest-cov, logilab-devtools, demjson (optional)
+ - pip install -U pytest pytest-cov logilab-devtools demjson

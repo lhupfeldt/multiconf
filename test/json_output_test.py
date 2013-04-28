@@ -9,7 +9,7 @@ try:
     decode = demjson.JSON(strict=True).decode
 except ImportError:
     def decode(_string):
-        pass
+        return True
 
 from .utils import replace_ids, lineno, replace_ids_builder, to_compact
 
@@ -37,38 +37,48 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
     try:
         compact_json = item.json(compact=True, builders=dump_builders)
         full_json = item.json(builders=dump_builders)
-
-        if not replace_builders:
-            assert replace_ids(compact_json) == to_compact(expected_json)
-            assert replace_ids(full_json) == expected_json
+        if replace_builders:
+            compact_json_replaced = replace_ids_builder(compact_json)
+            full_json_replaced = replace_ids_builder(full_json)
         else:            
-            assert replace_ids_builder(compact_json) == to_compact(expected_json)
-            assert replace_ids_builder(full_json) == expected_json
+            compact_json_replaced = replace_ids(compact_json)
+            full_json_replaced = replace_ids(full_json)
 
-        if test_decode:
-            assert decode(compact_json)
-            assert decode(full_json)
+        assert compact_json_replaced == to_compact(expected_json)
+        assert full_json_replaced == expected_json
 
     except:
         print '--- compact ---'
-        print item.json(compact=True)
+        print compact_json
 
         print '--- compact ids replaced ---'
-        print replace_ids(item.json(compact=True))
+        print compact_json_replaced
 
         print '--- compact expected ---'
         print to_compact(expected_json)
 
         print '--- full ---'
-        print item.json()
+        print full_json
 
         print '--- full ids replaced ---'
-        print replace_ids(item.json())
+        print full_json_replaced
 
         print '--- full expected ---'
         print expected_json
 
         raise
+
+    if test_decode:
+        try:
+            assert decode(compact_json)
+            assert decode(full_json)
+        except:
+            print 'FAILED DECODE'
+            print '--- compact ---'
+            print compact_json
+
+            print '--- full ---'
+            print full_json
 
 
 @nested_repeatables('someitems')
