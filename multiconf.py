@@ -531,8 +531,7 @@ class ConfigItem(_ConfigBase):
             if not my_key in self._mc_contained_in.__class__._mc_deco_nested_repeatables:
                 if isinstance(self._mc_contained_in, ConfigBuilder):
                     # Builders don't declare nested repeatables, since the items are ultimately to be assigned to the built items
-                    if not my_key in self._mc_contained_in.attributes:
-                        self._mc_contained_in.attributes[my_key] = Repeatable()
+                    self._mc_contained_in.attributes.setdefault(my_key, Repeatable())
                 else:
                     raise ConfigException(self._error_msg_not_repeatable_in_container(my_key))
                     # TODO?: type check of list items (isinstance(ConfigItem). Same type?
@@ -617,53 +616,40 @@ class ConfigBuilder(ConfigItem):
 
         self._mc_in_proxy_build = True
 
-        # We need to allow the same nested repeatables as the parent item
-        for key in self.contained_in.__class__._mc_deco_nested_repeatables:
-            self._mc_attributes[key] = Repeatable()
-
         super(ConfigBuilder, self)._mc_freeze()
 
-        # Attributes/Items on builder are copied to items created in build
         # Loop over attributes created in build
+        # Items and attributes created in 'build' goes into parent
+        # Attributes/Items on builder are copied to items created in build
         for build_key, build_value in self._mc_attributes.iteritems():
             if build_key in existing_attributes:
                 continue
+
             self._mc_what_built[build_key] = build_value._mc_value(self.env)
 
+            # Merge repeatable items into parent and update the contained_in ref to point to parent
             if isinstance(build_value, Repeatable):
-                for key, value in build_value.iteritems():
-                    if isinstance(value, ConfigItem):
-                        override(value, existing_attributes)
+                for rep_key, rep_value in build_value.iteritems():
+                    override(rep_value, existing_attributes)
+                    rep_value._mc_contained_in = self.contained_in
+
+                    if not build_key in self.contained_in.__class__._mc_deco_nested_repeatables:
+                        raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key))
+
+                    if rep_key in self.contained_in.attributes[build_key]:
+                        # TODO: Silently skip insert instead (optional warning)?
+                        raise ConfigException("Nested repeatable from 'build', key: " + repr(rep_key) + ", value: " + repr(rep_value) +
+                                              " overwrites existing entry in parent: " + repr(self._mc_contained_in))
+
+                    self.contained_in.attributes[build_key][rep_key] = rep_value
                 continue
 
             if isinstance(build_value, ConfigItem):
                 override(build_value, existing_attributes)
-
-        # Items and attributes created in 'build' goes into parent
-        for key, value in self._mc_attributes.iteritems():
-            if key in existing_attributes:
-                continue
-
-            # Merge repeatable items into parent and update the contained_in ref to point to parent
-            if isinstance(value, Repeatable):
-                for obj_key, ovalue in value.iteritems():
-                    if not key in self.contained_in.__class__._mc_deco_nested_repeatables:
-                        raise ConfigException(ovalue._error_msg_not_repeatable_in_container(key))
-
-                    if obj_key in self.contained_in.attributes[key]:
-                        # TODO: Silently skip insert instead (optional warning)?
-                        raise ConfigException("Nested repeatable from 'build', key: " + repr(obj_key) + ", value: " + repr(ovalue) +
-                                              " overwrites existing entry in parent: " + repr(self._mc_contained_in))
-                    if isinstance(ovalue, ConfigItem):
-                        ovalue._mc_contained_in = self.contained_in
-                    self.contained_in.attributes[key][obj_key] = ovalue
-                continue
-
-            if isinstance(value, ConfigItem):
-                value._mc_contained_in = self.contained_in
+                build_value._mc_contained_in = self.contained_in
 
             # TODO validation
-            self._mc_contained_in.attributes[key] = value
+            self._mc_contained_in.attributes[build_key] = build_value
 
         self._mc_in_proxy_build = False
         return self

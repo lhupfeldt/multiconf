@@ -108,8 +108,7 @@ _test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item
                 "__class__": "Xses #as: 'xses', id: 0000", 
                 "name": "server2", 
                 "server_num": 2, 
-                "something": 1, 
-                "num_servers": 2
+                "something": 1
             }
         }
     }
