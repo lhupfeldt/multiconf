@@ -5,6 +5,7 @@ import sys
 import abc
 import os
 from collections import Sequence, OrderedDict
+import itertools
 import json
 
 from .envs import BaseEnv, Env, EnvGroup, EnvException
@@ -581,13 +582,16 @@ class ConfigBuilder(ConfigItem):
     def __init__(self, json_filter=None, **attr):
         super(ConfigBuilder, self).__init__(json_filter=json_filter, **attr)
         self._mc_what_built = OrderedDict()
+        self._mc_child_build_attributes = OrderedDict()
 
     def _mc_freeze(self, _checked=True):
         if self._mc_frozen:
             return
 
         def override(item_from_build, attributes_from_with_block):
-            for override_key, override_value in attributes_from_with_block.iteritems():
+            item_from_build._mc_contained_in = self._mc_contained_in
+
+            for override_key, override_value in itertools.chain(attributes_from_with_block.iteritems(), self._mc_child_build_attributes.iteritems()):
                 if override_value._mc_value(self.env) == None:
                     continue
 
@@ -621,35 +625,40 @@ class ConfigBuilder(ConfigItem):
         # Loop over attributes created in build
         # Items and attributes created in 'build' goes into parent
         # Attributes/Items on builder are copied to items created in build
+        parent = self._mc_contained_in
         for build_key, build_value in self._mc_attributes.iteritems():
             if build_key in existing_attributes:
                 continue
 
             self._mc_what_built[build_key] = build_value._mc_value(self.env)
 
-            # Merge repeatable items into parent and update the contained_in ref to point to parent
+            # Merge repeatable items into parent
             if isinstance(build_value, Repeatable):
                 for rep_key, rep_value in build_value.iteritems():
                     override(rep_value, existing_attributes)
-                    rep_value._mc_contained_in = self.contained_in
 
-                    if not build_key in self.contained_in.__class__._mc_deco_nested_repeatables:
-                        raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key))
+                    if isinstance(parent, ConfigBuilder):
+                        parent._mc_child_build_attributes.setdefault(build_key, Repeatable())[rep_key] = rep_value
+                    else:
+                        if not build_key in parent.__class__._mc_deco_nested_repeatables:
+                            raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key))
 
-                    if rep_key in self.contained_in.attributes[build_key]:
-                        # TODO: Silently skip insert instead (optional warning)?
-                        raise ConfigException("Nested repeatable from 'build', key: " + repr(rep_key) + ", value: " + repr(rep_value) +
-                                              " overwrites existing entry in parent: " + repr(self._mc_contained_in))
-
-                    self.contained_in.attributes[build_key][rep_key] = rep_value
+                        if rep_key in parent.attributes[build_key]:
+                            # TODO: Silently skip insert instead (optional warning)?
+                            raise ConfigException("Nested repeatable from 'build', key: " + repr(rep_key) + ", value: " + repr(rep_value) +
+                                                  " overwrites existing entry in parent: " + repr(parent))
+                        parent.attributes[build_key][rep_key] = rep_value
                 continue
 
             if isinstance(build_value, ConfigItem):
                 override(build_value, existing_attributes)
-                build_value._mc_contained_in = self.contained_in
 
+            # Set non-repeatable items on parent
             # TODO validation
-            self._mc_contained_in.attributes[build_key] = build_value
+            if isinstance(parent, ConfigBuilder):
+                parent._mc_child_build_attributes[build_key] = build_value
+            else:
+                parent.attributes[build_key] = build_value
 
         self._mc_in_proxy_build = False
         return self

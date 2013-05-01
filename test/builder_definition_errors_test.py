@@ -189,18 +189,17 @@ def test_unexpected_repeatable_child_nested_builders():
 
     class MiddleBuilder(ConfigBuilder):
         def build(self):
-            pass
+            InnerBuilder()
 
     class OuterBuilder(ConfigBuilder):
         def build(self):
-            with MiddleBuilder():
-                InnerBuilder()
+            MiddleBuilder()
 
     class ItemWithoutARepeatable(ConfigItem):
         pass
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, valid_envs=[prod]):
+        with ConfigRoot(prod, valid_envs=[prod]) as cr:
             with ItemWithoutARepeatable():
                 OuterBuilder()
 
