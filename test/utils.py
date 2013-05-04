@@ -67,8 +67,12 @@ def replace_user_file_line_tuple(string):
 
 
 _replace_user_file_line_msg_regex = re.compile(r'File "[^"]+/([^/]+)_test.py", line [0-9]+')
-def replace_user_file_line_msg(string):
-    return _replace_user_file_line_msg_regex.sub(r'File "fake_dir/\1_test.py", line 999', string)
+def replace_user_file_line_msg(string, line_no=999):
+    return _replace_user_file_line_msg_regex.sub(r'File "fake_dir/\1_test.py", line %s' % line_no, string)
+
+_replace_multiconf_file_line_msg_regex = re.compile(r'File "[^"]+/multiconf/([^/]+).py", line [0-9]+')
+def replace_multiconf_file_line_msg(string):
+    return _replace_multiconf_file_line_msg_regex.sub(r'File "fake_multiconf_dir/\1.py", line 999', string)
 
 
 _replace_ids_regex = re.compile(r'("__id__"|, id| #id): [0-9]+("?),')

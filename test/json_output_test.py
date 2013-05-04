@@ -11,7 +11,7 @@ except ImportError:
     def decode(_string):
         return True
 
-from .utils import replace_ids, lineno, replace_ids_builder, to_compact
+from .utils import replace_ids, lineno, replace_ids_builder, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
 
@@ -689,9 +689,9 @@ def test_json_dump_user_defined_attribute_filter():
 
 _test_json_dump_dir_error_expected_stderr = """Error in json generation:
 Traceback (most recent call last):
-  File "/home/lhn/src/multiconf/json_output.py", line 0000, in default
+  File "fake_multiconf_dir/json_output.py", line 999, in default
     entries = dir(obj)
-  File "/home/lhn/src/multiconf/test/json_output_test.py", line %s, in __dir__
+  File "fake_dir/json_output_test.py", line %s, in __dir__
     raise Exception('Error in dir()')
 Exception: Error in dir()
 """
@@ -731,7 +731,7 @@ def test_json_dump_dir_error(capsys):
     mc_regexp = re.compile('json_output.py", line [0-9]*')
     _sout, serr = capsys.readouterr()
     # pylint: disable=W0212
-    assert mc_regexp.sub('json_output.py", line 0000', serr) == _test_json_dump_dir_error_expected_stderr % cr.someitem._errorline
+    assert replace_user_file_line_msg(replace_multiconf_file_line_msg(serr), cr.someitem._errorline) == _test_json_dump_dir_error_expected_stderr % cr.someitem._errorline
     compare_json(cr, _test_json_dump_dir_error_expected)
 
 
