@@ -241,3 +241,34 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
                 XChild(a=10)
 
     assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_child_with_nested_repeatables_undeclared_in_with_expected_ex
+
+
+def test_configbuilders_repeated_non_repeatable_in_build():
+    class MiddleItem(ConfigItem):
+        def __init__(self, name):
+            super(MiddleItem, self).__init__(id=name)
+    
+    class MiddleBuilder(ConfigBuilder):
+        def __init__(self, name):
+            super(MiddleBuilder, self).__init__(name=name)
+    
+        def build(self):
+            MiddleItem('middleitem1')
+            MiddleItem('middleitem2')
+            MiddleItem('middleitem3')
+    
+    class OuterItem(ConfigItem):
+        pass
+    
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, [prod], name='myp'):
+            with OuterItem():
+                MiddleBuilder('base1')
+
+    assert replace_ids(exinfo.value.message, False) == "Repeated non repeatable conf item: 'MiddleItem'"
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, [prod], name='myp'):
+            MiddleBuilder('base2')
+
+    assert replace_ids(exinfo.value.message, False) == "Repeated non repeatable conf item: 'MiddleItem'"

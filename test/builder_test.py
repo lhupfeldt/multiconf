@@ -463,8 +463,10 @@ def test_configbuilders_alternating_with_items_repeatable():
             super(InnerBuilder, self).__init__()
     
         def build(self):
-            InnerItem('innermost')
+            InnerItem('innermost1')
+            InnerItem('innermost2')
     
+    @repeat()
     @nested_repeatables('inners')
     class MiddleItem(ConfigItem):
         def __init__(self, name):
@@ -475,9 +477,11 @@ def test_configbuilders_alternating_with_items_repeatable():
             super(MiddleBuilder, self).__init__(name=name)
     
         def build(self):
-            with MiddleItem(name=self.name):
-                pass
+            MiddleItem('middleitem1')
+            MiddleItem('middleitem2')
+            MiddleItem('middleitem3')
     
+    @nested_repeatables('MiddleItems')
     class OuterItem(ConfigItem):
         pass
     
@@ -487,4 +491,4 @@ def test_configbuilders_alternating_with_items_repeatable():
                 InnerBuilder()
     
     print project.json(compact=True)
-    # TODO
+
