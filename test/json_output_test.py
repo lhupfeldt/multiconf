@@ -820,10 +820,6 @@ _test_json_dump_configbuilder_expected_json_full = """{
                 "y_children": {
                     "Hanna": "#ref id: 0000", 
                     "Herbert": "#ref id: 0000"
-                }, 
-                "ys": {
-                    "server3": "#ref id: 0000", 
-                    "server4": "#ref id: 0000"
                 }
             }
         }
@@ -836,11 +832,7 @@ _test_json_dump_configbuilder_expected_json_full = """{
         "y_children": {
             "Hugo": "#ref id: 0000"
         }, 
-        "YBuilder.builder.0000": "#ref id: 0000", 
-        "ys": {
-            "server1": "#ref id: 0000", 
-            "server2": "#ref id: 0000"
-        }
+        "YBuilder.builder.0000": "#ref id: 0000"
     }, 
     "aaa": 2, 
     "aaa #calculated": true
@@ -907,10 +899,6 @@ _test_json_dump_configbuilder_expected_json_repeatable_item = """{
         "y_children": {
             "Hanna": "#ref id: 0000", 
             "Herbert": "#ref id: 0000"
-        }, 
-        "ys": {
-            "server3": "#ref id: 0000", 
-            "server4": "#ref id: 0000"
         }
     }
 }"""

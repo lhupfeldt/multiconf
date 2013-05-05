@@ -57,3 +57,8 @@ class Attribute(object):
 
     def __repr__(self):
         return self.__class__.__name__ + ': ' + repr(self.attribute_name) + ':' + ('frozen' if self._mc_frozen else 'not-frozen') + ", values: " + repr(self.env_values)
+
+    def merge(self, other):
+        for env, value in other.env_values.iteritems():
+            self.env_values.setdefault(env, value)
+        return self

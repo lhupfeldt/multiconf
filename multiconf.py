@@ -35,12 +35,13 @@ class _ConfigBase(object):
         self._mc_json_filter = json_filter
         self._mc_root_conf = None
         self._mc_attributes = Repeatable()
+        self._mc_build_attributes = Repeatable()
         self._mc_frozen = False
         self._mc_in_init = True
         self._mc_in_build = False
         self._mc_in_proxy_build = False
         self._mc_user_validated = False
-        self._mc_currently_last_child = None
+        self._mc_previous_child = None
 
         # Prepare attributes with default values
         for key, value in attr.iteritems():
@@ -76,6 +77,83 @@ class _ConfigBase(object):
         return self.json(compact=True, property_methods=False, builders=True)
         # TODO proper pythonic repr, but until indentation is fixed, json is better
         # return self.irepr(len(self.__class__._mc_nested) -1)
+
+    def _mc_freeze_previous_child(self):
+        # Freeze attributes on previously defined child
+        previous_item = self._mc_previous_child
+        if previous_item and not previous_item.frozen:
+            try:
+                previous_item._mc_freeze()
+            except Exception as ex:
+                print >> sys.stderr, "Exception validating previously defined object -"
+                print >> sys.stderr, "  type:", type(previous_item)
+                print >> sys.stderr, "Stack trace will be misleading!"
+                print >> sys.stderr, "This happens if there is an error (e.g. missing required attributes) in an object that was not"
+                print >> sys.stderr, "directly enclosed in a with statement. Objects that are not arguments to a with statement will"
+                print >> sys.stderr, "not be validated until the next ConfigItem is declared or an outer with statement is exited."
+            
+                if hasattr(ex, '_mc_in_user_code') or _debug_exc:
+                    raise
+                raise ex
+
+    def _mc_insert_item(self, child_item):
+        self._mc_freeze_previous_child()
+        self._mc_previous_child = child_item
+
+        # Insert child_item in attributes
+        child_key = child_item.named_as()
+
+        if self._mc_in_build:
+            attributes = self._mc_build_attributes
+        else:
+            attributes = self._mc_attributes
+
+        if child_item.__class__._mc_deco_repeatable:
+            # Validate that this class specifies item as repeatable
+            if isinstance(self, ConfigBuilder):
+                attributes.setdefault(child_key, Repeatable())
+            elif not child_key in self.__class__._mc_deco_nested_repeatables:
+                raise ConfigException(child_item._error_msg_not_repeatable_in_container(child_key))
+            elif self._mc_in_build:
+                attributes.setdefault(child_key, Repeatable())
+
+            # Calculate key to use when inserting repeatable item in Repeatable dict
+            # Key is calculated as 'obj.id', 'obj.name' or id(obj) in that preferred order
+            try:
+                try:
+                    obj_key = child_item._mc_attributes['id']
+                except KeyError:
+                    obj_key = child_item._mc_attributes['name']
+                obj_key = obj_key.default_value()[0]
+
+                # Check that we are not replacing an object with the same id/name
+                if attributes[child_key].get(obj_key):
+                    raise ConfigException("Re-used id/name " + repr(obj_key) + " in nested objects")
+            except KeyError:
+                obj_key = id(child_item)
+
+            attributes[child_key][obj_key] = child_item
+            return
+
+        if child_key in attributes:
+            if isinstance(attributes[child_key], ConfigItem):
+                raise ConfigException("Repeated non repeatable conf item: " + repr(child_key))
+            if isinstance(attributes[child_key], Repeatable):
+                msg = repr(child_key) + ': ' + repr(child_item) + \
+                    ' is defined as non-repeatable, but the containing object has repeatable items with the same name: ' + repr(self)
+                raise ConfigException(msg)
+            raise ConfigException(repr(child_key) + ' is defined both as simple value and a contained item: ' + repr(child_item))
+
+        attributes[child_key] = child_item
+
+    def _mc_post_build_update(self):
+        # Merge items from build into items from with block
+        for child_key, child_item in self._mc_build_attributes.iteritems():
+            if isinstance(child_item, Repeatable):
+                for rep_key, rep_item in child_item.iteritems():
+                    self._mc_attributes[child_key].setdefault(rep_key, rep_item)
+                continue
+            self._mc_attributes.setdefault(child_key, child_item)
 
     def json(self, compact=False, property_methods=True, builders=False, skipkeys=True):
         """See json_output.ConfigItemEncoder for parameters"""
@@ -136,7 +214,7 @@ class _ConfigBase(object):
                     if not attr.num_errors:
                         self.check_attr_fully_defined(attr)
         if missing:
-            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + " == " + repr(required_if_condition) + ", missing attributes: " + repr(missing))
+            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + " == " + repr(required_if_condition) + ", missing attributes: " + repr(missing))        
 
     def _mc_freeze(self, _checked=True):
         """
@@ -161,6 +239,7 @@ class _ConfigBase(object):
             self._mc_in_build = True
             self.build()
             self._mc_in_build = False
+            self._mc_post_build_update()
         except Exception as ex:
             ex._mc_in_user_code = True
             raise
@@ -214,12 +293,13 @@ class _ConfigBase(object):
             eg_from = {}
             local = {}
 
-            attribute = self._mc_attributes.setdefault(name, Attribute(name))
+            if self._mc_in_build:
+                attributes = self._mc_build_attributes
+            else:
+                attributes = self._mc_attributes
+
+            attribute = attributes.setdefault(name, Attribute(name))
             if attribute._mc_frozen:
-                if self._mc_in_build:
-                    # Make sure an attribute set in build does not override an attribute set in with statement block
-                    return
-            
                 msg = "The attribute " + repr(name) + " is already fully defined"
                 attribute.error(msg)
                 raise ConfigException(msg + " on object " + repr(self))
@@ -242,12 +322,8 @@ class _ConfigBase(object):
                     for env in eg.envs():
                         self._check_env_is_valid(env, self.valid_envs)
 
-                        # Make sure an attribute set in build does not override an attribute set in with statement block
-                        if env in attribute.env_values and self._mc_in_build:
-                            continue
-
                         # Locally set attribute alway overwrite previously set 'unchecked'
-                        if env not in local and not self._mc_in_build:
+                        if env not in local:
                             attribute.env_values[env] = v_ufl
                             local[env] = True
                             eg_from[env] = eg
@@ -290,7 +366,7 @@ class _ConfigBase(object):
                     return
 
                 try:
-                    required_if_condition_attr = self.attributes[required_if_key]
+                    required_if_condition_attr = self._mc_attributes[required_if_key]
                     required_if_attribute_names = self.__class__._mc_deco_required_if[1]
                 except KeyError:
                     # The condition property was not specified, so the conditional properties are not required
@@ -377,10 +453,6 @@ class _ConfigBase(object):
         return self._mc_root_conf
 
     @property
-    def attributes(self):
-        return self._mc_attributes
-
-    @property
     def env(self):
         return self._mc_root_conf._mc_selected_env
 
@@ -417,7 +489,7 @@ class _ConfigBase(object):
         """Find first occurence of attribute 'attribute_name', by searching backwards towards root_conf, starting with self."""
         contained_in = self
         while contained_in:
-            attr = contained_in.attributes.get(attribute_name)
+            attr = contained_in._mc_attributes.get(attribute_name)
             if attr:
                 return contained_in.__getattr__(attribute_name)
             contained_in = contained_in.contained_in
@@ -505,70 +577,7 @@ class ConfigItem(_ConfigBase):
         # Set back reference to containing Item and root item
         self._mc_contained_in = self.__class__._mc_nested[-1]
         self._mc_root_conf = self._mc_contained_in.root_conf
-
-        # Freeze attributes on previously defined sibling
-        previous_item = self._mc_contained_in._mc_currently_last_child
-        if previous_item and not previous_item.frozen:
-            try:
-                previous_item._mc_freeze()
-            except Exception as ex:
-                print >> sys.stderr, "Exception validating previously defined object -"
-                print >> sys.stderr, "  type:", type(previous_item)
-                print >> sys.stderr, "Stack trace will be misleading!"
-                print >> sys.stderr, "This happens if there is an error (e.g. missing required attributes) in an object that was not"
-                print >> sys.stderr, "directly enclosed in a with statement. Objects that are not arguments to a with statement will"
-                print >> sys.stderr, "not be validated until the next ConfigItem is declared or an outer with statement is exited."
-            
-                if hasattr(ex, '_mc_in_user_code') or _debug_exc:
-                    raise
-                raise ex
-
-        # Automatic Nested Insert in parent, insert self in containing Item's attributes
-        self._mc_contained_in._mc_currently_last_child = self
-        my_key = self.named_as()
-
-        if self.__class__._mc_deco_repeatable:
-            # Validate that the containing item has specified this item as repeatable
-            if not my_key in self._mc_contained_in.__class__._mc_deco_nested_repeatables:
-                if isinstance(self._mc_contained_in, ConfigBuilder):
-                    # Builders don't declare nested repeatables, since the items are ultimately to be assigned to the built items
-                    self._mc_contained_in.attributes.setdefault(my_key, Repeatable())
-                else:
-                    raise ConfigException(self._error_msg_not_repeatable_in_container(my_key))
-                    # TODO?: type check of list items (isinstance(ConfigItem). Same type?
-
-            # Insert in Ordered dict by 'obj.id' or 'obj.name', 'id' is preferred if given
-            # If neither is given use id(obj)
-            try:
-                try:
-                    obj_key = self._mc_attributes['id']
-                except KeyError:
-                    obj_key = self._mc_attributes['name']
-                obj_key = obj_key.default_value()[0]
-
-                # Check that we are not replacing an object with the same id/name
-                if self._mc_contained_in.attributes[my_key].get(obj_key):
-                    if self._mc_contained_in._mc_in_build:
-                        return
-                    raise ConfigException("Re-used id/name " + repr(obj_key) + " in nested objects")
-            except KeyError:
-                obj_key = id(self)
-
-            self._mc_contained_in.attributes[my_key][obj_key] = self
-            return
-
-        if my_key in self._mc_contained_in.attributes:
-            if self._mc_contained_in._mc_in_build:
-                return
-            if isinstance(self._mc_contained_in.attributes[my_key], ConfigItem):
-                raise ConfigException("Repeated non repeatable conf item: " + repr(my_key))
-            if isinstance(self._mc_contained_in.attributes[my_key], Repeatable):
-                msg = repr(my_key) + ': ' + repr(self) + ' is defined as non-repeatable, but the containing object has repeatable items with the same name: ' + \
-                    repr(self._mc_contained_in)
-                raise ConfigException(msg)
-            raise ConfigException(repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self))
-
-        self._mc_contained_in.attributes[my_key] = self
+        self._mc_contained_in._mc_insert_item(self)
 
     def _error_msg_not_repeatable_in_container(self, key):
         return repr(key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
@@ -581,17 +590,21 @@ class ConfigBuilder(ConfigItem):
 
     def __init__(self, json_filter=None, **attr):
         super(ConfigBuilder, self).__init__(json_filter=json_filter, **attr)
-        self._mc_what_built = OrderedDict()
         self._mc_child_build_attributes = OrderedDict()
 
-    def _mc_freeze(self, _checked=True):
-        if self._mc_frozen:
-            return
+    def _mc_post_build_update(self):
+        # # Merge items from build into items from with block
+        # for child_key, child_item in self._mc_build_attributes.iteritems():
+        #     if isinstance(child_item, Repeatable):
+        #         for rep_key, rep_item in child_item.iteritems():
+        #             self._mc_attributes.setdefault(child_key, Repeatable()).setdefault(rep_key, rep_item)
+        #         continue
+        #     self._mc_attributes.setdefault(child_key, child_item)
 
-        def override(item_from_build, attributes_from_with_block):
+        def override(item_from_build):
             item_from_build._mc_contained_in = self._mc_contained_in
 
-            for override_key, override_value in itertools.chain(attributes_from_with_block.iteritems(), self._mc_child_build_attributes.iteritems()):
+            for override_key, override_value in itertools.chain(self._mc_attributes.iteritems(), self._mc_child_build_attributes.iteritems()):
                 if override_value._mc_value(self.env) == None:
                     continue
 
@@ -616,26 +629,15 @@ class ConfigBuilder(ConfigItem):
 
                 item_from_build._mc_attributes[override_key] = override_value
 
-        existing_attributes = self._mc_attributes.copy()
-
-        self._mc_in_proxy_build = True
-
-        super(ConfigBuilder, self)._mc_freeze()
-
         # Loop over attributes created in build
         # Items and attributes created in 'build' goes into parent
         # Attributes/Items on builder are copied to items created in build
         parent = self._mc_contained_in
-        for build_key, build_value in self._mc_attributes.iteritems():
-            if build_key in existing_attributes:
-                continue
-
-            self._mc_what_built[build_key] = build_value._mc_value(self.env)
-
+        for build_key, build_value in self._mc_build_attributes.iteritems():
             # Merge repeatable items into parent
             if isinstance(build_value, Repeatable):
                 for rep_key, rep_value in build_value.iteritems():
-                    override(rep_value, existing_attributes)
+                    override(rep_value)
 
                     if isinstance(parent, ConfigBuilder):
                         parent._mc_child_build_attributes.setdefault(build_key, Repeatable())[rep_key] = rep_value
@@ -643,24 +645,31 @@ class ConfigBuilder(ConfigItem):
                         if not build_key in parent.__class__._mc_deco_nested_repeatables:
                             raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key))
 
-                        if rep_key in parent.attributes[build_key]:
+                        if rep_key in parent._mc_attributes[build_key]:
                             # TODO: Silently skip insert instead (optional warning)?
                             raise ConfigException("Nested repeatable from 'build', key: " + repr(rep_key) + ", value: " + repr(rep_value) +
                                                   " overwrites existing entry in parent: " + repr(parent))
-                        parent.attributes[build_key][rep_key] = rep_value
+                        parent._mc_attributes[build_key][rep_key] = rep_value
                 continue
 
             if isinstance(build_value, ConfigItem):
-                override(build_value, existing_attributes)
+                override(build_value)
 
             # Set non-repeatable items on parent
             # TODO validation
             if isinstance(parent, ConfigBuilder):
                 parent._mc_child_build_attributes[build_key] = build_value
             else:
-                parent.attributes[build_key] = build_value
+                parent._mc_attributes[build_key] = build_value
 
+    def _mc_freeze(self, _checked=True):
+        if self._mc_frozen:
+            return
+
+        self._mc_in_proxy_build = True
+        super(ConfigBuilder, self)._mc_freeze()
         self._mc_in_proxy_build = False
+
         return self
 
     @abc.abstractmethod
@@ -669,7 +678,7 @@ class ConfigBuilder(ConfigItem):
         raise Exception("AbstractNotImplemented")
 
     def what_built(self):
-        return self._mc_what_built
+        return OrderedDict([(key, attr._mc_value(self.env)) for key, attr in self._mc_build_attributes.iteritems()])
 
     def named_as(self):
         return super(ConfigBuilder, self).named_as() + '.builder.' + repr(id(self))

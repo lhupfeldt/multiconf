@@ -352,7 +352,7 @@ def test_configbuilder_repeated():
     assert isinstance(xb1.what_built(), OrderedDict) == True
     assert xb1.what_built()['q'] == 2
 
-    assert len(xb1.what_built()) == 2
+    assert len(xb2.what_built()) == 2
     assert isinstance(xb2.what_built(), OrderedDict) == True
     assert xb2.what_built()['xses']['server3'].something == 1
     assert xb2.what_built()['q'] == 3

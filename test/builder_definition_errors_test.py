@@ -95,22 +95,7 @@ _test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item
     }, 
     "XBuilder.builder.0000": {
         "__class__": "XBuilder #as: 'XBuilder.builder.0000', id: 0000", 
-        "num_servers": 2, 
-        "xses": {
-            "server1": {
-                "__class__": "Xses #as: 'xses', id: 0000", 
-                "name": "server1", 
-                "server_num": 1, 
-                "something": 1, 
-                "num_servers": 2
-            }, 
-            "server2": {
-                "__class__": "Xses #as: 'xses', id: 0000", 
-                "name": "server2", 
-                "server_num": 2, 
-                "something": 1
-            }
-        }
+        "num_servers": 2
     }
 }"""
 
@@ -133,7 +118,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
             Xses(name='server1')
             with XBuilder():
                 pass
-
+    
     assert replace_ids_builder(exinfo.value.message, False) == _test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
 
 
