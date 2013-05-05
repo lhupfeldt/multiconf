@@ -23,6 +23,7 @@ pp = ef.Env('pp')
 prod = ef.Env('prod')
 
 g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
+a = ef.EnvGroup('a', prod, pp)
 
 
 @nested_repeatables('children')
@@ -320,10 +321,12 @@ def test_find_attribute_attribute_name():
 
 
 def test_env_value_overrides_group_value():
-    with ConfigRoot(prod, [prod, pp]) as cr1:
+    with ConfigRoot(prod, [dev1, prod, pp]) as cr1:
         with ConfigItem() as ci:
-            ci.setattr('aa', prod=1, g_prod_like=2)
-            ci.setattr('bb', g_prod_like=2, prod=3)
+            ci.setattr('aa', prod=1, g_prod_like=2, dev1=3)
+            # Note: Parameters are passed as a dictionary with undefined order
+            #  - Having a group named 'a' gives us 100% coverage in C Python
+            ci.setattr('bb', dev1=1, a=2, prod=3, pp=4)
 
     assert cr1.ConfigItem.aa == 1
     assert cr1.ConfigItem.bb == 3
