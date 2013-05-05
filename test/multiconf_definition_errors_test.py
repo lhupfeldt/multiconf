@@ -99,23 +99,6 @@ _k4_expected = """'RepeatableItems': {
 }"""
 
 
-_o_expected = """A value is already specified for: Env('dev2ct') from group EnvGroup('g_dev_overlap') {
-     Env('dev2ct')
-}=(3, ('fake_dir/multiconf_definition_errors_test.py', 999)), previous value: EnvGroup('g_dev2') {
-     Env('dev2ct'),
-     Env('dev2st')
-}=(2, ('fake_dir/multiconf_definition_errors_test.py', 999))"""
-
-_o_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
-    "env": {
-        "__class__": "Env", 
-        "name": "prod"
-    }, 
-    "a": 1
-}"""
-
-
 _p_expected = """A value is already specified for: Env('dev2ct') from group EnvGroup('g_dev_overlap') {
      Env('dev2ct'),
      Env('dev3ct')
@@ -130,22 +113,6 @@ _p_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
         "__class__": "Env", 
         "name": "prod"
     }, 
-    "a": 1
-}"""
-
-
-_r_expected = """The attribute 'a' is already fully defined"""
-_r1_expected_ex = _r_expected + """ on object {
-    "__class__": "project #as: 'project', id: 0000, not-frozen", 
-    "env": {
-        "__class__": "Env", 
-        "name": "prod"
-    }, 
-    "RepeatableItems": {}, 
-    "a": 1
-}"""
-_r2_expected_ex = _r_expected + """ on object {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen", 
     "a": 1
 }"""
 
@@ -370,6 +337,22 @@ def test_nested_repeatable_items_with_repeated_name(capsys):
     assert exinfo.value.message == "Re-used id/name 'my_name' in nested objects"
 
 
+_value_defined_through_multiple_groups_expected = """A value is already specified for: Env('dev2ct') from group EnvGroup('g_dev_overlap') {
+     Env('dev2ct')
+}=(3, ('fake_dir/multiconf_definition_errors_test.py', 999)), previous value: EnvGroup('g_dev2') {
+     Env('dev2ct'),
+     Env('dev2st')
+}=(2, ('fake_dir/multiconf_definition_errors_test.py', 999))"""
+
+_value_defined_through_multiple_groups_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 1
+}"""
+
 def test_value_defined_through_multiple_groups(capsys):
     with raises(ConfigException) as exinfo:
         g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct)
@@ -379,8 +362,8 @@ def test_value_defined_through_multiple_groups(capsys):
             cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_tuple(serr) == ce(errorline, _o_expected)
-    assert replace_ids(exinfo.value.message, False) == _o_expected_ex
+    assert replace_user_file_line_tuple(serr) == ce(errorline, _value_defined_through_multiple_groups_expected)
+    assert replace_ids(exinfo.value.message, False) == _value_defined_through_multiple_groups_expected_ex
 
 
 def test_value_defined_through_multiple_groups2(capsys):
@@ -396,6 +379,17 @@ def test_value_defined_through_multiple_groups2(capsys):
     assert replace_ids(exinfo.value.message, False) == _p_expected_ex
 
 
+_assigning_owerwrites_attribute_root_expected = """The attribute 'a' is already fully defined"""
+_assigning_owerwrites_attribute_root_expected_ex = _assigning_owerwrites_attribute_root_expected + """ on object {
+    "__class__": "project #as: 'project', id: 0000, not-frozen", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "RepeatableItems": {}, 
+    "a": 1
+}"""
+
 def test_assigning_owerwrites_attribute_root(capsys):
     with raises(ConfigException) as exinfo:
         with project(prod, [prod]) as cr:
@@ -404,9 +398,14 @@ def test_assigning_owerwrites_attribute_root(capsys):
             cr.a = 2
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, _r_expected)
-    assert replace_ids(exinfo.value.message, named_as=False) == _r1_expected_ex
+    assert serr == ce(errorline, _assigning_owerwrites_attribute_root_expected)
+    assert replace_ids(exinfo.value.message, named_as=False) == _assigning_owerwrites_attribute_root_expected_ex
 
+
+_assigning_owerwrites_attribute_nested_item_expected_ex = _assigning_owerwrites_attribute_root_expected + """ on object {
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen", 
+    "a": 1
+}"""
 
 def test_assigning_owerwrites_attribute_nested_item(capsys):
     with raises(ConfigException) as exinfo:
@@ -417,8 +416,8 @@ def test_assigning_owerwrites_attribute_nested_item(capsys):
                 ci.a = 1
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, _r_expected)
-    assert replace_ids(exinfo.value.message, named_as=False) == _r2_expected_ex
+    assert serr == ce(errorline, _assigning_owerwrites_attribute_root_expected)
+    assert replace_ids(exinfo.value.message, named_as=False) == _assigning_owerwrites_attribute_nested_item_expected_ex
 
 
 def test_configitem_outside_of_root(capsys):
