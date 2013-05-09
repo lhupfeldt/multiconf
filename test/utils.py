@@ -74,12 +74,11 @@ _replace_multiconf_file_line_msg_regex = re.compile(r'File "[^"]+/multiconf/([^/
 def replace_multiconf_file_line_msg(string):
     return _replace_multiconf_file_line_msg_regex.sub(r'File "fake_multiconf_dir/\1.py", line 999', string)
 
-
-_replace_ids_regex = re.compile(r'("__id__"|, id| #id): [0-9]+("?),')
+_replace_ids_regex = re.compile(r'("__id__"|, id| #id): [0-9]+("?)')
 _replace_refs_regex = re.compile(r'"#ref (self, |later, |)id: [0-9]+')
 _replace_named_as_regex = re.compile(r" #as: '[^,]+',")
 def replace_ids(json_string, named_as=True):
-    json_string = _replace_ids_regex.sub(r'\1: 0000\2,', json_string)
+    json_string = _replace_ids_regex.sub(r'\1: 0000\2', json_string)
     if named_as:
         json_string = _replace_named_as_regex.sub(r" #as: 'xxxx',", json_string)
     return _replace_refs_regex.sub(r'"#ref \1id: 0000', json_string)

@@ -75,7 +75,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
     assert replace_ids(exinfo.value.message, False) == "Use of 'contained_in' in not allowed in object while under a ConfigBuilder"
 
 
-_test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Nested repeatable from 'build', key: 'server1', value: {
+_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Nested repeatable from 'build', key: 'server1', value: {
     "__class__": "Xses #as: 'xses', id: 0000", 
     "name": "server1", 
     "server_num": 1, 
@@ -119,7 +119,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
             with XBuilder():
                 pass
     
-    assert replace_ids_builder(exinfo.value.message, False) == _test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
+    assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
 
 
 def test_configbuilder_without_build():
@@ -134,7 +134,7 @@ def test_configbuilder_without_build():
 
 
 _unexpected_repeatable_child_builder_expected_ex = """'r': {
-    "__class__": "RepeatableChild #as: 'r', id: 0000, not-frozen"
+    "__class__": "RepeatableChild #as: 'r', id: 0000"
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"""
 
 def test_unexpected_repeatable_child_builder():
@@ -151,33 +151,35 @@ def test_unexpected_repeatable_child_builder():
         with ConfigRoot(prod, valid_envs=[prod]):
             UnexpectedRepeatableChildBuilder()
 
-    _replace_key_ids_regex = re.compile(r"""\"[0-9]+\": {""")
-    ex_msg = _replace_key_ids_regex.sub(r'"0000": {', exinfo.value.message)
-    assert replace_ids_builder(ex_msg, False) == _unexpected_repeatable_child_builder_expected_ex
+    assert replace_ids(exinfo.value.message, False) == _unexpected_repeatable_child_builder_expected_ex
 
 
 _unexpected_repeatable_child_nested_builders_expected_ex = """'arepeatable': {
-    "__class__": "Repeatable #as: 'arepeatable', id: 0000, not-frozen", 
+    "__class__": "RepItem #as: 'arepeatable', id: 0000", 
     "name": "a"
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ItemWithoutARepeatable'"""
 
 def test_unexpected_repeatable_child_nested_builders():
     @repeat()
     @named_as('arepeatable')
-    class Repeatable(ConfigItem):
+    class RepItem(ConfigItem):
         def __init__(self):
-            super(Repeatable, self).__init__(name='a')
+            print "RepItem.__init__"
+            super(RepItem, self).__init__(name='a')
 
     class InnerBuilder(ConfigBuilder):
         def build(self):
-            Repeatable()
+            print "InnerBuilder.build"
+            RepItem()
 
     class MiddleBuilder(ConfigBuilder):
         def build(self):
+            print "MiddleBuilder.build"
             InnerBuilder()
 
     class OuterBuilder(ConfigBuilder):
         def build(self):
+            print "OuterBuilder.build"
             MiddleBuilder()
 
     class ItemWithoutARepeatable(ConfigItem):
@@ -187,10 +189,9 @@ def test_unexpected_repeatable_child_nested_builders():
         with ConfigRoot(prod, valid_envs=[prod]) as cr:
             with ItemWithoutARepeatable():
                 OuterBuilder()
+        print 'cr:', cr
 
-    _replace_key_ids_regex = re.compile(r"""\"[0-9]+\": {""")
-    ex_msg = _replace_key_ids_regex.sub(r'"0000": {', exinfo.value.message)
-    assert replace_ids_builder(ex_msg, False) == _unexpected_repeatable_child_nested_builders_expected_ex
+    assert replace_ids(exinfo.value.message, False) == _unexpected_repeatable_child_nested_builders_expected_ex
 
 
 _configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex = """'x_children': {

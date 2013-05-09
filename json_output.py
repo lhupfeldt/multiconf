@@ -57,7 +57,7 @@ class ConfigItemEncoder(json.JSONEncoder):
         self.seen[id(obj)] = obj
 
     def _check_nesting(self, obj, child_obj):
-        # Returns (new)val
+        # Returns child_obj or reference info string
         # Check that object being dumped is actually contained in self
         # We dont want to display an outer/sibling object as nested under an inner object
         # Check for reference to parent or sibling object (in case we dump from a lower level than root)
@@ -67,18 +67,21 @@ class ConfigItemEncoder(json.JSONEncoder):
         child_obj, done = self._check_already_dumped(child_obj)
 
         if not done and isinstance(child_obj, multiconf._ConfigBase):
-            contained_in = child_obj.contained_in
+            top = child_obj
+            contained_in = child_obj._mc_contained_in
             if contained_in is obj:
                 return child_obj
 
             while contained_in:
                 if contained_in is self.start_obj:
                     return "#ref later, id: " + repr(id(child_obj))
-                contained_in = contained_in.contained_in
+                top = contained_in
+                contained_in = contained_in._mc_contained_in
             else:
+                ref_msg = '#original-cloned-item-ref: ' if not isinstance(top, multiconf.ConfigRoot) else "#outside-ref: "
                 id_msg = ": id: " + repr(child_obj.id) if hasattr(child_obj, 'id') else ''
                 name_msg = ", name: " + repr(child_obj.name) if hasattr(child_obj, 'name') else ''
-                child_obj = "#outside-ref: " + child_obj.__class__.__name__ + id_msg + name_msg
+                return ref_msg + child_obj.__class__.__name__ + id_msg + name_msg
 
         return child_obj
 

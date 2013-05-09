@@ -248,22 +248,22 @@ def test_configbuilder_nested_items_access_to_contained_in():
 def test_configbuilder_multilevel_nested_items_access_to_contained_in():
     ybuilder_in_build_contained_in = []
     ys_in_init_contained_in = []
-    
+
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
             super(YBuilder, self).__init__()
             self.start = start
-    
+
         def build(self):
             ybuilder_in_build_contained_in.append(self.contained_in)
             for num in xrange(self.start, self.start + self.contained_in.aaa):
                 with Y(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
-    
+
     @nested_repeatables('ys')
     class ItemWithYs(ConfigItem):
         aaa = 2
-    
+
     @named_as('ys')
     @repeat()
     @nested_repeatables('y_children, ys')
@@ -271,43 +271,46 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
         def __init__(self, **kwarg):
             super(Y, self).__init__(**kwarg)
             ys_in_init_contained_in.append(self.contained_in)
-    
+
     @named_as('y_children')
     @repeat()
     class YChild(ConfigItem):
         pass
-    
+
     with ConfigRoot(prod, [prod, pp]) as cr:
         with ItemWithYs() as item:
             with YBuilder() as yb1:
                 yb1.b = 27
-                y1 = YChild(a=10)
+                yc10 = YChild(a=10)
                 with YBuilder(start=3) as yb2:
                     yb2.c = 28
-                    y2 = YChild(a=11)
+                    yc11 = YChild(a=11)
                     YChild(a=12)
-    
+
     assert len(item.ys) == 2
     total = 0
     for server in 'server1', 'server2':
         for y_child in item.ys[server].y_children.values():
             print y_child.a
+            assert type(y_child.contained_in) == Y
             total += y_child.a
         for inner_server in 'server3', 'server4':
             for y_child in item.ys[server].ys[inner_server].y_children.values():
+                assert type(y_child.contained_in) == Y
                 print y_child.a
                 total += y_child.a
     assert total == 112, total
-    
-    assert type(y1.contained_in) == Y
-    assert y1.contained_in.start == 1
-    assert type(y2.contained_in) == Y
-    assert y2.contained_in.start == 3
-    
+
+    # The item created under the builder with statement will have contained_in == None
+    # It may be cloned for insertion under multiple items created in 'build'
+    # The cloning is necessery to make sure the contained_in ref actually references the final parent
+    assert yc10.contained_in == None
+    assert yc11.contained_in == None
+
     assert len(ybuilder_in_build_contained_in) == 2
     for ci in ybuilder_in_build_contained_in:
         assert ci == item
-    
+
     assert len(ys_in_init_contained_in) == 4
     for ci in ys_in_init_contained_in:
         assert ci == item
@@ -419,76 +422,157 @@ def test_configbuilders_alternating_with_items():
     class InnerItem(ConfigItem):
         def __init__(self, name):
             super(InnerItem, self).__init__(name=name)
-    
+
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
             super(InnerBuilder, self).__init__()
-    
+
         def build(self):
             InnerItem('innermost')
-    
+
     class MiddleItem(ConfigItem):
         def __init__(self, name):
             super(MiddleItem, self).__init__(id=name)
-    
+
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
             super(MiddleBuilder, self).__init__(name=name)
-    
+
         def build(self):
             with MiddleItem(name=self.name):
                 pass
-    
+
     class OuterItem(ConfigItem):
         pass
-    
+
     with ConfigRoot(prod, [prod], name='myp') as project:
         with OuterItem():
             with MiddleBuilder('base'):
                 InnerBuilder()
-    
+
     print project.json(compact=True)
     # TODO
 
 
-def test_configbuilders_alternating_with_items_repeatable():
+def test_configbuilders_alternating_with_items_repeatable_simple():
     @repeat()
     @named_as('inners')
     class InnerItem(ConfigItem):
         def __init__(self, name):
             super(InnerItem, self).__init__(name=name)
-    
+
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
             super(InnerBuilder, self).__init__()
-    
+
+        def build(self):
+            InnerItem('innermost')
+
+    class OuterBuilder(ConfigBuilder):
+        def __init__(self):
+            super(OuterBuilder, self).__init__()
+
+        def build(self):
+            InnerBuilder()
+
+    @nested_repeatables('inners')
+    class OuterItem(ConfigItem):
+        pass
+
+    with ConfigRoot(prod, [prod], name='myp') as cr:
+        with OuterItem():
+            OuterBuilder()
+
+    print cr.json()
+    # TODO
+
+
+def test_configbuilders_alternating_with_items_repeatable_many():
+    @repeat()
+    @named_as('inners')
+    class InnerItem(ConfigItem):
+        def __init__(self, name):
+            super(InnerItem, self).__init__(name=name)
+
+    class InnerBuilder(ConfigBuilder):
+        def __init__(self):
+            super(InnerBuilder, self).__init__()
+
         def build(self):
             InnerItem('innermost1')
             InnerItem('innermost2')
-    
+
     @repeat()
     @nested_repeatables('inners')
     class MiddleItem(ConfigItem):
         def __init__(self, name):
             super(MiddleItem, self).__init__(id=name)
-    
+
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
             super(MiddleBuilder, self).__init__(name=name)
-    
+
         def build(self):
             MiddleItem('middleitem1')
             MiddleItem('middleitem2')
             MiddleItem('middleitem3')
-    
+
     @nested_repeatables('MiddleItems')
     class OuterItem(ConfigItem):
         pass
-    
+
     with ConfigRoot(prod, [prod], name='myp') as project:
         with OuterItem():
             with MiddleBuilder('base'):
                 InnerBuilder()
-    
-    print project.json(compact=True)
 
+    print project.json(compact=True)
+    # TODO
+
+
+def test_configbuilders_alternating_with_items_repeatable_multilevel():
+    @repeat()
+    @named_as('inners')
+    class InnerItem(ConfigItem):
+        def __init__(self, name):
+            super(InnerItem, self).__init__(name=name)
+
+    class InnerBuilder(ConfigBuilder):
+        def __init__(self):
+            super(InnerBuilder, self).__init__()
+
+        def build(self):
+            InnerItem('innermost')
+
+    @repeat()
+    @nested_repeatables('inners')
+    class MiddleItem(ConfigItem):
+        def __init__(self, name):
+            super(MiddleItem, self).__init__(id=name)
+
+    class MiddleBuilder(ConfigBuilder):
+        def __init__(self, name):
+            super(MiddleBuilder, self).__init__(name=name)
+
+        def build(self):
+            with MiddleItem(name=self.name):
+                pass
+
+    class OuterBuilder(ConfigBuilder):
+        def __init__(self):
+            super(OuterBuilder, self).__init__()
+
+        def build(self):
+            with MiddleBuilder('base'):
+                InnerBuilder()
+
+    @nested_repeatables('MiddleItems')
+    class OuterItem(ConfigItem):
+        pass
+
+    with ConfigRoot(prod, [prod], name='myp') as cr:
+        with OuterItem():
+            OuterBuilder()
+
+    print cr.json(builders=True)
+    # TODO

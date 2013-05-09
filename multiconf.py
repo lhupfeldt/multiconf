@@ -1,11 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys
-import abc
-import os
+import sys, abc, os, copy
 from collections import Sequence, OrderedDict
-import itertools
 import json
 
 from .envs import BaseEnv, Env, EnvGroup, EnvException
@@ -19,6 +16,7 @@ _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
 
 class ConfigApiException(ConfigBaseException):
     pass
+        
 
 class _ConfigBase(object):
     _mc_nested = []
@@ -102,18 +100,14 @@ class _ConfigBase(object):
 
         # Insert child_item in attributes
         child_key = child_item.named_as()
-
-        if self._mc_in_build:
-            attributes = self._mc_build_attributes
-        else:
-            attributes = self._mc_attributes
+        attributes = self._mc_build_attributes if self._mc_in_build else self._mc_attributes
 
         if child_item.__class__._mc_deco_repeatable:
             # Validate that this class specifies item as repeatable
             if isinstance(self, ConfigBuilder):
                 attributes.setdefault(child_key, Repeatable())
             elif not child_key in self.__class__._mc_deco_nested_repeatables:
-                raise ConfigException(child_item._error_msg_not_repeatable_in_container(child_key))
+                raise ConfigException(child_item._error_msg_not_repeatable_in_container(child_key, self))
             elif self._mc_in_build:
                 attributes.setdefault(child_key, Repeatable())
 
@@ -224,11 +218,10 @@ class _ConfigBase(object):
         """
         if self._mc_frozen:
             return
-
-        check = self._mc_deco_unchecked != self.__class__ and self._mc_deco_unchecked not in self.__class__.__bases__
+        check = (self._mc_deco_unchecked != self.__class__ and self._mc_deco_unchecked not in self.__class__.__bases__) and _checked
+        self._mc_frozen = check
         for _child_name, child_value in self._mc_attributes.iteritems():
             child_value._mc_freeze(check)
-        self._mc_frozen = check
 
         must_pop = False
         self._mc_in_init = False
@@ -238,8 +231,10 @@ class _ConfigBase(object):
         try:
             self._mc_in_build = True
             self.build()
-            self._mc_in_build = False
+            for _name, value in self._mc_build_attributes.iteritems():
+                value._mc_freeze(check)
             self._mc_post_build_update()
+            self._mc_in_build = False
         except Exception as ex:
             ex._mc_in_user_code = True
             raise
@@ -293,11 +288,7 @@ class _ConfigBase(object):
             eg_from = {}
             local = {}
 
-            if self._mc_in_build:
-                attributes = self._mc_build_attributes
-            else:
-                attributes = self._mc_attributes
-
+            attributes = self._mc_build_attributes if self._mc_in_build else self._mc_attributes
             attribute = attributes.setdefault(name, Attribute(name))
             if attribute._mc_frozen:
                 msg = "The attribute " + repr(name) + " is already fully defined"
@@ -409,7 +400,7 @@ class _ConfigBase(object):
 
     def __getattr__(self, name):
         if name.startswith('__'):
-            super(_ConfigBase, self).__getattr__(name)
+            return super(_ConfigBase, self).__getattr__(name)
 
         if name.startswith('_mc'):
             ex_msg = "An error was detected trying to get attribute " + repr(name) + " on class " + repr(self.__class__.__name__)
@@ -465,7 +456,7 @@ class _ConfigBase(object):
         while contained_in:
             if contained_in._mc_json_filter:
                 return contained_in._mc_json_filter
-            contained_in = contained_in.contained_in
+            contained_in = contained_in._mc_contained_in
         return None
 
     def find_contained_in(self, named_as):
@@ -579,10 +570,9 @@ class ConfigItem(_ConfigBase):
         self._mc_root_conf = self._mc_contained_in.root_conf
         self._mc_contained_in._mc_insert_item(self)
 
-    def _error_msg_not_repeatable_in_container(self, key):
+    def _error_msg_not_repeatable_in_container(self, key, containing_class):
         return repr(key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
-            repr(self.contained_in.named_as())
-
+            repr(containing_class.named_as())
 
 
 class ConfigBuilder(ConfigItem):
@@ -590,77 +580,75 @@ class ConfigBuilder(ConfigItem):
 
     def __init__(self, json_filter=None, **attr):
         super(ConfigBuilder, self).__init__(json_filter=json_filter, **attr)
-        self._mc_child_build_attributes = OrderedDict()
 
     def _mc_post_build_update(self):
-        # # Merge items from build into items from with block
-        # for child_key, child_item in self._mc_build_attributes.iteritems():
-        #     if isinstance(child_item, Repeatable):
-        #         for rep_key, rep_item in child_item.iteritems():
-        #             self._mc_attributes.setdefault(child_key, Repeatable()).setdefault(rep_key, rep_item)
-        #         continue
-        #     self._mc_attributes.setdefault(child_key, child_item)
-
-        def override(item_from_build):
-            item_from_build._mc_contained_in = self._mc_contained_in
-
-            for override_key, override_value in itertools.chain(self._mc_attributes.iteritems(), self._mc_child_build_attributes.iteritems()):
-                if override_value._mc_value(self.env) == None:
+        def set_my_attributes_on_item_from_build(me, item_from_build, clone):
+            for override_key, override_value in me._mc_attributes.iteritems():
+                if override_value._mc_value(me.env) == None:
                     continue
 
                 if isinstance(override_value, Repeatable):
-                    for repeatable_override_key, repeatable_override_value in override_value.iteritems():
-                        repeatable_override_value._mc_contained_in = item_from_build
+                    for rep_override_key, rep_override_value in override_value.iteritems():
                         if not override_key in item_from_build.__class__._mc_deco_nested_repeatables:
-                            raise ConfigException(repeatable_override_value._error_msg_not_repeatable_in_container(override_key))
+                            raise ConfigException(rep_override_value._error_msg_not_repeatable_in_container(override_key, item_from_build))
 
-                        # TODO: is this relevant?
-                        #if repeatable_override_value._mc_value(self.env) == None:
-                        #    continue
+                        rep_override_value._mc_contained_in = None
+                        ov = copy.copy(rep_override_value) if clone else rep_override_value
+                        ov._mc_contained_in = item_from_build
 
-                        item_from_build._mc_attributes[override_key][repeatable_override_key] = repeatable_override_value
-
+                        item_from_build._mc_attributes[override_key][rep_override_key] = ov
                     continue
 
                 if isinstance(override_value, ConfigItem):
-                    item_from_build._mc_attributes[override_key] = override_value
-                    override_value._mc_contained_in = item_from_build
+                    override_value._mc_contained_in = None
+                    ov = copy.copy(override_value) if clone else override_value
+                    ov._mc_contained_in = item_from_build
+                    item_from_build._mc_attributes[override_key] = ov
                     continue
 
                 item_from_build._mc_attributes[override_key] = override_value
 
-        # Loop over attributes created in build
-        # Items and attributes created in 'build' goes into parent
-        # Attributes/Items on builder are copied to items created in build
-        parent = self._mc_contained_in
-        for build_key, build_value in self._mc_build_attributes.iteritems():
+        def from_build_to_parent(build_key, build_value):
+            """Copy/Merge all items/attributes defined in 'build' into parent object"""
+            parent = self._mc_contained_in
+            parent_attributes = parent._mc_build_attributes if parent._mc_in_build else parent._mc_attributes
+
             # Merge repeatable items into parent
             if isinstance(build_value, Repeatable):
                 for rep_key, rep_value in build_value.iteritems():
-                    override(rep_value)
+                    rep_value._mc_contained_in = parent
+                    set_my_attributes_on_item_from_build(self, rep_value, clone=True)
 
                     if isinstance(parent, ConfigBuilder):
-                        parent._mc_child_build_attributes.setdefault(build_key, Repeatable())[rep_key] = rep_value
-                    else:
-                        if not build_key in parent.__class__._mc_deco_nested_repeatables:
-                            raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key))
+                        parent_attributes.setdefault(build_key, Repeatable())
+                    elif not build_key in parent.__class__._mc_deco_nested_repeatables:
+                        raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key, parent))
 
-                        if rep_key in parent._mc_attributes[build_key]:
-                            # TODO: Silently skip insert instead (optional warning)?
-                            raise ConfigException("Nested repeatable from 'build', key: " + repr(rep_key) + ", value: " + repr(rep_value) +
-                                                  " overwrites existing entry in parent: " + repr(parent))
-                        parent._mc_attributes[build_key][rep_key] = rep_value
-                continue
+                    if rep_key in parent_attributes[build_key]:
+                        # TODO: Silently skip insert instead (optional warning)?
+                        raise ConfigException("Nested repeatable from 'build', key: " + repr(rep_key) + ", value: " + repr(rep_value) +
+                                              " overwrites existing entry in parent: " + repr(parent))
+
+                    parent_attributes[build_key][rep_key] = rep_value
+                return
 
             if isinstance(build_value, ConfigItem):
-                override(build_value)
+                build_value._mc_contained_in = parent
+                set_my_attributes_on_item_from_build(self, build_value, clone=False)
 
             # Set non-repeatable items on parent
             # TODO validation
-            if isinstance(parent, ConfigBuilder):
-                parent._mc_child_build_attributes[build_key] = build_value
-            else:
-                parent._mc_attributes[build_key] = build_value
+            parent_attributes[build_key] = build_value
+
+
+        def move_items_around():
+            # Loop over attributes created in build
+            # Items and attributes created in 'build' goes into parent
+            # Attributes/Items on builder are copied to items created in build
+            for build_key, build_value in self._mc_build_attributes.iteritems():
+                from_build_to_parent(build_key, build_value)
+
+        move_items_around()
 
     def _mc_freeze(self, _checked=True):
         if self._mc_frozen:
