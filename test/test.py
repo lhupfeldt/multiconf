@@ -4,8 +4,6 @@ import sys, os, subprocess
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-os.chdir(here)
-
 print "Running tests"
 if len(sys.argv) > 1:
     sys.exit(subprocess.call(['py.test', '--capture=sys'] + sys.argv[1:]))
