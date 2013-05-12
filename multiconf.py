@@ -35,9 +35,9 @@ class _ConfigBase(object):
         self._mc_attributes = Repeatable()
         self._mc_build_attributes = Repeatable()
         self._mc_frozen = False
+        self._mc_built = False
         self._mc_in_init = True
         self._mc_in_build = False
-        self._mc_in_proxy_build = False
         self._mc_user_validated = False
         self._mc_previous_child = None
 
@@ -81,7 +81,7 @@ class _ConfigBase(object):
         previous_item = self._mc_previous_child
         if previous_item and not previous_item.frozen:
             try:
-                previous_item._mc_freeze()
+                return previous_item._mc_freeze()
             except Exception as ex:
                 print >> sys.stderr, "Exception validating previously defined object -"
                 print >> sys.stderr, "  type:", type(previous_item)
@@ -165,9 +165,6 @@ class _ConfigBase(object):
         return self
 
     def _mc_freeze_validation(self):
-        if self._mc_deco_unchecked == self.__class__:
-            return
-
         # Validate all unfrozen attributes
         for attr in self._mc_attributes.itervalues():
             if not attr._mc_frozen and isinstance(attr, Attribute):
@@ -208,43 +205,51 @@ class _ConfigBase(object):
                     if not attr.num_errors:
                         self.check_attr_fully_defined(attr)
         if missing:
-            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + " == " + repr(required_if_condition) + ", missing attributes: " + repr(missing))        
+            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + " == " + repr(required_if_condition) + ", missing attributes: " + repr(missing))
 
-    def _mc_freeze(self, _checked=True):
+    def _mc_freeze(self):
         """
         Recursively freeze contained items bottom up.
         If self is ready to be validated (exit from with_statement or not declared in a with_statement),
         then self will be frozen and validated
         """
         if self._mc_frozen:
-            return
-        check = (self._mc_deco_unchecked != self.__class__ and self._mc_deco_unchecked not in self.__class__.__bases__) and _checked
-        self._mc_frozen = check
+            return True
+        
+        self._mc_frozen = self._mc_deco_unchecked != self.__class__ and not self._mc_root_conf._mc_under_proxy_build
         for _child_name, child_value in self._mc_attributes.iteritems():
-            child_value._mc_freeze(check)
+            self._mc_frozen &= child_value._mc_freeze()
 
-        must_pop = False
-        self._mc_in_init = False
-        if self._mc_nested[-1] != self:
-            must_pop = True
-            self._mc_nested.append(self)
-        try:
-            self._mc_in_build = True
-            self.__mc_init__()
-            if isinstance(self, ConfigBuilder):
-                self.build()
-            for _name, value in self._mc_build_attributes.iteritems():
-                value._mc_freeze(check)
-            self._mc_post_build_update()
-            self._mc_in_build = False
-        except Exception as ex:
-            ex._mc_in_user_code = True
-            raise
-        finally:
-            if must_pop:
-                self._mc_nested.pop()
+        if not self._mc_built:
+            must_pop = False
+            self._mc_in_init = False
+            if self._mc_nested[-1] != self:
+                must_pop = True
+                self._mc_nested.append(self)
+            try:
+                self._mc_in_build = True
+                self.__mc_init__()
+                was_under_proxy_build = self._mc_root_conf._mc_under_proxy_build
+                if isinstance(self, ConfigBuilder):
+                    self._mc_root_conf._mc_under_proxy_build = True
+                    self.build()
+                for _name, value in self._mc_build_attributes.iteritems():
+                    self._mc_frozen &= value._mc_freeze()
+                self._mc_post_build_update()
+                self._mc_in_build = False
+            except Exception as ex:
+                ex._mc_in_user_code = True
+                raise
+            finally:
+                self._mc_root_conf._mc_under_proxy_build = was_under_proxy_build
+                if must_pop:
+                    self._mc_nested.pop()
+                self._mc_built = True
 
-        self._mc_freeze_validation()
+        if self._mc_frozen:
+            self._mc_freeze_validation()
+
+        return self._mc_frozen
 
     @property
     def frozen(self):
@@ -297,6 +302,7 @@ class _ConfigBase(object):
                 attribute.error(msg)
                 raise ConfigException(msg + " on object " + repr(self))
 
+            # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class __mc_init__
             check = self._mc_deco_unchecked != self.__class__ and self._mc_deco_unchecked not in self.__class__.__bases__
             if not self._mc_in_init and not ('default' in kwargs and len(kwargs) == 1) and check:
                 attribute._mc_frozen = True
@@ -437,7 +443,7 @@ class _ConfigBase(object):
     def contained_in(self):
         if not isinstance(self._mc_contained_in, ConfigBuilder):
             return self._mc_contained_in
-        if self._mc_in_proxy_build or self._mc_contained_in._mc_in_proxy_build:
+        if self._mc_root_conf._mc_under_proxy_build:
             return self._mc_contained_in.contained_in            
         raise ConfigApiException("Use of 'contained_in' in not allowed in object while under a ConfigBuilder")
 
@@ -543,6 +549,7 @@ class ConfigRoot(_ConfigBase):
         self._mc_root_conf = self
         self._mc_contained_in = None
         self._mc_nesting_level = 0
+        self._mc_under_proxy_build = False
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
@@ -651,16 +658,6 @@ class ConfigBuilder(ConfigItem):
                 from_build_to_parent(build_key, build_value)
 
         move_items_around()
-
-    def _mc_freeze(self, _checked=True):
-        if self._mc_frozen:
-            return
-
-        self._mc_in_proxy_build = True
-        super(ConfigBuilder, self)._mc_freeze()
-        self._mc_in_proxy_build = False
-
-        return self
 
     @abc.abstractmethod
     def build(self):

@@ -76,7 +76,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
 
 
 _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Nested repeatable from 'build', key: 'server1', value: {
-    "__class__": "Xses #as: 'xses', id: 0000", 
+    "__class__": "Xses #as: 'xses', id: 0000, not-frozen", 
     "name": "server1", 
     "server_num": 1, 
     "something": 1, 
@@ -94,7 +94,7 @@ _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expe
         }
     }, 
     "XBuilder.builder.0000": {
-        "__class__": "XBuilder #as: 'XBuilder.builder.0000', id: 0000", 
+        "__class__": "XBuilder #as: 'XBuilder.builder.0000', id: 0000, not-frozen", 
         "num_servers": 2
     }
 }"""
@@ -134,7 +134,7 @@ def test_configbuilder_without_build():
 
 
 _unexpected_repeatable_child_builder_expected_ex = """'r': {
-    "__class__": "RepeatableChild #as: 'r', id: 0000"
+    "__class__": "RepeatableChild #as: 'r', id: 0000, not-frozen"
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"""
 
 def test_unexpected_repeatable_child_builder():
@@ -155,7 +155,7 @@ def test_unexpected_repeatable_child_builder():
 
 
 _unexpected_repeatable_child_nested_builders_expected_ex = """'arepeatable': {
-    "__class__": "RepItem #as: 'arepeatable', id: 0000", 
+    "__class__": "RepItem #as: 'arepeatable', id: 0000, not-frozen", 
     "name": "a"
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ItemWithoutARepeatable'"""
 

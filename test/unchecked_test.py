@@ -109,19 +109,19 @@ _required_missing_unchecked_super_for_configitem_expected1b = \
 }"""
 
 _required_missing_unchecked_super_for_configitem_expected1_ex = """There were 2 errors when defining attribute 'anotherattr' on object: {
-    "__class__": "item #as: 'item', id: 0000, not-frozen", 
+    "__class__": "item #as: 'item', id: 0000", 
     "anattr": 2, 
     "anotherattr": 2
 }"""
 
 _required_missing_unchecked_super_for_configitem_expected2_ex = """There were 1 errors when defining attribute 'anattr' on object: {
-    "__class__": "item #as: 'item', id: 0000, not-frozen", 
+    "__class__": "item #as: 'item', id: 0000", 
     "anotherattr": 0, 
     "anattr": 2
 }"""
 
 _required_missing_unchecked_super_for_configitem_expected3_ex = """There were 1 errors when defining attribute 'anattr' on object: {
-    "__class__": "item #as: 'item', id: 0000, not-frozen", 
+    "__class__": "item #as: 'item', id: 0000", 
     "anattr": 1, 
     "anotherattr": 0
 }"""
