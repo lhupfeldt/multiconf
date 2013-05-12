@@ -230,7 +230,9 @@ class _ConfigBase(object):
             self._mc_nested.append(self)
         try:
             self._mc_in_build = True
-            self.build()
+            self.__mc_init__()
+            if isinstance(self, ConfigBuilder):
+                self.build()
             for _name, value in self._mc_build_attributes.iteritems():
                 value._mc_freeze(check)
             self._mc_post_build_update()
@@ -514,7 +516,7 @@ class _ConfigBase(object):
         """Can be overridden to provide post-frozen validation"""
         pass
 
-    def build(self):
+    def __mc_init__(self):
         """Can be overridden in derived classes to instantiate default child objects"""
         pass
 

@@ -481,7 +481,7 @@ def test_assigning_to_attribute_underscore_attribute():
 
 def test_build_simple_items():
     class X(ConfigItem):
-        def build(self):
+        def __mc_init__(self):
             self.a = 1
             self.b = 1
             ConfigItem(a=1, b=1)
@@ -512,7 +512,7 @@ def test_build_repeatable_items():
 
     @nested_repeatables('Xs')
     class Y(ConfigItem):
-        def build(self):
+        def __mc_init__(self):
             self.a = 1
             self.b = 1
             with X(id='a', a=1, b=1) as x:
@@ -534,7 +534,7 @@ def test_build_repeatable_items():
 
 def test_build_root():
     class RootX(ConfigRoot):
-        def build(self):
+        def __mc_init__(self):
             self.a = 1
             self.b = 1
             ConfigItem(a=1, b=1)
@@ -559,19 +559,19 @@ def test_build_root():
 
 def test_nested_build_simple_items():
     class X1(ConfigItem):
-        def build(self):
+        def __mc_init__(self):
             self.a = 11
             self.b = 11
             ConfigItem(a=11, b=11)
 
     class X2(ConfigItem):
-        def build(self):
+        def __mc_init__(self):
             self.a = 12
             self.b = 12
             ConfigItem(a=12, b=12)
 
     class X3(ConfigItem):
-        def build(self):
+        def __mc_init__(self):
             self.a = 13
             self.b = 13
             ConfigItem(a=13, b=13)
