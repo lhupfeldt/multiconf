@@ -4,12 +4,11 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-import re
 from pytest import raises
 
-from .utils import config_error, lineno, replace_ids, replace_ids_builder
+from .utils import config_error, replace_ids, replace_ids_builder
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigApiException, ConfigException
+from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
 from ..decorators import nested_repeatables, named_as, repeat
 from ..envs import EnvFactory
 
@@ -32,47 +31,6 @@ class Xses(ConfigItem):
 @repeat()
 class XChild(ConfigItem):
     pass
-
-
-def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_scope(capsys):
-    class YBuilder(ConfigBuilder):
-        def __init__(self, start=1):
-            super(YBuilder, self).__init__()
-            self.start = start
-            self.number = self.contained_in.aaa
-
-        def build(self):
-            for num in xrange(self.start, self.start + self.number):
-                with Ys(name='server%d' % num, server_num=num) as c:
-                    c.setattr('something', prod=1, pp=2)
-
-    @nested_repeatables('ys')
-    class ItemWithYs(ConfigItem):
-        aaa = 2
-
-    @named_as('ys')
-    @repeat()
-    class Ys(ConfigItem):
-        def __init__(self, **kwarg):
-            super(Ys, self).__init__(**kwarg)
-
-    @named_as('y_children')
-    @repeat()
-    class YChild(ConfigItem):
-        pass
-
-    with raises(ConfigApiException) as exinfo:
-        with ConfigRoot(prod, [prod, pp]):
-            with ItemWithYs():
-                with YBuilder() as yb1:
-                    yb1.b = 27
-                    with YChild(a=10) as y1:
-                        errorline = lineno() + 1
-                        _item = y1.contained_in
-
-    _sout, serr = capsys.readouterr()
-    # assert serr == ce(errorline, '')
-    assert replace_ids(exinfo.value.message, False) == "Use of 'contained_in' in not allowed in object while under a ConfigBuilder"
 
 
 _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Nested repeatable from 'build', key: 'server1', value: {
@@ -164,32 +122,27 @@ def test_unexpected_repeatable_child_nested_builders():
     @named_as('arepeatable')
     class RepItem(ConfigItem):
         def __init__(self):
-            print "RepItem.__init__"
             super(RepItem, self).__init__(name='a')
 
     class InnerBuilder(ConfigBuilder):
         def build(self):
-            print "InnerBuilder.build"
             RepItem()
 
     class MiddleBuilder(ConfigBuilder):
         def build(self):
-            print "MiddleBuilder.build"
             InnerBuilder()
 
     class OuterBuilder(ConfigBuilder):
         def build(self):
-            print "OuterBuilder.build"
             MiddleBuilder()
 
     class ItemWithoutARepeatable(ConfigItem):
         pass
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, valid_envs=[prod]) as cr:
+        with ConfigRoot(prod, valid_envs=[prod]):
             with ItemWithoutARepeatable():
                 OuterBuilder()
-        print 'cr:', cr
 
     assert replace_ids(exinfo.value.message, False) == _unexpected_repeatable_child_nested_builders_expected_ex
 
@@ -236,7 +189,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
         aaa = 2
 
     with raises(ConfigException) as exinfo:
-        with Root(prod, [prod, pp]) as cr:
+        with Root(prod, [prod, pp]):
             with XBuilder() as xb:
                 xb.b = 27
                 XChild(a=10)

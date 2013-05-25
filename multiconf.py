@@ -9,7 +9,7 @@ from .envs import BaseEnv, Env, EnvGroup, EnvException
 from .attribute import Attribute
 from .repeatable import Repeatable
 from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _api_error_msg, _user_file_line
-import json_output
+from . import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
 
@@ -591,17 +591,15 @@ class ConfigBuilder(ConfigItem):
         super(ConfigBuilder, self).__init__(json_filter=json_filter, **attr)
 
     def _mc_post_build_update(self):
-        def set_my_attributes_on_item_from_build(me, item_from_build, clone):
-            for override_key, override_value in me._mc_attributes.iteritems():
-                if override_value._mc_value(me.env) == None:
+        def set_my_attributes_on_item_from_build(item_from_build, clone):
+            for override_key, override_value in self._mc_attributes.iteritems():
+                if override_value._mc_value(self.env) == None:
                     continue
 
                 if isinstance(override_value, Repeatable):
                     for rep_override_key, rep_override_value in override_value.iteritems():
                         if not override_key in item_from_build.__class__._mc_deco_nested_repeatables:
                             raise ConfigException(rep_override_value._error_msg_not_repeatable_in_container(override_key, item_from_build))
-
-                        rep_override_value._mc_contained_in = None
                         ov = copy.copy(rep_override_value) if clone else rep_override_value
                         ov._mc_contained_in = item_from_build
 
@@ -609,7 +607,6 @@ class ConfigBuilder(ConfigItem):
                     continue
 
                 if isinstance(override_value, ConfigItem):
-                    override_value._mc_contained_in = None
                     ov = copy.copy(override_value) if clone else override_value
                     ov._mc_contained_in = item_from_build
                     item_from_build._mc_attributes[override_key] = ov
@@ -617,7 +614,7 @@ class ConfigBuilder(ConfigItem):
 
                 item_from_build._mc_attributes[override_key] = override_value
 
-        def from_build_to_parent(build_key, build_value):
+        def from_build_to_parent(build_key, build_value, clone):
             """Copy/Merge all items/attributes defined in 'build' into parent object"""
             parent = self._mc_contained_in
             parent_attributes = parent._mc_build_attributes if parent._mc_in_build else parent._mc_attributes
@@ -626,7 +623,7 @@ class ConfigBuilder(ConfigItem):
             if isinstance(build_value, Repeatable):
                 for rep_key, rep_value in build_value.iteritems():
                     rep_value._mc_contained_in = parent
-                    set_my_attributes_on_item_from_build(self, rep_value, clone=True)
+                    set_my_attributes_on_item_from_build(rep_value, clone=clone)
 
                     if isinstance(parent, ConfigBuilder):
                         parent_attributes.setdefault(build_key, Repeatable())
@@ -643,19 +640,20 @@ class ConfigBuilder(ConfigItem):
 
             if isinstance(build_value, ConfigItem):
                 build_value._mc_contained_in = parent
-                set_my_attributes_on_item_from_build(self, build_value, clone=False)
+                set_my_attributes_on_item_from_build(build_value, clone=clone)
 
             # Set non-repeatable items on parent
             # TODO validation
             parent_attributes[build_key] = build_value
 
-
         def move_items_around():
             # Loop over attributes created in build
             # Items and attributes created in 'build' goes into parent
             # Attributes/Items on builder are copied to items created in build
+            clone = False
             for build_key, build_value in self._mc_build_attributes.iteritems():
-                from_build_to_parent(build_key, build_value)
+                from_build_to_parent(build_key, build_value, clone)
+                clone = True
 
         move_items_around()
 

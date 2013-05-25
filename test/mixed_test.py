@@ -62,5 +62,5 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
         with OuterItem():
             OuterBuilder()
 
-    print cr.json(builders=True)
+    cr.json(builders=True)
     # TODO

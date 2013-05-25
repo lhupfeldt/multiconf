@@ -9,6 +9,8 @@ from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import nested_repeatables, named_as, repeat, required
 from ..envs import EnvFactory
 
+from .check_containment import check_containment
+
 
 ef = EnvFactory()
 pp = ef.Env('pp')
@@ -61,7 +63,7 @@ def test_configbuilder_override():
     assert cr.xses['server4'].server_num == 4
     assert cr.xses['server4'].none_is_not_used == False
     # TODO: override of conditional attributes (required_if)
-
+    check_containment(cr)
 
 def test_configbuilder_build_at_freeze():
     class XBuilder(ConfigBuilder):
@@ -84,6 +86,7 @@ def test_configbuilder_build_at_freeze():
     for ii in 1, 2, 3, 4:
         name = 'server' + repr(ii)
         assert cr.xses[name].name == name
+    check_containment(cr)
 
 
 def test_configbuilder_access_to_contained_in_from_build():
@@ -104,6 +107,7 @@ def test_configbuilder_access_to_contained_in_from_build():
         YBuilder()
 
     assert cr.y.number == 7
+    check_containment(cr)
 
 
 def test_configbuilder_access_to_contained_in_from___init__():
@@ -128,6 +132,7 @@ def test_configbuilder_access_to_contained_in_from___init__():
         XBuilder()
 
     assert cr.x.number == 7
+    check_containment(cr)
 
 
 def test_configbuilder_access_to_contained_in_from_with_block():
@@ -148,6 +153,7 @@ def test_configbuilder_access_to_contained_in_from_with_block():
             parent = xb.contained_in
 
     assert parent == cr
+    check_containment(cr)
 
 
 def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_of_builder():
@@ -183,6 +189,7 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
     assert cr.x.init_parent == cr
     assert cr.x.mc_init_parent == cr
     assert cr.x.validate_parent == cr
+    check_containment(cr)
 
 
 def test_configbuilder_nested_items():
@@ -213,6 +220,7 @@ def test_configbuilder_nested_items():
             assert x_child.a == index
             index += 1
         assert index == 12
+    check_containment(cr)
 
 
 def test_configbuilder_nested_items_access_to_contained_in():
@@ -247,6 +255,7 @@ def test_configbuilder_nested_items_access_to_contained_in():
             assert x_child.a == index
             index += 1
         assert index == 12
+    check_containment(cr)
 
 
 def test_configbuilder_multilevel_nested_items_access_to_contained_in():
@@ -285,7 +294,8 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
         with ItemWithYs() as item:
             with YBuilder() as yb1:
                 yb1.b = 27
-                yc10 = YChild(a=10)
+                yc10a = YChild(a=10)
+                yc10b = YChild(a=10)
                 with YBuilder(start=3) as yb2:
                     yb2.c = 28
                     yc11 = YChild(a=11)
@@ -295,21 +305,20 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
     total = 0
     for server in 'server1', 'server2':
         for y_child in item.ys[server].y_children.values():
-            print y_child.a
             assert type(y_child.contained_in) == Y
             total += y_child.a
         for inner_server in 'server3', 'server4':
             for y_child in item.ys[server].ys[inner_server].y_children.values():
                 assert type(y_child.contained_in) == Y
-                print y_child.a
                 total += y_child.a
-    assert total == 112, total
+    assert total == 132, total
 
     # The item created under the builder with statement will have contained_in == None
     # It may be cloned for insertion under multiple items created in 'build'
     # The cloning is necessery to make sure the contained_in ref actually references the final parent
-    assert yc10.contained_in == None
-    assert yc11.contained_in == None
+    assert type(yc10a.contained_in) == Y
+    assert type(yc10b.contained_in) == Y
+    assert type(yc11.contained_in) == Y
 
     assert len(ybuilder_in_build_contained_in) == 2
     for ci in ybuilder_in_build_contained_in:
@@ -318,6 +327,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
     assert len(ys_in_init_contained_in) == 4
     for ci in ys_in_init_contained_in:
         assert ci == item
+    check_containment(cr)
 
 
 def test_configbuilder_repeated():
@@ -363,6 +373,7 @@ def test_configbuilder_repeated():
     assert isinstance(xb2.what_built(), OrderedDict) == True
     assert xb2.what_built()['xses']['server3'].something == 1
     assert xb2.what_built()['q'] == 3
+    check_containment(cr)
 
 
 def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder():
@@ -371,12 +382,13 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder()
         def build(self):
             pass
 
-    with ConfigRoot(prod, [prod]):
+    with ConfigRoot(prod, [prod]) as cr:
         with builder() as ii:
             ii.a = 1
             assert ii.a == 1
             ii.setattr('b', prod=2)
             assert ii.b == 2
+    check_containment(cr)
 
 
 def test_configbuilder_child_with_nested_repeatables():
@@ -398,6 +410,7 @@ def test_configbuilder_child_with_nested_repeatables():
     assert len(cr.xses) == 1
     for x in cr.xses.values():
         assert len(x.x_children) == 1
+    check_containment(cr)
 
 
 def test_configbuilder_child_with_declared_but_not_defined_nested_repeatables():
@@ -419,6 +432,7 @@ def test_configbuilder_child_with_declared_but_not_defined_nested_repeatables():
     for x in cr.xses.values():
         assert isinstance(x.x_children, OrderedDict)
         assert len(x.x_children) == 0
+    check_containment(cr)
 
 
 def test_configbuilders_alternating_with_items():
@@ -449,13 +463,13 @@ def test_configbuilders_alternating_with_items():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod], name='myp') as project:
+    with ConfigRoot(prod, [prod], name='myp') as cr:
         with OuterItem():
             with MiddleBuilder('base'):
                 InnerBuilder()
 
-    print project.json(compact=True)
-    # TODO
+    cr.json(compact=True)
+    check_containment(cr)
 
 
 def test_configbuilders_alternating_with_items_repeatable_simple():
@@ -487,8 +501,8 @@ def test_configbuilders_alternating_with_items_repeatable_simple():
         with OuterItem():
             OuterBuilder()
 
-    print cr.json()
-    # TODO
+    cr.json()
+    check_containment(cr)
 
 
 def test_configbuilders_alternating_with_items_repeatable_many():
@@ -525,13 +539,13 @@ def test_configbuilders_alternating_with_items_repeatable_many():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod], name='myp') as project:
+    with ConfigRoot(prod, [prod], name='myp') as cr:
         with OuterItem():
             with MiddleBuilder('base'):
                 InnerBuilder()
 
-    print project.json(compact=True)
-    # TODO
+    cr.json(compact=True)
+    check_containment(cr)
 
 
 def test_configbuilders_alternating_with_items_repeatable_multilevel():
@@ -578,5 +592,5 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel():
         with OuterItem():
             OuterBuilder()
 
-    print cr.json(builders=True)
-    # TODO
+    cr.json(builders=True)
+    check_containment(cr)
