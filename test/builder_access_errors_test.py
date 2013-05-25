@@ -6,7 +6,7 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils import config_error, lineno, replace_ids
+from .utils.utils import config_error, lineno, replace_ids
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigApiException
 from ..decorators import nested_repeatables, named_as, repeat

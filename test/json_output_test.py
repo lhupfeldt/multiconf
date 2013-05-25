@@ -9,8 +9,8 @@ from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, C
 from ..decorators import nested_repeatables, named_as, repeat
 from ..envs import EnvFactory
 
-from .utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg
-from .compare_json import compare_json
+from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg
+from .utils.compare_json import compare_json
 
 
 ef = EnvFactory()

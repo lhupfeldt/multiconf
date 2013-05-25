@@ -5,9 +5,9 @@
 
 # pylint: disable=E0611
 from pytest import raises
-from .utils import config_error, config_warning, lineno, replace_ids
+from .utils.utils import config_error, config_warning, lineno
 
-from .. import ConfigRoot, ConfigItem, ConfigException, NoAttributeException
+from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import required, required_if, optional, nested_repeatables, ConfigDefinitionException
 from ..envs import EnvFactory
 

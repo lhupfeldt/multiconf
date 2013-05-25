@@ -6,7 +6,7 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils import config_error, lineno
+from .utils.utils import config_error, lineno
 
 from ..envs import EnvFactory, EnvException
 

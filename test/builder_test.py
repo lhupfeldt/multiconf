@@ -9,7 +9,7 @@ from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import nested_repeatables, named_as, repeat, required
 from ..envs import EnvFactory
 
-from .check_containment import check_containment
+from .utils.check_containment import check_containment
 
 
 ef = EnvFactory()

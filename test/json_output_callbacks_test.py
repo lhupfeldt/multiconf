@@ -6,7 +6,7 @@ from .. import ConfigRoot, ConfigItem
 from ..decorators import named_as
 from ..envs import EnvFactory
 
-from .compare_json import compare_json
+from .utils.compare_json import compare_json
 
 ef = EnvFactory()
 

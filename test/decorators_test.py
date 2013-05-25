@@ -3,7 +3,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .utils import config_error, replace_ids
+from .utils.utils import config_error, replace_ids
 
 from .. import ConfigRoot, ConfigItem
 from ..decorators import  required, named_as, optional

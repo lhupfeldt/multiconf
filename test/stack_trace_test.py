@@ -4,11 +4,11 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-from pytest import raises, fail
+from pytest import raises
 
-from .utils import config_error, lineno, replace_ids
+from .utils.utils import config_error, lineno, replace_ids
 
-from .. import ConfigRoot, ConfigItem, ConfigApiException, ConfigException, ConfigBuilder
+from .. import ConfigRoot, ConfigItem, ConfigException, ConfigBuilder
 from ..decorators import nested_repeatables, repeat
 from ..envs import EnvFactory
 
