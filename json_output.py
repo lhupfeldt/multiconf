@@ -19,17 +19,24 @@ class ConfigItemEncoder(json.JSONEncoder):
     recursion_check = threading.local()
     recursion_check.in_default = False
 
-    def __init__(self, filter_callable=None, compact=False, property_methods=True, builders=False, **kwargs):
+    def __init__(self, filter_callable=None, fallback_callable=None, compact=False, property_methods=True, builders=False, **kwargs):
         """
         filter_callable: func(obj, key, value)
         - filter_callable is called for each key/value pair of attributes on each ConfigItem obj.
-        - It it must return a tuple of (key, value). If key is False, the key/value pair is removed from the json output
+        - It must return a tuple of (key, value). If key is False, the key/value pair is removed from the json output
+
+        fallback_callable: func(obj)
+        - fallback_callable is called for objects that are not handled by the builtin encoder.
+        - It must return a tupple (object, handled). If handled is True, the object must be encodable by the standard json encoder.
+
         compact: Set compact to true if dumping for debug, false for machine readable output.
+
         property_methods: call @property methods and insert values in output, including a comment that the value is calculated.
         """
         super(ConfigItemEncoder, self).__init__(**kwargs)
         self.filter_out_keys = ('env', 'valid_envs', 'contained_in', 'root_conf', 'attributes', 'frozen')
         self.user_filter_callable = filter_callable
+        self.user_fallback_callable = fallback_callable
         self.compact = compact
         self.property_methods = property_methods
         self.seen = {}
@@ -208,6 +215,11 @@ class ConfigItemEncoder(json.JSONEncoder):
             else:
                 #print "# Handle iterable objects", type(obj)
                 return list(iterable)
+
+            if self.user_fallback_callable:
+                obj, handled = self.user_fallback_callable(obj)
+                if handled:
+                    return obj
 
             if isinstance(obj, types.InstanceType):
                 #print "# Handle instances of old style classes", type(obj)

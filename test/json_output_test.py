@@ -4,20 +4,14 @@
 import re, abc
 from collections import OrderedDict
 
-try:
-    import demjson
-    decode = demjson.JSON(strict=True).decode
-except ImportError:
-    def decode(_string):
-        return True
-
 from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
 
 from ..decorators import nested_repeatables, named_as, repeat
 from ..envs import EnvFactory
 
-from .utils import replace_ids, lineno, replace_ids_builder, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg
-from .check_containment import check_containment
+from .utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg
+from .compare_json import compare_json
+
 
 ef = EnvFactory()
 
@@ -32,57 +26,6 @@ pp = ef.Env('pp')
 prod = ef.Env('prod')
 
 g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
-
-
-def compare_json(item, expected_json, replace_builders=False, dump_builders=True, test_decode=False, test_containment=True):
-    try:
-        compact_json = item.json(compact=True, builders=dump_builders)
-        full_json = item.json(builders=dump_builders)
-        if replace_builders:
-            compact_json_replaced = replace_ids_builder(compact_json)
-            full_json_replaced = replace_ids_builder(full_json)
-        else:            
-            compact_json_replaced = replace_ids(compact_json)
-            full_json_replaced = replace_ids(full_json)
-
-        assert compact_json_replaced == to_compact(expected_json)
-        assert full_json_replaced == expected_json
-
-    except:
-        print '--- full ids replaced ---'
-        print full_json_replaced
-
-        print '--- full expected ---'
-        print expected_json
-
-        print '--- full original ---'
-        print full_json
-
-        print '--- compact ids replaced ---'
-        print compact_json_replaced
-
-        print '--- compact expected ---'
-        print to_compact(expected_json)
-
-        print '--- compact original ---'
-        print compact_json
-
-        raise
-
-    if test_decode:
-        try:
-            assert decode(compact_json)
-            assert decode(full_json)
-        except:
-            print 'FAILED DECODE'
-            print '--- compact original ---'
-            print compact_json
-
-            print '--- full original ---'
-            print full_json
-
-    if test_containment:
-        check_containment(item)
 
 
 @nested_repeatables('someitems')
@@ -652,43 +595,6 @@ def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
                 NestedRepeatable(id='n3', uplevel_ref=n1, d=3)
 
     compare_json(n2, _uplevel_ref_expected_json_output, test_containment=False)
-
-
-_filter_expected_json_output = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
-    "env": {
-        "__class__": "Env", 
-        "name": "prod"
-    }, 
-    "a": 0, 
-    "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "b": 2, 
-        "a": 1, 
-        "a #calculated": true
-    }
-}"""
-
-def test_json_dump_user_defined_attribute_filter():
-    def json_filter(_obj, key, value):
-        return (False, None) if (key == 'hide_me1' or key == 'hide_me2') else (key, value)
-
-    @named_as('someitem')
-    class Nested(ConfigItem):
-        @property
-        def hide_me2(self):
-            return "FAIL"
-
-        @property
-        def a(self):
-            return 1
-
-    with ConfigRoot(prod, [prod, pp], json_filter=json_filter, a=0, hide_me1='FAILED') as cr:
-        Nested(b=2, hide_me1=7)
-
-    compare_json(cr, _filter_expected_json_output)
 
 
 _test_json_dump_dir_error_expected_stderr = """Error in json generation:
