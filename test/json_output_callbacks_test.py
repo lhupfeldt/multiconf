@@ -51,7 +51,7 @@ def test_json_dump_user_defined_attribute_filter():
     compare_json(cr, _filter_expected_json_output)
 
 
-_fallback_expected_json_output = """{
+_json_fallback_handler_expected_json_output = """{
     "__class__": "ConfigRoot", 
     "__id__": 0000, 
     "env": {
@@ -68,7 +68,6 @@ _fallback_expected_json_output = """{
         "__class__": "Nested", 
         "__id__": 0000, 
         "b": 2, 
-        "hide_me1": 7, 
         "a": 1, 
         "a #calculated": true
     }
@@ -82,20 +81,57 @@ def test_json_fallback_handler():
     class UnHandledNonItem(object):
         a = 3
 
-    def json_fallback_handler(obj):
-        if isinstance(obj, HandledNonItem):
-            return [obj.a, obj.b], True
-        return obj, False
-
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
         def a(self):
             return 1
 
+    def json_fallback_handler(obj):
+        if isinstance(obj, HandledNonItem):
+            return [obj.a, obj.b], True
+        return obj, False
+
     with ConfigRoot(prod, [prod, pp], json_fallback=json_fallback_handler, a=0) as cr:
         cr.handled_non_item = HandledNonItem()
         cr.unhandled_non_item = UnHandledNonItem()
-        Nested(b=2, hide_me1=7)
+        Nested(b=2)
 
-    compare_json(cr, _fallback_expected_json_output)
+    compare_json(cr, _json_fallback_handler_expected_json_output)
+
+
+_json_fallback_handler_iterable_expected_json_output = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "handled_non_items": [
+        [
+            1, 
+            7
+        ], 
+        [
+            2, 
+            7
+        ]
+    ]
+}"""
+
+def test_json_fallback_handler_iterable():
+    class HandledNonItem(object):
+        b = 7
+        def __init__(self, a):
+            self.a = a
+
+    def json_fallback_handler(obj):
+        if isinstance(obj, HandledNonItem):
+            return [obj.a, obj.b], True
+        return obj, False
+
+    with ConfigRoot(prod, [prod, pp], json_fallback=json_fallback_handler, a=0) as cr:
+        cr.handled_non_items = [HandledNonItem(1), HandledNonItem(2)]
+
+    compare_json(cr, _json_fallback_handler_iterable_expected_json_output)
