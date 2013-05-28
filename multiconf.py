@@ -31,9 +31,9 @@ class _ConfigBase(object):
     _mc_deco_required_if = (None, ())
     _mc_deco_unchecked = None
 
-    def __init__(self, json_filter=None, json_fallback=None, **attr):
-        self._mc_json_filter = json_filter
-        self._mc_json_fallback = json_fallback
+    def __init__(self, mc_json_filter=None, mc_json_fallback=None, **attr):
+        self._mc_json_filter = mc_json_filter
+        self._mc_json_fallback = mc_json_fallback
         self._mc_root_conf = None
         self._mc_attributes = Repeatable()
         self._mc_build_attributes = Repeatable()
@@ -154,8 +154,8 @@ class _ConfigBase(object):
 
     def json(self, compact=False, property_methods=True, builders=False, skipkeys=True):
         """See json_output.ConfigItemEncoder for parameters"""
-        filter_callable = self.json_filter_callable()
-        fallback_callable = self.json_fallback_callable()
+        filter_callable = self._mc_find_json_filter_callable()
+        fallback_callable = self._mc_find_json_fallback_callable()
         class Encoder(json_output.ConfigItemEncoder):
             def __init__(self, **kwargs):
                 super(Encoder, self).__init__(filter_callable=filter_callable, fallback_callable=fallback_callable,
@@ -464,7 +464,7 @@ class _ConfigBase(object):
     def valid_envs(self):
         return self._mc_root_conf.valid_envs
 
-    def json_filter_callable(self):
+    def _mc_find_json_filter_callable(self):
         contained_in = self
         while contained_in:
             if contained_in._mc_json_filter:
@@ -472,7 +472,7 @@ class _ConfigBase(object):
             contained_in = contained_in._mc_contained_in
         return None
 
-    def json_fallback_callable(self):
+    def _mc_find_json_fallback_callable(self):
         contained_in = self
         while contained_in:
             if contained_in._mc_json_fallback:
@@ -544,7 +544,7 @@ class _ConfigBase(object):
 
 
 class ConfigRoot(_ConfigBase):
-    def __init__(self, selected_env, valid_envs, json_filter=None, json_fallback=None, **attr):
+    def __init__(self, selected_env, valid_envs, mc_json_filter=None, mc_json_fallback=None, **attr):
         if not isinstance(valid_envs, Sequence) or isinstance(valid_envs, str):
             raise ConfigException(self.__class__.__name__ + ": valid_envs arg must be a 'Sequence'; found type " + repr(valid_envs.__class__.__name__) + ': ' + repr(valid_envs))
 
@@ -558,7 +558,7 @@ class ConfigRoot(_ConfigBase):
 
         self._mc_selected_env = selected_env
         self._mc_valid_envs = valid_envs
-        super(ConfigRoot, self).__init__(json_filter=json_filter, json_fallback=json_fallback, **attr)
+        super(ConfigRoot, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
         self._mc_root_conf = self
         self._mc_contained_in = None
         self._mc_nesting_level = 0
@@ -580,8 +580,8 @@ class ConfigRoot(_ConfigBase):
 
 
 class ConfigItem(_ConfigBase):
-    def __init__(self, json_filter=None, json_fallback=None, **attr):
-        super(ConfigItem, self).__init__(json_filter=json_filter, json_fallback=json_fallback, **attr)
+    def __init__(self, mc_json_filter=None, mc_json_fallback=None, **attr):
+        super(ConfigItem, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
 
         if not self.__class__._mc_nested:
             raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
@@ -600,8 +600,8 @@ class ConfigItem(_ConfigBase):
 class ConfigBuilder(ConfigItem):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, json_filter=None, **attr):
-        super(ConfigBuilder, self).__init__(json_filter=json_filter, **attr)
+    def __init__(self, mc_json_filter=None, **attr):
+        super(ConfigBuilder, self).__init__(mc_json_filter=mc_json_filter, **attr)
 
     def _mc_post_build_update(self):
         def set_my_attributes_on_item_from_build(item_from_build, clone):
