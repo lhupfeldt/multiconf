@@ -3,6 +3,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 # pylint: disable=E0611
 from pytest import raises
 
@@ -33,7 +35,7 @@ def test_access_undefined_attribute():
         pass
 
     with raises(AttributeError) as exinfo:
-        print cr.b
+        print(cr.b)
 
     assert replace_ids(exinfo.value.message, named_as=False) == _test_access_undefined_attribute_expected_repr
 
@@ -52,7 +54,7 @@ def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_
         cr.setattr('bs', prod=4)
 
     with raises(AttributeError) as exinfo:
-        print cr.b
+        print(cr.b)
 
     assert replace_ids(exinfo.value.message, named_as=False) == _t2_expected_repr
 

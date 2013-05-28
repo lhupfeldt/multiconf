@@ -28,23 +28,23 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
         assert full_json_replaced == expected_json
 
     except:
-        print '--- full ids replaced ---'
-        print full_json_replaced
+        print('--- full ids replaced ---')
+        print(full_json_replaced)
 
-        print '--- full expected ---'
-        print expected_json
+        print('--- full expected ---')
+        print(expected_json)
 
-        print '--- full original ---'
-        print full_json
+        print('--- full original ---')
+        print(full_json)
 
-        print '--- compact ids replaced ---'
-        print compact_json_replaced
+        print('--- compact ids replaced ---')
+        print(compact_json_replaced)
 
-        print '--- compact expected ---'
-        print to_compact(expected_json)
+        print('--- compact expected ---')
+        print(to_compact(expected_json))
 
-        print '--- compact original ---'
-        print compact_json
+        print('--- compact original ---')
+        print(compact_json)
 
         raise
 
@@ -53,12 +53,12 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
             assert decode(compact_json)
             assert decode(full_json)
         except:
-            print 'FAILED DECODE'
-            print '--- compact original ---'
-            print compact_json
+            print('FAILED DECODE')
+            print('--- compact original ---')
+            print(compact_json)
 
-            print '--- full original ---'
-            print full_json
+            print('--- full original ---')
+            print(full_json)
 
     if test_containment:
         check_containment(item)

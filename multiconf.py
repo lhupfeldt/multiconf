@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import sys, abc, os, copy
 from collections import Sequence, OrderedDict
 import json
@@ -84,12 +86,12 @@ class _ConfigBase(object):
             try:
                 return previous_item._mc_freeze()
             except Exception as ex:
-                print >> sys.stderr, "Exception validating previously defined object -"
-                print >> sys.stderr, "  type:", type(previous_item)
-                print >> sys.stderr, "Stack trace will be misleading!"
-                print >> sys.stderr, "This happens if there is an error (e.g. missing required attributes) in an object that was not"
-                print >> sys.stderr, "directly enclosed in a with statement. Objects that are not arguments to a with statement will"
-                print >> sys.stderr, "not be validated until the next ConfigItem is declared or an outer with statement is exited."
+                print("Exception validating previously defined object -", file=sys.stderr)
+                print("  type:", type(previous_item), file=sys.stderr)
+                print("Stack trace will be misleading!", file=sys.stderr)
+                print("This happens if there is an error (e.g. missing required attributes) in an object that was not", file=sys.stderr)
+                print("directly enclosed in a with statement. Objects that are not arguments to a with statement will", file=sys.stderr)
+                print("not be validated until the next ConfigItem is declared or an outer with statement is exited.", file=sys.stderr)
             
                 if hasattr(ex, '_mc_in_user_code') or _debug_exc:
                     raise
@@ -270,8 +272,8 @@ class _ConfigBase(object):
                 raise ex
 
             if not hasattr(exc_value, '_mc_in_exit') or hasattr(ex, '_mc_in_user_code'):
-                print >> sys.stderr, "Exception in __exit__:", repr(ex)
-                print >> sys.stderr, "Exception in with block will be raised"
+                print("Exception in __exit__:", repr(ex), file=sys.stderr)
+                print("Exception in with block will be raised", file=sys.stderr)
         finally:
             self.__class__._mc_nested.pop()
 

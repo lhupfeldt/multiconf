@@ -3,6 +3,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 # pylint: disable=E0611
 from pytest import raises
 
@@ -82,7 +84,7 @@ def test_property_method_called_before_parent___init__(capsys):
                 global inner_errorline
                 # Error: env must not be called before parent __init__
                 inner_errorline = lineno() + 1
-                print self.env
+                print(self.env)
 
         with root(prod, [prod, pp], a=0):
             inner(id='n1', b=1)

@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import sys, os.path
 
 
@@ -39,11 +41,11 @@ def _user_file_line(up_level_start=1):
 def _line_msg(up_level=2, ufl=None, msg=''):
     """ufl is a tuple of filename, linenumber referece to user code"""
     ufl = ufl or _user_file_line(up_level+1)
-    print >> sys.stderr, ('File "%s", line %d' % ufl) + (', ' + msg if msg else '')
+    print(('File "%s", line %d' % ufl) + (', ' + msg if msg else ''), file=sys.stderr)
 
 
 def _error_type_msg(num_errors, message):
-    print >> sys.stderr, 'ConfigError:', message
+    print('ConfigError:', message, file=sys.stderr)
     return num_errors + 1
 
 def _error_msg(num_errors, message, up_level=2, ufl=None):
@@ -52,7 +54,7 @@ def _error_msg(num_errors, message, up_level=2, ufl=None):
 
 
 def _warning_type_msg(num_warnings, message):
-    print >> sys.stderr, 'ConfigWarning:', message
+    print('ConfigWarning:', message, file=sys.stderr)
     return num_warnings + 1
 
 def _warning_msg(num_warnings, message, up_level=2, ufl=None):
@@ -61,7 +63,7 @@ def _warning_msg(num_warnings, message, up_level=2, ufl=None):
 
 
 def _api_error_type_msg(num_warnings, message):
-    print >> sys.stderr, 'MultiConfApiError:', message
+    print('MultiConfApiError:', message, file=sys.stderr)
     return num_warnings + 1
 
 def _api_error_msg(num_errors, message, up_level=2, ufl=None):

@@ -1,3 +1,8 @@
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
+from __future__ import print_function
+
 import sys, threading, traceback
 from collections import OrderedDict
 import json
@@ -124,7 +129,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                 try:
                     entries = dir(obj)
                 except Exception as ex:
-                    print >> sys.stderr, "Error in json generation:"
+                    print("Error in json generation:", file=sys.stderr)
                     traceback.print_exception(*sys.exc_info())
                     dd['__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included'] = repr(ex)
 
@@ -162,7 +167,7 @@ class ConfigItemEncoder(json.JSONEncoder):
                         dd[key + ' #invalid usage context'] = repr(ex)
                         continue
                     except Exception as ex:
-                        print >> sys.stderr, "Error in json generation:"
+                        print("Error in json generation:", file=sys.stderr)
                         traceback.print_exception(*sys.exc_info())
                         dd[repr(key) + ' # json_error trying to handle property method'] = repr(ex)
                         continue

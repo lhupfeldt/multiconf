@@ -3,6 +3,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 # pylint: disable=E0611
 from pytest import raises
 from .utils.utils import config_error, config_warning, lineno
@@ -73,7 +75,7 @@ def test_optional_attribute_accessed_for_env_where_not_specified():
         with root(prod, [prod, dev2ct]) as cr:
             cr.setattr('a', dev2ct=18)
 
-        print cr.a
+        print(cr.a)
 
     assert exinfo.value.message == "Attribute 'a' undefined for env Env('prod')"
 
