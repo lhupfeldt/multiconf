@@ -10,6 +10,7 @@ import json
 from .envs import BaseEnv, Env, EnvGroup, EnvException
 from .attribute import Attribute
 from .repeatable import Repeatable
+from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _api_error_msg, _user_file_line
 from . import json_output
 
@@ -43,6 +44,9 @@ class _ConfigBase(object):
         self._mc_in_build = False
         self._mc_user_validated = False
         self._mc_previous_child = None
+        self._mc_is_excluded = False
+        self._mc_include_in_envs = None # Means 'all'
+        self._mc_exclude_from_envs = []
 
         # Prepare attributes with default values
         for key, value in attr.iteritems():
@@ -99,13 +103,18 @@ class _ConfigBase(object):
 
     def _mc_insert_item(self, child_item):
         self._mc_freeze_previous_child()
-        self._mc_previous_child = child_item
+        if not child_item._mc_is_excluded:
+            self._mc_previous_child = child_item
 
         # Insert child_item in attributes
         child_key = child_item.named_as()
         attributes = self._mc_build_attributes if self._mc_in_build else self._mc_attributes
 
         if child_item.__class__._mc_deco_repeatable:
+            # Repeatable excluded items are simply excluded
+            if child_item._mc_is_excluded:
+                return
+
             # Validate that this class specifies item as repeatable
             if isinstance(self, ConfigBuilder):
                 attributes.setdefault(child_key, Repeatable())
@@ -141,7 +150,13 @@ class _ConfigBase(object):
                 raise ConfigException(msg)
             raise ConfigException(repr(child_key) + ' is defined both as simple value and a contained item: ' + repr(child_item))
 
-        attributes[child_key] = child_item
+        if not child_item._mc_is_excluded:
+            attributes[child_key] = child_item
+            return
+
+        # In case of a Non-Repeatable excluded item we insert an Excluded object which is always False
+        # This makes it possible to do 'if x.item: ...' instead of hasattr(x, 'item') and allows for a nicer json dump
+        attributes[child_key] = Excluded(child_item)
 
     def _mc_post_build_update(self):
         # Merge items from build into items from with block
@@ -218,7 +233,7 @@ class _ConfigBase(object):
         If self is ready to be validated (exit from with_statement or not declared in a with_statement),
         then self will be frozen and validated
         """
-        if self._mc_frozen:
+        if self._mc_frozen or self._mc_is_excluded:
             return True
         
         self._mc_frozen = self._mc_deco_unchecked != self.__class__ and not self._mc_root_conf._mc_under_proxy_build
@@ -377,7 +392,8 @@ class _ConfigBase(object):
                     required_if_key = False
 
             # Validate that the attribute is defined for all envs
-            for eg in self.root_conf._mc_valid_envs:
+            valid_envs = self.root_conf._mc_valid_envs if not self._mc_include_in_envs else self._mc_include_in_envs
+            for eg in valid_envs:
                 for env in eg.envs():
                     if env in attribute.env_values:
                         # The attribute is set with an env specific value
@@ -390,9 +406,13 @@ class _ConfigBase(object):
                     except NoAttributeException:
                         continue
 
-                    group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
-                    msg = "Attribute: " + repr(name) + " did not receive a value for env " + repr(env)
-                    attribute.error(msg + group_msg)
+                    for ex_eg in self._mc_exclude_from_envs:
+                        if env in ex_eg:
+                            break
+                    else:
+                        group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
+                        msg = "Attribute: " + repr(name) + " did not receive a value for env " + repr(env)
+                        attribute.error(msg + group_msg)
 
         if attribute.num_errors:
             attribute.already_checked = True
@@ -580,7 +600,7 @@ class ConfigRoot(_ConfigBase):
 
 
 class ConfigItem(_ConfigBase):
-    def __init__(self, mc_json_filter=None, mc_json_fallback=None, **attr):
+    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None, **attr):
         super(ConfigItem, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
 
         if not self.__class__._mc_nested:
@@ -590,6 +610,21 @@ class ConfigItem(_ConfigBase):
         # Set back reference to containing Item and root item
         self._mc_contained_in = self.__class__._mc_nested[-1]
         self._mc_root_conf = self._mc_contained_in.root_conf
+
+        if mc_exclude:
+            self._mc_exclude_from_envs = mc_exclude
+            for eg in mc_exclude:
+                if self.env in eg.envs():
+                    self._mc_is_excluded = True
+
+        if mc_include:
+            self._mc_include_in_envs = mc_include
+            for eg in mc_include:
+                if self.env in eg.envs():
+                    break
+            else:
+                self._mc_is_excluded = True
+
         self._mc_contained_in._mc_insert_item(self)
 
     def _error_msg_not_repeatable_in_container(self, key, containing_class):
@@ -600,8 +635,8 @@ class ConfigItem(_ConfigBase):
 class ConfigBuilder(ConfigItem):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, mc_json_filter=None, **attr):
-        super(ConfigBuilder, self).__init__(mc_json_filter=mc_json_filter, **attr)
+    def __init__(self, mc_json_filter=None, mc_include=None, mc_exclude=None, **attr):
+        super(ConfigBuilder, self).__init__(mc_json_filter=mc_json_filter, mc_include=mc_include, mc_exclude=mc_exclude, **attr)
 
     def _mc_post_build_update(self):
         def set_my_attributes_on_item_from_build(item_from_build, clone):

@@ -9,6 +9,7 @@ import json
 import types
 
 import multiconf, envs
+from .excluded import Excluded
 from .config_errors import InvalidUsageException
 
 
@@ -151,6 +152,16 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if key in entries:
                         dd[key + ' #shadowed'] = val
                         continue
+
+                    if isinstance(val, Excluded):
+                        if self.compact:
+                            dd[key] = 'false #' + repr(val)
+                            continue
+
+                        dd[key] = False
+                        dd[key + ' #' + repr(val)] = True
+                        continue
+
                     dd[key] = val
 
                 if not self.property_methods:

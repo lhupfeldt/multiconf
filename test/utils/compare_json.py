@@ -9,11 +9,11 @@ except ImportError:
         return True
 
 
-from .utils import replace_ids, replace_ids_builder, to_compact
+from .utils import replace_ids, replace_ids_builder, to_compact, to_compact_excluded
 from .check_containment import check_containment
 
 
-def compare_json(item, expected_json, replace_builders=False, dump_builders=True, test_decode=False, test_containment=True):
+def compare_json(item, expected_json, replace_builders=False, dump_builders=True, test_decode=False, test_containment=True, test_excluded=False):
     try:
         compact_json = item.json(compact=True, builders=dump_builders)
         full_json = item.json(builders=dump_builders)
@@ -24,7 +24,12 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
             compact_json_replaced = replace_ids(compact_json)
             full_json_replaced = replace_ids(full_json)
 
-        assert compact_json_replaced == to_compact(expected_json)
+        if test_excluded:
+            compact_expected_json = to_compact_excluded(expected_json)
+            assert compact_json_replaced == compact_expected_json
+        else:
+            compact_expected_json = to_compact(expected_json)
+            assert compact_json_replaced == compact_expected_json
         assert full_json_replaced == expected_json
 
     except:
@@ -41,7 +46,7 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
         print(compact_json_replaced)
 
         print('--- compact expected ---')
-        print(to_compact(expected_json))
+        print(compact_expected_json)
 
         print('--- compact original ---')
         print(compact_json)
