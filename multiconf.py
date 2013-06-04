@@ -248,7 +248,7 @@ class _ConfigBase(object):
                 self._mc_nested.append(self)
             try:
                 self._mc_in_build = True
-                self.__mc_init__()
+                self.mc_init()
                 was_under_proxy_build = self._mc_root_conf._mc_under_proxy_build
                 if isinstance(self, ConfigBuilder):
                     self._mc_root_conf._mc_under_proxy_build = True
@@ -322,7 +322,7 @@ class _ConfigBase(object):
                 attribute.error(msg)
                 raise ConfigException(msg + " on object " + repr(self))
 
-            # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class __mc_init__
+            # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class mc_init
             check = self._mc_deco_unchecked != self.__class__ and self._mc_deco_unchecked not in self.__class__.__bases__
             if not self._mc_in_init and not ('default' in kwargs and len(kwargs) == 1) and check:
                 attribute._mc_frozen = True
@@ -555,7 +555,7 @@ class _ConfigBase(object):
         """Can be overridden to provide post-frozen validation"""
         pass
 
-    def __mc_init__(self):
+    def mc_init(self):
         """Can be overridden in derived classes to instantiate default child objects"""
         pass
 

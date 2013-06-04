@@ -163,7 +163,7 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
             super(X, self).__init__(**kwargs)
             self.init_parent = self.contained_in
 
-        def __mc_init__(self):
+        def mc_init(self):
             self.mc_init_parent = self.contained_in
 
         def validate(self):

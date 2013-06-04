@@ -32,7 +32,7 @@ valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 @required('anattr, anotherattr')
 @unchecked()
 class uitem(ConfigItem):
-    def __mc_init__(self):
+    def mc_init(self):
         self.setattr('anattr', prod=2, g_dev=2)
 
 
@@ -44,7 +44,7 @@ def test_required_missing_unchecked_for_configroot():
     @required('anattr, anotherattr')
     @unchecked()
     class root(ConfigRoot):
-        def __mc_init__(self):
+        def mc_init(self):
             self.setattr('anattr', prod=2, g_dev=2)
 
     with root(prod, [g_dev, pp, prod]) as cr:
