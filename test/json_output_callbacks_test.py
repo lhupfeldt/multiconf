@@ -14,7 +14,7 @@ pp = ef.Env('pp')
 prod = ef.Env('prod')
 
 
-_filter_expected_json_output = """{
+_filter_expected_json = """{
     "__class__": "ConfigRoot", 
     "__id__": 0000, 
     "env": {
@@ -48,10 +48,10 @@ def test_json_dump_user_defined_attribute_filter():
     with ConfigRoot(prod, [prod, pp], mc_json_filter=json_filter, a=0, hide_me1='FAILED') as cr:
         Nested(b=2, hide_me1=7)
 
-    compare_json(cr, _filter_expected_json_output)
+    compare_json(cr, _filter_expected_json)
 
 
-_json_fallback_handler_expected_json_output = """{
+_json_fallback_handler_expected_json = """{
     "__class__": "ConfigRoot", 
     "__id__": 0000, 
     "env": {
@@ -97,10 +97,10 @@ def test_json_fallback_handler():
         cr.unhandled_non_item = UnHandledNonItem()
         Nested(b=2)
 
-    compare_json(cr, _json_fallback_handler_expected_json_output)
+    compare_json(cr, _json_fallback_handler_expected_json)
 
 
-_json_fallback_handler_iterable_expected_json_output = """{
+_json_fallback_handler_iterable_expected_json = """{
     "__class__": "ConfigRoot", 
     "__id__": 0000, 
     "env": {
@@ -134,4 +134,40 @@ def test_json_fallback_handler_iterable():
     with ConfigRoot(prod, [prod, pp], mc_json_fallback=json_fallback_handler, a=0) as cr:
         cr.handled_non_items = [HandledNonItem(1), HandledNonItem(2)]
 
-    compare_json(cr, _json_fallback_handler_iterable_expected_json_output)
+    compare_json(cr, _json_fallback_handler_iterable_expected_json)
+
+
+_json_equivalent_expected_json = """{
+    "__class__": "ConfigRoot", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "handled_non_item": {
+        "a": 1, 
+        "b": "Hi"
+    }, 
+    "someitem": {
+        "__class__": "Item", 
+        "__id__": 0000, 
+        "a": 7
+    }
+}"""
+
+def test_json_equivalent():
+    class NonItemWithEquiv(object):
+        def json_equivalent(self):
+            return dict(a=1, b='Hi')
+
+    @named_as('someitem')
+    class Item(ConfigItem):
+        def __init__(self):
+            super(Item, self).__init__(a=7)
+
+    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+        cr.handled_non_item = NonItemWithEquiv()
+        Item()
+
+    compare_json(cr, _json_equivalent_expected_json)

@@ -109,7 +109,8 @@ class ConfigItemEncoder(json.JSONEncoder):
     # pylint: disable=E0202
     def default(self, obj):
         if ConfigItemEncoder.recursion_check.in_default:
-            # print >> sys.stderr, self.__class__.__name__, "json_output.default: type(obj)", type(obj)
+            ConfigItemEncoder.recursion_check.in_default = False
+            print("Warning: json_output.default: type(obj), obj", type(obj), file=sys.stderr)
             raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
 
         try:
@@ -223,6 +224,10 @@ class ConfigItemEncoder(json.JSONEncoder):
                 for eg in obj.all():
                     dd['name'] = eg.name
                 return dd
+
+            # If obj defines json_equivalent, then return the result of that
+            if hasattr(obj, 'json_equivalent'):
+                return obj.json_equivalent()
 
             try:
                 iterable = iter(obj)
