@@ -48,6 +48,7 @@ def _error_type_msg(num_errors, message):
     print('ConfigError:', message, file=sys.stderr)
     return num_errors + 1
 
+
 def _error_msg(num_errors, message, up_level=2, ufl=None):
     _line_msg(up_level, ufl)
     return _error_type_msg(num_errors, message)
@@ -65,6 +66,7 @@ def _warning_msg(num_warnings, message, up_level=2, ufl=None):
 def _api_error_type_msg(num_warnings, message):
     print('MultiConfApiError:', message, file=sys.stderr)
     return num_warnings + 1
+
 
 def _api_error_msg(num_errors, message, up_level=2, ufl=None):
     _line_msg(up_level, ufl)
