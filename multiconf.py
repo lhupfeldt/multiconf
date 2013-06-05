@@ -515,7 +515,7 @@ class _ConfigBase(object):
             contained_in_names.append(contained_in.named_as())
             contained_in = contained_in.contained_in
 
-        raise ConfigException('Could not find a parent container named as: ' + repr(named_as) + ' in hieracy with names: ' + repr(contained_in_names))
+        raise ConfigException("Searching from: " + repr(self) + ': Could not find a parent container named as: ' + repr(named_as) + ' in hieracy with names: ' + repr(contained_in_names))
 
     def find_attribute(self, attribute_name):
         """Find first occurence of attribute 'attribute_name', by searching backwards towards root_conf, starting with self."""
