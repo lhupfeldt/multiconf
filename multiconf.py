@@ -19,7 +19,7 @@ _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
 
 class ConfigApiException(ConfigBaseException):
     pass
-        
+
 
 class _ConfigBase(object):
     _mc_nested = []
@@ -96,7 +96,7 @@ class _ConfigBase(object):
                 print("This happens if there is an error (e.g. missing required attributes) in an object that was not", file=sys.stderr)
                 print("directly enclosed in a with statement. Objects that are not arguments to a with statement will", file=sys.stderr)
                 print("not be validated until the next ConfigItem is declared or an outer with statement is exited.", file=sys.stderr)
-            
+
                 if hasattr(ex, '_mc_in_user_code') or _debug_exc:
                     raise
                 raise ex
@@ -235,7 +235,7 @@ class _ConfigBase(object):
         """
         if self._mc_frozen or self._mc_is_excluded:
             return True
-        
+
         self._mc_frozen = self._mc_deco_unchecked != self.__class__ and not self._mc_root_conf._mc_under_proxy_build
         for _child_name, child_value in self._mc_attributes.iteritems():
             self._mc_frozen &= child_value._mc_freeze()
@@ -428,7 +428,7 @@ class _ConfigBase(object):
     def _check_valid_env(self, env, valid_envs):
         if not isinstance(env, Env):
             raise ConfigException(self.__class__.__name__ + ': env must be instance of ' + repr(Env.__name__) + '; found type ' + repr(env.__class__.__name__) + ': ' + repr(env))
-        
+
         return self._check_env_is_valid(env, valid_envs)
 
     def __getattr__(self, name):
@@ -473,7 +473,7 @@ class _ConfigBase(object):
         if not isinstance(self._mc_contained_in, ConfigBuilder):
             return self._mc_contained_in
         if self._mc_root_conf._mc_under_proxy_build:
-            return self._mc_contained_in.contained_in            
+            return self._mc_contained_in.contained_in
         raise ConfigApiException("Use of 'contained_in' in not allowed in object while under a ConfigBuilder")
 
     @property
