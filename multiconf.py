@@ -449,7 +449,11 @@ class _ConfigBase(object):
             repeatable_name = name + 's'
             if self._mc_attributes.get(repeatable_name):
                 error_message = ", but found attribute " + repr(repeatable_name)
-            raise AttributeError(repr(self) + " has no attribute " + repr(name) + error_message)
+            try:
+                self_repr = repr(self)
+            except:
+                self_repr = repr(type(self))
+            raise AttributeError(self_repr + " has no attribute " + repr(name) + error_message)
 
         try:
             return attr._mc_value(self.env)
