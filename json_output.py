@@ -99,18 +99,18 @@ class ConfigItemEncoder(json.JSONEncoder):
         return child_obj
 
     def encode(self, obj, **kwargs):
-        #print self.__class__.__name__, "encode: type(obj)", type(obj)
+        #print(self.__class__.__name__, "encode: type(obj)", type(obj), kwargs)
         return super(ConfigItemEncoder, self).encode(obj, **kwargs)
 
     def iterencode(self, obj, **kwargs):
-        #print self.__class__.__name__, "iterencode: type(obj)", type(obj)
+        #print(self.__class__.__name__, "iterencode: type(obj)", type(obj), kwargs)
         return super(ConfigItemEncoder, self).iterencode(obj, **kwargs)
 
     # pylint: disable=E0202
     def default(self, obj):
         if ConfigItemEncoder.recursion_check.in_default:
             ConfigItemEncoder.recursion_check.in_default = False
-            print("Warning: json_output.default: type(obj), obj", type(obj), file=sys.stderr)
+            print("Warning: Nested json calls: type(obj) == ", type(obj), obj, file=sys.stderr)
             raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
 
         try:
