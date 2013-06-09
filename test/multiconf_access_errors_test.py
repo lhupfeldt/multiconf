@@ -104,6 +104,12 @@ def test_find_contained_in_named_as_not_found():
     assert replace_ids(exinfo.value.message) == _find_contained_in_named_as_not_found_expected
 
 
+_find_attribute_with_attribute_name_not_found = """Searching from: {
+    "__class__": "X #as: 'xxxx', id: 0000", 
+    "someitems": {}, 
+    "a": 3
+}: Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"""
+
 def test_find_attribute_with_attribute_name_not_found():
     @named_as('someitems')
     @nested_repeatables('someitems')
@@ -137,7 +143,7 @@ def test_find_attribute_with_attribute_name_not_found():
     with raises(ConfigException) as exinfo:
         assert cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e') == 3
     
-    assert exinfo.value.message == "Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"
+    assert replace_ids(exinfo.value.message) == _find_attribute_with_attribute_name_not_found
 
 
 # TODO

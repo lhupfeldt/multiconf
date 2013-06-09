@@ -519,7 +519,11 @@ class _ConfigBase(object):
             contained_in_names.append(contained_in.named_as())
             contained_in = contained_in.contained_in
 
-        raise ConfigException("Searching from: " + repr(self) + ': Could not find a parent container named as: ' + repr(named_as) + ' in hieracy with names: ' + repr(contained_in_names))
+        msg = ': Could not find a parent container named as: ' + repr(named_as) + ' in hieracy with names: ' + repr(contained_in_names)
+        try:
+            raise ConfigException("Searching from: " + repr(self) + msg)
+        except json_output.NestedJsonCallError:
+            raise ConfigException("Searching from: " + repr(type(self)) + msg)            
 
     def find_attribute(self, attribute_name):
         """Find first occurence of attribute 'attribute_name', by searching backwards towards root_conf, starting with self."""
@@ -537,7 +541,11 @@ class _ConfigBase(object):
             contained_in_names.append(contained_in.named_as())
             contained_in = contained_in.contained_in
 
-        raise ConfigException('Could not find an attribute named: ' + repr(attribute_name) + ' in hieracy with names: ' + repr(contained_in_names))
+        msg = ': Could not find an attribute named: ' + repr(attribute_name) + ' in hieracy with names: ' + repr(contained_in_names)
+        try:
+            raise ConfigException("Searching from: " + repr(self) + msg)
+        except json_output.NestedJsonCallError:
+            raise ConfigException("Searching from: " + repr(type(self)) + msg)            
 
     def _user_validate_recursively(self):
         """Call the user defined 'validate' methods on all items"""
