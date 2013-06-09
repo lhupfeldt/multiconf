@@ -444,6 +444,12 @@ _json_dump_property_method_calls_json_expected_json = """{
     }
 }"""
 
+_json_dump_property_method_calls_json_expected_stderr = """Warning: Nested json calls:
+outer object type: <class 'multiconf.test.json_output_test.Nested'>
+inner object type: <class 'multiconf.test.json_output_test.Nested'>, inner obj: {
+    "__class__": "Nested #as: 'xxxx', id: 0000"
+}"""
+
 def test_json_dump_property_method_calls_json():
     @named_as('someitem')
     class Nested(ConfigItem):
@@ -455,6 +461,7 @@ def test_json_dump_property_method_calls_json():
         Nested()
 
     compare_json(cr, _json_dump_property_method_calls_json_expected_json)
+    # TODO check stderr
 
 
 # TODO: insert information about skipped objects into json output

@@ -23,7 +23,7 @@ def _class_tuple(obj, obj_info=""):
 
 class ConfigItemEncoder(json.JSONEncoder):
     recursion_check = threading.local()
-    recursion_check.in_default = False
+    recursion_check.in_default = None
 
     def __init__(self, filter_callable=None, fallback_callable=None, compact=False, property_methods=True, builders=False, **kwargs):
         """
@@ -109,12 +109,16 @@ class ConfigItemEncoder(json.JSONEncoder):
     # pylint: disable=E0202
     def default(self, obj):
         if ConfigItemEncoder.recursion_check.in_default:
-            ConfigItemEncoder.recursion_check.in_default = False
-            print("Warning: Nested json calls: type(obj) == ", type(obj), obj, file=sys.stderr)
+            in_default = ConfigItemEncoder.recursion_check.in_default
+            ConfigItemEncoder.recursion_check.in_default = None
+            print("Warning: Nested json calls:", file=sys.stderr)
+            print("outer object type:", type(in_default), file=sys.stderr)
+            print("inner object type:", repr(type(obj)) + ", inner obj:", in_default, file=sys.stderr)
+            ConfigItemEncoder.recursion_check.in_default = in_default
             raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
 
         try:
-            ConfigItemEncoder.recursion_check.in_default = True
+            ConfigItemEncoder.recursion_check.in_default = obj
             if not self.start_obj:
                 self.start_obj = obj
 
@@ -254,4 +258,4 @@ class ConfigItemEncoder(json.JSONEncoder):
             return "__json_error__ # don't know how to handle obj of type: " + repr(type(obj))
 
         finally:
-            ConfigItemEncoder.recursion_check.in_default = False
+            ConfigItemEncoder.recursion_check.in_default = None
