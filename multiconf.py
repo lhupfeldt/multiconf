@@ -248,8 +248,8 @@ class _ConfigBase(object):
                 self._mc_nested.append(self)
             try:
                 self._mc_in_build = True
-                self.mc_init()
                 was_under_proxy_build = self._mc_root_conf._mc_under_proxy_build
+                self.mc_init()
                 if isinstance(self, ConfigBuilder):
                     self._mc_root_conf._mc_under_proxy_build = True
                     self.build()
