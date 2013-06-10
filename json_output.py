@@ -113,8 +113,7 @@ class ConfigItemEncoder(json.JSONEncoder):
             ConfigItemEncoder.recursion_check.in_default = None
             print("Warning: Nested json calls:", file=sys.stderr)
             print("outer object type:", type(in_default), file=sys.stderr)
-            print("inner object type:", repr(type(obj)) + ", inner obj:", in_default, file=sys.stderr)
-            ConfigItemEncoder.recursion_check.in_default = in_default
+            print("inner object type:", repr(type(obj)) + ", inner obj:", obj, file=sys.stderr)
             raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
 
         try:
@@ -128,7 +127,7 @@ class ConfigItemEncoder(json.JSONEncoder):
             self._set_already_dumped(obj)
 
             if isinstance(obj, multiconf._ConfigBase):
-                #print "# Handle ConfigItems", type(obj)
+                # print("# Handle ConfigItems", type(obj))
                 dd = self._mc_class_dict(obj)
 
                 entries = ()
