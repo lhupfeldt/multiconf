@@ -25,7 +25,7 @@ class ConfigItemEncoder(json.JSONEncoder):
     recursion_check = threading.local()
     recursion_check.in_default = None
 
-    def __init__(self, filter_callable=None, fallback_callable=None, compact=False, property_methods=True, builders=False, **kwargs):
+    def __init__(self, filter_callable=None, fallback_callable=None, compact=False, property_methods=True, builders=False, warn_nesting=False, **kwargs):
         """
         filter_callable: func(obj, key, value)
         - filter_callable is called for each key/value pair of attributes on each ConfigItem obj.
@@ -48,6 +48,7 @@ class ConfigItemEncoder(json.JSONEncoder):
         self.seen = {}
         self.start_obj = None
         self.builders = builders
+        self.warn_nesting = warn_nesting
 
     def _class_dict(self, obj):
         if self.compact:
@@ -111,9 +112,10 @@ class ConfigItemEncoder(json.JSONEncoder):
         if ConfigItemEncoder.recursion_check.in_default:
             in_default = ConfigItemEncoder.recursion_check.in_default
             ConfigItemEncoder.recursion_check.in_default = None
-            print("Warning: Nested json calls:", file=sys.stderr)
-            print("outer object type:", type(in_default), file=sys.stderr)
-            print("inner object type:", repr(type(obj)) + ", inner obj:", obj, file=sys.stderr)
+            if self.warn_nesting:
+                print("Warning: Nested json calls:", file=sys.stderr)
+                print("outer object type:", type(in_default), file=sys.stderr)
+                print("inner object type:", repr(type(obj)) + ", inner obj:", obj, file=sys.stderr)
             raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
 
         try:

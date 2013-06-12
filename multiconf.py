@@ -15,7 +15,7 @@ from .config_errors import ConfigBaseException, ConfigException, NoAttributeExce
 from . import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
-
+_warn_json_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
 
 class ConfigApiException(ConfigBaseException):
     pass
@@ -174,7 +174,8 @@ class _ConfigBase(object):
         class Encoder(json_output.ConfigItemEncoder):
             def __init__(self, **kwargs):
                 super(Encoder, self).__init__(filter_callable=filter_callable, fallback_callable=fallback_callable,
-                                              compact=compact, property_methods=property_methods, builders=builders, **kwargs)
+                                              compact=compact, property_methods=property_methods, builders=builders, 
+                                              warn_nesting=_warn_json_nesting, **kwargs)
 
         return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=False, sort_keys=False, indent=4)
 
