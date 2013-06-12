@@ -49,17 +49,17 @@ def conf(env_name):
             # same applies to 'devlocal' environment
             adm_server.setattr('host', devs='admin.special.otherdomain', devlocal='localhost')
 
-        # Here we define hom many managed servers we need in each environment, the default is set to 4:
+        # Here we define how many managed servers we need in each environment, the default is set to 4:
         # It is considered good practice to always have the prod value as default, you don't want somebody
         # to forget overriding a property with the correct prod value
-        with managed_servers(num_servers=4, base_port=dc.base_port) as c:
+        with managed_servers(num_servers=4, host_pattern='ms%(n)d.'+env.name+'.mydomain', base_port=dc.base_port) as ms:
             # But dev envs will only have 1 managed server
             # This override uses group 'g_dev', which has all development environments
-            c.setattr('num_servers', g_dev=1)
+            ms.setattr('num_servers', g_dev=1)
             # Same as above - we cannot use default host naming in two environments
-            ms.setattr('host', devs='ms.special.otherdomain', devlocal='localhost')
+            ms.setattr('host_pattern', devs='ms.special.otherdomain', devlocal='localhost')
 
-        # Add a special managed server, and add custom property
+        # Add some special managed servers, with custom properties
 
         # Here we are getting the domain base port value set above
         port = dc.base_port + 110
@@ -75,9 +75,9 @@ def conf(env_name):
         # Add a special managed server, and override default value
         port = dc.base_port + 210
         # Managed server 'ms6' have property 'another_prop', which is set to default value [1, 2]
-        with managed_server(name='ms6', host='ms.'+env.name+'.mydomain', port=port+1, suffix=17, another_prop=[1, 2]) as c:
+        with managed_server(name='ms6', host='ms.'+env.name+'.mydomain', port=port+1, suffix=17, another_prop=[1, 2]) as ms:
             # But on 'g_dev' group it needs to be set to another value
-            c.setattr('another_prop', g_dev=[1])
+            ms.setattr('another_prop', g_dev=[1])
             # Same as above - we cannot use default host naming in two environments
             ms.setattr('host', devs='ms.special.otherdomain', devlocal='localhost')
 
@@ -85,7 +85,7 @@ def conf(env_name):
         # This means all environment will have the same settings for this
         # server
         # Except 'host' parameter, which is different for two environments
-        managed_server(name='ms7', host='ms.'+env.name+'.mydomain', port=port+2, suffix=18)
+        with managed_server(name='ms7', host='ms.'+env.name+'.mydomain', port=port+2, suffix=18) as ms:
             # Same as above - we cannot use default host naming in two environments
             ms.setattr('host', devs='ms.special.otherdomain', devlocal='localhost')
 

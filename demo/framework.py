@@ -23,29 +23,31 @@ class weblogic_config(ConfigRoot):
 # Weblogic's standalone administration server. Used to control domain.
 class admin_server(ConfigItem):
     def __init__(self, **attr):
-        super(admin_server, self).__init__(server_type='admin', **attr)
+        super(admin_server, self).__init__(name='admin', server_type='admin', **attr)
 
 
-# Here specify that a managed_server can be repeated within it's holder
+# Here specify that a managed_server can be repeated within it's parent (domain)
 @repeat()
 class managed_server(ConfigItem):
     def __init__(self, name, **attr):
         super(managed_server, self).__init__(name=name, server_type='managed', **attr)
 
 
-# Here specify that a parameter num_servers is required when defining a
+# Here we specify that a parameter num_servers is required when defining a
 # builder for managed_server
 @required('num_servers')
 class managed_servers(ConfigBuilder):
     ''' Builder for managed_server objects. Used in environment configuration to
     automatically create proper number of managed_server objects '''
-    def __init__(self, base_port, **attr):
-        super(managed_servers, self).__init__(base_port=base_port, **attr)
+    def __init__(self, num_servers, host_pattern, base_port, **attr):
+        super(managed_servers, self).__init__(num_servers=num_servers, host_pattern=host_pattern, base_port=base_port, **attr)
 
     def build(self):
         for server_num in xrange(1, self.num_servers+1):
-            # Here we generating managed_server's name
-            managed_server(name='ms%d' % server_num, port=self.base_port+10+server_num)
+            # Here we are generating the managed_server's name and host name, from a pattern and the managed server number
+            server_name = 'ms%d' % server_num
+            host_name = self.host_pattern % dict(n=server_num)
+            managed_server(name=server_name, host=host_name, port=self.base_port+10+server_num)
 
 
 @repeat()
