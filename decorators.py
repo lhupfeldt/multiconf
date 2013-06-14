@@ -4,17 +4,21 @@
 import re
 import keyword
 
-from .config_errors import _warning_msg as warn
-
-class ConfigDefinitionException(Exception):
-    def __init__(self, msg):
-        super(ConfigDefinitionException, self).__init__(msg)
+from .config_errors import ConfigDefinitionException, _warning_msg as warn, _error_msg as error
+from . import ConfigBuilder
 
 
-def _isidentifier(s):
-    if s in keyword.kwlist:
+def _isidentifier(name):
+    if name in keyword.kwlist:
         return False
-    return re.match(r'^[a-z_][a-z0-9_]*$', s, re.I) is not None
+    return re.match(r'^[a-z_][a-z0-9_]*$', name, re.I) is not None
+
+
+def _not_config_builder(cls, decorator_name):
+    if issubclass(cls, ConfigBuilder):
+        msg = "Decorator '@" + decorator_name + "' is not allowed on instance of ConfigBuilder."
+        error(0, msg)
+        raise ConfigDefinitionException(msg)
 
 
 def _check_valid_identifiers(names):
@@ -29,10 +33,24 @@ def _check_valid_identifiers(names):
     raise ConfigDefinitionException(repr(invalid) + " are not valid identifiers")
 
 
+def _add_super_list_deco_values(cls, attr_names_str, deco_attr_name):
+    attr_names = [attr.strip() for attr in attr_names_str.split(',')]
+    _check_valid_identifiers(attr_names)
+
+    super_names = getattr(super(cls, cls), '_mc_deco_' + deco_attr_name)
+    for attr in super_names:
+        if attr in attr_names:
+            warn(0, "Attribute name: " + repr(attr) + " re-specified as " + repr(deco_attr_name) + " on class: " + repr(cls.__name__) + " , was already inherited from a super class.",
+                 up_level=3)
+
+    return attr_names + super_names
+
+
 def named_as(insert_as_name):
     def deco(cls):
+        _not_config_builder(cls, 'named_as')
         _check_valid_identifiers((insert_as_name,))
-        cls._deco_named_as = insert_as_name
+        cls._mc_deco_named_as = insert_as_name
         return cls
 
     return deco
@@ -40,7 +58,8 @@ def named_as(insert_as_name):
 
 def repeat():
     def deco(cls):
-        cls._deco_repeatable = True
+        _not_config_builder(cls, 'repeat')
+        cls._mc_deco_repeatable = True
         return cls
 
     return deco
@@ -48,13 +67,8 @@ def repeat():
 
 def nested_repeatables(attr_names):
     def deco(cls):
-        attributes = [attr.strip() for attr in attr_names.split(',')]
-        _check_valid_identifiers(attributes)
-        super_deco_nested_repeatables = super(cls, cls)._deco_nested_repeatables
-        for attr in super_deco_nested_repeatables:
-            if attr in attributes:
-                warn("Attribute name: " + repr(attr) + " re-specified as 'nested_repeatables' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
-        cls._deco_nested_repeatables = attributes + super_deco_nested_repeatables
+        _not_config_builder(cls, 'nested_repeatables')
+        cls._mc_deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
         return cls
 
     return deco
@@ -62,13 +76,7 @@ def nested_repeatables(attr_names):
 
 def required(attr_names):
     def deco(cls):
-        attributes = [attr.strip() for attr in attr_names.split(',')]
-        _check_valid_identifiers(attributes)
-        super_deco_required = super(cls, cls)._deco_required_attributes
-        for attr in super_deco_required:
-            if attr in attributes:
-                warn("Attribute name: " + repr(attr) + " re-specified as 'required' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
-        cls._deco_required_attributes = attributes + super_deco_required
+        cls._mc_deco_required = _add_super_list_deco_values(cls, attr_names, 'required')
         return cls
 
     return deco
@@ -78,21 +86,7 @@ def required_if(attr_name, attr_names):
     def deco(cls):
         attributes = [attr.strip() for attr in attr_names.split(',')]
         _check_valid_identifiers([attr_name] + attributes)
-        cls._deco_required_if_attributes = attr_name, attributes
-        return cls
-
-    return deco
-
-
-def override(attr_names):
-    def deco(cls):
-        attributes = [attr.strip() for attr in attr_names.split(',')]
-        _check_valid_identifiers(attributes)
-        super_deco_override = super(cls, cls)._deco_override_attributes
-        for attr in super_deco_override:
-            if attr in attributes:
-                warn("Attribute name: " + repr(attr) + " re-specified as 'override' on class: " + repr(cls.__name__) + " , was already inherited from a super class.")
-        cls._deco_override_attributes = attributes + super_deco_override
+        cls._mc_deco_required_if = attr_name, attributes
         return cls
 
     return deco
@@ -101,3 +95,11 @@ def override(attr_names):
 def optional(attr_name):
     # TODO: Implement this cleanly so the a reasonable error message will be given
     return required_if(attr_name, attr_name)
+
+
+def unchecked():
+    def deco(cls):
+        cls._mc_deco_unchecked = cls
+        return cls
+
+    return deco

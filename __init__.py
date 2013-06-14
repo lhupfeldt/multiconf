@@ -2,5 +2,5 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=W0611
-from .multiconf import ConfigRoot, ConfigBuilder, ConfigItem
-from .config_errors import ConfigException, NoAttributeException, InvalidUsageException
+from .multiconf import ConfigRoot, ConfigBuilder, ConfigItem, ConfigApiException
+from .config_errors import ConfigException, ConfigDefinitionException, InvalidUsageException, NoAttributeException

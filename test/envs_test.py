@@ -3,9 +3,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import unittest
-from oktest import ok, test
-
 from ..envs import EnvFactory
 
 ef = EnvFactory()
@@ -54,67 +51,63 @@ EnvGroup('g_all') {
 """
 
 
-class EnvsTest(unittest.TestCase):
-
-    @test("repr of valid_envs")
-    def _0(self):
-        ok (repr(valid_envs)) == valid_envs_repr.strip()
-
-    @test("Membership")
-    def _1(self):
-        # Env is in itself
-        ok (prod in prod) == True
-        # Group is in itself
-        ok (g_dev in g_dev) == True
-
-        ok (prod in valid_envs) == True
-        ok (prod not in g_dev) == True
-        ok (g_dev not in g_prod) == True
-        ok (dev2ct in g_dev2) == True
-        ok (dev2ct in g_dev) == True
-        ok (dev2ct not in g_dev3) == True
-        ok (g_dev2 in g_dev) == True
-        ok (g_dev not in g_dev2) == True
-
-    @test("Iterating envs only")
-    def _2(self):
-        envs = []
-        for env in valid_envs.envs():
-            envs.append(env)
-        ok (envs) == envs_only
+def test_repr_of_valid_envs():
+    assert repr(valid_envs) == valid_envs_repr.strip()
 
 
-    @test("Iterating Groups only")
-    def _3(self):
-        groups = []
-        for group in valid_envs.groups():
-            groups.append(group)
-        ok (groups) == groups_only
+def test_membership():
+    # Env is in itself
+    assert prod in prod
+    # Group is in itself
+    assert g_dev in g_dev
 
-    @test("Iterating Groups and Envs")
-    def _4(self):
-        envs = []
-        for env in valid_envs.all():
-            envs.append(env)
-        ok (envs) == all_envs
+    assert prod in valid_envs
+    assert prod not in g_dev
+    assert g_dev not in g_prod
+    assert dev2ct in g_dev2
+    assert dev2ct in g_dev
+    assert dev2ct not in g_dev3
+    assert g_dev2 in g_dev
+    assert g_dev not in g_dev2
 
-    @test("As key")
-    def _5(self):
-        envs = {}
-        for env in valid_envs.all():
-            envs[env] = True
-        for env in valid_envs.all():
-            ok (envs[env]) == True
 
-    @test("env from string")
-    def _l(self):
-        ok(ef.env("dev2CT").name) == "dev2CT"
+def test_iterating_envs_only():
+    envs = []
+    for env in valid_envs.envs():
+        envs.append(env)
+    assert envs == envs_only
 
-    @test("group from string")
-    def _m(self):
-        ok(ef.group("g_dev2").name) == "g_dev2"
 
-    @test("env_or_group from string")
-    def _n(self):
-        ok(ef.env_or_group("dev2CT").name) == "dev2CT"
-        ok(ef.env_or_group("g_dev2").name) == "g_dev2"
+def test_iterating_groups_only():
+    groups = []
+    for group in valid_envs.groups():
+        groups.append(group)
+    assert groups == groups_only
+
+
+def test_iterating_groups_and_envs():
+    envs = []
+    for env in valid_envs.all():
+        envs.append(env)
+    assert envs == all_envs
+
+
+def test_as_key():
+    envs = {}
+    for env in valid_envs.all():
+        envs[env] = True
+    for env in valid_envs.all():
+        assert envs[env] == True
+
+
+def test_env_from_string():
+    assert ef.env("dev2CT").name == "dev2CT"
+
+
+def test_group_from_string():
+    assert ef.group("g_dev2").name == "g_dev2"
+
+
+def test_env_or_group_from_string():
+    assert ef.env_or_group("dev2CT").name == "dev2CT"
+    assert ef.env_or_group("g_dev2").name == "g_dev2"
