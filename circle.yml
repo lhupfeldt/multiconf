@@ -1,0 +1,3 @@
+dependencies:
+  post:
+    - pip install pytest pytest-cov logilab-devtools demjson
