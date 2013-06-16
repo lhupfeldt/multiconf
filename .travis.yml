@@ -1,6 +1,6 @@
 language: python
 python:
   - "2.7"
-install: "pip install oktest coverage"
+install: "pip install pytest pytest-cov logilab-devtools demjson"
 script: nosetests
 
