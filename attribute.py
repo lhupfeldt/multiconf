@@ -5,11 +5,12 @@ from .config_errors import NoAttributeException, _error_type_msg as error_msg, _
 
 
 class Attribute(object):
-    def __init__(self, attribute_name):
+    def __init__(self, attribute_name, _mc_override=False):
         self.attribute_name = attribute_name
         self.env_values = {}
         self.num_errors = 0
         self._mc_frozen = False
+        self._mc_override = _mc_override
 
     def validate_types(self, env_name, value):
         # Validate that an attribute has the same type for all envs

@@ -623,3 +623,27 @@ def test_nested_build_simple_items():
     assert cr.X1.X2.X3.b == 13
     assert cr.X1.X2.X3.ConfigItem.a == 13
     assert cr.X1.X2.X3.ConfigItem.b == 13
+
+
+def test_mc_init_ref_env_attr_and_override():
+    class X(ConfigItem):
+        def __init__(self, aa=1):
+            super(X, self).__init__()
+            self.aa = aa
+
+        def mc_init(self):
+            self.override('aa', self.aa + 1)
+
+    with ConfigRoot(prod, [prod, pp]) as cr:
+        X()
+    assert cr.X.aa == 2
+
+    with ConfigRoot(pp, [prod, pp]) as cr:
+        with X(aa=2) as x:
+            x.aa = 3
+    assert cr.X.aa == 4
+
+    with ConfigRoot(pp, [prod, pp]) as cr:
+        with X(aa=2) as x:
+            x.setattr('aa', default=3, pp=5)
+    assert cr.X.aa == 6

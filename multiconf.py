@@ -47,6 +47,7 @@ class _ConfigBase(object):
         self._mc_is_excluded = False
         self._mc_include_in_envs = None # Means 'all'
         self._mc_exclude_from_envs = []
+        self._mc_override = False
 
         # Prepare attributes with default values
         for key, value in attr.iteritems():
@@ -158,14 +159,20 @@ class _ConfigBase(object):
         # This makes it possible to do 'if x.item: ...' instead of hasattr(x, 'item') and allows for a nicer json dump
         attributes[child_key] = Excluded(child_item)
 
-    def _mc_post_build_update(self):
+    def _mc_post_init_update(self):
         # Merge items from build into items from with block
         for child_key, child_item in self._mc_build_attributes.iteritems():
             if isinstance(child_item, Repeatable):
                 for rep_key, rep_item in child_item.iteritems():
-                    self._mc_attributes[child_key].setdefault(rep_key, rep_item)
+                    if rep_item._mc_override:
+                        self._mc_attributes[child_key][rep_key] = rep_item
+                    else:
+                        self._mc_attributes[child_key].setdefault(rep_key, rep_item)
                 continue
-            self._mc_attributes.setdefault(child_key, child_item)
+            if child_item._mc_override:
+                self._mc_attributes[child_key] = child_item
+            else:
+                self._mc_attributes.setdefault(child_key, child_item)
 
     def json(self, compact=False, property_methods=True, builders=False, skipkeys=True):
         """See json_output.ConfigItemEncoder for parameters"""
@@ -251,12 +258,14 @@ class _ConfigBase(object):
                 self._mc_in_build = True
                 was_under_proxy_build = self._mc_root_conf._mc_under_proxy_build
                 self.mc_init()
+                self._mc_post_init_update()
                 if isinstance(self, ConfigBuilder):
                     self._mc_root_conf._mc_under_proxy_build = True
                     self.build()
                 for _name, value in self._mc_build_attributes.iteritems():
                     self._mc_frozen &= value._mc_freeze()
-                self._mc_post_build_update()
+                if isinstance(self, ConfigBuilder):
+                    self._mc_post_build_update()
                 self._mc_in_build = False
             except Exception as ex:
                 ex._mc_in_user_code = True
@@ -298,77 +307,93 @@ class _ConfigBase(object):
             # Needed to set private values in __init__
             super(_ConfigBase, self).__setattr__(name, value)
             return
-        self.setattr(name, default=value)
+        self._setattr(name, _mc_override=False, default=value)
 
-    def setattr(self, name, **kwargs):
+    def _setattr(self, name, _mc_override, **kwargs):
         """Set attributes with environment specific values"""
-        try:
-            if name[0] == '_':
-                if name.startswith('_mc'):
-                    raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " +
-                                          "Atributes starting with '_mc' are reserved for multiconf internal usage.")
-
+        if name[0] == '_':
+            if name.startswith('_mc'):
                 raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " +
-                                      "Atributes starting with '_' can not be set using item.setattr. Use assignment instead.")
+                                      "Atributes starting with '_mc' are reserved for multiconf internal usage.")
 
-            # For error messages
-            ufl = _user_file_line()
-            eg_from = {}
-            local = {}
+            raise ConfigException("Trying to set attribute " + repr(name) + " on a config item. " +
+                                  "Atributes starting with '_' can not be set using item.setattr. Use assignment instead.")
 
-            attributes = self._mc_build_attributes if self._mc_in_build else self._mc_attributes
+        # For error messages
+        ufl = _user_file_line()
+        eg_from = {}
+        local = {}
+
+        attributes = self._mc_build_attributes if self._mc_in_build else self._mc_attributes
+
+        if _mc_override:
+            attribute = attributes[name] = Attribute(name, _mc_override=True)
+        else:
             attribute = attributes.setdefault(name, Attribute(name))
-            if attribute._mc_frozen:
-                msg = "The attribute " + repr(name) + " is already fully defined"
-                attribute.error(msg)
-                raise ConfigException(msg + " on object " + repr(self))
+            
+        if attribute._mc_frozen:
+            msg = "The attribute " + repr(name) + " is already fully defined"
+            attribute.error(msg)
+            raise ConfigException(msg + " on object " + repr(self))
 
-            # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class mc_init
-            check = self._mc_deco_unchecked != self.__class__ and self._mc_deco_unchecked not in self.__class__.__bases__
-            if not self._mc_in_init and not ('default' in kwargs and len(kwargs) == 1) and check:
-                attribute._mc_frozen = True
+        # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class mc_init
+        check = self._mc_deco_unchecked != self.__class__ and self._mc_deco_unchecked not in self.__class__.__bases__
+        if not self._mc_in_init and not ('default' in kwargs and len(kwargs) == 1) and check:
+            attribute._mc_frozen = True
 
-            # Validate and assign given env values
-            for eg_name, value in kwargs.iteritems():
-                v_ufl = (value, ufl)
-                try:
-                    attribute.validate_types(eg_name, v_ufl)
+        # Validate and assign given env values
+        for eg_name, value in kwargs.iteritems():
+            v_ufl = (value, ufl)
+            try:
+                attribute.validate_types(eg_name, v_ufl)
 
-                    if eg_name == 'default':
-                        attribute.env_values['default'] = v_ufl
+                if eg_name == 'default':
+                    attribute.env_values['default'] = v_ufl
+                    continue
+
+                eg = self.env.factory.env_or_group(eg_name)
+                for env in eg.envs():
+                    self._check_env_is_valid(env, self.valid_envs)
+
+                    # Locally set attribute alway overwrite previously set 'unchecked'
+                    if env not in local:
+                        attribute.env_values[env] = v_ufl
+                        local[env] = True
+                        eg_from[env] = eg
                         continue
 
-                    eg = self.env.factory.env_or_group(eg_name)
-                    for env in eg.envs():
-                        self._check_env_is_valid(env, self.valid_envs)
+                    # If env == eg then this is a direct env specification, allow overwriting value previously specified through a group
+                    if env not in attribute.env_values or (isinstance(eg_from[env], EnvGroup) and (env == eg)):
+                        attribute.env_values[env] = v_ufl
+                        eg_from[env] = eg
+                        continue
 
-                        # Locally set attribute alway overwrite previously set 'unchecked'
-                        if env not in local:
-                            attribute.env_values[env] = v_ufl
-                            local[env] = True
-                            eg_from[env] = eg
-                            continue
+                    # If env != eg then this is specified through a group, if it was previously specified directly, just ignore
+                    if (not isinstance(eg_from[env], EnvGroup)) and (env != eg):
+                        continue
 
-                        # If env == eg then this is a direct env specification, allow overwriting value previously specified through a group
-                        if env not in attribute.env_values or (isinstance(eg_from[env], EnvGroup) and (env == eg)):
-                            attribute.env_values[env] = v_ufl
-                            eg_from[env] = eg
-                            continue
+                    new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
+                    prev_eg_msg = repr(eg_from[env])
+                    msg = "A value is already specified for: " + new_eg_msg + '=' + repr(v_ufl) + ", previous value: " + prev_eg_msg + '=' + repr(attribute.env_values[env])
+                    attribute.error(msg)
 
-                        # If env != eg then this is specified through a group, if it was previously specified directly, just ignore
-                        if (not isinstance(eg_from[env], EnvGroup)) and (env != eg):
-                            continue
+            except EnvException as ex:
+                attribute.error(ex.message)
 
-                        new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
-                        prev_eg_msg = repr(eg_from[env])
-                        msg = "A value is already specified for: " + new_eg_msg + '=' + repr(v_ufl) + ", previous value: " + prev_eg_msg + '=' + repr(attribute.env_values[env])
-                        attribute.error(msg)
+        if check:
+            self.check_attr_fully_defined(attribute)
 
-                except EnvException as ex:
-                    attribute.error(ex.message)
+    def setattr(self, name, **kwargs):
+        try:
+            self._setattr(name, _mc_override=False, **kwargs)
+        except ConfigBaseException as ex:
+            if _debug_exc:
+                raise
+            raise ex
 
-            if check:
-                self.check_attr_fully_defined(attribute)
+    def override(self, name, value):
+        try:
+            self._setattr(name, _mc_override=True, default=value)
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
