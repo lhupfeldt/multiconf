@@ -5,6 +5,7 @@ from __future__ import print_function
 import sys, os, subprocess
 
 here = os.path.abspath(os.path.dirname(__file__))
+os.environ['MULTICONF_WARN_JSON_NESTING'] = 'true'
 
 print("Running tests")
 if len(sys.argv) > 1:

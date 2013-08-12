@@ -9,9 +9,9 @@ from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, C
 from ..decorators import nested_repeatables, named_as, repeat
 from ..envs import EnvFactory
 
-from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg
-from .utils.compare_json import compare_json
+from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg, config_error
 
+from .utils.compare_json import compare_json
 
 ef = EnvFactory()
 
@@ -26,6 +26,9 @@ pp = ef.Env('pp')
 prod = ef.Env('prod')
 
 g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
+
+def ce(line_num, *lines):
+    return config_error(__file__, line_num, *lines)
 
 
 @nested_repeatables('someitems')
@@ -450,7 +453,7 @@ inner object type: <class 'multiconf.test.json_output_test.Nested'>, inner obj: 
     "__class__": "Nested #as: 'xxxx', id: 0000"
 }"""
 
-def test_json_dump_property_method_calls_json():
+def test_json_dump_property_method_calls_json(capsys):
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
@@ -461,7 +464,9 @@ def test_json_dump_property_method_calls_json():
         Nested()
 
     compare_json(cr, _json_dump_property_method_calls_json_expected_json)
-    # TODO check stderr
+    _sout, serr = capsys.readouterr()
+    assert "Nested json calls detected" in serr
+    assert _json_dump_property_method_calls_json_expected_stderr in replace_ids(serr)
 
 
 # TODO: insert information about skipped objects into json output
