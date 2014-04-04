@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from attribute import Attribute
+from .attribute import Attribute
 
 class Repeatable(OrderedDict):
     _mc_frozen = False
