@@ -18,7 +18,7 @@ class Repeatable(OrderedDict):
         if isinstance(other, Attribute) and key in self:
             attr = self[key]
             if attr._mc_frozen:
-                return attr 
+                return attr
             return attr.merge(other)
         return super(Repeatable, self).setdefault(key, other)
 

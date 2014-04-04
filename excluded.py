@@ -16,9 +16,9 @@ class Excluded(object):
 
     def _mc_freeze(self):
         return True
-    
+
     def _user_validate_recursively(self):
         pass
-    
+
     def _mc_value(self, _current_env):
         return self

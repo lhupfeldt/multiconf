@@ -70,7 +70,7 @@ class EnvGroup(BaseEnv, Container):
         # Check arg types
         for cfg in members:
             if not isinstance(cfg, BaseEnv):
-                raise EnvException(self.__class__.__name__ +  ': ' + ' Group members args must be instance of ' + 
+                raise EnvException(self.__class__.__name__ +  ': ' + ' Group members args must be instance of ' +
                                    repr(Env.__name__) + ' or ' + repr(EnvGroup.__name__) + ', found: ' + repr(cfg))
 
         # Check for doublets
@@ -149,7 +149,7 @@ class EnvFactory(object):
     def __init__(self):
         self._envs = {}
         self._groups = {}
-    
+
     def Env(self, name):
         """ Declare a new Env """
         return Env(name, self)
@@ -157,31 +157,31 @@ class EnvFactory(object):
     def EnvGroup(self, name, *members):
         """ Declare a new EnvGroup """
         return EnvGroup(name, self, *members)
-    
+
     def env(self, name):
         """Get an already declared env from it's name"""
         _env = self._envs.get(name)
         if _env:
             return _env
-    
+
         raise EnvException("No such " + Env.__name__ + ": " + repr(name))
-    
+
     def group(self, name):
         """Get an already declared group from it's name"""
         _env_group = self._groups.get(name)
         if _env_group:
             return _env_group
-    
+
         raise EnvException("No such " + EnvGroup.__name__ + ": " + repr(name))
-        
+
     def env_or_group(self, name):
         """Get an already declared env or group from it's name"""
         _env = self._envs.get(name)
         if _env:
             return _env
-    
+
         _env_group = self._groups.get(name)
         if _env_group:
             return _env_group
-    
+
         raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(name))

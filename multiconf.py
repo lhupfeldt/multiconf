@@ -181,7 +181,7 @@ class _ConfigBase(object):
         class Encoder(json_output.ConfigItemEncoder):
             def __init__(self, **kwargs):
                 super(Encoder, self).__init__(filter_callable=filter_callable, fallback_callable=fallback_callable,
-                                              compact=compact, property_methods=property_methods, builders=builders, 
+                                              compact=compact, property_methods=property_methods, builders=builders,
                                               warn_nesting=_warn_json_nesting, **kwargs)
 
         return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=False, sort_keys=False, indent=4)
@@ -330,7 +330,7 @@ class _ConfigBase(object):
             attribute = attributes[name] = Attribute(name, _mc_override=True)
         else:
             attribute = attributes.setdefault(name, Attribute(name))
-            
+
         if attribute._mc_frozen:
             msg = "The attribute " + repr(name) + " is already fully defined"
             attribute.error(msg)
@@ -584,7 +584,7 @@ class _ConfigBase(object):
             contained_in = contained_in.contained_in
 
         msg = ': Could not find an attribute named: ' + repr(attribute_name) + ' in hieracy with names: ' + repr(contained_in_names)
-        raise ConfigException("Searching from: " + repr(type(self)) + msg)            
+        raise ConfigException("Searching from: " + repr(type(self)) + msg)
 
     def _user_validate_recursively(self):
         """Call the user defined 'validate' methods on all items"""
