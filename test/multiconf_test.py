@@ -647,3 +647,22 @@ def test_mc_init_ref_env_attr_and_override():
         with X(aa=2) as x:
             x.setattr('aa', default=3, pp=5)
     assert cr.X.aa == 6
+
+
+def test_find_contained_in_or_none():
+    with ConfigRoot(prod, [prod, pp]) as cr:
+        with ConfigItem(a=1) as i1:
+            ConfigItem(a=2)
+
+    assert cr.ConfigItem.ConfigItem.find_contained_in_or_none('notthere') == None
+    assert cr.ConfigItem.ConfigItem.find_contained_in_or_none('ConfigItem') == i1
+
+
+def test_find_attribute_or_none():
+    with ConfigRoot(prod, [prod, pp]) as cr:
+        with ConfigItem(a=1) as i1:
+            i1.my_attr = 7
+            ConfigItem(a=2)
+
+    assert cr.ConfigItem.ConfigItem.find_attribute_or_none('notthere') == None
+    assert cr.ConfigItem.ConfigItem.find_attribute_or_none('my_attr') == 7

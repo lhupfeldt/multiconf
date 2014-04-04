@@ -530,6 +530,15 @@ class _ConfigBase(object):
             contained_in = contained_in._mc_contained_in
         return None
 
+    def find_contained_in_or_none(self, named_as):
+        """Find first parent container named as 'named_as', by searching backwards towards root_conf, starting with parent container"""
+        contained_in = self.contained_in
+        while contained_in:
+            if contained_in.named_as() == named_as:
+                return contained_in
+            contained_in = contained_in.contained_in
+        return None
+
     def find_contained_in(self, named_as):
         """Find first parent container named as 'named_as', by searching backwards towards root_conf, starting with parent container"""
         contained_in = self.contained_in
@@ -546,7 +555,17 @@ class _ConfigBase(object):
             contained_in = contained_in.contained_in
 
         msg = ': Could not find a parent container named as: ' + repr(named_as) + ' in hieracy with names: ' + repr(contained_in_names)
-        raise ConfigException("Searching from: " + repr(type(self)) + msg)            
+        raise ConfigException("Searching from: " + repr(type(self)) + msg)
+
+    def find_attribute_or_none(self, attribute_name):
+        """Find first occurence of attribute 'attribute_name', by searching backwards towards root_conf, starting with self."""
+        contained_in = self
+        while contained_in:
+            attr = contained_in._mc_attributes.get(attribute_name)
+            if attr:
+                return contained_in.__getattr__(attribute_name)
+            contained_in = contained_in.contained_in
+        return None
 
     def find_attribute(self, attribute_name):
         """Find first occurence of attribute 'attribute_name', by searching backwards towards root_conf, starting with self."""
