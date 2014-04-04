@@ -27,6 +27,10 @@ class InvalidUsageException(ConfigBaseException):
     pass
 
 
+class ConfigApiException(ConfigBaseException):
+    pass
+
+
 def _user_file_line(up_level_start=1):
     frame = sys._getframe(up_level_start)
     while 1:

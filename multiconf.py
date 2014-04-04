@@ -11,14 +11,11 @@ from .envs import BaseEnv, Env, EnvGroup, EnvException
 from .attribute import Attribute
 from .repeatable import Repeatable
 from .excluded import Excluded
-from .config_errors import ConfigBaseException, ConfigException, NoAttributeException, _api_error_msg, _user_file_line
+from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, NoAttributeException, _api_error_msg, _user_file_line
 from . import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
 _warn_json_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
-
-class ConfigApiException(ConfigBaseException):
-    pass
 
 
 class _ConfigBase(object):
