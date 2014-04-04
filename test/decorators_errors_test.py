@@ -93,7 +93,7 @@ def test_decorator_arg_is_keyword_in_nested_repeatables_decorator():
         @nested_repeatables('a, b, def, c')
         class root(ConfigRoot):
             pass
-    
+
     assert exinfo.value.message == "'def' is not a valid identifier"
 
 def test_decorator_args_are_keywords_in_required_decorator():

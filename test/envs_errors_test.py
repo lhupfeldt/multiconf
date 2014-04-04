@@ -33,7 +33,7 @@ def test_group_member_with_same_name_as_self(capsys):
         cc22 = ef.EnvGroup('cc22', cc21)
         errorline = lineno() + 1
         cc22 = ef.EnvGroup('cc22', cc22)
-    
+
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
     assert exinfo.value.message == "Can't have a member with my own name: 'cc22', members:  [EnvGroup('cc22') {\n     Env('cc21')\n}]"
@@ -90,7 +90,7 @@ def test_repeated_nested_env_member_reversed(capsys):
         ii2 = ef.EnvGroup('ii2', ii1)
         errorline = lineno() + 1
         ii3 = ef.EnvGroup('ii3', ii2, ii1)
-    
+
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
     assert exinfo.value.message == "Repeated group member: Env('ii1') in EnvGroup('ii3') {\n\n}"
@@ -125,7 +125,7 @@ def test_repeated_nested_group_member_reversed(capsys):
 def test_env_from_string_undefined():
     with raises(EnvException) as exinfo:
         ef.env("undefined")
-    
+
     assert exinfo.value.message == "No such Env: 'undefined'"
 
 
@@ -146,7 +146,7 @@ def test_env_or_group_from_string_undefined():
 def test_env_name_is_not_a_str(capsys):
     with raises(EnvException) as exinfo:
         _e1 = ef.Env(1)
-    
+
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
     assert exinfo.value.message == "Env: 'name' must be instance of str, found: int"
@@ -183,7 +183,7 @@ def test_group_name_eq_default(capsys):
     with raises(EnvException) as exinfo:
         e1 = ef.Env("e1")
         _g1 = ef.EnvGroup("default", e1)
-    
+
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
     assert exinfo.value.message == "EnvGroup: 'default' is a reserved name"
@@ -192,7 +192,7 @@ def test_group_name_eq_default(capsys):
 def test_no_group_members(capsys):
     with raises(EnvException) as exinfo:
         gg2 = ef.EnvGroup('gg')
-    
+
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
     assert exinfo.value.message == "EnvGroup: No group members specified"
@@ -201,7 +201,7 @@ def test_no_group_members(capsys):
 def test_group_member_is_not_instanceof_env(capsys):
     with raises(EnvException) as exinfo:
         _g = ef.EnvGroup('gg', 1)
-    
+
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
     assert exinfo.value.message == "EnvGroup:  Group members args must be instance of 'Env' or 'EnvGroup', found: 1"

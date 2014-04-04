@@ -57,7 +57,7 @@ def test_find_contained_in_called_before_parent___init__(capsys):
     with raises(ConfigApiException) as exinfo:
         class root(ConfigRoot):
             pass
-        
+
         class inner(ConfigItem):
             def __init__(self, **kwargs):
                 global inner_errorline
@@ -67,7 +67,7 @@ def test_find_contained_in_called_before_parent___init__(capsys):
 
         with root(prod, [prod, pp], a=0):
             inner(id='n1', b=1)
-    
+
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % '_mc_contained_in'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
@@ -78,7 +78,7 @@ def test_property_method_called_before_parent___init__(capsys):
     with raises(ConfigApiException) as exinfo:
         class root(ConfigRoot):
             pass
-        
+
         class inner(ConfigItem):
             def __init__(self, **kwargs):
                 global inner_errorline
@@ -88,7 +88,7 @@ def test_property_method_called_before_parent___init__(capsys):
 
         with root(prod, [prod, pp], a=0):
             inner(id='n1', b=1)
-    
+
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % '_mc_root_conf'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
@@ -99,7 +99,7 @@ def test_undefined_method_called_before_parent___init__(capsys):
     with raises(ConfigApiException) as exinfo:
         class root(ConfigRoot):
             pass
-        
+
         class inner(ConfigItem):
             def __init__(self, **kwargs):
                 global inner_errorline
@@ -108,7 +108,7 @@ def test_undefined_method_called_before_parent___init__(capsys):
 
         with root(prod, [prod, pp], a=0):
             inner(id='n1', b=1)
-        
+
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % '_mc_attributes'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
@@ -119,7 +119,7 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
     with raises(ConfigApiException) as exinfo:
         class root(ConfigRoot):
             pass
-        
+
         class inner(ConfigItem):
             def __init__(self, **kwargs):
                 global inner_errorline
@@ -128,7 +128,7 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
 
         with root(prod, [prod, pp], a=0):
             inner(id='n1', b=1)
-        
+
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % '_mc_attributes'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
@@ -138,7 +138,7 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
 def test_setattr_multiconf_private_attribute():
     class root(ConfigRoot):
         pass
-        
+
     class inner(ConfigItem):
         pass
 
@@ -148,7 +148,7 @@ def test_setattr_multiconf_private_attribute():
         with root(prod, [prod, pp], a=0) as cr:
             cr.setattr('_mc_whatever', default=1)
 
-    assert exinfo.value.message == ex_msg        
+    assert exinfo.value.message == ex_msg
 
     with raises(ConfigException) as exinfo:
         with root(prod, [prod, pp], a=0) as cr:

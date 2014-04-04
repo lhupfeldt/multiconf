@@ -18,7 +18,7 @@ import config
 def generate(env):
     print('---- Instantiating config for env: ' + repr(env) + ' -----')
     c = config.conf(env)
-    
+
     print('\n---- Printing entire config as "compact" json: -----')
     # json will dump property method values as well as multiconf property values
     # compact give a more human readable output

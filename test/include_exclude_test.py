@@ -61,7 +61,7 @@ def test_include_for_configitem():
     cr = conf(dev2ct)
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
-    
+
 
 def test_exclude_for_configitem():
     def conf(env):
@@ -121,7 +121,7 @@ def test_include_for_configitem_repeatable():
     cr = conf(dev2ct)
     assert cr.ritems['a'].anattr == 2
     assert cr.ritems['a'].anotherattr == 1
-    
+
 
 def test_exclude_for_configitem_repeatable():
     def conf(env):

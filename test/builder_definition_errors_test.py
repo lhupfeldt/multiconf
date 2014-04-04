@@ -76,7 +76,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
             Xses(name='server1')
             with XBuilder():
                 pass
-    
+
     assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
 
 
@@ -100,11 +100,11 @@ def test_unexpected_repeatable_child_builder():
     @named_as('r')
     class RepeatableChild(ConfigItem):
         pass
-    
+
     class UnexpectedRepeatableChildBuilder(ConfigBuilder):
         def build(self):
             RepeatableChild()
-    
+
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, valid_envs=[prod]):
             UnexpectedRepeatableChildBuilder()
@@ -201,19 +201,19 @@ def test_configbuilders_repeated_non_repeatable_in_build():
     class MiddleItem(ConfigItem):
         def __init__(self, name):
             super(MiddleItem, self).__init__(id=name)
-    
+
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
             super(MiddleBuilder, self).__init__(name=name)
-    
+
         def build(self):
             MiddleItem('middleitem1')
             MiddleItem('middleitem2')
             MiddleItem('middleitem3')
-    
+
     class OuterItem(ConfigItem):
         pass
-    
+
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, [prod], name='myp'):
             with OuterItem():

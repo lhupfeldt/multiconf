@@ -132,10 +132,10 @@ def test_find_attribute_with_attribute_name_not_found():
                         ci.setattr('a', prod=2)
                         with X() as ci:
                             ci.setattr('a', prod=3)
-                
+
     with raises(ConfigException) as exinfo:
         assert cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e') == 3
-    
+
     assert replace_ids(exinfo.value.message) == _find_attribute_with_attribute_name_not_found
 
 
@@ -154,7 +154,7 @@ def test_find_attribute_with_attribute_name_not_found():
 #
 #    with root(prod, [prod]) as cr:
 #        X()
-#                
+#
 #    with raises(ConfigException) as exinfo:
 #        a = cr.x.method
 #

@@ -34,13 +34,13 @@ def conf(env_name):
     with weblogic_config(env, [g_dev, g_prod]) as dc:
         # Set domain base port number for different environments.
         # Domain base port is used as base to calculate port offsets
-        # Here we're saying that Wevlogic in g_prod group will have 
+        # Here we're saying that Weblogic in g_prod group will have
         # attribute base_port set to 7000, and each of the development environments
         # will have unique base_port
         dc.setattr('base_port', g_prod=7000, devi=7100, devs=7200, devlocal=7300)
 
         # Weblogic will have an admin server, which will be listening on the environment's base port plus one
-        # But admin server will be running on different hosts, where the default value is calculated using the 
+        # But admin server will be running on different hosts, where the default value is calculated using the
         # environment name
         # In this example default host name will be 'admin.devlocal.mydomain' for 'devlocal' environment.
         # 'admin.devi.mydomain' for 'devi' environment and so on for all advironments
@@ -110,7 +110,7 @@ def conf(env_name):
 #           will be defined within managed_server class from framework.py)
 #       'ms5', on host 'localhost' and on port 7411, with custom_property=2 (defaults overridden on lines 67-73)
 #       'ms6', on host 'localhost' and on port 7511, with another_prop=[1] (overridden on lines 78-82)
-#       'ms7', on host 'localhost' and on port 7513 
+#       'ms7', on host 'localhost' and on port 7513
 #   Datasource 'SampleDS_one' with database_type='Oracle'
 #   Datasource 'SampleDS_two' with database_type='SQLServer'
 #
@@ -126,10 +126,10 @@ def conf(env_name):
 #       'ms4', on host 'ms2.prod.mydomain' and on port 7020 (naming of servers and port numbering
 #       'ms5', on host 'ms.prod.mydomain' and on port 7111, with custom_property=1 (defaults overridden on lines 67-73)
 #       'ms6', on host 'ms.prod.mydomain' and on port 7211, with another_prop=[1, 2] (default on line 78)
-#       'ms7', on host 'ms.prod.mydomain' and on port 7213 
+#       'ms7', on host 'ms.prod.mydomain' and on port 7213
 #   Datasource 'SampleDS_one' with database_type='OracleRAC'
 #   Datasource 'SampleDS_two' with database_type='SQLServer'
 #
 # As you can see, all of this defined in one small file. Ports and host names are calculated automatically
-# and match within environment. There is no need to maintain multiple property files per environment per 
+# and match within environment. There is no need to maintain multiple property files per environment per
 # multiple environments.

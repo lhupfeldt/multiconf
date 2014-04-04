@@ -489,7 +489,7 @@ def test_build_simple_items():
     with ConfigRoot(prod, [prod, pp]) as cr:
         with X() as x:
             x.a = 2
-            ConfigItem(a=2)            
+            ConfigItem(a=2)
 
     assert cr.X.a == 2
     assert cr.X.b == 1
@@ -541,7 +541,7 @@ def test_build_root():
 
     with RootX(prod, [prod, pp]) as cr:
         cr.a = 2
-        ConfigItem(a=2)            
+        ConfigItem(a=2)
 
     assert cr.a == 2
     assert cr.b == 1

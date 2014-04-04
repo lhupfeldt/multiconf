@@ -20,7 +20,7 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
         if replace_builders:
             compact_json_replaced = replace_ids_builder(compact_json)
             full_json_replaced = replace_ids_builder(full_json)
-        else:            
+        else:
             compact_json_replaced = replace_ids(compact_json)
             full_json_replaced = replace_ids(full_json)
 

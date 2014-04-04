@@ -44,7 +44,7 @@ def test_required_if_attributes_condition_true_prod_and_condition_unset_dev2ct()
     with root(prod, [prod, dev2ct]) as cr:
         cr.setattr('a', prod=10)
         cr.setattr('b', prod=20)
-        cr.setattr('c', prod=30)        
+        cr.setattr('c', prod=30)
         cr.setattr('d', prod=40, dev2ct=41)
 
     assert cr.a == 10
@@ -118,7 +118,7 @@ def test_required_if_condition_attribute_missing():
     with root(prod, [prod]):
         with item() as it:
             it.setattr('a', prod=2)
-            
+
     # The above code is valid, the condition attribute i not mandatory
     assert 1 == 1
 

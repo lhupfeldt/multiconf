@@ -98,7 +98,7 @@ def to_compact(json_string):
     return _compact_calculated_regex.sub(r': "\1 #calculated"', json_string)
 
 
-#    "item": false, 
+#    "item": false,
 #    "item #Excluded: <class 'multiconf.test.include_exclude_test.item'>": true
 
 _compact_excluded_regex = re.compile(r""": false, \n *"([a-zA-Z0-9_]*) #Excluded: <class '([.xa-zA-Z0-9_]*)'>": true""")
