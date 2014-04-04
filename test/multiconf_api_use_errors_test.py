@@ -166,3 +166,14 @@ def test_setattr_to_attribute_underscore_attribute():
                 ci.setattr('_b', default=7)
 
     assert exinfo.value.message == ex_msg
+
+
+def test_getattr_repr_error():
+    class X(ConfigItem):
+        def __repr__(self):
+            raise Exception("Bad repr")
+
+    with raises(AttributeError):
+        with ConfigRoot(prod, [prod, pp]):
+            x = X()
+            _ = x.a
