@@ -559,3 +559,17 @@ def test_setattr_ref_declared_not_valid_group(capsys):
 
     # TODO: Improve error message
     assert exinfo.value.message ==  """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
+
+
+def test_mc_init_ref_env_attr_and_override_error():
+    class X(ConfigItem):
+        def __init__(self, aa=1):
+            super(X, self).__init__()
+            self.aa = aa
+
+        def mc_init(self):
+            self.override("_a", "Hello")
+
+    with raises(ConfigException):
+        with ConfigRoot(prod, [prod, pp]):
+            X()
