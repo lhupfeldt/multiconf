@@ -11,7 +11,8 @@ from .envs import BaseEnv, Env, EnvGroup, EnvException
 from .attribute import Attribute
 from .repeatable import Repeatable
 from .excluded import Excluded
-from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, NoAttributeException, _api_error_msg, _user_file_line
+from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, NoAttributeException, ConfigAttributeError
+from .config_errors import _api_error_msg, _user_file_line
 from . import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
@@ -472,11 +473,7 @@ class _ConfigBase(object):
             repeatable_name = name + 's'
             if self._mc_attributes.get(repeatable_name):
                 error_message = ", but found attribute " + repr(repeatable_name)
-            try:
-                self_repr = repr(self)
-            except:
-                self_repr = repr(type(self))
-            raise AttributeError(self_repr + " has no attribute " + repr(name) + error_message)
+            raise ConfigAttributeError("%(self_repr)s has no attribute %(attr_name)s" + error_message, self_repr=self, attr_name=name)
 
         try:
             return attr._mc_value(self.env)

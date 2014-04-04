@@ -173,7 +173,9 @@ def test_getattr_repr_error():
         def __repr__(self):
             raise Exception("Bad repr")
 
-    with raises(AttributeError):
+    with raises(AttributeError) as exinfo:
         with ConfigRoot(prod, [prod, pp]):
             x = X()
             _ = x.a
+
+    assert "X'> has no attribute 'a'" in exinfo.value.message
