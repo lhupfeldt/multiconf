@@ -469,11 +469,7 @@ class _ConfigBase(object):
         try:
             attr = self._mc_attributes[name]
         except KeyError:
-            error_message = ""
-            repeatable_name = name + 's'
-            if self._mc_attributes.get(repeatable_name):
-                error_message = ", but found attribute " + repr(repeatable_name)
-            raise ConfigAttributeError("%(self_repr)s has no attribute %(attr_name)s" + error_message, self_repr=self, attr_name=name)
+            raise ConfigAttributeError(mc_object=self, attr_name=name)
 
         try:
             return attr._mc_value(self.env)

@@ -28,7 +28,7 @@ _test_access_undefined_attribute_expected_repr = """{
         "__class__": "Env", 
         "name": "prod"
     }
-} has no attribute 'b'"""
+}, type: <class 'multiconf.multiconf.ConfigRoot'> has no attribute 'b'"""
 
 def test_access_undefined_attribute():
     with ConfigRoot(prod, [prod]) as cr:
@@ -47,7 +47,7 @@ _t2_expected_repr = """{
         "name": "prod"
     }, 
     "bs": 4
-} has no attribute 'b', but found attribute 'bs'"""
+}, type: <class 'multiconf.multiconf.ConfigRoot'> has no attribute 'b', but found attribute 'bs'"""
 
 def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s():
     with ConfigRoot(prod, [prod]) as cr:

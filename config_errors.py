@@ -31,9 +31,9 @@ class ConfigApiException(ConfigBaseException):
     pass
 
 
-class ConfigAttributeError(AttributeError):
+class LateExpandeMessageErrorMixin(object):
     def __init__(self, message, **kwargs):
-        super(ConfigAttributeError, self).__init__(message)
+        super(LateExpandeMessageErrorMixin, self).__init__(message)
         self.kwargs = kwargs
 
     @property
@@ -45,7 +45,27 @@ class ConfigAttributeError(AttributeError):
             except:  # pylint: disable=bare-except
                 arg_reprs[key] = repr(type(value))
 
-        return super(ConfigAttributeError, self).message % arg_reprs
+        return super(LateExpandeMessageErrorMixin, self).message % arg_reprs
+
+
+class ConfigAttributeError(AttributeError):
+    def __init__(self, mc_object, attr_name):
+        super(ConfigAttributeError, self).__init__("")
+        self.mc_object = mc_object
+        self.attr_name = attr_name
+
+    @property
+    def message(self):
+        error_message = "%(mc_object_repr_and_type)s has no attribute %(attr_name)s"
+        repeatable_attr_name = self.attr_name + 's'
+        if self.mc_object._mc_attributes.get(repeatable_attr_name):
+            error_message += ", but found attribute " + repr(repeatable_attr_name)
+        try:
+            arg_reprs = dict(mc_object_repr_and_type=repr(self.mc_object) + ", type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
+        except:  # pylint: disable=bare-except
+            arg_reprs = dict(mc_object_repr_and_type="Type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
+
+        return error_message % arg_reprs
 
 
 def _user_file_line(up_level_start=1):
