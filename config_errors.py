@@ -47,6 +47,9 @@ class LateExpandeMessageErrorMixin(object):
 
         return super(LateExpandeMessageErrorMixin, self).message % arg_reprs
 
+    def __str__(self):
+        return self.message
+
 
 class ConfigAttributeError(AttributeError):
     def __init__(self, mc_object, attr_name):
@@ -61,11 +64,14 @@ class ConfigAttributeError(AttributeError):
         if self.mc_object._mc_attributes.get(repeatable_attr_name):
             error_message += ", but found attribute " + repr(repeatable_attr_name)
         try:
-            arg_reprs = dict(mc_object_repr_and_type=repr(self.mc_object) + ", type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
+            arg_reprs = dict(mc_object_repr_and_type=repr(self.mc_object) + ", object of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
         except:  # pylint: disable=bare-except
-            arg_reprs = dict(mc_object_repr_and_type="Type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
+            arg_reprs = dict(mc_object_repr_and_type="Object of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
 
         return error_message % arg_reprs
+
+    def __str__(self):
+        return self.message
 
 
 def _user_file_line(up_level_start=1):

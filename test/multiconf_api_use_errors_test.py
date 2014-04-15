@@ -179,3 +179,4 @@ def test_getattr_repr_error():
             _ = x.a
 
     assert "X'> has no attribute 'a'" in exinfo.value.message
+    assert "X'> has no attribute 'a'" in str(exinfo.value)
