@@ -31,26 +31,6 @@ class ConfigApiException(ConfigBaseException):
     pass
 
 
-class LateExpandeMessageErrorMixin(object):
-    def __init__(self, message, **kwargs):
-        super(LateExpandeMessageErrorMixin, self).__init__(message)
-        self.kwargs = kwargs
-
-    @property
-    def message(self):
-        arg_reprs = {}
-        for key, value in self.kwargs.iteritems():
-            try:
-                arg_reprs[key] = repr(value)
-            except:  # pylint: disable=bare-except
-                arg_reprs[key] = repr(type(value))
-
-        return super(LateExpandeMessageErrorMixin, self).message % arg_reprs
-
-    def __str__(self):
-        return self.message
-
-
 class ConfigAttributeError(AttributeError):
     def __init__(self, mc_object, attr_name):
         super(ConfigAttributeError, self).__init__("")
