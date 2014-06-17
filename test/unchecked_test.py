@@ -94,14 +94,12 @@ def test_required_missing_unchecked_base_for_configitem():
     assert cr.item.anotherattr == 0
 
 
-_required_missing_unchecked_super_for_configitem_expected1a = \
-"""Attribute: 'anotherattr' did not receive a value for env Env('dev2ct'), which is a member of EnvGroup('g_dev') {
+_required_missing_unchecked_super_for_configitem_expected1a = """Attribute: 'anotherattr' did not receive a value for env Env('dev2ct'), which is a member of EnvGroup('g_dev') {
      Env('dev2ct'),
      Env('dev2st')
 }"""
 
-_required_missing_unchecked_super_for_configitem_expected1b = \
-"""Attribute: 'anotherattr' did not receive a value for env Env('dev2st'), which is a member of EnvGroup('g_dev') {
+_required_missing_unchecked_super_for_configitem_expected1b = """Attribute: 'anotherattr' did not receive a value for env Env('dev2st'), which is a member of EnvGroup('g_dev') {
      Env('dev2ct'),
      Env('dev2st')
 }"""
@@ -126,21 +124,21 @@ _required_missing_unchecked_super_for_configitem_expected3_ex = """There were 1 
 
 def test_required_missing_unchecked_super_for_configitem(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [g_dev, pp, prod]) as cr:
+        with ConfigRoot(prod, [g_dev, pp, prod]):
             with item() as it:
                 it.setattr('anattr', pp=1, g_dev=1)
                 it.setattr('anotherattr', prod=2, pp=1)
                 errorline = lineno()
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, 
+    assert serr == ce(errorline,
                       _required_missing_unchecked_super_for_configitem_expected1a,
                       _required_missing_unchecked_super_for_configitem_expected1b,
                       )
     assert replace_ids(exinfo.value.message, False) == _required_missing_unchecked_super_for_configitem_expected1_ex
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(dev2ct, [g_dev, pp, prod]) as cr:
+        with ConfigRoot(dev2ct, [g_dev, pp, prod]):
             with item() as it:
                 it.setattr('anotherattr', prod=2, pp=1, g_dev=0)
                 errorline = lineno()
@@ -150,7 +148,7 @@ def test_required_missing_unchecked_super_for_configitem(capsys):
     assert replace_ids(exinfo.value.message, False) == _required_missing_unchecked_super_for_configitem_expected2_ex
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(dev2ct, [g_dev, pp, prod]) as cr:
+        with ConfigRoot(dev2ct, [g_dev, pp, prod]):
             with item() as it:
                 it.setattr('anattr', g_dev=1)
                 it.setattr('anotherattr', prod=2, pp=1, g_dev=0)

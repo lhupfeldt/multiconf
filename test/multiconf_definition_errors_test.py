@@ -140,14 +140,14 @@ def test_non_env_in_valid_envs():
     assert exinfo.value.message == "project: valid_envs items must be instance of 'Env' or 'EnvGroup'; found a 'str': 'Why?'"
 
 
-def test_valid_envs_is_not_a_sequence(capsys):
+def test_valid_envs_is_not_a_sequence():
     with raises(ConfigException) as exinfo:
         project(prod, 1)
 
     assert exinfo.value.message == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
 
 
-def test_valid_envs_is_a_str(capsys):
+def test_valid_envs_is_a_str():
     with raises(ConfigException) as exinfo:
         project(prod, 'Why?')
 
@@ -171,14 +171,14 @@ _test_valid_envs_arg_as_envgroup_exp = """ConfigRoot: valid_envs arg must be a '
   }
 }"""
 
-def test_valid_envs_arg_as_envgroup(capsys):
+def test_valid_envs_arg_as_envgroup():
     with raises(ConfigException) as exinfo:
         ConfigRoot(prod, valid_envs)
 
     assert exinfo.value.message == _test_valid_envs_arg_as_envgroup_exp
 
 
-def test_selected_conf_not_in_valid_envs(capsys):
+def test_selected_conf_not_in_valid_envs():
     with raises(ConfigException) as exinfo:
         ConfigRoot(prod, [dev3ct, dev3st])
 
@@ -240,7 +240,7 @@ def test_attribute_redefinition_attempt(capsys):
     assert replace_ids(exinfo.value.message, named_as=False) == _h_expected_ex
 
 
-def test_nested_item_overrides_simple_attribute(capsys):
+def test_nested_item_overrides_simple_attribute():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, [prod]) as cr:
             cr.setattr('ConfigItem', prod="hello")
@@ -249,7 +249,7 @@ def test_nested_item_overrides_simple_attribute(capsys):
     assert replace_ids(exinfo.value.message, named_as=False) == _i_expected
 
 
-def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class(capsys):
+def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, [prod]) as cr:
             RepeatableItem()
@@ -257,7 +257,7 @@ def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class(
     assert replace_ids(exinfo.value.message, named_as=False) == _j_expected
 
 
-def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repeatable(capsys):
+def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repeatable():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, [prod]) as cr:
             # cr.RepeatableItems is just an attribute named like an item
@@ -267,10 +267,10 @@ def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repe
     assert replace_ids(exinfo.value.message, named_as=False) == _k1_expected
 
 
-def test_nested_repeatable_item_shadowed_by_default_attribute(capsys):
+def test_nested_repeatable_item_shadowed_by_default_attribute():
     with raises(ConfigException) as exinfo:
         # RepeatableItems is just an attribute named like an item
-        with project(prod, [prod], RepeatableItems=1) as cr:
+        with project(prod, [prod], RepeatableItems=1):
             RepeatableItem()
 
     assert replace_ids(exinfo.value.message, named_as=False) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
@@ -294,19 +294,19 @@ def test_nested_repeatable_item_shadowed_by_default_attribute(capsys):
 #     assert exinfo.value.message == "'children' is defined both as simple value and a contained item: children {\n}"
 
 
-def test_non_repeatable_but_container_expects_repeatable(capsys):
+def test_non_repeatable_but_container_expects_repeatable():
     with raises(ConfigException) as exinfo:
         # The following class in not repeatable!
         class RepeatableItems(ConfigItem):
             pass
 
-        with project(prod, [prod]) as cr:
+        with project(prod, [prod]):
             RepeatableItems()
 
     assert replace_ids(exinfo.value.message, named_as=False) == _k4_expected
 
 
-def test_simple_attribute_attempt_to_override_contained_item(capsys):
+def test_simple_attribute_attempt_to_override_contained_item():
     with raises(TypeError) as exinfo:
         with ConfigRoot(prod, [prod]) as cr:
             ConfigItem()
@@ -316,7 +316,7 @@ def test_simple_attribute_attempt_to_override_contained_item(capsys):
     assert exinfo.value.message == "'ConfigItem' object is not callable"
 
 
-def test_repeated_non_repeatable_item(capsys):
+def test_repeated_non_repeatable_item():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, [prod]) as cr:
             ConfigItem()
@@ -326,9 +326,9 @@ def test_repeated_non_repeatable_item(capsys):
     assert exinfo.value.message == "Repeated non repeatable conf item: 'ConfigItem'"
 
 
-def test_nested_repeatable_items_with_repeated_name(capsys):
+def test_nested_repeatable_items_with_repeated_name():
     with raises(ConfigException) as exinfo:
-        with project(prod, [prod]) as cr:
+        with project(prod, [prod]):
             RepeatableItem(id='my_name')
             RepeatableItem(id='my_name')
 
@@ -418,7 +418,7 @@ def test_assigning_owerwrites_attribute_nested_item(capsys):
     assert replace_ids(exinfo.value.message, named_as=False) == _assigning_owerwrites_attribute_nested_item_expected_ex
 
 
-def test_configitem_outside_of_root(capsys):
+def test_configitem_outside_of_root():
     with raises(ConfigException) as exinfo:
         ConfigItem()
 
@@ -430,7 +430,7 @@ _group_for_selected_env_expected = """project: env must be instance of 'Env'; fo
      Env('dev3st')
 }"""
 
-def test_using_group_for_selected_env(capsys):
+def test_using_group_for_selected_env():
     with raises(ConfigException) as exinfo:
         project(g_dev3, [g_dev3])
 
@@ -494,7 +494,7 @@ def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
 
 def test_root_attribute_exception_in_with_block():
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, [prod, pp]) as cr:
+        with ConfigRoot(prod, [prod, pp]):
             raise Exception("Error in root with block")
 
     assert exinfo.value.message == "Error in root with block"
@@ -531,7 +531,7 @@ def test_error_freezing_previous_sibling__validation(capsys):
         pass
 
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, [prod, pp]) as cr:
+        with ConfigRoot(prod, [prod, pp]):
             inner()
             # It would be nice if errorline would be previous line, but that is not really possible
             errorline = lineno() + 1
@@ -542,7 +542,7 @@ def test_error_freezing_previous_sibling__validation(capsys):
     assert exinfo.value.message == "No value given for required attributes: ['a']"
 
 
-def test_setattr_ref_declared_not_valid_env(capsys):
+def test_setattr_ref_declared_not_valid_env():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, valid_envs=[prod]):
             with ConfigItem() as it:
@@ -551,7 +551,7 @@ def test_setattr_ref_declared_not_valid_env(capsys):
     assert exinfo.value.message == """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
 
 
-def test_setattr_ref_declared_not_valid_group(capsys):
+def test_setattr_ref_declared_not_valid_group():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, valid_envs=[prod]):
             with ConfigItem() as it:
