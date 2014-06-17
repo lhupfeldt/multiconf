@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
@@ -439,9 +437,10 @@ def test_using_group_for_selected_env(capsys):
     assert exinfo.value.message == _group_for_selected_env_expected
 
 
-_test_exception_in___exit___and_build = """Exception in __exit__: Exception('in build',)
-Exception in with block will be raised
-"""
+_exception_in___exit___and_build = (
+    """Exception in __exit__: Exception('in build',)"""
+    "\nException in with block will be raised\n"
+)
 
 def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_if_any_pending_builder(capsys):
     with raises(Exception) as exinfo:
@@ -457,13 +456,14 @@ def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_i
                 raise Exception("in with")
 
     _sout, serr = capsys.readouterr()
-    assert serr == _test_exception_in___exit___and_build
+    assert serr == _exception_in___exit___and_build
     assert exinfo.value.message == 'in with'
 
 
-_test_double_error_for_configroot_expected_stderr = """Exception in __exit__: ConfigException("No value given for required attributes: ['someattr1', 'someattr2']",)
-Exception in with block will be raised
-"""
+_double_error_for_configroot_expected_stderr = (
+    """Exception in __exit__: ConfigException("No value given for required attributes: ['someattr1', 'someattr2']",)"""
+    "\nException in with block will be raised\n"
+)
 
 def test_double_error_for_configroot(capsys):
     with raises(Exception) as exinfo:
@@ -475,7 +475,7 @@ def test_double_error_for_configroot(capsys):
             raise Exception("Error in root with block")
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr) == _test_double_error_for_configroot_expected_stderr
+    assert replace_user_file_line_msg(serr) == _double_error_for_configroot_expected_stderr
     assert exinfo.value.message == "Error in root with block"
 
 
@@ -548,7 +548,7 @@ def test_setattr_ref_declared_not_valid_env(capsys):
             with ConfigItem() as it:
                 it.setattr('a', declared_not_valid_env=1)
 
-    assert exinfo.value.message ==  """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
+    assert exinfo.value.message == """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
 
 
 def test_setattr_ref_declared_not_valid_group(capsys):
@@ -558,7 +558,7 @@ def test_setattr_ref_declared_not_valid_group(capsys):
                 it.setattr('a', declared_not_valid_group=1)
 
     # TODO: Improve error message
-    assert exinfo.value.message ==  """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
+    assert exinfo.value.message == """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
 
 
 def test_mc_init_ref_env_attr_and_override_error():
