@@ -6,7 +6,7 @@ from pytest import raises
 
 from .utils.utils import config_error, multi_file_single_config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
+from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
 from ..decorators import nested_repeatables, repeat, required
 from ..envs import EnvFactory
 
@@ -573,3 +573,60 @@ def test_mc_init_ref_env_attr_and_override_error():
     with raises(ConfigException):
         with ConfigRoot(prod, [prod, pp]):
             X()
+
+
+_attribute_mc_required_expected = """Attribute: 'a' MC_REQUIRED did not receive a value for env Env('prod')"""
+
+_attribute_mc_required_expected_env_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": "MC_REQUIRED"
+}"""
+
+def test_attribute_mc_required_env(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', prod=MC_REQUIRED, pp="hello")
+
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, _attribute_mc_required_expected)
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_expected_env_ex
+
+
+_attribute_mc_required_expected_default_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }
+}"""
+
+def test_attribute_mc_required_default(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', default=MC_REQUIRED, pp="hello")
+
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, _attribute_mc_required_expected)
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_expected_default_ex
+
+
+_attribute_mc_required_expected_init_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen"
+}"""
+
+def test_attribute_mc_required_init(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, [prod, pp]):
+            with ConfigItem(a=MC_REQUIRED) as ci:
+                errorline = lineno() + 1
+                ci.setattr('a', pp="hello")
+
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, _attribute_mc_required_expected)
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_expected_init_ex

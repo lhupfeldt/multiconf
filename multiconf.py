@@ -9,6 +9,7 @@ import json
 
 from .envs import BaseEnv, Env, EnvGroup, EnvException
 from .attribute import Attribute
+from .values import MC_REQUIRED
 from .repeatable import Repeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, NoAttributeException, ConfigAttributeError
@@ -420,8 +421,10 @@ class _ConfigBase(object):
             for eg in valid_envs:
                 for env in eg.envs():
                     if env in attribute.env_values:
-                        # The attribute is set with an env specific value
-                        continue
+                        value = attribute.env_values[env][0]
+                        if value != MC_REQUIRED:
+                            # The attribute is set with an env specific value
+                            continue
 
                     # Check for required_if, the required_if atributes are optional if required_if_condition value is false or not specified for the env
                     try:
@@ -435,8 +438,14 @@ class _ConfigBase(object):
                             break
                     else:
                         group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
-                        msg = "Attribute: " + repr(name) + " did not receive a value for env " + repr(env)
-                        attribute.error(msg + group_msg)
+                        mcreq = env in attribute.env_values
+                        if not mcreq:
+                            try:
+                                mcreq = attribute.default_value()
+                            except Exception:
+                                pass
+                        mc_required_msg = (' ' + repr(MC_REQUIRED)) if mcreq else ''
+                        attribute.error("Attribute: " + repr(name) + mc_required_msg + " did not receive a value for env " + repr(env) + group_msg)
 
         if attribute.num_errors:
             attribute.already_checked = True
