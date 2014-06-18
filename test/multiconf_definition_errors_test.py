@@ -154,7 +154,7 @@ def test_valid_envs_is_a_str():
     assert exinfo.value.message == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
 
 
-_test_valid_envs_arg_as_envgroup_exp = """ConfigRoot: valid_envs arg must be a 'Sequence'; found type 'EnvGroup': EnvGroup('g_all') {
+_valid_envs_arg_as_envgroup_exp = """ConfigRoot: valid_envs arg must be a 'Sequence'; found type 'EnvGroup': EnvGroup('g_all') {
      EnvGroup('g_dev') {
        EnvGroup('g_dev2') {
          Env('dev2ct'),
@@ -175,7 +175,7 @@ def test_valid_envs_arg_as_envgroup():
     with raises(ConfigException) as exinfo:
         ConfigRoot(prod, valid_envs)
 
-    assert exinfo.value.message == _test_valid_envs_arg_as_envgroup_exp
+    assert exinfo.value.message == _valid_envs_arg_as_envgroup_exp
 
 
 def test_selected_conf_not_in_valid_envs():
@@ -207,8 +207,8 @@ def test_value_not_assigned_to_all_envs(capsys):
     assert replace_ids(exinfo.value.message, False) == _f_expected
 
 
-_test_attribute_defined_with_different_types_expected = "ConfigError: Found different value types for property 'a' for different envs"
-_test_attribute_defined_with_different_types_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_defined_with_different_types_expected = "ConfigError: Found different value types for property 'a' for different envs"
+_attribute_defined_with_different_types_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
     "env": {
         "__class__": "Env", 
@@ -224,8 +224,8 @@ def test_attribute_defined_with_different_types(capsys):
             cr.setattr('a', prod=1, pp="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == mfsce_local(_test_attribute_defined_with_different_types_expected, errorline, "prod <type 'int'>", "pp <type 'str'>")
-    assert replace_ids(exinfo.value.message, False) == _test_attribute_defined_with_different_types_expected_ex
+    assert serr == mfsce_local(_attribute_defined_with_different_types_expected, errorline, "prod <type 'int'>", "pp <type 'str'>")
+    assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
 
 
 def test_attribute_redefinition_attempt(capsys):

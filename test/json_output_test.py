@@ -233,7 +233,7 @@ def test_json_dump_cyclic_references_between_conf_items_and_other_objects():
     compare_json(cr, __json_dump_cyclic_references_between_conf_items_and_other_objects_expected_json)
 
 
-_test_json_dump_property_method_expected = """{
+_json_dump_property_method_expected = """{
     "__class__": "ConfigRoot", 
     "__id__": 0000, 
     "env": {
@@ -259,7 +259,7 @@ def test_json_dump_property_method():
     with ConfigRoot(prod, [prod, pp], a=0) as cr:
         Nested()
 
-    compare_json(cr, _test_json_dump_property_method_expected)
+    compare_json(cr, _json_dump_property_method_expected)
 
 
 _json_dump_property_method_shadows_attribute_expected_json = """{
@@ -609,7 +609,7 @@ def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
     compare_json(n2, _uplevel_ref_expected_json_output, test_containment=False)
 
 
-_test_json_dump_dir_error_expected_stderr = """Error in json generation:
+_json_dump_dir_error_expected_stderr = """Error in json generation:
 Traceback (most recent call last):
   File "fake_multiconf_dir/json_output.py", line 999, in default
     entries = dir(obj)
@@ -618,7 +618,7 @@ Traceback (most recent call last):
 Exception: Error in dir()
 """
 
-_test_json_dump_dir_error_expected = """{
+_json_dump_dir_error_expected = """{
     "__class__": "ConfigRoot", 
     "__id__": 0000, 
     "env": {
@@ -653,11 +653,11 @@ def test_json_dump_dir_error(capsys):
     mc_regexp = re.compile('json_output.py", line [0-9]*')
     _sout, serr = capsys.readouterr()
     # pylint: disable=W0212
-    assert replace_user_file_line_msg(replace_multiconf_file_line_msg(serr), cr.someitem._errorline) == _test_json_dump_dir_error_expected_stderr % cr.someitem._errorline
-    compare_json(cr, _test_json_dump_dir_error_expected)
+    assert replace_user_file_line_msg(replace_multiconf_file_line_msg(serr), cr.someitem._errorline) == _json_dump_dir_error_expected_stderr % cr.someitem._errorline
+    compare_json(cr, _json_dump_dir_error_expected)
 
 
-_test_json_dump_configbuilder_expected_json_full = """{
+_json_dump_configbuilder_expected_json_full = """{
     "__class__": "ItemWithYs", 
     "__id__": 0000, 
     "env": {
@@ -764,7 +764,7 @@ _test_json_dump_configbuilder_expected_json_full = """{
     "aaa #calculated": true
 }"""
 
-_test_json_dump_configbuilder_expected_json_repeatable_item = """{
+_json_dump_configbuilder_expected_json_repeatable_item = """{
     "__class__": "Y", 
     "__id__": 0000, 
     "name": "server2", 
@@ -829,7 +829,7 @@ _test_json_dump_configbuilder_expected_json_repeatable_item = """{
     }
 }"""
 
-_test_json_dump_configbuilder_dont_dump_expected_json_full = """{
+_json_dump_configbuilder_dont_dump_expected_json_full = """{
     "__class__": "ItemWithYs", 
     "__id__": 0000, 
     "env": {
@@ -911,7 +911,7 @@ _test_json_dump_configbuilder_dont_dump_expected_json_full = """{
     "aaa #calculated": true
 }"""
 
-_test_json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
+_json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
     "__class__": "Y", 
     "__id__": 0000, 
     "name": "server2", 
@@ -1000,11 +1000,11 @@ def test_json_dump_configbuilder():
                 YChild(name='Hanna', a=11)
                 YChild(name='Herbert', a=12)
 
-    compare_json(cr, _test_json_dump_configbuilder_expected_json_full, replace_builders=True, test_decode=True)
-    compare_json(cr.ys['server2'], _test_json_dump_configbuilder_expected_json_repeatable_item, replace_builders=True, test_decode=True)
+    compare_json(cr, _json_dump_configbuilder_expected_json_full, replace_builders=True, test_decode=True)
+    compare_json(cr.ys['server2'], _json_dump_configbuilder_expected_json_repeatable_item, replace_builders=True, test_decode=True)
 
-    compare_json(cr, _test_json_dump_configbuilder_dont_dump_expected_json_full, replace_builders=False, dump_builders=False, test_decode=True)
-    compare_json(cr.ys['server2'], _test_json_dump_configbuilder_dont_dump_expected_json_repeatable_item, replace_builders=False, dump_builders=False, test_decode=True)
+    compare_json(cr, _json_dump_configbuilder_dont_dump_expected_json_full, replace_builders=False, dump_builders=False, test_decode=True)
+    compare_json(cr.ys['server2'], _json_dump_configbuilder_dont_dump_expected_json_repeatable_item, replace_builders=False, dump_builders=False, test_decode=True)
 
 
 @named_as('someitems')

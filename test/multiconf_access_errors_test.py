@@ -20,7 +20,7 @@ def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
 
-_test_access_undefined_attribute_expected_repr = """{
+_access_undefined_attribute_expected_repr = """{
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000", 
     "env": {
         "__class__": "Env", 
@@ -35,7 +35,7 @@ def test_access_undefined_attribute():
     with raises(AttributeError) as exinfo:
         print(cr.b)
 
-    assert replace_ids(exinfo.value.message, named_as=False) == _test_access_undefined_attribute_expected_repr
+    assert replace_ids(exinfo.value.message, named_as=False) == _access_undefined_attribute_expected_repr
 
 
 _t2_expected_repr = """{

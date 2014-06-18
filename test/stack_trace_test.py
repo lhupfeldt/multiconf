@@ -49,7 +49,7 @@ class RepeatableItem(ConfigItem):
     pass
 
 
-_test_stacktrace_strips_multiconf_code_exp_ex = """There were 3 errors when defining attribute 'a' on object: {
+_stacktrace_strips_multiconf_code_exp_ex = """There were 3 errors when defining attribute 'a' on object: {
     "__class__": "inner #as: 'xxxx', id: 0000, not-frozen"
 }"""
 
@@ -72,7 +72,7 @@ def test_stacktrace_strips_multiconf_code(capsys):
                       "No such Env or EnvGroup: 'qq'",
                       "Attribute: 'a' did not receive a value for env Env('prod')",
                       "Attribute: 'a' did not receive a value for env Env('pp')")
-    assert replace_ids(exinfo.value.message) == _test_stacktrace_strips_multiconf_code_exp_ex
+    assert replace_ids(exinfo.value.message) == _stacktrace_strips_multiconf_code_exp_ex
     assert len(exinfo.traceback) == 2, "Traceback: " + repr(exinfo.traceback)
     # TODO py.test exinfo.traceback[0].lineno is off by 1!
     assert exinfo.traceback[0].lineno == errorline - 1
