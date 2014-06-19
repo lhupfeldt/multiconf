@@ -22,7 +22,7 @@ def ce(line_num, *lines):
 
 _attribute_mc_required_expected = """Attribute: 'a' MC_REQUIRED did not receive a value for env Env('prod')"""
 
-_attribute_mc_required_expected_env_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_mc_required_env_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
     "env": {
         "__class__": "Env", 
@@ -39,10 +39,10 @@ def test_attribute_mc_required_env(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, _attribute_mc_required_expected)
-    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_expected_env_ex
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_env_expected_ex
 
 
-_attribute_mc_required_expected_default_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_mc_required_default_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
     "env": {
         "__class__": "Env", 
@@ -58,10 +58,10 @@ def test_attribute_mc_required_default(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, _attribute_mc_required_expected)
-    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_expected_default_ex
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_default_expected_ex
 
 
-_attribute_mc_required_expected_init_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_mc_required_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen"
 }"""
 
@@ -74,10 +74,10 @@ def test_attribute_mc_required_init(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, _attribute_mc_required_expected)
-    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_expected_init_ex
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_init_expected_ex
 
 
-_attribute_mc_required_expected_other_env_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_mc_required_other_env_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
     "env": {
         "__class__": "Env", 
@@ -94,10 +94,10 @@ def test_attribute_mc_required_other_env(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, """Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')""")
-    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_expected_other_env_ex
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_other_env_expected_ex
 
 
-_attribute_mc_required_expected_other_env_different_types_ex = """There were 2 errors when defining attribute 'a' on object: {
+_attribute_mc_required_other_env_different_types_expected_ex = """There were 2 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
     "env": {
         "__class__": "Env", 
@@ -122,7 +122,7 @@ def test_attribute_mc_required_other_env_different_types(capsys):
         "^%(ll)s",
         "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')"
     )
-    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_expected_other_env_different_types_ex
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_other_env_different_types_expected_ex
 
 
 def test_attribute_mc_required_default_all_overridden():
