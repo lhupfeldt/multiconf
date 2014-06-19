@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import sys, re
-
+from pytest import fail  # pylint: disable=no-name-in-module
 
 def lineno():
     frame = sys._getframe(1)
@@ -18,9 +18,10 @@ def _config_msg(error_type, file_name, line_num, *lines):
         # file_name  may end in .pyc!
         file_name = file_name[:-1]
 
+    line_msg = 'File "{file_name}", line {line_num}'.format(file_name=file_name, line_num=line_num) + '\n'
     emsg = ""
     for line in lines:
-        emsg += 'File "{file_name}", line {line_num}'.format(file_name=file_name, line_num=line_num) + '\n'
+        emsg += line_msg
         emsg += error_type + ': ' + line + '\n'
     return emsg
 
@@ -37,25 +38,63 @@ def api_error(file_name, line_num, *line):
     return _config_msg('MultiConfApiError', file_name, line_num, *line)
 
 
-def _multi_file_single_config_msg(error_type, msg, *file_line_msg):
+def assert_lines_in(file_name, line_num, text, *expected_lines):
+    """Assert that `*expected_lines` occur in order in the lines of `text`.
+
+    Args:
+        file_name (str): Test file name, should be set to '__file__'
+        line_num (int): Line number of failure, find the line number by using 'lineno()'
+        text (str): The text to find *expected_lines in
+        *expected_lines (str or RegexObject (hasattr `match`)): For each `expected_line` in expected_lines:
+            If `expected_line` has a match method it is called and must return True for a line in `text`.
+            Otherwise, if the `expected_line` starts with '^', a line in `text` must start with `expected_line[1:]`
+            Otherwise `expected line` must simply occur in a line in `text`
+
+    The following pattern will be replaced in all expected_lines which are not regex:
+    '%(ll)s' replaced with: 'File "{file_name}", line {line_num}'
     """
-    file_line_msg: tuple of (filename, lineni, linemsg)
-    msg: overall error message
-    """
 
-    emsg = ""
-    for file_name, line_num, line_msg in file_line_msg:
-        if not file_name.endswith('.py'):
-            # file_name  may end in .pyc!
-            file_name = file_name[:-1]
+    if not file_name.endswith('.py'):
+        # file_name  may end in .pyc!
+        file_name = file_name[:-1]
+    file_line_replace = dict(ll='File "%(file_name)s", line %(line_num)d' % dict(file_name=file_name, line_num=line_num))
 
-        emsg += 'File "{file_name}", line {line_num}'.format(file_name=file_name, line_num=line_num) + ', ' + line_msg + '\n'
-    emsg += msg + '\n'
-    return emsg
+    fixed_expected = []
+    for expected in expected_lines:
+        fixed_expected.append(expected % file_line_replace if not hasattr(expected, 'match') else expected)
 
+    max_index = len(fixed_expected) - 1
+    index = 0
 
-def multi_file_single_config_error(msg, *file_line_msg):
-    return _multi_file_single_config_msg('ConfigError', msg, *file_line_msg)
+    for line in text.split('\n'):
+        expected = fixed_expected[index]
+
+        if hasattr(expected, 'match'):
+            if expected.match(line):
+                index += 1
+                if index == max_index:
+                    return
+            continue
+
+        if expected.startswith('^'):
+            if line.startswith(expected[1:]):
+                index += 1
+                if index == max_index:
+                    return
+            continue
+
+        if expected in line:
+            index += 1
+            if index == max_index:
+                return
+
+    if hasattr(expected, 'match'):
+        fail("\n\nThe regex:\n\n" + repr(expected.pattern) + "\n\n    --- NOT MATCHED or OUT OF ORDER in ---\n\n" + text)
+
+    if expected.startswith('^'):
+        fail("\n\nThe text:\n\n" + repr(expected[1:]) + "\n\n    --- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in ---\n\n" + text)
+
+    fail("\n\nThe text:\n\n" + repr(expected) + "\n\n    --- NOT FOUND OR OUT OF ORDER IN ---\n\n" + text)
 
 
 # Handle variable ids and source file line numbers in json/repr output
