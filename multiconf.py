@@ -9,7 +9,7 @@ import json
 
 from .envs import BaseEnv, Env, EnvGroup, EnvException
 from .attribute import Attribute
-from .values import MC_REQUIRED
+from .values import MC_TODO, _mc_invalid_values
 from .repeatable import Repeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, NoAttributeException, ConfigAttributeError
@@ -420,9 +420,10 @@ class _ConfigBase(object):
             valid_envs = self.root_conf._mc_valid_envs if not self._mc_include_in_envs else self._mc_include_in_envs
             for eg in valid_envs:
                 for env in eg.envs():
+                    value = None
                     if env in attribute.env_values:
                         value = attribute.env_values[env][0]
-                        if value != MC_REQUIRED:
+                        if not value in _mc_invalid_values:
                             # The attribute is set with an env specific value
                             continue
 
@@ -438,14 +439,24 @@ class _ConfigBase(object):
                             break
                     else:
                         group_msg = ", which is a member of " + repr(eg) if isinstance(eg, EnvGroup) else ""
-                        mcreq = env in attribute.env_values
-                        if not mcreq:
+                        if value is None:
                             try:
-                                mcreq = attribute.default_value()
+                                value = attribute.default_value()[0]
                             except Exception:
                                 pass
-                        mc_required_msg = (' ' + repr(MC_REQUIRED)) if mcreq else ''
-                        attribute.error("Attribute: " + repr(name) + mc_required_msg + " did not receive a value for env " + repr(env) + group_msg)
+                        value_msg = (' ' + repr(value)) if value is not None else ''
+                        current_env_msg = " current" if env == self.env else ''
+                        msg = "Attribute: " + repr(name) + value_msg + " did not receive a value for" + current_env_msg + " env " + repr(env) + group_msg
+
+                        if value == MC_TODO:
+                            if env != self.env and self.root_conf._mc_allow_todo:
+                                attribute.warning(msg)
+                                continue
+                            if self.root_conf._mc_allow_current_env_todo:
+                                attribute.warning(msg + ". Continuing with invalid configuration!")
+                                continue
+
+                        attribute.error(msg)
 
         if attribute.num_errors:
             attribute.already_checked = True
@@ -614,7 +625,7 @@ class _ConfigBase(object):
 
 
 class ConfigRoot(_ConfigBase):
-    def __init__(self, selected_env, valid_envs, mc_json_filter=None, mc_json_fallback=None, **attr):
+    def __init__(self, selected_env, valid_envs, mc_json_filter=None, mc_json_fallback=None, mc_allow_todo=False, mc_allow_current_env_todo=False, **attr):
         if not isinstance(valid_envs, Sequence) or isinstance(valid_envs, str):
             raise ConfigException(self.__class__.__name__ + ": valid_envs arg must be a 'Sequence'; found type " + repr(valid_envs.__class__.__name__) + ': ' + repr(valid_envs))
 
@@ -628,6 +639,9 @@ class ConfigRoot(_ConfigBase):
 
         self._mc_selected_env = selected_env
         self._mc_valid_envs = valid_envs
+        self._mc_allow_todo = mc_allow_todo or mc_allow_current_env_todo
+        self._mc_allow_current_env_todo = mc_allow_current_env_todo
+
         super(ConfigRoot, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
         self._mc_root_conf = self
         self._mc_contained_in = None

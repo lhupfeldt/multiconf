@@ -2,15 +2,21 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 
-class MCRequired(object):
+class MCInvalidValue(object):
+    def __init__(self, name):
+        self.name = name
+
     def __nonzero__(self):
         return False
 
     def __repr__(self):
-        return "MC_REQUIRED"
+        return self.name
     
     def json_equivalent(self):
         return self.__repr__()
 
 
-MC_REQUIRED = MCRequired()
+MC_REQUIRED = MCInvalidValue("MC_REQUIRED")
+MC_TODO = MCInvalidValue("MC_TODO")
+
+_mc_invalid_values = (MC_REQUIRED, MC_TODO)
