@@ -13,7 +13,7 @@ from .values import MC_TODO, _mc_invalid_values
 from .repeatable import Repeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, NoAttributeException, ConfigAttributeError
-from .config_errors import _api_error_msg, _user_file_line
+from .config_errors import _api_error_msg, _user_file_line, _line_msg as line_msg
 from . import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
@@ -344,8 +344,6 @@ class _ConfigBase(object):
         for eg_name, value in kwargs.iteritems():
             v_ufl = (value, ufl)
             try:
-                attribute.validate_types(eg_name, v_ufl)
-
                 if eg_name == 'default':
                     attribute.env_values['default'] = v_ufl
                     continue
@@ -375,9 +373,25 @@ class _ConfigBase(object):
                     prev_eg_msg = repr(eg_from[env])
                     msg = "A value is already specified for: " + new_eg_msg + '=' + repr(v_ufl) + ", previous value: " + prev_eg_msg + '=' + repr(attribute.env_values[env])
                     attribute.error(msg)
-
             except EnvException as ex:
                 attribute.error(ex.message)
+
+        other_type = None
+        for env, value in attribute.env_values.iteritems():
+            val = value[0]
+            # Validate that an attribute has the same type for all envs
+            if type(val) == other_type or val is None or val in _mc_invalid_values:
+                continue
+
+            if other_type is not None:
+                line_msg(ufl=value[1], msg=env if isinstance(env, str) else env.name + ' ' + repr(type(val)))
+                line_msg(ufl=other_value[1], msg=other_env_name + ' ' + repr(other_type))  # pylint: disable=used-before-assignment
+                msg = "Found different value types for property " + repr(name) + " for different envs"
+                attribute.error(msg)
+            else:
+                other_env_name = env if isinstance(env, str) else env.name
+                other_value = value
+                other_type = type(val)
 
         if check:
             self.check_attr_fully_defined(attribute)

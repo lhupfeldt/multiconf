@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .config_errors import NoAttributeException, _error_type_msg as error_msg, _line_msg as line_msg, _error_msg, _warning_msg
+from .config_errors import NoAttributeException, _error_msg, _warning_msg
 from .values import _mc_invalid_values
 
 
@@ -13,26 +13,6 @@ class Attribute(object):
         self.num_warnings = 0
         self._mc_frozen = False
         self._mc_override = _mc_override
-
-    def validate_types(self, env_name, value):
-        # Validate that an attribute has the same type for all envs
-        val = value[0]
-        if val is None or val in _mc_invalid_values:
-            return
-
-        v_type = type(val)
-        for other_env, other_value in self.env_values.iteritems():
-            other_val = other_value[0]
-            if other_val is None or other_val in _mc_invalid_values:
-                continue
-
-            o_type = type(other_val)
-            if v_type != o_type:
-                line_msg(ufl=value[1], msg=env_name + ' ' + repr(v_type))
-                other_env_name = other_env if isinstance(other_env, str) else other_env.name
-                line_msg(ufl=other_value[1], msg=other_env_name + ' ' + repr(o_type))
-                msg = "Found different value types for property " + repr(self.attribute_name) + " for different envs"
-                self.num_errors = error_msg(self.num_errors, msg)
 
     def has_default(self):
         has_default = 'default' in self.env_values or '__init__' in self.env_values
