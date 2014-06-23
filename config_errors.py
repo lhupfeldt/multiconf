@@ -57,12 +57,11 @@ class ConfigAttributeError(AttributeError):
 def _user_file_line(up_level_start=1):
     frame = sys._getframe(up_level_start)
     while 1:
-        filename = frame.f_globals['__file__']
-        if os.path.basename(os.path.dirname(filename)) != 'multiconf':
-            break
+        if frame.f_globals['__package__'] != 'multiconf':
+            return frame.f_globals['__file__'].rstrip('c'), frame.f_lineno
         frame = frame.f_back
 
-    return filename if filename[-1] == 'y' else filename[:-1], frame.f_lineno
+    raise Exception("Internal error")
 
 
 def _line_msg(up_level=2, ufl=None, msg=''):
