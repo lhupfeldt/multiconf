@@ -227,6 +227,22 @@ def test_attribute_defined_with_different_types(capsys):
     assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
 
 
+def test_attribute_defined_with_different_types_default(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, [prod, pp]) as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', default="hello", prod=1)
+
+    _sout, serr = capsys.readouterr()
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^%(ll)s, prod <type 'int'>",
+        "^%(ll)s, default <type 'str'>",
+        "^ConfigError: Found different value types for property 'a' for different envs",
+    )
+    assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
+
+
 def test_attribute_redefinition_attempt(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, [prod]) as cr:
