@@ -659,7 +659,6 @@ class ConfigRoot(_ConfigBase):
         super(ConfigRoot, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
         self._mc_root_conf = self
         self._mc_contained_in = None
-        self._mc_nesting_level = 0
         self._mc_under_proxy_build = False
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -683,7 +682,6 @@ class ConfigItem(_ConfigBase):
 
         if not self.__class__._mc_nested:
             raise ConfigException(self.__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
-        self._mc_nesting_level = len(self.__class__._mc_nested)
 
         # Set back reference to containing Item and root item
         self._mc_contained_in = self.__class__._mc_nested[-1]
