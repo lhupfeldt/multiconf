@@ -14,6 +14,7 @@ from .repeatable import Repeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, NoAttributeException, ConfigAttributeError
 from .config_errors import _api_error_msg, _user_file_line, _line_msg as line_msg
+from .config_errors import _error_msg, _warning_msg
 from . import json_output
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
@@ -195,7 +196,7 @@ class _ConfigBase(object):
         # Validate all unfrozen attributes
         for attr in self._mc_attributes.itervalues():
             if not attr._mc_frozen and isinstance(attr, Attribute):
-                self.check_attr_fully_defined(attr)
+                self.check_attr_fully_defined(attr, num_errors=0)
 
         # Validate @required
         missing = []
@@ -228,9 +229,8 @@ class _ConfigBase(object):
             else:
                 attr = self._mc_attributes[req]
                 if isinstance(attr, Attribute):
-                    # Avoid double errors
-                    if not attr.num_errors:
-                        self.check_attr_fully_defined(attr)
+                    self.check_attr_fully_defined(attr, 0)
+
         if missing:
             raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + " == " + repr(required_if_condition) + ", missing attributes: " + repr(missing))
 
@@ -319,6 +319,7 @@ class _ConfigBase(object):
                                   "Atributes starting with '_' can not be set using item.setattr. Use assignment instead.")
 
         # For error messages
+        num_errors = 0
         ufl = _user_file_line()
         eg_from = {}
         local = {}
@@ -332,7 +333,7 @@ class _ConfigBase(object):
 
         if attribute._mc_frozen:
             msg = "The attribute " + repr(name) + " is already fully defined"
-            attribute.error(msg)
+            num_errors = _error_msg(num_errors, msg)
             raise ConfigException(msg + " on object " + repr(self))
 
         # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class mc_init
@@ -372,9 +373,9 @@ class _ConfigBase(object):
                     new_eg_msg = repr(env) + ("" if env == eg else " from group " + repr(eg))
                     prev_eg_msg = repr(eg_from[env])
                     msg = "A value is already specified for: " + new_eg_msg + '=' + repr(v_ufl) + ", previous value: " + prev_eg_msg + '=' + repr(attribute.env_values[env])
-                    attribute.error(msg)
+                    num_errors = _error_msg(num_errors, msg)
             except EnvException as ex:
-                attribute.error(ex.message)
+                num_errors = _error_msg(num_errors, ex.message)
 
         other_type = None
         for env, value in attribute.env_values.iteritems():
@@ -387,14 +388,14 @@ class _ConfigBase(object):
                 line_msg(ufl=value[1], msg=(env if isinstance(env, str) else env.name) + ' ' + repr(type(val)))
                 line_msg(ufl=other_value[1], msg=other_env_name + ' ' + repr(other_type))  # pylint: disable=used-before-assignment
                 msg = "Found different value types for property " + repr(name) + " for different envs"
-                attribute.error(msg)
+                num_errors = _error_msg(num_errors, msg)
             else:
                 other_env_name = env if isinstance(env, str) else env.name
                 other_value = value
                 other_type = type(val)
 
         if check:
-            self.check_attr_fully_defined(attribute)
+            self.check_attr_fully_defined(attribute, num_errors)
 
     def setattr(self, name, **kwargs):
         try:
@@ -412,7 +413,7 @@ class _ConfigBase(object):
                 raise
             raise ex
 
-    def check_attr_fully_defined(self, attribute):
+    def check_attr_fully_defined(self, attribute, num_errors):
         name = attribute.attribute_name
 
         if not attribute.has_default() and not hasattr(attribute, 'already_checked'):
@@ -464,17 +465,17 @@ class _ConfigBase(object):
 
                         if value == MC_TODO:
                             if env != self.env and self.root_conf._mc_allow_todo:
-                                attribute.warning(msg)
+                                self._warning_msg(msg)
                                 continue
                             if self.root_conf._mc_allow_current_env_todo:
-                                attribute.warning(msg + ". Continuing with invalid configuration!")
+                                self._warning_msg(msg + ". Continuing with invalid configuration!")
                                 continue
 
-                        attribute.error(msg)
+                        num_errors = _error_msg(num_errors, msg)
 
-        if attribute.num_errors:
+        if num_errors:
             attribute.already_checked = True
-            raise ConfigException("There were " + repr(attribute.num_errors) + " errors when defining attribute " + repr(name) + " on object: " + repr(self))
+            raise ConfigException("There were " + repr(num_errors) + " errors when defining attribute " + repr(name) + " on object: " + repr(self))
 
     def _check_env_is_valid(self, env, valid_envs):
         """Expects env to be of type env"""
@@ -637,6 +638,9 @@ class _ConfigBase(object):
     def _mc_value(self, env):
         return self
 
+    def _warning_msg(self, msg):
+        self._mc_root_conf._mc_num_warnings = _warning_msg(self._mc_root_conf._mc_num_warnings, msg)
+
 
 class ConfigRoot(_ConfigBase):
     def __init__(self, selected_env, valid_envs, mc_json_filter=None, mc_json_fallback=None, mc_allow_todo=False, mc_allow_current_env_todo=False, **attr):
@@ -660,6 +664,7 @@ class ConfigRoot(_ConfigBase):
         self._mc_root_conf = self
         self._mc_contained_in = None
         self._mc_under_proxy_build = False
+        self._mc_num_warnings = 0
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:

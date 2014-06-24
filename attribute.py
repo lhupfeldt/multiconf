@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .config_errors import NoAttributeException, _error_msg, _warning_msg
+from .config_errors import NoAttributeException
 from .values import _mc_invalid_values
 
 
@@ -9,8 +9,6 @@ class Attribute(object):
     def __init__(self, attribute_name, _mc_override=False):
         self.attribute_name = attribute_name
         self.env_values = {}
-        self.num_errors = 0
-        self.num_warnings = 0
         self._mc_frozen = False
         self._mc_override = _mc_override
 
@@ -42,12 +40,6 @@ class Attribute(object):
             return self.default_value()[0]
 
         raise NoAttributeException("Attribute " + repr(self.attribute_name) + " undefined for env " + repr(current_env))
-
-    def error(self, msg):
-        self.num_errors = _error_msg(self.num_errors, msg)
-
-    def warning(self, msg):
-        self.num_warnings = _warning_msg(self.num_warnings, msg)
 
     def __repr__(self):
         return self.__class__.__name__ + ': ' + repr(self.attribute_name) + ':' + ('frozen' if self._mc_frozen else 'not-frozen') + ", values: " + repr(self.env_values)
