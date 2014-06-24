@@ -384,7 +384,7 @@ class _ConfigBase(object):
                 continue
 
             if other_type is not None:
-                line_msg(ufl=value[1], msg=env if isinstance(env, str) else env.name + ' ' + repr(type(val)))
+                line_msg(ufl=value[1], msg=(env if isinstance(env, str) else env.name) + ' ' + repr(type(val)))
                 line_msg(ufl=other_value[1], msg=other_env_name + ' ' + repr(other_type))  # pylint: disable=used-before-assignment
                 msg = "Found different value types for property " + repr(name) + " for different envs"
                 attribute.error(msg)

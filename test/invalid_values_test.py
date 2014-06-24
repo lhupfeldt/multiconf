@@ -121,10 +121,10 @@ def test_attribute_mc_required_other_env_different_types(capsys):
 
     assert_lines_in(
         __file__, errorline, serr,
-        "^%(ll)s, dev <type 'int'>",
-        "^%(ll)s, prod <type 'str'>",
+        "^%(lnum)s, dev <type 'int'>",
+        "^%(lnum)s, prod <type 'str'>",
         "^ConfigError: Found different value types for property 'a' for different envs",
-        "^%(ll)s",
+        "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')"
     )
     assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_other_env_different_types_expected_ex
@@ -223,12 +223,12 @@ def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
 
     assert_lines_in(
         __file__, errorline, serr,
-        "^%(ll)s, dev <type 'int'>",
-        "^%(ll)s, tst <type 'str'>",
+        "^%(lnum)s, dev <type 'int'>",
+        "^%(lnum)s, tst <type 'str'>",
         "^ConfigError: Found different value types for property 'a' for different envs",
-        "^%(ll)s",
+        "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^%(ll)s",
+        "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_TODO did not receive a value for env Env('prod')",
     )
     assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_mc_todo_different_types_expected_ex

@@ -220,8 +220,8 @@ def test_attribute_defined_with_different_types(capsys):
     _sout, serr = capsys.readouterr()
     assert_lines_in(
         __file__, errorline, serr,
-        "^%(ll)s, prod <type 'int'>",
-        "^%(ll)s, pp <type 'str'>",
+        "^%(lnum)s, prod <type 'int'>",
+        "^%(lnum)s, pp <type 'str'>",
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
     assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
@@ -236,8 +236,25 @@ def test_attribute_defined_with_different_types_default(capsys):
     _sout, serr = capsys.readouterr()
     assert_lines_in(
         __file__, errorline, serr,
-        "^%(ll)s, prod <type 'int'>",
-        "^%(ll)s, default <type 'str'>",
+        "^%(lnum)s, prod <type 'int'>",
+        "^%(lnum)s, default <type 'str'>",
+        "^ConfigError: Found different value types for property 'a' for different envs",
+    )
+    assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
+
+
+def test_attribute_defined_with_different_types_init_default(capsys):
+    with raises(ConfigException) as exinfo:
+        init_line = lineno() + 1
+        with ConfigRoot(prod, [prod, pp], a="hello") as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', default=1)
+
+    _sout, serr = capsys.readouterr()
+    assert_lines_in(
+        __file__, errorline, serr,
+        """^File "%(file_name)s", line {line_num}, __init__ <type 'str'>""".format(line_num=init_line),
+        "^%(lnum)s, default <type 'int'>",
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
     assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex

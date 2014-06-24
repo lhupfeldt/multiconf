@@ -51,13 +51,17 @@ def assert_lines_in(file_name, line_num, text, *expected_lines):
             Otherwise `expected line` must simply occur in a line in `text`
 
     The following pattern will be replaced in all expected_lines which are not regex:
-    '%(ll)s' replaced with: 'File "{file_name}", line {line_num}'
+    '%(file_name)s' replaced with: file_name
+    '%(lnum)s' replaced with: 'File "%(file_name)s", line %(line_num)d'
     """
 
     if not file_name.endswith('.py'):
         # file_name  may end in .pyc!
         file_name = file_name[:-1]
-    file_line_replace = dict(ll='File "%(file_name)s", line %(line_num)d' % dict(file_name=file_name, line_num=line_num))
+    file_line_replace = dict(
+        lnum='File "%(file_name)s", line %(line_num)d' % dict(file_name=file_name, line_num=line_num),
+        file_name=file_name,
+    )
 
     fixed_expected = []
     for expected in expected_lines:
