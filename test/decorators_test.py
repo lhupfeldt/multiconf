@@ -21,8 +21,6 @@ pp = ef.Env('pp')
 prod = ef.Env('prod')
 g_prod = ef.EnvGroup('g_prod', pp, prod)
 
-valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
-
 _g_expected = """{
     "__class__": "root #as: 'project', id: 0000", 
     "env": {

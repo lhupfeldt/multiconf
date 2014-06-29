@@ -20,9 +20,6 @@ g_dev = ef.EnvGroup('g_dev', dev2ct, dev2st)
 
 pp = ef.Env('pp')
 prod = ef.Env('prod')
-g_prod = ef.EnvGroup('g_prod', pp, prod)
-
-valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
 
 @required('anattr, anotherattr')
