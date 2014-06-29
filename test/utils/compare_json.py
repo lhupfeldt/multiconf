@@ -34,7 +34,7 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
             assert compact_json_replaced == compact_expected_json
         assert full_json_replaced == expected_json
 
-    except:
+    except AssertionError:
         print('--- full ids replaced ---')
         print(full_json_replaced)
 
@@ -59,7 +59,7 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
         try:
             assert decode(compact_json)
             assert decode(full_json)
-        except:
+        except AssertionError:
             print('FAILED DECODE')
             print('--- compact original ---')
             print(compact_json)
