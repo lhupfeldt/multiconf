@@ -593,7 +593,7 @@ def test_setattr_ref_declared_not_valid_group():
     assert exinfo.value.message == """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
 
 
-def test_mc_init_ref_env_attr_and_override_error():
+def test_mc_init_override_underscore_error(capsys):
     class X(ConfigItem):
         def __init__(self, aa=1):
             super(X, self).__init__()
@@ -602,6 +602,11 @@ def test_mc_init_ref_env_attr_and_override_error():
         def mc_init(self):
             self.override("_a", "Hello")
 
-    with raises(ConfigException):
+    with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, [prod, pp]):
             X()
+    
+    _sout, serr = capsys.readouterr()
+    # TODO: missing error message
+    assert replace_user_file_line_msg(serr) == ""
+    assert exinfo.value.message == """Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.setattr. Use assignment instead."""
