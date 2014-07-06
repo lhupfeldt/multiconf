@@ -67,7 +67,7 @@ def assert_lines_in(file_name, line_num, text, *expected_lines):
     for expected in expected_lines:
         fixed_expected.append(expected % file_line_replace if not hasattr(expected, 'match') else expected)
 
-    max_index = len(fixed_expected) - 1
+    max_index = len(fixed_expected)
     index = 0
 
     for line in text.split('\n'):

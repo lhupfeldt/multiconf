@@ -229,7 +229,7 @@ def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
         "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
         "^%(lnum)s",
-        "^ConfigError: Attribute: 'a' MC_TODO did not receive a value for env Env('prod')",
+        "^ConfigError: Attribute: 'a' MC_TODO did not receive a value for current env Env('prod')",
     )
     assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_mc_todo_different_types_expected_ex
 
