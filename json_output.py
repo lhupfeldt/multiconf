@@ -192,6 +192,10 @@ class ConfigItemEncoder(json.JSONEncoder):
                     if type(val) == types.MethodType:
                         continue
 
+                    if type(val) == types.TypeType:
+                        dd[key] = repr(val)
+                        continue
+
                     if self.user_filter_callable:
                         key, val = self.user_filter_callable(obj, key, val)
                         if key is False:
@@ -229,6 +233,9 @@ class ConfigItemEncoder(json.JSONEncoder):
                 for eg in obj.all():
                     dd['name'] = eg.name
                 return dd
+
+            if type(obj) == types.TypeType:
+                return repr(obj)
 
             # If obj defines json_equivalent, then return the result of that
             if hasattr(obj, 'json_equivalent'):

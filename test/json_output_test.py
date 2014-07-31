@@ -1265,3 +1265,79 @@ def test_json_dump_with_builders_containment_check():
     cr.json(builders=True)
     # TODO
     assert True
+
+
+_json_dump_test_json_dump_nested_class_non_mc_expected_json_1 = """{
+    "__class__": "root", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "someitems": {}, 
+    "McWithNestedClass": {
+        "__class__": "McWithNestedClass", 
+        "__id__": 0000, 
+        "TTT": "<class 'multiconf.test.json_output_test.TTT'>"
+    }
+}"""
+
+_json_dump_test_json_dump_nested_class_non_mc_expected_json_2 = """{
+    "__class__": "root", 
+    "__id__": 0000, 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 0, 
+    "someitems": {}, 
+    "ConfigItem": {
+        "__class__": "ConfigItem", 
+        "__id__": 0000, 
+        "a": "<class 'multiconf.test.json_output_test.NonMcWithNestedClass'>"
+    }
+}"""
+
+def test_json_dump_nested_class_non_mc():
+    class McWithNestedClass(ConfigItem):
+        class TTT(object):
+            pass
+
+    with root(prod, [prod, pp], a=0) as cr:
+        McWithNestedClass()
+
+    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1)
+
+    class NonMcWithNestedClass(object):
+        class TTT(object):
+            pass
+
+    with root(prod, [prod, pp], a=0) as cr:
+        with ConfigItem() as ci:
+            ci.a = NonMcWithNestedClass
+
+    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2)
+
+
+def test_json_dump_nested_class_with_json_equiv_non_mc():
+    class McWithNestedClass(ConfigItem):
+        class TTT(object):
+            def json_equivalent(self):
+                return ""
+
+    with root(prod, [prod, pp], a=0) as cr:
+        McWithNestedClass()
+
+    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1)
+
+    class NonMcWithNestedClass(object):
+        class TTT(object):
+            def json_equivalent(self):
+                return ""
+
+    with root(prod, [prod, pp], a=0) as cr:
+        with ConfigItem() as ci:
+            ci.a = NonMcWithNestedClass
+
+    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2)
