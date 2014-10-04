@@ -29,9 +29,9 @@ def conf(env_name):
     # This will define a weblogic configuration for all environments defined above
     # But the result of execution of conf() will be the setting for environment
     # passed as argument 'env_name'
-    # Use the goups "g_dev" and "g_prod" to define the required/allowed environments
+    # Use EnvFactory 'ef' to define the required/allowed environments
     # The 'weblogic_config' class is defined in framework.py
-    with weblogic_config(env, [g_dev, g_prod]) as dc:
+    with weblogic_config(env, ef) as dc:
         # Set domain base port number for different environments.
         # Domain base port is used as base to calculate port offsets
         # Here we're saying that Weblogic in g_prod group will have

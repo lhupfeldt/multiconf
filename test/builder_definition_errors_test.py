@@ -15,9 +15,13 @@ def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
 
-ef = EnvFactory()
-pp = ef.Env('pp')
-prod = ef.Env('prod')
+ef1_prod = EnvFactory()
+prod1 = ef1_prod.Env('prod')
+
+ef2_prod_pp = EnvFactory()
+pp2 = ef2_prod_pp.Env('pp')
+prod2 = ef2_prod_pp.Env('prod')
+
 
 @named_as('xses')
 @repeat()
@@ -70,7 +74,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
         pass
 
     with raises(ConfigException) as exinfo:
-        with Root(prod, [prod, pp]):
+        with Root(prod2, ef2_prod_pp):
             Xses(name='server1')
             with XBuilder():
                 pass
@@ -83,7 +87,7 @@ def test_configbuilder_without_build():
         pass
 
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, [prod, pp]):
+        with ConfigRoot(prod2, ef2_prod_pp):
             ABuilder()
 
     assert exinfo.value.message == "Can't instantiate abstract class ABuilder with abstract methods build"
@@ -104,7 +108,7 @@ def test_unexpected_repeatable_child_builder():
             RepeatableChild()
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, valid_envs=[prod]):
+        with ConfigRoot(prod1, ef1_prod):
             UnexpectedRepeatableChildBuilder()
 
     assert replace_ids(exinfo.value.message, False) == _unexpected_repeatable_child_builder_expected_ex
@@ -138,7 +142,7 @@ def test_unexpected_repeatable_child_nested_builders():
         pass
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, valid_envs=[prod]):
+        with ConfigRoot(prod1, ef1_prod):
             with ItemWithoutARepeatable():
                 OuterBuilder()
 
@@ -163,7 +167,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
         pass
 
     with raises(ConfigException) as exinfo:
-        with Root(prod, [prod, pp]):
+        with Root(prod2, ef2_prod_pp):
             XBuilder()
 
     assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex
@@ -187,7 +191,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
         aaa = 2
 
     with raises(ConfigException) as exinfo:
-        with Root(prod, [prod, pp]):
+        with Root(prod2, ef2_prod_pp):
             with XBuilder() as xb:
                 xb.b = 27
                 XChild(a=10)
@@ -213,14 +217,14 @@ def test_configbuilders_repeated_non_repeatable_in_build():
         pass
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod], name='myp'):
+        with ConfigRoot(prod1, ef1_prod, name='myp'):
             with OuterItem():
                 MiddleBuilder('base1')
 
     assert replace_ids(exinfo.value.message, False) == "Repeated non repeatable conf item: 'MiddleItem'"
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod], name='myp'):
+        with ConfigRoot(prod1, ef1_prod, name='myp'):
             MiddleBuilder('base2')
 
     assert replace_ids(exinfo.value.message, False) == "Repeated non repeatable conf item: 'MiddleItem'"

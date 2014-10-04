@@ -17,7 +17,7 @@ for ii in range(0, 16):
 
 
 def test_many_envs():
-    with ConfigRoot(envs[0], envs) as conf:
+    with ConfigRoot(envs[0], ef) as conf:
         conf.setattr('a', default=None, e0_0=0)
         conf.setattr('b', default=None, e1_7=1)
         conf.setattr('c', default=None, e2_15=2)
@@ -35,7 +35,7 @@ def test_many_envs():
 
 def test_many_groups():
     # This is slow!
-    with ConfigRoot(envs[0], envs) as conf:
+    with ConfigRoot(envs[0], ef) as conf:
         conf.setattr('a', default=None, g0=0)
         conf.setattr('b', default=None, g1=1)
         conf.setattr('i', default=None, e0_0=10, g15=8)

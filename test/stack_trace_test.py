@@ -11,22 +11,8 @@ from ..decorators import nested_repeatables, repeat
 from ..envs import EnvFactory
 
 ef = EnvFactory()
-
-dev2ct = ef.Env('dev2CT')
-dev2st = ef.Env('dev2ST')
-g_dev2 = ef.EnvGroup('g_dev2', dev2ct, dev2st)
-
-dev3ct = ef.Env('dev3CT')
-dev3st = ef.Env('dev3ST')
-g_dev3 = ef.EnvGroup('g_dev3', dev3ct, dev3st)
-
-g_dev = ef.EnvGroup('g_dev', g_dev2, g_dev3)
-
 pp = ef.Env('pp')
 prod = ef.Env('prod')
-g_prod = ef.EnvGroup('g_prod', pp, prod)
-
-valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
 
 _expected_ex_msg = "An error was detected trying to get attribute '%s' on class 'inner'"
@@ -61,7 +47,7 @@ def test_stacktrace_strips_multiconf_code(capsys):
         class inner(ConfigItem):
             pass
 
-        with root(prod, [prod, pp], a=0):
+        with root(prod, ef, a=0):
             with inner():
                 with inner() as ii2:
                     errorline = lineno() + 1
@@ -70,8 +56,8 @@ def test_stacktrace_strips_multiconf_code(capsys):
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline,
                       "No such Env or EnvGroup: 'qq'",
-                      "Attribute: 'a' did not receive a value for current env Env('prod')",
-                      "Attribute: 'a' did not receive a value for env Env('pp')")
+                      "Attribute: 'a' did not receive a value for env Env('pp')",
+                      "Attribute: 'a' did not receive a value for current env Env('prod')")
     assert replace_ids(exinfo.value.message) == _stacktrace_strips_multiconf_code_exp_ex
     assert len(exinfo.traceback) == 2, "Traceback: " + repr(exinfo.traceback)
     # TODO py.test exinfo.traceback[0].lineno is off by 1!
@@ -90,7 +76,7 @@ def test_stacktrace_from_user_validate_code():
                 raise Exception("In inner validate")
 
 
-        with root(prod, [prod, pp], a=0):
+        with root(prod, ef, a=0):
             with inner():
                 errorline = lineno() + 1
                 inner()
@@ -118,7 +104,7 @@ def test_stacktrace_from_user_build_code():
                 raise Exception("In inner build")
 
 
-        with root(prod, [prod, pp], a=0):
+        with root(prod, ef, a=0):
             with inner():
                 errorline = lineno() + 1
                 inner()

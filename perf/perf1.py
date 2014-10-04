@@ -67,7 +67,7 @@ def perf1():
     second_range = 1000
     third_range = 1000
 
-    with root(prod, valid_envs) as cr:
+    with root(prod, ef) as cr:
         for ii in xrange(0, first_range):
             rchild_init(name=repr(ii), aa=1, bb=1)
 

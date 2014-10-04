@@ -1,7 +1,10 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from collections import Container
+from collections import Container, OrderedDict
+import json
+
+from .bits import int_to_bin_str
 
 
 class EnvException(Exception):
@@ -9,24 +12,48 @@ class EnvException(Exception):
 
 
 class BaseEnv(object):
-    def __init__(self, name, factory):
+    def __init__(self, name, factory, mask):
         """ Private, use EnvFactory.Env() """
-        if not isinstance(name, type("")):
-            raise EnvException(self.__class__.__name__ + ": 'name' must be instance of " + type("").__name__ + ", found: " +  type(name).__name__)
-        if not len(name):
-            raise EnvException(self.__class__.__name__ + ": 'name' must not be empty")
-        if name[0] == '_':
-            raise EnvException(self.__class__.__name__ + ": 'name' must not start with '_', got: " + repr(name))
-        if name == 'default':
-            raise EnvException(self.__class__.__name__ + ": 'default' is a reserved name")
-
         self._name = name
         self.members = []
         self.factory = factory
+        self.index = self.factory._index
+        self.bit = 1 << self.index
+        self.mask = mask | self.bit
+        self.factory._all_egs_mask |= mask
+        self.factory._index += 1
+
+    @classmethod
+    def validate(cls, name):
+        if not isinstance(name, type("")):
+            raise EnvException(cls.__name__ + ": 'name' must be instance of " + type("").__name__ + ", found: " +  type(name).__name__)
+        if not len(name):
+            raise EnvException(cls.__name__ + ": 'name' must not be empty")
+        if name[0] == '_':
+            raise EnvException(cls.__name__ + ": 'name' must not start with '_', got: " + repr(name))
+        if name in ('default', '__init__'):
+            raise EnvException(cls.__name__ + ": name '" + name + "' is reserved")
 
     @property
     def name(self):
         return self._name
+
+    def json(self, skipkeys=True):
+        class Encoder(json.JSONEncoder):
+            def default(self, env):  # pylint: disable=method-hidden
+                return env.json_equivalent()
+
+        return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=True, sort_keys=False, indent=4)
+
+    def json_equivalent(self):
+        return OrderedDict((
+            ("type", repr(self.__class__)),
+            ("name", self.name),
+            ("bit", self.bit),
+            ("mask", int_to_bin_str(self.mask)),
+            #("hash", self.__hash__()),
+            ("members", self.members))
+        )
 
     def irepr(self, _indent_level):
         return self.__class__.__name__ + '(' + repr(self.name) + ')'
@@ -34,67 +61,80 @@ class BaseEnv(object):
     def __repr__(self):
         return self.irepr(0)
 
-    def envs(self):
-        """ return self"""
-        yield self
-
-    all = envs
-
     def __eq__(self, other):
-        return self._name == other.name
+        return self.bit == other.bit
+
+    def __lt__(self, other):
+        return self.bit < other.bit
 
     def __hash__(self):
-        return hash(self._name)
+        return self.bit
 
     def __contains__(self, other):
-        if other == self:
-            return True
+        return self.mask & other.mask == other.mask and self.mask != other.mask
 
 
 class Env(BaseEnv):
     def __init__(self, name, factory):
-        super(Env, self).__init__(name, factory)
-        self.factory._envs[name] = self
+        self.env_bits = [factory._index]
+        self.eg_bits = self.env_bits
+        super(Env, self).__init__(name=name, factory=factory, mask=0)
+        self.factory._all_envs_mask |= self.bit
+        self.envs = [self]
+        self.all = [self]
 
 
 class EnvGroup(BaseEnv, Container):
-    def __init__(self, name, factory, *members):
+    def __init__(self, name, factory, members):
         """ Private, use EnvFactory.Group() method """
-        super(EnvGroup, self).__init__(name, factory)
-        self.factory._groups[name] = self
-
         # Check for empty group
         if not members:
             raise EnvException(self.__class__.__name__ + ': No group members specified')
 
-        # Check arg types
-        for cfg in members:
-            if not isinstance(cfg, BaseEnv):
-                raise EnvException(self.__class__.__name__ +  ': ' + ' Group members args must be instance of ' +
-                                   repr(Env.__name__) + ' or ' + repr(EnvGroup.__name__) + ', found: ' + repr(cfg))
+        # Collect mask of all children. Check arg types
+        mask = 0b0
+        for eg in members:
+            if not isinstance(eg, BaseEnv):
+                raise EnvException(self.__class__.__name__ +  ': Group members args must be instance of ' +
+                                   repr(Env.__name__) + ' or ' + repr(EnvGroup.__name__) + ', found: ' + repr(eg))
+            if not eg.factory is factory:
+                raise EnvException(self.__class__.__name__ +  ": The group members must be from the same 'env_factory' as the group being declared. " +
+                                   repr(Env.__name__) + ' or ' + repr(EnvGroup.__name__) + ' found: ' + repr(eg))
+            mask |= eg.mask
+
+        super(EnvGroup, self).__init__(name=name, factory=factory, mask=mask)
 
         # Check for doublets
         seen_envs = set()
-        def check_doublets(envs):
-            for cfg in envs:
-                if cfg in seen_envs:
-                    raise EnvException("Repeated group member: " + repr(cfg) + " in " + repr(self))
-                seen_envs.add(cfg)
-
-                # Check children
-                check_doublets(cfg.members)
-
-        check_doublets(members)
-
-        if self in seen_envs:
-            raise EnvException("Can't have a member with my own name: " + repr(name) + ", members:  " + repr(list(members)))
+        for eg in members:
+            if eg in seen_envs:
+                raise EnvException("Repeated group member: " + repr(eg) + " in " + repr(self))
+            seen_envs.add(eg)
 
         # All good
         self.members = members
+        self.env_bits = list(self._env_bits())
+        self.eg_bits = list(self._eg_bits())
+
+        self.groups = [self]
+        for member_group in self._groups_recursive():
+            self.groups.append(member_group)
+
+        envs = OrderedDict()
+        for member in self.members:
+            if not isinstance(member, EnvGroup):
+                envs[member.name] = member
+                continue
+            for member in member.envs:
+                envs[member.name] = member
+        self.envs = list(envs.values())
+
+        self.all = self.groups + self.envs
+
 
     def irepr(self, indent_level):
         indent1 = '  ' * indent_level
-        indent2 =  indent1 + '     '
+        indent2 = indent1 + '     '
         return self.__class__.__name__ + '(' + repr(self.name) + ') {\n' + \
             ',\n'.join([indent2 + member.irepr(indent_level + 1) for member in self.members]) + '\n' + \
             indent1 + '}'
@@ -102,86 +142,115 @@ class EnvGroup(BaseEnv, Container):
     def __repr__(self):
         return self.irepr(0)
 
-    def _groups(self):
-        # Note: recursive whereas the 'groups' function is not
+    def _eg_bits(self):
+        bit = 0
+        while bit < self.factory._index:
+            if 1 << bit & self.mask:
+                yield bit
+            bit += 1
+
+    def _env_bits(self):
+        bit = 0
+        while bit < self.factory._index:
+            if 1 << bit & self.mask & self.factory._all_envs_mask:
+                yield bit
+            bit += 1
+
+    def _groups_recursive(self):
         for member in self.members:
             if isinstance(member, EnvGroup):
-                yield member
-                for member in member._groups():
+                for member in member.groups:
                     yield member
-
-    def groups(self):
-        """ return all groups from all env groups"""
-        yield self
-        for member_group in self._groups():
-            yield member_group
-
-    def envs(self):
-        """ return all envs from all env groups"""
-        for member in self.members:
-            if not isinstance(member, EnvGroup):
-                yield member
-                continue
-            for member in member.envs():
-                yield member
-
-    def all(self):
-        """ return all envs and groups from all env groups"""
-        for group in self.groups():
-            yield group
-        for env in self.envs():
-            yield env
-
-    def __contains__(self, other):
-        if other == self:
-            return True
-        for member in self.members:
-            if other == member:
-                return True
-            if isinstance(member, EnvGroup):
-                if other in member:
-                    return True
-
-        return False
 
 
 class EnvFactory(object):
     def __init__(self):
-        self._envs = {}
-        self._groups = {}
+        self.envs = OrderedDict()
+        self.groups = OrderedDict()
+        self._index = 1  # bit zero reserved to be set for all groups, so that a Group mask will never be equal to an env mask
+        self._all_egs_mask = 0
+        self._all_envs_mask = 0
+        self._mc_default_group = None
+        self._mc_init_group = None
+        self._mc_frozen = False
 
     def Env(self, name):
         """ Declare a new Env """
-        return Env(name, self)
+        if self._mc_frozen:
+            raise EnvException(self.__class__.__name__ + " is already in use. No more envs may be added.")
+        if name in self.groups:
+            raise EnvException("Name " + repr(name) + " is already used by group: " + repr(self.groups[name]))
+        if name in self.envs:
+            raise EnvException("Name " + repr(name) + " is already used by env: " + repr(self.envs[name]))
+        Env.validate(name)
+        new_env = Env(name, factory=self)
+        self.envs[name] = new_env
+        return new_env
+
+    def _EnvGroup(self, name, members):
+        new_group = EnvGroup(name=name, factory=self, members=members)
+        self.groups[name] = new_group
+        return new_group
 
     def EnvGroup(self, name, *members):
         """ Declare a new EnvGroup """
-        return EnvGroup(name, self, *members)
+        if self._mc_frozen:
+            raise EnvException(self.__class__.__name__ + " is already in use. No more groups may be added.")
+        if name in self.groups:
+            raise EnvException("Name " + repr(name) + " is already used by group: " + repr(self.groups[name]))
+        if name in self.envs:
+            raise EnvException("Name " + repr(name) + " is already used by env: " + repr(self.envs[name]))
+        EnvGroup.validate(name)
+        return self._EnvGroup(name=name, members=members)
+
+    def _mc_init_and_default_groups(self):
+        """
+        Must be called after all user defined envs and groups are defined.
+        creates 'default' group which is the superset of all user defined groups and envs
+        creates '__init__' group which is the superset of 'default' group.
+        after this i called, no more envs or groups may be created by this factory.
+        """
+        if not self._mc_frozen:
+            self._mc_default_group = self._EnvGroup('default', members=self.groups.values() + self.envs.values())
+            self._mc_init_group = self._EnvGroup('__init__', members=[self._mc_default_group])
+            self._mc_frozen = True
 
     def env(self, name):
         """Get an already declared env from it's name"""
-        _env = self._envs.get(name)
+        _env = self.envs.get(name)
         if _env:
             return _env
 
         raise EnvException("No such " + Env.__name__ + ": " + repr(name))
 
-    def group(self, name):
-        """Get an already declared group from it's name"""
-        _env_group = self._groups.get(name)
-        if _env_group:
-            return _env_group
-
-        raise EnvException("No such " + EnvGroup.__name__ + ": " + repr(name))
-
-    def env_or_group(self, name):
+    def env_or_group_from_name(self, name):
         """Get an already declared env or group from it's name"""
-        _env = self._envs.get(name)
+        _env = self.envs.get(name)
         if _env:
             return _env
 
-        _env_group = self._groups.get(name)
+        _env_group = self.groups.get(name)
         if _env_group:
             return _env_group
 
         raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(name))
+
+    def env_or_group_from_bit(self, bit):
+        """Get an already declared env or group from it's bit mask"""
+
+        for env in self.envs.values():
+            if env.bit & bit:
+                return env
+
+        for group in self.groups.values():
+            if group.bit & bit:
+                return group
+
+        raise EnvException("No " + Env.__name__ + " or " + EnvGroup.__name__ + " with bit " + int_to_bin_str(bit, self._index + 1))
+
+    def envs_from_mask(self, mask):
+        """Yield envs matching mask"""
+
+        for env in self.envs.values():
+            if env.bit & mask:
+                yield env

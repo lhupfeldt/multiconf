@@ -10,9 +10,12 @@ from ..envs import EnvFactory
 from .utils.check_containment import check_containment
 
 
-ef = EnvFactory()
-pp = ef.Env('pp')
-prod = ef.Env('prod')
+ef1_prod = EnvFactory()
+prod1 = ef1_prod.Env('prod')
+
+ef2_prod_pp = EnvFactory()
+pp2 = ef2_prod_pp.Env('pp')
+prod2 = ef2_prod_pp.Env('prod')
 
 
 @named_as('xses')
@@ -44,7 +47,7 @@ def test_configbuilder_override():
     class Root(ConfigRoot):
         pass
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         with XBuilder(a=1, something=7) as xb:
             xb.setattr('num_servers', pp=2)
             xb.setattr('b', prod=3, pp=4)
@@ -77,7 +80,7 @@ def test_configbuilder_build_at_freeze():
     class Root(ConfigRoot):
         pass
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         XBuilder(a=1)
 
     assert len(cr.xses) == 4
@@ -101,7 +104,7 @@ def test_configbuilder_access_to_contained_in_from_build():
     class Root(ConfigRoot):
         aaa = 7
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         YBuilder()
 
     assert cr.y.number == 7
@@ -126,7 +129,7 @@ def test_configbuilder_access_to_contained_in_from___init__():
     class Root(ConfigRoot):
         aaa = 7
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         XBuilder()
 
     assert cr.x.number == 7
@@ -146,7 +149,7 @@ def test_configbuilder_access_to_contained_in_from_with_block():
     class Root(ConfigRoot):
         aaa = 7
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         with XBuilder() as xb:
             parent = xb.contained_in
 
@@ -180,7 +183,7 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
     class Root(ConfigRoot):
         aaa = 7
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         XBuilder()
 
     assert cr.x.number == 7
@@ -205,7 +208,7 @@ def test_configbuilder_nested_items():
     class Root(ConfigRoot):
         aaa = 2
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         with XBuilder() as xb:
             xb.b = 27
             XChild(a=10)
@@ -238,7 +241,7 @@ def test_configbuilder_nested_items_access_to_contained_in():
     class Root(ConfigRoot):
         aaa = 2
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         with XBuilder() as xb:
             xb.b = 27
             with XChild(a=10) as x1:
@@ -288,7 +291,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
     class YChild(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod, pp]) as cr:
+    with ConfigRoot(prod2, ef2_prod_pp) as cr:
         with ItemWithYs() as item:
             with YBuilder() as yb1:
                 yb1.b = 27
@@ -339,13 +342,13 @@ def test_configbuilder_repeated():
             for num in xrange(self.first, self.last+1):
                 with Xses(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
-                self.q = self.last
+            self.q = self.last
 
     @nested_repeatables('xses')
     class Root(ConfigRoot):
         aaa = 2
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         with XBuilder() as xb1:
             XChild(a=10)
             XChild(a=11)
@@ -380,7 +383,7 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder()
         def build(self):
             pass
 
-    with ConfigRoot(prod, [prod]) as cr:
+    with ConfigRoot(prod1, ef1_prod) as cr:
         with builder() as ii:
             ii.a = 1
             assert ii.a == 1
@@ -402,7 +405,7 @@ def test_configbuilder_child_with_nested_repeatables():
     class Root(ConfigRoot):
         pass
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         XBuilder()
 
     assert len(cr.xses) == 1
@@ -423,7 +426,7 @@ def test_configbuilder_child_with_declared_but_not_defined_nested_repeatables():
     class Root(ConfigRoot):
         pass
 
-    with Root(prod, [prod, pp]) as cr:
+    with Root(prod2, ef2_prod_pp) as cr:
         XBuilder()
 
     assert len(cr.xses) == 1
@@ -461,7 +464,7 @@ def test_configbuilders_alternating_with_items():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod], name='myp') as cr:
+    with ConfigRoot(prod1, ef1_prod, name='myp') as cr:
         with OuterItem():
             with MiddleBuilder('base'):
                 InnerBuilder()
@@ -495,7 +498,7 @@ def test_configbuilders_alternating_with_items_repeatable_simple():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod], name='myp') as cr:
+    with ConfigRoot(prod1, ef1_prod, name='myp') as cr:
         with OuterItem():
             OuterBuilder()
 
@@ -537,7 +540,7 @@ def test_configbuilders_alternating_with_items_repeatable_many():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod], name='myp') as cr:
+    with ConfigRoot(prod1, ef1_prod, name='myp') as cr:
         with OuterItem():
             with MiddleBuilder('base'):
                 InnerBuilder()
@@ -586,7 +589,7 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod], name='myp') as cr:
+    with ConfigRoot(prod1, ef1_prod, name='myp') as cr:
         with OuterItem():
             OuterBuilder()
 

@@ -27,8 +27,6 @@ prod = ef.Env('prod')
 
 g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
 
-valid_envs = [g_dev, tst, g_prod_like]
-
 
 @nested_repeatables('children_init, children_default, children_env, children_mc_init')
 class root(ConfigRoot):
@@ -69,7 +67,7 @@ def perf1():
     second_range = 2000
     third_range = 2000
 
-    with root(prod, valid_envs) as cr:
+    with root(prod, ef) as cr:
         for ii in xrange(0, first_range):
             rchild_init(name=repr(ii), aa=1, bb=1, xx="hello", yy="hi")
 

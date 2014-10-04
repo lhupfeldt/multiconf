@@ -40,7 +40,7 @@ class ConfigItemEncoder(json.JSONEncoder):
         property_methods: call @property methods and insert values in output, including a comment that the value is calculated.
         """
         super(ConfigItemEncoder, self).__init__(**kwargs)
-        self.filter_out_keys = ('env', 'valid_envs', 'contained_in', 'root_conf', 'attributes', 'frozen')
+        self.filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'frozen')
         self.user_filter_callable = filter_callable
         self.user_fallback_callable = fallback_callable
         self.compact = compact
@@ -230,7 +230,7 @@ class ConfigItemEncoder(json.JSONEncoder):
             if isinstance(obj, envs.BaseEnv):
                 #print "# Handle Env objects", type(obj)
                 dd = OrderedDict((_class_tuple(obj),))
-                for eg in obj.all():
+                for eg in obj.all:
                     dd['name'] = eg.name
                 return dd
 

@@ -9,23 +9,18 @@ from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import required_if
 from ..envs import EnvFactory
 
-ef = EnvFactory()
+ef1_prod = EnvFactory()
+prod1 = ef1_prod.Env('prod')
 
-dev2ct = ef.Env('dev2ct')
-dev2st = ef.Env('dev2st')
-g_dev2 = ef.EnvGroup('g_dev2', dev2ct, dev2st)
+ef2_prod_dev2ct = EnvFactory()
+dev2ct2 = ef2_prod_dev2ct.Env('dev2ct')
+prod2 = ef2_prod_dev2ct.Env('prod')
 
-dev3ct = ef.Env('dev3ct')
-dev3st = ef.Env('dev3st')
-g_dev3 = ef.EnvGroup('g_dev3', dev3ct, dev3st)
+ef3_prod_dev2ct_dev3ct = EnvFactory()
+dev2ct3 = ef3_prod_dev2ct_dev3ct.Env('dev2ct')
+dev3ct3 = ef3_prod_dev2ct_dev3ct.Env('dev3ct')
+prod3 = ef3_prod_dev2ct_dev3ct.Env('prod')
 
-g_dev = ef.EnvGroup('g_dev', g_dev2, g_dev3)
-
-pp = ef.Env('pp')
-prod = ef.Env('prod')
-g_prod = ef.EnvGroup('g_prod', pp, prod)
-
-valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -39,7 +34,7 @@ def test_required_if_attributes_condition_true_prod_and_condition_unset_dev2ct()
     class root(ConfigRoot):
         pass
 
-    with root(prod, [prod, dev2ct]) as cr:
+    with root(prod2, ef2_prod_dev2ct) as cr:
         cr.setattr('a', prod=10)
         cr.setattr('b', prod=20)
         cr.setattr('c', prod=30)
@@ -65,7 +60,7 @@ def conf1(env):
     class root(ConfigRoot):
         pass
 
-    with root(env, [prod, dev2ct]) as cr:
+    with root(env, ef2_prod_dev2ct) as cr:
         cr.setattr('a', prod=0, dev2ct=1)
         cr.setattr('b', prod=10, dev2ct=11)
         cr.setattr('c', dev2ct=21)
@@ -74,7 +69,7 @@ def conf1(env):
 
 
 def test_required_if_attributes_condition_false_instantiated_env():
-    cr = conf1(prod)
+    cr = conf1(prod2)
     assert cr.a == 0
     assert cr.b == 10
     assert not hasattr(cr, 'c')
@@ -90,7 +85,7 @@ def test_required_if_attributes_condition_false_instantiated_env():
 
 
 def test_required_if_attributes_condition_true_other_env():
-    cr = conf1(dev2ct)
+    cr = conf1(dev2ct2)
     assert cr.a == 1
     assert cr.b == 11
     assert cr.c == 21
@@ -105,7 +100,7 @@ def test_required_if_attributes_condition_true_other_env():
     assert index == 3
 
 
-def test_required_if_condition_attribute_missing():
+def test_required_if_condition_attribute_missing_completely():
     class root(ConfigRoot):
         pass
 
@@ -113,11 +108,70 @@ def test_required_if_condition_attribute_missing():
     class item(ConfigItem):
         pass
 
-    with root(prod, [prod]):
+    with root(prod1, ef1_prod):
         with item() as it:
             it.setattr('a', prod=2)
 
     # The above code is valid, the condition attribute i not mandatory
+    assert 1 == 1
+
+
+def test_required_if_condition_attribute_missing_from_current_env():
+    class root(ConfigRoot):
+        pass
+
+    @required_if('abcd', 'efgh, ijkl')
+    class item(ConfigItem):
+        pass
+
+    with root(prod2, ef2_prod_dev2ct):
+        with item() as it:
+            it.setattr('abcd', dev2ct2=2)
+    assert 1 == 1
+
+
+def test_required_if_condition_attribute_missing_from_some_other_env():
+    class root(ConfigRoot):
+        pass
+
+    @required_if('abcd', 'efgh, ijkl')
+    class item(ConfigItem):
+        pass
+
+    with root(prod2, ef2_prod_dev2ct):
+        with item() as it:
+            it.setattr('abcd', prod=0)
+    assert 1 == 1
+
+
+def test_required_if_condition_attribute_missing_completely_with_partially_specified_conditional_attribute():
+    class root(ConfigRoot):
+        pass
+
+    @required_if('abcd', 'efgh, ijkl')
+    class item(ConfigItem):
+        pass
+
+    with root(prod2, ef2_prod_dev2ct):
+        with item() as it:
+            it.setattr('efgh', prod=13)
+            it.setattr('ijkl', dev2ct=17)
+    assert it.efgh == 13
+
+
+def test_required_if_condition_attribute_missing_from_some_other_env_with_partially_specified_conditional_attribute():
+    class root(ConfigRoot):
+        pass
+
+    @required_if('abcd', 'efgh, ijkl')
+    class item(ConfigItem):
+        pass
+
+    with root(prod2, ef2_prod_dev2ct):
+        with item() as it:
+            it.setattr('abcd', prod=0)
+            it.setattr('efgh', prod=13)
+            it.setattr('ijkl', dev2ct=17)
     assert 1 == 1
 
 
@@ -129,9 +183,8 @@ def test_required_if_condition_attribute_missing_other_attribute_default_value()
     class item(ConfigItem):
         pass
 
-    with root(prod, [prod]):
+    with root(prod1, ef1_prod):
         item(a=1)
-    # The above code is valid, the condition attribute i not mandatory
     assert 1 == 1
 
 
@@ -143,9 +196,8 @@ def test_required_if_condition_attribute_missing_no_other_attributes():
     class item(ConfigItem):
         pass
 
-    with root(prod, [prod]):
+    with root(prod1, ef1_prod):
         item()
-    # The above code is valid, the condition attribute i not mandatory
     assert 1 == 1
 
 
@@ -160,7 +212,7 @@ def test_required_if_optional_attributes_missing_fully_instantiated_env():
         class item(ConfigItem):
             pass
 
-        with root(prod, [prod, dev2ct]):
+        with root(prod2, ef2_prod_dev2ct):
             with item() as ii:
                 ii.setattr('abcd', prod=1, dev2ct=0)
                 ii.setattr('ihasit', prod=7, dev2ct=8)
@@ -179,7 +231,7 @@ def test_required_if_optional_attributes_missing_fully_instantiated_env():
 #        class item(ConfigItem):
 #            pass
 #
-#        with root(dev2ct, [prod, dev2ct]):
+#        with root(dev2ct2, ef2_prod_dev2ct):
 #            with item() as ii:
 #                ii.setattr('abcd', prod=1, dev2ct=0)
 #                ii.setattr('ihasit', prod=7, dev2ct=8)
@@ -196,7 +248,7 @@ def test_required_if_optional_attributes_missing_some_env_instantiated_env():
         class item(ConfigItem):
             pass
 
-        with root(prod, [prod, dev2ct, dev3ct]):
+        with root(prod3, ef3_prod_dev2ct_dev3ct):
             with item() as ii:
                 ii.setattr('abcd', prod=1, dev2ct=0, dev3ct=17)
                 ii.setattr('efgh', prod=2)
@@ -216,7 +268,7 @@ def test_required_if_optional_attributes_missing_some_env_other_env():
         class item(ConfigItem):
             pass
 
-        with root(dev2ct, [prod, dev2ct, dev3ct]):
+        with root(dev2ct3, ef3_prod_dev2ct_dev3ct):
             with item() as ii:
                 ii.setattr('abcd', prod=1, dev2ct=0, dev3ct=17)
                 ii.setattr('efgh', prod=2)
@@ -241,7 +293,7 @@ def test_regular_attributes_missing_when_required_if_used():
         class item(ConfigItem):
             pass
 
-        with root(prod, [prod, dev2ct]):
+        with root(prod2, ef2_prod_dev2ct):
             with item() as ii:
                 ii.setattr('abcd', prod=0)
                 ii.setattr('x', dev2ct=0)

@@ -8,18 +8,17 @@ from ..decorators import  required, named_as, optional
 
 from ..envs import EnvFactory
 
-ef = EnvFactory()
-
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
-dev2ct = ef.Env('dev2ct')
-dev2st = ef.Env('dev2st')
-g_dev = ef.EnvGroup('g_dev', dev2ct, dev2st)
 
-pp = ef.Env('pp')
-prod = ef.Env('prod')
-g_prod = ef.EnvGroup('g_prod', pp, prod)
+ef1_prod = EnvFactory()
+prod1 = ef1_prod.Env('prod')
+
+ef2_prod_dev2ct = EnvFactory()
+pp2 = ef2_prod_dev2ct.Env('dev2ct')
+prod2 = ef2_prod_dev2ct.Env('prod')
+
 
 _g_expected = """{
     "__class__": "root #as: 'project', id: 0000", 
@@ -36,7 +35,7 @@ def test_required_attributes_for_configroot():
     class root(ConfigRoot):
         pass
 
-    with root(prod, [prod]) as cr:
+    with root(prod1, ef1_prod) as cr:
         cr.setattr('anattr', prod=1)
         cr.setattr('anotherattr', prod=2)
     assert cr.anattr == 1
@@ -51,7 +50,7 @@ def test_required_attributes_for_configitem():
     class item(ConfigItem):
         pass
 
-    with root(prod, [prod]) as cr:
+    with root(prod1, ef1_prod) as cr:
         with item() as ii:
             ii.setattr('a', prod=1)
             ii.setattr('b', prod=2)
@@ -69,7 +68,7 @@ def test_required_attributes_accept_override_of_single_property():
         def __init__(self, a, b):
             super(item, self).__init__(a=a, b=b)
 
-    with root(prod, [prod]) as cr:
+    with root(prod1, ef1_prod) as cr:
         with item(a=1, b=1) as ii:
             ii.setattr('b', prod=2)
 
@@ -82,11 +81,11 @@ def test_optional_attribute():
     class root(ConfigRoot):
         pass
 
-    with root(prod, [prod, dev2ct]) as cr:
+    with root(prod2, ef2_prod_dev2ct) as cr:
         cr.setattr('a', dev2ct=18)
     assert "no-exception" == "no-exception"
 
-    with root(prod, [prod, dev2ct]) as cr:
+    with root(prod2, ef2_prod_dev2ct) as cr:
         cr.setattr('a', prod=17)
     assert cr.a == 17
 
@@ -96,7 +95,7 @@ def test_named_as():
     class root(ConfigRoot):
         pass
 
-    with root(prod, [prod, dev2ct], name='abc') as proj:
+    with root(prod2, ef2_prod_dev2ct, name='abc') as proj:
         pass
     assert replace_ids(repr(proj), named_as=False) == _g_expected
 
@@ -110,7 +109,7 @@ def test_required_attributes_inherited_ok():
     class root2(root):
         pass
 
-    with root2(prod, [prod]) as cr:
+    with root2(prod1, ef1_prod) as cr:
         cr.setattr('anattr', prod=1)
         cr.setattr('anotherattr', prod=2)
         cr.setattr('someattr2', prod=3)

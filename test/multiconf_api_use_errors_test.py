@@ -12,23 +12,12 @@ from .. import ConfigRoot, ConfigItem, ConfigApiException, ConfigException
 from ..decorators import nested_repeatables, repeat
 from ..envs import EnvFactory
 
-ef = EnvFactory()
+ef1_prod = EnvFactory()
+prod1 = ef1_prod.Env('prod')
 
-dev2ct = ef.Env('dev2CT')
-dev2st = ef.Env('dev2ST')
-g_dev2 = ef.EnvGroup('g_dev2', dev2ct, dev2st)
-
-dev3ct = ef.Env('dev3CT')
-dev3st = ef.Env('dev3ST')
-g_dev3 = ef.EnvGroup('g_dev3', dev3ct, dev3st)
-
-g_dev = ef.EnvGroup('g_dev', g_dev2, g_dev3)
-
-pp = ef.Env('pp')
-prod = ef.Env('prod')
-g_prod = ef.EnvGroup('g_prod', pp, prod)
-
-valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
+ef2_prod_pp = EnvFactory()
+pp2 = ef2_prod_pp.Env('pp')
+prod2 = ef2_prod_pp.Env('prod')
 
 
 _expected_ex_msg = "An error was detected trying to get attribute '%s' on class 'inner'"
@@ -63,7 +52,7 @@ def test_find_contained_in_called_before_parent___init__(capsys):
                 inner_errorline = lineno() + 1
                 self.find_contained_in('a')
 
-        with root(prod, [prod, pp], a=0):
+        with root(prod2, ef2_prod_pp, a=0):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
@@ -84,7 +73,7 @@ def test_property_method_called_before_parent___init__(capsys):
                 inner_errorline = lineno() + 1
                 print(self.env)
 
-        with root(prod, [prod, pp], a=0):
+        with root(prod2, ef2_prod_pp, a=0):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
@@ -104,7 +93,7 @@ def test_undefined_method_called_before_parent___init__(capsys):
                 inner_errorline = lineno() + 1
                 self.ttt('')
 
-        with root(prod, [prod, pp], a=0):
+        with root(prod2, ef2_prod_pp, a=0):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
@@ -124,7 +113,7 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
                 inner_errorline = lineno() + 1
                 self.ttt
 
-        with root(prod, [prod, pp], a=0):
+        with root(prod2, ef2_prod_pp, a=0):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
@@ -143,13 +132,13 @@ def test_setattr_multiconf_private_attribute():
     ex_msg = """Trying to set attribute '_mc_whatever' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
 
     with raises(ConfigException) as exinfo:
-        with root(prod, [prod, pp], a=0) as cr:
+        with root(prod2, ef2_prod_pp, a=0) as cr:
             cr.setattr('_mc_whatever', default=1)
 
     assert exinfo.value.message == ex_msg
 
     with raises(ConfigException) as exinfo:
-        with root(prod, [prod, pp], a=0) as cr:
+        with root(prod2, ef2_prod_pp, a=0) as cr:
             with inner(id='n1', b=1) as ci:
                 ci.setattr('_mc_whatever', default=1)
 
@@ -159,7 +148,7 @@ def test_setattr_multiconf_private_attribute():
 def test_setattr_to_attribute_underscore_attribute():
     ex_msg = """Trying to set attribute '_b' on a config item. Atributes starting with '_' can not be set using item.setattr. Use assignment instead."""
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod]):
+        with ConfigRoot(prod1, ef1_prod):
             with ConfigItem() as ci:
                 ci.setattr('_b', default=7)
 
@@ -172,7 +161,7 @@ def test_getattr_repr_error():
             raise Exception("Bad repr")
 
     with raises(AttributeError) as exinfo:
-        with ConfigRoot(prod, [prod, pp]):
+        with ConfigRoot(prod2, ef2_prod_pp):
             x = X()
             _ = x.a
 

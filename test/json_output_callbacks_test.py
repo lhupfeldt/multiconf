@@ -45,7 +45,7 @@ def test_json_dump_user_defined_attribute_filter():
         def a(self):
             return 1
 
-    with ConfigRoot(prod, [prod, pp], mc_json_filter=json_filter, a=0, hide_me1='FAILED') as cr:
+    with ConfigRoot(prod, ef, mc_json_filter=json_filter, a=0, hide_me1='FAILED') as cr:
         Nested(b=2, hide_me1=7)
 
     compare_json(cr, _filter_expected_json)
@@ -92,7 +92,7 @@ def test_json_fallback_handler():
             return [obj.a, obj.b], True
         return obj, False
 
-    with ConfigRoot(prod, [prod, pp], mc_json_fallback=json_fallback_handler, a=0) as cr:
+    with ConfigRoot(prod, ef, mc_json_fallback=json_fallback_handler, a=0) as cr:
         cr.handled_non_item = HandledNonItem()
         cr.unhandled_non_item = UnHandledNonItem()
         Nested(b=2)
@@ -131,7 +131,7 @@ def test_json_fallback_handler_iterable():
             return [obj.a, obj.b], True
         return obj, False
 
-    with ConfigRoot(prod, [prod, pp], mc_json_fallback=json_fallback_handler, a=0) as cr:
+    with ConfigRoot(prod, ef, mc_json_fallback=json_fallback_handler, a=0) as cr:
         cr.handled_non_items = [HandledNonItem(1), HandledNonItem(2)]
 
     compare_json(cr, _json_fallback_handler_iterable_expected_json)
@@ -166,7 +166,7 @@ def test_json_equivalent():
         def __init__(self):
             super(Item, self).__init__(a=7)
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         cr.handled_non_item = NonItemWithEquiv()
         Item()
 

@@ -20,5 +20,5 @@ class Excluded(object):
     def _user_validate_recursively(self):
         pass
 
-    def _mc_value(self, _current_env):
+    def _mc_value(self):
         return self

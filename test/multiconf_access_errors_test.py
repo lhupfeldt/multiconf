@@ -12,9 +12,9 @@ from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import nested_repeatables, named_as, repeat
 from ..envs import EnvFactory
 
-ef = EnvFactory()
+ef1_prod = EnvFactory()
 
-prod = ef.Env('prod')
+prod = ef1_prod.Env('prod')
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -29,7 +29,7 @@ _access_undefined_attribute_expected_repr = """{
 }, object of type: <class 'multiconf.multiconf.ConfigRoot'> has no attribute 'b'"""
 
 def test_access_undefined_attribute():
-    with ConfigRoot(prod, [prod]) as cr:
+    with ConfigRoot(prod, ef1_prod) as cr:
         pass
 
     with raises(AttributeError) as exinfo:
@@ -48,7 +48,7 @@ _t2_expected_repr = """{
 }, object of type: <class 'multiconf.multiconf.ConfigRoot'> has no attribute 'b', but found attribute 'bs'"""
 
 def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s():
-    with ConfigRoot(prod, [prod]) as cr:
+    with ConfigRoot(prod, ef1_prod) as cr:
         cr.setattr('bs', prod=4)
 
     with raises(AttributeError) as exinfo:
@@ -79,7 +79,7 @@ def test_find_contained_in_named_as_not_found():
     class root(ConfigRoot):
         pass
 
-    with root(prod, [prod], a=0) as cr:
+    with root(prod, ef1_prod, a=0) as cr:
         NestedRepeatable()
         with X() as ci:
             ci.setattr('a', prod=0)
@@ -117,7 +117,7 @@ def test_find_attribute_with_attribute_name_not_found():
     class root(ConfigRoot):
         pass
 
-    with root(prod, [prod], a=0, q=17) as cr:
+    with root(prod, ef1_prod, a=0, q=17) as cr:
         NestedRepeatable()
         with X() as ci:
             ci.setattr('a', prod=0)
@@ -150,7 +150,7 @@ def test_find_attribute_with_attribute_name_not_found():
 #            a = {1:""}
 #            return a[1].nosuchprop
 #
-#    with root(prod, [prod]) as cr:
+#    with root(prod, ef1_prod) as cr:
 #        X()
 #
 #    with raises(ConfigException) as exinfo:

@@ -7,7 +7,6 @@ from ..envs import EnvFactory
 
 
 ef = EnvFactory()
-pp = ef.Env('pp')
 prod = ef.Env('prod')
 
 
@@ -56,7 +55,7 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod], name='myp') as cr:
+    with ConfigRoot(prod, ef, name='myp') as cr:
         with OuterItem():
             OuterBuilder()
 

@@ -11,23 +11,13 @@ from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import required, required_if, optional, nested_repeatables, ConfigDefinitionException
 from ..envs import EnvFactory
 
-ef = EnvFactory()
+ef1_prod = EnvFactory()
+prod1 = ef1_prod.Env('prod')
 
-dev2ct = ef.Env('dev2ct')
-dev2st = ef.Env('dev2st')
-g_dev2 = ef.EnvGroup('g_dev2', dev2ct, dev2st)
+ef2_prod_dev2ct = EnvFactory()
+dev2ct = ef2_prod_dev2ct.Env('dev2ct')
+prod2 = ef2_prod_dev2ct.Env('prod')
 
-dev3ct = ef.Env('dev3ct')
-dev3st = ef.Env('dev3st')
-g_dev3 = ef.EnvGroup('g_dev3', dev3ct, dev3st)
-
-g_dev = ef.EnvGroup('g_dev', g_dev2, g_dev3)
-
-pp = ef.Env('pp')
-prod = ef.Env('prod')
-g_prod = ef.EnvGroup('g_prod', pp, prod)
-
-valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -42,7 +32,7 @@ def test_required_attributes_missing_for_configroot():
         class root(ConfigRoot):
             pass
 
-        with root(prod, [prod]):
+        with root(prod1, ef1_prod):
             pass
 
     assert exinfo.value.message == "No value given for required attributes: ['someattr1', 'someattr2']"
@@ -57,7 +47,7 @@ def test_required_attributes_missing_for_configitem():
         class item(ConfigItem):
             pass
 
-        with root(prod, [prod]):
+        with root(prod1, ef1_prod):
             with item() as ii:
                 ii.setattr('efgh', prod=7)
 
@@ -70,7 +60,7 @@ def test_optional_attribute_accessed_for_env_where_not_specified():
         pass
 
     with raises(AttributeError) as exinfo:
-        with root(prod, [prod, dev2ct]) as cr:
+        with root(prod2, ef2_prod_dev2ct) as cr:
             cr.setattr('a', dev2ct=18)
 
         print(cr.a)
@@ -122,7 +112,7 @@ def test_required_attributes_inherited_missing():
         pass
 
     with raises(ConfigException) as exinfo:
-        with root2(prod, [prod]) as cr:
+        with root2(prod1, ef1_prod) as cr:
             cr.setattr('anattr', prod=1)
             cr.setattr('someattr2', prod=3)
             cr.setattr('someotherattr2', prod=4)

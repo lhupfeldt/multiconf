@@ -18,5 +18,6 @@ class MCInvalidValue(object):
 
 MC_REQUIRED = MCInvalidValue("MC_REQUIRED")
 MC_TODO = MCInvalidValue("MC_TODO")
+_MC_NO_VALUE = MCInvalidValue("_MC_NO_VALUE")
 
-_mc_invalid_values = (MC_REQUIRED, MC_TODO)
+_mc_invalid_values = (MC_REQUIRED, MC_TODO, _MC_NO_VALUE)

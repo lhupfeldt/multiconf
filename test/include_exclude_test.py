@@ -9,15 +9,14 @@ from ..decorators import required, repeat, nested_repeatables
 
 from ..envs import EnvFactory
 
-ef = EnvFactory()
-
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
+
+ef = EnvFactory()
 dev2ct = ef.Env('dev2ct')
 dev2st = ef.Env('dev2st')
 g_dev = ef.EnvGroup('g_dev', dev2ct, dev2st)
-
 pp = ef.Env('pp')
 prod = ef.Env('prod')
 
@@ -41,7 +40,7 @@ _include_exclude_for_configitem_expected_json = """{
 
 def test_include_for_configitem():
     def conf(env):
-        with ConfigRoot(env, [g_dev, pp, prod]) as cr:
+        with ConfigRoot(env, ef) as cr:
             cr.a = 1
             with item(mc_include=[dev2ct, pp]) as it:
                 it.setattr('anattr', pp=1, g_dev=2)
@@ -60,7 +59,7 @@ def test_include_for_configitem():
 
 def test_exclude_for_configitem():
     def conf(env):
-        with ConfigRoot(env, [g_dev, pp, prod]) as cr:
+        with ConfigRoot(env, ef) as cr:
             cr.a = 1
             with item(mc_exclude=[dev2st, prod]) as it:
                 it.setattr('anattr', pp=1, g_dev=2)
@@ -101,7 +100,7 @@ _include_exclude_for_configitem_repeatable_expected_json = """{
 
 def test_include_for_configitem_repeatable():
     def conf(env):
-        with root(env, [g_dev, pp, prod]) as cr:
+        with root(env, ef) as cr:
             cr.a = 1
             with ritem(id='a', mc_include=[dev2ct, pp]) as it:
                 it.setattr('anattr', pp=1, g_dev=2)
@@ -120,7 +119,7 @@ def test_include_for_configitem_repeatable():
 
 def test_exclude_for_configitem_repeatable():
     def conf(env):
-        with root(env, [g_dev, pp, prod]) as cr:
+        with root(env, ef) as cr:
             cr.a = 1
             with ritem(id='a', mc_exclude=[dev2st, prod]) as it:
                 it.setattr('anattr', pp=1, g_dev=2)

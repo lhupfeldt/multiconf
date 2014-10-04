@@ -19,10 +19,6 @@ class ConfigException(ConfigBaseException):
     pass
 
 
-class NoAttributeException(ConfigBaseException):
-    pass
-
-
 class InvalidUsageException(ConfigBaseException):
     pass
 
@@ -54,20 +50,24 @@ class ConfigAttributeError(AttributeError):
         return self.message
 
 
-def _user_file_line(up_level_start=1):
+def caller_file_line(up_level=2):
+    frame = sys._getframe(up_level)
+    return frame.f_globals['__file__'].rstrip('c'), frame.f_lineno
+
+
+def find_user_file_line(up_level_start=2):
     frame = sys._getframe(up_level_start)
     while 1:
         if frame.f_globals['__package__'] != 'multiconf':
             return frame.f_globals['__file__'].rstrip('c'), frame.f_lineno
         frame = frame.f_back
 
-    raise Exception("Internal error")
 
-
-def _line_msg(up_level=2, ufl=None, msg=''):
+def _line_msg(up_level=2, file_name=None, line_num=None, msg=''):
     """ufl is a tuple of filename, linenumber referece to user code"""
-    ufl = ufl or _user_file_line(up_level+1)
-    print(('File "%s", line %d' % ufl) + (', ' + msg if msg else ''), file=sys.stderr)
+    if file_name is None:
+        file_name, line_num = find_user_file_line(up_level + 1)
+    print(('File "%s", line %d' % (file_name, line_num)) + (', ' + msg if msg else ''), file=sys.stderr)
 
 
 def _error_type_msg(num_errors, message):
@@ -75,8 +75,8 @@ def _error_type_msg(num_errors, message):
     return num_errors + 1
 
 
-def _error_msg(num_errors, message, up_level=2, ufl=None):
-    _line_msg(up_level, ufl)
+def _error_msg(num_errors, message, up_level=2, file_name=None, line_num=None):
+    _line_msg(up_level, file_name, line_num)
     return _error_type_msg(num_errors, message)
 
 
@@ -84,8 +84,8 @@ def _warning_type_msg(num_warnings, message):
     print('ConfigWarning:', message, file=sys.stderr)
     return num_warnings + 1
 
-def _warning_msg(num_warnings, message, up_level=2, ufl=None):
-    _line_msg(up_level, ufl)
+def _warning_msg(num_warnings, message, up_level=2, file_name=None, line_num=None):
+    _line_msg(up_level, file_name, line_num)
     return _warning_type_msg(num_warnings, message)
 
 
@@ -94,6 +94,6 @@ def _api_error_type_msg(num_warnings, message):
     return num_warnings + 1
 
 
-def _api_error_msg(num_errors, message, up_level=2, ufl=None):
-    _line_msg(up_level, ufl)
+def _api_error_msg(num_errors, message, up_level=2, file_name=None, line_num=None):
+    _line_msg(up_level, file_name, line_num)
     return _api_error_type_msg(num_errors, message)

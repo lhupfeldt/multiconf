@@ -14,18 +14,12 @@ from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line
 from .utils.compare_json import compare_json
 
 ef = EnvFactory()
-
-
-dev1 = ef.Env('dev1')
-dev2 = ef.Env('dev2')
-g_dev = ef.EnvGroup('g_dev', dev1, dev2)
-
-tst = ef.Env('tst')
-
 pp = ef.Env('pp')
 prod = ef.Env('prod')
 
-g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
+ef2_prod = EnvFactory()
+prod2 = ef2_prod.Env('prod')
+
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -122,7 +116,7 @@ _json_dump_simple_expected_json = """{
 }"""
 
 def test_json_dump_simple():
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         NestedRepeatable(id='a-level1')
         with NestedRepeatable(id='b-level1') as ci:
             NestedRepeatable(id='a-level2')
@@ -189,7 +183,7 @@ def test_json_dump_cyclic_references_in_conf_items():
     class AnXItem(ConfigItem):
         pass
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         with NestedRepeatable(id='a1') as ref_obj1:
             ref_obj1.setattr('some_value', pp=1, prod=2)
 
@@ -214,18 +208,18 @@ __json_dump_cyclic_references_between_conf_items_and_other_objects_expected_json
     "someitem": {
         "__class__": "SimpleItem", 
         "__id__": 0000, 
+        "someattr": 12, 
+        "id": "b1", 
         "cycl": {
             "cyclic_item_ref": "#ref id: 0000"
-        }, 
-        "id": "b1", 
-        "someattr": 12
+        }
     }
 }"""
 
 def test_json_dump_cyclic_references_between_conf_items_and_other_objects():
     cycler = {}
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         with SimpleItem(id='b1', someattr=12, cycl=cycler) as ref_obj2:
             pass
         cycler['cyclic_item_ref'] = ref_obj2
@@ -256,7 +250,7 @@ def test_json_dump_property_method():
         def m(self):
             return 1
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_expected)
@@ -286,7 +280,7 @@ def test_json_dump_property_method_shadows_attribute():
         def m(self):
             return 1
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         Nested(m=7)
 
     compare_json(cr, _json_dump_property_method_shadows_attribute_expected_json)
@@ -315,7 +309,7 @@ def test_json_dump_property_method_raises_InvalidUsageException():
         def m(self):
             raise InvalidUsageException("No m now")
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_raises_InvalidUsageException_expected_json)
@@ -343,7 +337,7 @@ def test_json_dump_property_method_raises_Exception():
         def m(self):
             raise Exception("Something is wrong")
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_raises_Exception_expected_json)
@@ -358,7 +352,7 @@ def test_json_dump_property_method_raises_ConfigException():
         def m(self):
             raise ConfigException("Something is wrong")
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _e2b_expected_json_output)
@@ -387,7 +381,7 @@ def test_json_dump_property_method_returns_self():
         def m(self):
             return self
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_returns_self_expected_json)
@@ -425,7 +419,7 @@ def test_json_dump_property_method_returns_already_seen_conf_item():
     class X(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         X(a=0)
         Nested()
 
@@ -460,7 +454,7 @@ def test_json_dump_property_method_calls_json(capsys):
         def other_conf_item(self):
             self.json()
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_calls_json_expected_json)
@@ -492,7 +486,7 @@ def test_json_dump_non_conf_item_not_json_serializable():
         def __repr__(self):
             return "<Key object>"
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         SimpleItem(b={Key():2})
 
     compare_json(cr, _json_dump_non_conf_item_not_json_serializable_expected_json)
@@ -523,7 +517,7 @@ def test_json_dump_non_conf_item():
         def __init__(self):
             self.a = 187
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         SimpleItem(a=SomeClass())
 
     assert replace_ids(cr.json()) == _json_dump_non_conf_item_expected_json
@@ -550,7 +544,7 @@ def test_json_dump_unhandled_item_function_ref():
     def fff():
         pass
 
-    with ConfigRoot(prod, [prod, pp]) as cr:
+    with ConfigRoot(prod, ef) as cr:
         SimpleItem(func=fff)
 
     compare_json(cr, _json_dump_unhandled_item_function_ref_expected_json)
@@ -577,7 +571,7 @@ def test_json_dump_iterable():
         def __iter__(self):
             yield 1
 
-    with ConfigRoot(prod, [prod, pp]) as cr:
+    with ConfigRoot(prod, ef) as cr:
         SimpleItem(a=MyIterable())
 
     compare_json(cr, _json_dump_iterable_expected_json)
@@ -601,7 +595,7 @@ _uplevel_ref_expected_json_output = """{
 }"""
 
 def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
-    with root(prod, [prod, pp], a=0):
+    with root(prod, ef, a=0):
         with NestedRepeatable(id='n1', name='Number 1', b=1) as n1:
             with NestedRepeatable(id='n2', c=2) as n2:
                 NestedRepeatable(id='n3', uplevel_ref=n1, d=3)
@@ -646,7 +640,7 @@ def test_json_dump_dir_error(capsys):
         def c(self):
             return "will-not-show"
 
-    with ConfigRoot(prod, [prod, pp], a=0) as cr:
+    with ConfigRoot(prod, ef, a=0) as cr:
         Nested(b=2)
 
     cr.json()
@@ -991,7 +985,7 @@ def test_json_dump_configbuilder():
     class YChild(ConfigItem):
         pass
 
-    with ItemWithYs(prod, [prod, pp]) as cr:
+    with ItemWithYs(prod, ef) as cr:
         with YBuilder() as yb1:
             yb1.b = 27
             YChild(name='Hugo', a=10)
@@ -1059,7 +1053,7 @@ def test_json_dump_property_method_returns_later_confitem_same_level():
         def m(self):
             return self.contained_in.someitems['two']
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         NamedNestedRepeatable(name='one')
         NamedNestedRepeatable(name='two')
 
@@ -1120,7 +1114,7 @@ def test_json_dump_property_method_returns_later_confitem_list_same_level():
         def m(self):
             return [self.contained_in.someitems['two'], self.contained_in.someitems['three']]
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         NamedNestedRepeatable(name='one')
         NamedNestedRepeatable(name='two')
         NamedNestedRepeatable(name='three')
@@ -1134,7 +1128,7 @@ def test_json_dump_property_method_returns_later_confitem_tuple_same_level():
         def m(self):
             return self.contained_in.someitems['two'], self.contained_in.someitems['three']
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         NamedNestedRepeatable(name='one')
         NamedNestedRepeatable(name='two')
         NamedNestedRepeatable(name='three')
@@ -1196,7 +1190,7 @@ def test_json_dump_property_method_returns_later_confitem_dict_same_level():
         def m(self):
             return dict(a=self.contained_in.someitems['two'], b=self.contained_in.someitems['three'])
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         NamedNestedRepeatable(name='one')
         NamedNestedRepeatable(name='two')
         NamedNestedRepeatable(name='three')
@@ -1210,7 +1204,7 @@ def test_json_dump_property_method_returns_later_confitem_ordereddict_same_level
         def m(self):
             return OrderedDict((('a', self.contained_in.someitems['two']), ('b', self.contained_in.someitems['three'])))
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         NamedNestedRepeatable(name='one')
         NamedNestedRepeatable(name='two')
         NamedNestedRepeatable(name='three')
@@ -1258,7 +1252,7 @@ def test_json_dump_with_builders_containment_check():
     class MyOuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod, [prod], name='myp') as cr:
+    with ConfigRoot(prod2, ef2_prod, name='myp') as cr:
         with MyOuterItem():
             MyOuterBuilder()
 
@@ -1304,7 +1298,7 @@ def test_json_dump_nested_class_non_mc():
         class TTT(object):
             pass
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         McWithNestedClass()
 
     compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1)
@@ -1313,7 +1307,7 @@ def test_json_dump_nested_class_non_mc():
         class TTT(object):
             pass
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         with ConfigItem() as ci:
             ci.a = NonMcWithNestedClass
 
@@ -1326,7 +1320,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
             def json_equivalent(self):
                 return ""
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         McWithNestedClass()
 
     compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1)
@@ -1336,7 +1330,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
             def json_equivalent(self):
                 return ""
 
-    with root(prod, [prod, pp], a=0) as cr:
+    with root(prod, ef, a=0) as cr:
         with ConfigItem() as ci:
             ci.a = NonMcWithNestedClass
 

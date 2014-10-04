@@ -47,7 +47,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
         pass
 
     with raises(ConfigApiException) as exinfo:
-        with ConfigRoot(prod, [prod, pp]):
+        with ConfigRoot(prod, ef):
             with ItemWithYs():
                 with YBuilder() as yb1:
                     yb1.b = 27
@@ -88,7 +88,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_detache
         pass
 
     with raises(ConfigApiException) as exinfo:
-        with ConfigRoot(prod, [prod, pp]):
+        with ConfigRoot(prod, ef):
             with ItemWithYs():
                 with YBuilder() as yb1:
                     yb1.b = 27

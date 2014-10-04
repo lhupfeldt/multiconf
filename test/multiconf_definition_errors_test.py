@@ -10,26 +10,79 @@ from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDef
 from ..decorators import nested_repeatables, repeat, required
 from ..envs import EnvFactory
 
-ef = EnvFactory()
+# ef1
+ef1_prod = EnvFactory()
+prod1 = ef1_prod.Env('prod')
 
-dev2ct = ef.Env('dev2ct')
-dev2st = ef.Env('dev2st')
-g_dev2 = ef.EnvGroup('g_dev2', dev2ct, dev2st)
+# ef2
+ef2_pp_prod = EnvFactory()
+pp2 = ef2_pp_prod.Env('pp')
+prod2 = ef2_pp_prod.Env('prod')
 
-dev3ct = ef.Env('dev3ct')
-dev3st = ef.Env('dev3st')
-g_dev3 = ef.EnvGroup('g_dev3', dev3ct, dev3st)
+# ef3
+ef3_dev_prod = EnvFactory()
 
-g_dev = ef.EnvGroup('g_dev', g_dev2, g_dev3)
+dev2ct3 = ef3_dev_prod.Env('dev2ct')
+dev2st3 = ef3_dev_prod.Env('dev2st')
+g_dev23 = ef3_dev_prod.EnvGroup('g_dev2', dev2ct3, dev2st3)
 
-pp = ef.Env('pp')
-prod = ef.Env('prod')
-g_prod = ef.EnvGroup('g_prod', pp, prod)
+dev3ct3 = ef3_dev_prod.Env('dev3ct')
+dev3st3 = ef3_dev_prod.Env('dev3st')
+g_dev33 = ef3_dev_prod.EnvGroup('g_dev3', dev3ct3, dev3st3)
 
-valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
+g_dev_overlap3 = ef3_dev_prod.EnvGroup('g_dev_overlap', dev2ct3)
 
-oops = ef.Env('declared_not_valid_env')
-g_oops = ef.EnvGroup('declared_not_valid_group', prod, oops)
+g_all_dev3 = ef3_dev_prod.EnvGroup('g_dev', g_dev23, g_dev33)
+
+pp3 = ef3_dev_prod.Env('pp')
+prod3 = ef3_dev_prod.Env('prod')
+g_prod3 = ef3_dev_prod.EnvGroup('g_prod', pp3, prod3)
+
+g_all3 = ef3_dev_prod.EnvGroup('g_all', g_all_dev3, g_prod3)
+
+# ef4
+ef4_dev_prod = EnvFactory()
+
+dev2ct4 = ef4_dev_prod.Env('dev2ct')
+dev2st4 = ef4_dev_prod.Env('dev2st')
+g_dev24 = ef4_dev_prod.EnvGroup('g_dev2', dev2ct4, dev2st4)
+
+dev3ct4 = ef4_dev_prod.Env('dev3ct')
+dev3st4 = ef4_dev_prod.Env('dev3st')
+g_dev34 = ef4_dev_prod.EnvGroup('g_dev3', dev3ct4, dev3st4)
+
+g_dev_overlap4 = ef4_dev_prod.EnvGroup('g_dev_overlap', dev2ct4, dev3ct4)
+
+g_all_dev4 = ef4_dev_prod.EnvGroup('g_dev', g_dev24, g_dev34)
+
+pp4 = ef4_dev_prod.Env('pp')
+prod4 = ef4_dev_prod.Env('prod')
+g_prod4 = ef4_dev_prod.EnvGroup('g_prod', pp4, prod4)
+
+g_all4 = ef4_dev_prod.EnvGroup('g_all', g_all_dev4, g_prod4)
+
+# ef5
+ef5_dev_prod = EnvFactory()
+
+dev2ct5 = ef5_dev_prod.Env('dev2ct')
+dev2st5 = ef5_dev_prod.Env('dev2st')
+g_dev25 = ef5_dev_prod.EnvGroup('g_dev2', dev2ct5, dev2st5)
+
+dev3ct5 = ef5_dev_prod.Env('dev3ct')
+dev3st5 = ef5_dev_prod.Env('dev3st')
+g_dev35 = ef5_dev_prod.EnvGroup('g_dev3', dev3ct5, dev3st5)
+
+g_dev_overlap15 = ef5_dev_prod.EnvGroup('g_dev_overlap1', dev2ct5)
+g_dev_overlap25 = ef5_dev_prod.EnvGroup('g_dev_overlap2', dev2ct5)
+
+g_all_dev5 = ef5_dev_prod.EnvGroup('g_dev', g_dev25, g_dev35)
+
+pp5 = ef5_dev_prod.Env('pp')
+prod5 = ef5_dev_prod.Env('prod')
+g_prod5 = ef5_dev_prod.EnvGroup('g_prod', pp5, prod5)
+
+g_all5 = ef5_dev_prod.EnvGroup('g_all', g_all_dev5, g_prod5)
+
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -92,15 +145,28 @@ _k4_expected = """'RepeatableItems': {
 }"""
 
 
-_p_expected = """A value is already specified for: Env('dev2ct') from group EnvGroup('g_dev_overlap') {
-     Env('dev2ct'),
-     Env('dev3ct')
-}=(3, ('fake_dir/multiconf_definition_errors_test.py', 999)), previous value: EnvGroup('g_dev2') {
+_p_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
+ConfigError: Value for env 'dev2ct' is specified more than once, with no single most specific group or direct env:
+value: 2, from: EnvGroup('g_dev2') {
      Env('dev2ct'),
      Env('dev2st')
-}=(2, ('fake_dir/multiconf_definition_errors_test.py', 999))"""
+}
+value: 3, from: EnvGroup('g_dev_overlap') {
+     Env('dev2ct'),
+     Env('dev3ct')
+}
+File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
+ConfigError: Value for env 'dev3ct' is specified more than once, with no single most specific group or direct env:
+value: 12, from: EnvGroup('g_dev3') {
+     Env('dev3ct'),
+     Env('dev3st')
+}
+value: 3, from: EnvGroup('g_dev_overlap') {
+     Env('dev2ct'),
+     Env('dev3ct')
+}"""
 
-_p_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_p_expected_ex = """There were 2 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
     "env": {
         "__class__": "Env", 
@@ -123,33 +189,19 @@ class RepeatableItem(ConfigItem):
 
 def test_non_env_for_instantiatiation_env():
     with raises(ConfigException) as exinfo:
-        project('Why?', [prod])
+        project('Why?', ef1_prod)
 
     assert exinfo.value.message == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
 
 
-def test_non_env_in_valid_envs():
+def test_env_factory_is_not_an_env_factory():
     with raises(ConfigException) as exinfo:
-        project(prod, [prod, 'Why?'])
+        project(prod3, 1)
 
-    assert exinfo.value.message == "project: valid_envs items must be instance of 'Env' or 'EnvGroup'; found a 'str': 'Why?'"
-
-
-def test_valid_envs_is_not_a_sequence():
-    with raises(ConfigException) as exinfo:
-        project(prod, 1)
-
-    assert exinfo.value.message == "project: valid_envs arg must be a 'Sequence'; found type 'int': 1"
+    assert exinfo.value.message == "project: env_factory arg must be instance of 'EnvFactory'; found type 'int': 1"
 
 
-def test_valid_envs_is_a_str():
-    with raises(ConfigException) as exinfo:
-        project(prod, 'Why?')
-
-    assert exinfo.value.message == "project: valid_envs arg must be a 'Sequence'; found type 'str': 'Why?'"
-
-
-_valid_envs_arg_as_envgroup_exp = """ConfigRoot: valid_envs arg must be a 'Sequence'; found type 'EnvGroup': EnvGroup('g_all') {
+_env_factory_arg_as_envgroup_exp = """ConfigRoot: env_factory arg must be instance of 'EnvFactory'; found type 'EnvGroup': EnvGroup('g_all') {
      EnvGroup('g_dev') {
        EnvGroup('g_dev2') {
          Env('dev2ct'),
@@ -166,23 +218,23 @@ _valid_envs_arg_as_envgroup_exp = """ConfigRoot: valid_envs arg must be a 'Seque
   }
 }"""
 
-def test_valid_envs_arg_as_envgroup():
+def test_env_factory_arg_as_envgroup():
     with raises(ConfigException) as exinfo:
-        ConfigRoot(prod, valid_envs)
+        ConfigRoot(prod3, g_all3)
 
-    assert exinfo.value.message == _valid_envs_arg_as_envgroup_exp
+    assert exinfo.value.message == _env_factory_arg_as_envgroup_exp
 
 
-def test_selected_conf_not_in_valid_envs():
+def test_selected_conf_not_from_env_factory():
     with raises(ConfigException) as exinfo:
-        ConfigRoot(prod, [dev3ct, dev3st])
+        ConfigRoot(prod3, EnvFactory())
 
-    assert exinfo.value.message == """The env Env('prod') must be in the (nested) list of valid_envs [Env('dev3ct'), Env('dev3st')]"""
+    assert exinfo.value.message == """The selected env Env('prod') must be from the specified 'env_factory'"""
 
 
 def test_assign_to_undefine_env(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod]) as cr:
+        with ConfigRoot(prod1, ef1_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', pros="hello", prod="hi")
 
@@ -193,7 +245,7 @@ def test_assign_to_undefine_env(capsys):
 
 def test_value_not_assigned_to_all_envs(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod, pp]) as cr:
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', prod="hello")
 
@@ -213,7 +265,7 @@ _attribute_defined_with_different_types_expected_ex = """There were 1 errors whe
 
 def test_attribute_defined_with_different_types(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod, pp]) as cr:
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', prod=1, pp="hello")
 
@@ -229,7 +281,7 @@ def test_attribute_defined_with_different_types(capsys):
 
 def test_attribute_defined_with_different_types_default(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod, pp]) as cr:
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', default="hello", prod=1)
 
@@ -243,26 +295,44 @@ def test_attribute_defined_with_different_types_default(capsys):
     assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
 
 
+_attribute_defined_with_different_types_item_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen", 
+    "a": 1
+}"""
+
 def test_attribute_defined_with_different_types_init_default(capsys):
     with raises(ConfigException) as exinfo:
-        init_line = lineno() + 1
-        with ConfigRoot(prod, [prod, pp], a="hello") as cr:
-            errorline = lineno() + 1
+        init_line1 = lineno() + 1
+        with ConfigRoot(prod2, ef2_pp_prod, a="hello") as cr:
+            errorline1 = lineno() + 1
             cr.setattr('a', default=1)
 
-    _sout, serr = capsys.readouterr()
-    assert_lines_in(
-        __file__, errorline, serr,
-        """^File "%(file_name)s", line {line_num}, __init__ <type 'str'>""".format(line_num=init_line),
-        "^%(lnum)s, default <type 'int'>",
-        "^ConfigError: Found different value types for property 'a' for different envs",
-    )
+    _sout, serr1 = capsys.readouterr()
     assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
+
+
+    with raises(ConfigException) as exinfo:
+        with project(prod1, ef1_prod):
+            init_line2 = lineno() + 1
+            with ConfigItem(a="hello") as ci:
+                errorline2 = lineno() + 1
+                ci.a = 1
+
+    _sout, serr2 = capsys.readouterr()
+    assert replace_ids(exinfo.value.message, named_as=False) == _attribute_defined_with_different_types_item_expected_ex
+
+    for init_line, errorline, serr in ((init_line1, errorline1, serr1), (init_line2, errorline2, serr2)):
+        assert_lines_in(
+            __file__, errorline, serr,
+            "^%(lnum)s, default <type 'int'>",
+            """^File "%(file_name)s", line {line_num}, __init__ <type 'str'>""".format(line_num=init_line),
+            "^ConfigError: Found different value types for property 'a' for different envs",
+        )
 
 
 def test_attribute_redefinition_attempt(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod]) as cr:
+        with ConfigRoot(prod1, ef1_prod) as cr:
             cr.setattr('a', prod=1)
             errorline = lineno() + 1
             cr.setattr('a', prod=2)
@@ -274,7 +344,7 @@ def test_attribute_redefinition_attempt(capsys):
 
 def test_nested_item_overrides_simple_attribute():
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod]) as cr:
+        with ConfigRoot(prod1, ef1_prod) as cr:
             cr.setattr('ConfigItem', prod="hello")
             ConfigItem()
 
@@ -283,7 +353,7 @@ def test_nested_item_overrides_simple_attribute():
 
 def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class():
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod]) as cr:
+        with ConfigRoot(prod1, ef1_prod) as cr:
             RepeatableItem()
 
     assert replace_ids(exinfo.value.message, named_as=False) == _j_expected
@@ -291,7 +361,7 @@ def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class(
 
 def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repeatable():
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod]) as cr:
+        with ConfigRoot(prod1, ef1_prod) as cr:
             # cr.RepeatableItems is just an attribute named like an item
             cr.setattr('RepeatableItems', prod="hello")
             RepeatableItem()
@@ -302,7 +372,7 @@ def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repe
 def test_nested_repeatable_item_shadowed_by_default_attribute():
     with raises(ConfigException) as exinfo:
         # RepeatableItems is just an attribute named like an item
-        with project(prod, [prod], RepeatableItems=1):
+        with project(prod1, ef1_prod, RepeatableItems=1):
             RepeatableItem()
 
     assert replace_ids(exinfo.value.message, named_as=False) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
@@ -319,7 +389,7 @@ def test_nested_repeatable_item_shadowed_by_default_attribute():
 #         class rchild(RepeatableItem):
 #             pass
 #
-#         with root(prod, [prod]) as cr:
+#         with root(prod1, ef1_prod) as cr:
 # TODO: 'cr' is an OrderedDict, so this call is not possible, which is fine, but the error message is not good
 #             cr.children(prod="hello")
 #             rchild()
@@ -332,7 +402,7 @@ def test_non_repeatable_but_container_expects_repeatable():
         class RepeatableItems(ConfigItem):
             pass
 
-        with project(prod, [prod]):
+        with project(prod1, ef1_prod):
             RepeatableItems()
 
     assert replace_ids(exinfo.value.message, named_as=False) == _k4_expected
@@ -340,7 +410,7 @@ def test_non_repeatable_but_container_expects_repeatable():
 
 def test_simple_attribute_attempt_to_override_contained_item():
     with raises(TypeError) as exinfo:
-        with ConfigRoot(prod, [prod]) as cr:
+        with ConfigRoot(prod1, ef1_prod) as cr:
             ConfigItem()
             errorline = lineno() + 1
             cr.ConfigItem(prod="hello")
@@ -350,7 +420,7 @@ def test_simple_attribute_attempt_to_override_contained_item():
 
 def test_repeated_non_repeatable_item():
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod]) as cr:
+        with ConfigRoot(prod1, ef1_prod) as cr:
             ConfigItem()
             errorline = lineno() + 1
             ConfigItem()
@@ -360,21 +430,24 @@ def test_repeated_non_repeatable_item():
 
 def test_nested_repeatable_items_with_repeated_name():
     with raises(ConfigException) as exinfo:
-        with project(prod, [prod]):
+        with project(prod1, ef1_prod):
             RepeatableItem(id='my_name')
             RepeatableItem(id='my_name')
 
     assert exinfo.value.message == "Re-used id/name 'my_name' in nested objects"
 
 
-_value_defined_through_multiple_groups_expected = """A value is already specified for: Env('dev2ct') from group EnvGroup('g_dev_overlap') {
-     Env('dev2ct')
-}=(3, ('fake_dir/multiconf_definition_errors_test.py', 999)), previous value: EnvGroup('g_dev2') {
+_value_defined_through_two_groups_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
+ConfigError: Value for env 'dev2ct' is specified more than once, with no single most specific group or direct env:
+value: 2, from: EnvGroup('g_dev2') {
      Env('dev2ct'),
      Env('dev2st')
-}=(2, ('fake_dir/multiconf_definition_errors_test.py', 999))"""
+}
+value: 3, from: EnvGroup('g_dev_overlap') {
+     Env('dev2ct')
+}"""
 
-_value_defined_through_multiple_groups_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_value_defined_through_two_groups_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
     "env": {
         "__class__": "Env", 
@@ -383,29 +456,61 @@ _value_defined_through_multiple_groups_expected_ex = """There were 1 errors when
     "a": 1
 }"""
 
-def test_value_defined_through_multiple_groups(capsys):
+def test_value_defined_through_two_groups(capsys):
     with raises(ConfigException) as exinfo:
-        g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct)
-
-        with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
+        with ConfigRoot(prod3, ef3_dev_prod) as cr:
             errorline = lineno() + 1
-            cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
+            cr.setattr('a', default=7, prod=1, g_dev2=2, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_tuple(serr) == ce(errorline, _value_defined_through_multiple_groups_expected)
-    assert replace_ids(exinfo.value.message, False) == _value_defined_through_multiple_groups_expected_ex
+    print serr
+    assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _value_defined_through_two_groups_expected % dict(line=errorline)
+    assert replace_ids(exinfo.value.message, False) == _value_defined_through_two_groups_expected_ex
 
 
-def test_value_defined_through_multiple_groups2(capsys):
+_value_defined_through_three_groups_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
+ConfigError: Value for env 'dev2ct' is specified more than once, with no single most specific group or direct env:
+value: 2, from: EnvGroup('g_dev2') {
+     Env('dev2ct'),
+     Env('dev2st')
+}
+value: 3, from: EnvGroup('g_dev_overlap1') {
+     Env('dev2ct')
+}
+value: 7, from: EnvGroup('g_dev_overlap2') {
+     Env('dev2ct')
+}"""
+
+_value_defined_through_three_groups_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "env": {
+        "__class__": "Env", 
+        "name": "prod"
+    }, 
+    "a": 1
+}"""
+
+def test_value_defined_through_three_groups(capsys):
     with raises(ConfigException) as exinfo:
-        g_dev_overlap = ef.EnvGroup('g_dev_overlap', dev2ct, dev3ct)
-
-        with ConfigRoot(prod, [prod, g_dev2, g_dev_overlap]) as cr:
+        with ConfigRoot(prod5, ef5_dev_prod) as cr:
             errorline = lineno() + 1
-            cr.setattr('a', prod=1, g_dev2=2, g_dev_overlap=3)
+            cr.setattr('a', g_dev_overlap2=7, default=7, prod=1, g_dev2=2, g_dev_overlap1=3)
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_tuple(serr) == ce(errorline, _p_expected)
+    print serr
+    assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _value_defined_through_three_groups_expected % dict(line=errorline)
+    assert replace_ids(exinfo.value.message, False) == _value_defined_through_three_groups_expected_ex
+
+
+def test_two_values_defined_through_two_groups(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod4, ef4_dev_prod) as cr:
+            errorline = lineno() + 1
+            cr.setattr('a', prod=1, dev3st=14, pp=33, g_dev2=2, g_dev3=12, g_dev_overlap=3)
+
+    _sout, serr = capsys.readouterr()
+    print _sout, serr
+    assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _p_expected.strip() % dict(line=errorline)
     assert replace_ids(exinfo.value.message, False) == _p_expected_ex
 
 
@@ -422,7 +527,7 @@ _assigning_owerwrites_attribute_root_expected_ex = _assigning_owerwrites_attribu
 
 def test_assigning_owerwrites_attribute_root(capsys):
     with raises(ConfigException) as exinfo:
-        with project(prod, [prod]) as cr:
+        with project(prod1, ef1_prod) as cr:
             cr.setattr('a', prod=1)
             errorline = lineno() + 1
             cr.a = 2
@@ -439,7 +544,7 @@ _assigning_owerwrites_attribute_nested_item_expected_ex = _assigning_owerwrites_
 
 def test_assigning_owerwrites_attribute_nested_item(capsys):
     with raises(ConfigException) as exinfo:
-        with project(prod, [prod]) as cr:
+        with project(prod1, ef1_prod):
             with ConfigItem() as ci:
                 ci.setattr('a', prod=1)
                 errorline = lineno() + 1
@@ -464,7 +569,7 @@ _group_for_selected_env_expected = """project: env must be instance of 'Env'; fo
 
 def test_using_group_for_selected_env():
     with raises(ConfigException) as exinfo:
-        project(g_dev3, [g_dev3])
+        project(g_dev33, ef3_dev_prod)
 
     assert exinfo.value.message == _group_for_selected_env_expected
 
@@ -483,7 +588,7 @@ def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_i
             def build(self):
                 raise Exception("in build")
 
-        with root(prod, [prod, pp], a=0):
+        with root(prod2, ef2_pp_prod, a=0):
             with inner(id='n1', b=1):
                 raise Exception("in with")
 
@@ -503,7 +608,7 @@ def test_double_error_for_configroot(capsys):
         class root(ConfigRoot):
             pass
 
-        with root(prod, [prod]):
+        with root(prod1, ef1_prod):
             raise Exception("Error in root with block")
 
     _sout, serr = capsys.readouterr()
@@ -526,7 +631,7 @@ def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
 
 def test_root_attribute_exception_in_with_block():
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, [prod, pp]):
+        with ConfigRoot(prod2, ef2_pp_prod):
             raise Exception("Error in root with block")
 
     assert exinfo.value.message == "Error in root with block"
@@ -546,7 +651,7 @@ def test_error_freezing_previous_sibling__build(capsys):
             raise Exception("Error in build")
 
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, [prod, pp]) as cr:
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
             inner()
             # It would be nice if errorline would be previous line, but that is not really possible
             errorline = lineno() + 1
@@ -563,7 +668,7 @@ def test_error_freezing_previous_sibling__validation(capsys):
         pass
 
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, [prod, pp]):
+        with ConfigRoot(prod2, ef2_pp_prod):
             inner()
             # It would be nice if errorline would be previous line, but that is not really possible
             errorline = lineno() + 1
@@ -574,39 +679,31 @@ def test_error_freezing_previous_sibling__validation(capsys):
     assert exinfo.value.message == "No value given for required attributes: ['a']"
 
 
-def test_setattr_ref_declared_not_valid_env():
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, valid_envs=[prod]):
-            with ConfigItem() as it:
-                it.setattr('a', declared_not_valid_env=1)
-
-    assert exinfo.value.message == """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
-
-
-def test_setattr_ref_declared_not_valid_group():
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, valid_envs=[prod]):
-            with ConfigItem() as it:
-                it.setattr('a', declared_not_valid_group=1)
-
-    # TODO: Improve error message
-    assert exinfo.value.message == """The env Env('declared_not_valid_env') must be in the (nested) list of valid_envs [Env('prod')]"""
-
-
 def test_mc_init_override_underscore_error(capsys):
     class X(ConfigItem):
-        def __init__(self, aa=1):
-            super(X, self).__init__()
-            self.aa = aa
-
         def mc_init(self):
             self.override("_a", "Hello")
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, [prod, pp]):
+        with ConfigRoot(prod2, ef2_pp_prod):
             X()
     
     _sout, serr = capsys.readouterr()
     # TODO: missing error message
     assert replace_user_file_line_msg(serr) == ""
-    assert exinfo.value.message == """Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.setattr. Use assignment instead."""
+    assert exinfo.value.message == """Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.override. Use assignment instead."""
+
+
+def test_mc_init_override_underscore_mc_error(capsys):
+    class X(ConfigItem):
+        def mc_init(self):
+            self.override("_mca", "Hello")
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            X()
+    
+    _sout, serr = capsys.readouterr()
+    # TODO: missing error message
+    assert replace_user_file_line_msg(serr) == ""
+    assert exinfo.value.message == """Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""

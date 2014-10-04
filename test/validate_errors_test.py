@@ -18,7 +18,7 @@ def test_root_user_validate_error():
             raise Exception("Error in root validate")
 
     with raises(Exception) as exinfo:
-        with root(prod, [prod]):
+        with root(prod, ef):
             pass
 
     assert exinfo.value.message == "Error in root validate"
@@ -30,7 +30,7 @@ def test_item_user_validate_error():
             raise Exception("Error in item validate")
 
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, [prod]):
+        with ConfigRoot(prod, ef):
             item()
 
     assert exinfo.value.message == "Error in item validate"
@@ -45,7 +45,7 @@ def test_builder_user_validate_error():
             raise Exception("Error in builder validate")
 
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, [prod]):
+        with ConfigRoot(prod, ef):
             builder()
 
     assert exinfo.value.message == "Error in builder validate"

@@ -3,6 +3,6 @@
 
 # pylint: disable=W0611
 from .multiconf import ConfigRoot, ConfigBuilder, ConfigItem
-from .config_errors import ConfigException, ConfigDefinitionException, ConfigApiException, InvalidUsageException
+from .config_errors import caller_file_line, ConfigException, ConfigDefinitionException, ConfigApiException, InvalidUsageException
 from .values import MC_REQUIRED, MC_TODO
 
