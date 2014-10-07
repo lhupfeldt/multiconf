@@ -21,7 +21,7 @@ class item(ConfigItem):
 
 
 _env_factories_ef1_expected_ex = """There were 3 errors when defining attribute 'aa' on object: {
-    "__class__": "item #as: 'item', id: 0000, not-frozen", 
+    "__class__": "item #as: 'item', id: 0000, not-frozen",
     "aa": 1
 }"""
 
@@ -79,7 +79,7 @@ def test_env_factories_ef1(capsys):
 
 
 _env_factories_ef2_expected_ex = """There were 1 errors when defining attribute 'aa' on object: {
-    "__class__": "item #as: 'item', id: 0000, not-frozen", 
+    "__class__": "item #as: 'item', id: 0000, not-frozen",
     "aa": 1
 }"""
 

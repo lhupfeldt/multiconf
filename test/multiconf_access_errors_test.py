@@ -21,9 +21,9 @@ def ce(line_num, *lines):
 
 
 _access_undefined_attribute_expected_repr = """{
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
     }
 }, object of type: <class 'multiconf.multiconf.ConfigRoot'> has no attribute 'b'"""
@@ -39,11 +39,11 @@ def test_access_undefined_attribute():
 
 
 _t2_expected_repr = """{
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "bs": 4
 }, object of type: <class 'multiconf.multiconf.ConfigRoot'> has no attribute 'b', but found attribute 'bs'"""
 
@@ -95,7 +95,7 @@ def test_find_contained_in_named_as_not_found():
 
     with raises(ConfigException) as exinfo:
         cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
-    
+
     assert replace_ids(exinfo.value.message) == _find_contained_in_named_as_not_found_expected
 
 

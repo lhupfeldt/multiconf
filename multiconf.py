@@ -181,7 +181,7 @@ class _ConfigBase(object):
                                               compact=compact, property_methods=property_methods, builders=builders,
                                               warn_nesting=_warn_json_nesting, **kwargs)
 
-        return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=False, sort_keys=False, indent=4)
+        return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
 
     def __enter__(self):
         assert not self._mc_frozen

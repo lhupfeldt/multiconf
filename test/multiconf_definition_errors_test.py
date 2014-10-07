@@ -89,31 +89,31 @@ def ce(line_num, *lines):
 
 
 _e_expected = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": "hi"
 }"""
 
 
 _f_expected = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": "hello"
 }"""
 
 _h_expected = """The attribute 'a' is already fully defined"""
 _h_expected_ex = _h_expected + """ on object {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": 1
 }"""
 
@@ -136,11 +136,11 @@ _k1_expected = """'RepeatableItems': {
 _k4_expected = """'RepeatableItems': {
     "__class__": "RepeatableItems #as: 'RepeatableItems', id: 0000, not-frozen"
 } is defined as non-repeatable, but the containing object has repeatable items with the same name: {
-    "__class__": "project #as: 'project', id: 0000, not-frozen", 
+    "__class__": "project #as: 'project', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "RepeatableItems": {}
 }"""
 
@@ -167,11 +167,11 @@ value: 3, from: EnvGroup('g_dev_overlap') {
 }"""
 
 _p_expected_ex = """There were 2 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": 1
 }"""
 
@@ -255,11 +255,11 @@ def test_value_not_assigned_to_all_envs(capsys):
 
 
 _attribute_defined_with_different_types_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": 1
 }"""
 
@@ -296,7 +296,7 @@ def test_attribute_defined_with_different_types_default(capsys):
 
 
 _attribute_defined_with_different_types_item_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen", 
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
     "a": 1
 }"""
 
@@ -448,11 +448,11 @@ value: 3, from: EnvGroup('g_dev_overlap') {
 }"""
 
 _value_defined_through_two_groups_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": 1
 }"""
 
@@ -482,11 +482,11 @@ value: 7, from: EnvGroup('g_dev_overlap2') {
 }"""
 
 _value_defined_through_three_groups_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": 1
 }"""
 
@@ -516,12 +516,12 @@ def test_two_values_defined_through_two_groups(capsys):
 
 _assigning_owerwrites_attribute_root_expected = """The attribute 'a' is already fully defined"""
 _assigning_owerwrites_attribute_root_expected_ex = _assigning_owerwrites_attribute_root_expected + """ on object {
-    "__class__": "project #as: 'project', id: 0000, not-frozen", 
+    "__class__": "project #as: 'project', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "RepeatableItems": {}, 
+    },
+    "RepeatableItems": {},
     "a": 1
 }"""
 
@@ -538,7 +538,7 @@ def test_assigning_owerwrites_attribute_root(capsys):
 
 
 _assigning_owerwrites_attribute_nested_item_expected_ex = _assigning_owerwrites_attribute_root_expected + """ on object {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen", 
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
     "a": 1
 }"""
 
@@ -687,7 +687,7 @@ def test_mc_init_override_underscore_error(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod):
             X()
-    
+
     _sout, serr = capsys.readouterr()
     # TODO: missing error message
     assert replace_user_file_line_msg(serr) == ""
@@ -702,7 +702,7 @@ def test_mc_init_override_underscore_mc_error(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod):
             X()
-    
+
     _sout, serr = capsys.readouterr()
     # TODO: missing error message
     assert replace_user_file_line_msg(serr) == ""

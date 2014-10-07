@@ -21,11 +21,11 @@ prod2 = ef2_prod_dev2ct.Env('prod')
 
 
 _g_expected = """{
-    "__class__": "root #as: 'project', id: 0000", 
+    "__class__": "root #as: 'project', id: 0000",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "name": "abc"
 }"""
 

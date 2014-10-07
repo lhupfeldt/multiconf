@@ -36,25 +36,25 @@ class XChild(ConfigItem):
 
 
 _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Nested repeatable from 'build', key: 'server1', value: {
-    "__class__": "Xses #as: 'xses', id: 0000, not-frozen", 
-    "name": "server1", 
-    "server_num": 1, 
-    "something": 1, 
+    "__class__": "Xses #as: 'xses', id: 0000, not-frozen",
+    "name": "server1",
+    "server_num": 1,
+    "something": 1,
     "num_servers": 2
 } overwrites existing entry in parent: {
-    "__class__": "Root #as: 'Root', id: 0000, not-frozen", 
+    "__class__": "Root #as: 'Root', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "xses": {
         "server1": {
-            "__class__": "Xses #as: 'xses', id: 0000", 
+            "__class__": "Xses #as: 'xses', id: 0000",
             "name": "server1"
         }
-    }, 
+    },
     "XBuilder.builder.0000": {
-        "__class__": "XBuilder #as: 'XBuilder.builder.0000', id: 0000, not-frozen", 
+        "__class__": "XBuilder #as: 'XBuilder.builder.0000', id: 0000, not-frozen",
         "num_servers": 2
     }
 }"""
@@ -115,7 +115,7 @@ def test_unexpected_repeatable_child_builder():
 
 
 _unexpected_repeatable_child_nested_builders_expected_ex = """'arepeatable': {
-    "__class__": "RepItem #as: 'arepeatable', id: 0000, not-frozen", 
+    "__class__": "RepItem #as: 'arepeatable', id: 0000, not-frozen",
     "name": "a"
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ItemWithoutARepeatable'"""
 
@@ -174,7 +174,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
 
 
 _configbuilder_child_with_nested_repeatables_undeclared_in_with_expected_ex = """'x_children': {
-    "__class__": "XChild #as: 'x_children', id: 0000", 
+    "__class__": "XChild #as: 'x_children', id: 0000",
     "a": 10
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'xses'"""
 

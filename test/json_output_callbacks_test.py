@@ -15,18 +15,18 @@ prod = ef.Env('prod')
 
 
 _filter_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "b": 2, 
-        "a": 1, 
+        "__class__": "Nested",
+        "__id__": 0000,
+        "b": 2,
+        "a": 1,
         "a #calculated": true
     }
 }"""
@@ -52,23 +52,23 @@ def test_json_dump_user_defined_attribute_filter():
 
 
 _json_fallback_handler_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "handled_non_item": [
-        1, 
+        1,
         2
-    ], 
-    "unhandled_non_item": "__json_error__ # don't know how to handle obj of type: <class 'multiconf.test.json_output_callbacks_test.UnHandledNonItem'>", 
+    ],
+    "unhandled_non_item": "__json_error__ # don't know how to handle obj of type: <class 'multiconf.test.json_output_callbacks_test.UnHandledNonItem'>",
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "b": 2, 
-        "a": 1, 
+        "__class__": "Nested",
+        "__id__": 0000,
+        "b": 2,
+        "a": 1,
         "a #calculated": true
     }
 }"""
@@ -101,20 +101,20 @@ def test_json_fallback_handler():
 
 
 _json_fallback_handler_iterable_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "handled_non_items": [
         [
-            1, 
+            1,
             7
-        ], 
+        ],
         [
-            2, 
+            2,
             7
         ]
     ]
@@ -138,20 +138,20 @@ def test_json_fallback_handler_iterable():
 
 
 _json_equivalent_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "handled_non_item": {
-        "a": 1, 
+        "a": 1,
         "b": "Hi"
-    }, 
+    },
     "someitem": {
-        "__class__": "Item", 
-        "__id__": 0000, 
+        "__class__": "Item",
+        "__id__": 0000,
         "a": 7
     }
 }"""

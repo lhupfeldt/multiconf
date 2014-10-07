@@ -36,11 +36,11 @@ def cw(line_num, *lines):
 _attribute_mc_required_expected = """Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')"""
 
 _attribute_mc_required_env_expected_ex = """There were %(num_errors)s errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": "MC_REQUIRED"
 }"""
 
@@ -75,11 +75,11 @@ def test_attribute_mc_required_override_env(capsys):
 
 
 _attribute_mc_required_default_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": "MC_REQUIRED"
 }"""
 
@@ -96,7 +96,7 @@ def test_attribute_mc_required_default(capsys):
 
 
 _attribute_mc_required_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen", 
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
     "a": "MC_REQUIRED"
 }"""
 
@@ -113,11 +113,11 @@ def test_attribute_mc_required_init(capsys):
 
 
 _attribute_mc_required_other_env_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": "hi"
 }"""
 
@@ -134,11 +134,11 @@ def test_attribute_mc_required_other_env(capsys):
 
 
 _attribute_mc_required_other_env_different_types_expected_ex = """There were 2 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": "hi"
 }"""
 
@@ -177,11 +177,11 @@ _attribute_mc_todo_other_env_expected = """Attribute: 'a' MC_TODO did not receiv
 # MC_TODO - Not Allowed for Current Env
 
 _attribute_mc_todo_env_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": "MC_TODO"
 }"""
 
@@ -199,11 +199,11 @@ def test_attribute_mc_todo_env(capsys, allow_todo):
 
 
 _attribute_mc_todo_default_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": "MC_TODO"
 }"""
 
@@ -220,7 +220,7 @@ def test_attribute_mc_todo_default(capsys, allow_todo):
 
 
 _attribute_mc_todo_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen", 
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
     "a": "MC_TODO"
 }"""
 
@@ -238,11 +238,11 @@ def test_attribute_mc_todo_init(capsys, allow_todo):
 
 
 _attribute_mc_required_mc_todo_different_types_expected_ex = """There were 3 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "a": "MC_TODO"
 }"""
 
@@ -271,11 +271,11 @@ def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
 # MC_TODO - Not Allowed for Other Envs
 
 _attribute_mc_todo_other_env_env_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "pp"
-    }, 
+    },
     "a": "hello"
 }"""
 
@@ -291,11 +291,11 @@ def test_attribute_mc_todo_other_env_env(capsys):
 
 
 _attribute_mc_todo_other_env_default_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen", 
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "pp"
-    }, 
+    },
     "a": "hello"
 }"""
 
@@ -311,7 +311,7 @@ def test_attribute_mc_todo_other_env_default(capsys):
 
 
 _attribute_mc_todo_other_env_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen", 
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
     "a": "hello"
 }"""
 

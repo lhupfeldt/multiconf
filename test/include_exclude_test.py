@@ -27,14 +27,14 @@ class item(ConfigItem):
 
 
 _include_exclude_for_configitem_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 1, 
-    "item": false, 
+    },
+    "a": 1,
+    "item": false,
     "item #Excluded: <class 'multiconf.test.include_exclude_test.item'>": true
 }"""
 
@@ -88,13 +88,13 @@ class root(ConfigRoot):
 
 
 _include_exclude_for_configitem_repeatable_expected_json = """{
-    "__class__": "root", 
-    "__id__": 0000, 
+    "__class__": "root",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "ritems": {}, 
+    },
+    "ritems": {},
     "a": 1
 }"""
 

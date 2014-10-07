@@ -133,8 +133,8 @@ def replace_ids_builder(json_string, named_as=True):
     return replace_ids(json_string, named_as)
 
 
-_compact_ids_regex = re.compile(r'("), \n *"__id__": ([0-9]+),')
-_compact_calculated_regex = re.compile(r': "?([^"]+)"?, \n *"([a-zA-Z0-9_]*) #calculated": true')
+_compact_ids_regex = re.compile(r'("),\n *"__id__": ([0-9]+),')
+_compact_calculated_regex = re.compile(r': "?([^"]+)"?,\n *"([a-zA-Z0-9_]*) #calculated": true')
 def to_compact(json_string):
     # There is no named_as in the non-compact format, just insert
     json_string = _compact_ids_regex.sub(r" #as: 'xxxx', id: \2\1,", json_string)
@@ -144,7 +144,7 @@ def to_compact(json_string):
 #    "item": false,
 #    "item #Excluded: <class 'multiconf.test.include_exclude_test.item'>": true
 
-_compact_excluded_regex = re.compile(r""": false, \n *"([a-zA-Z0-9_]*) #Excluded: <class '([.xa-zA-Z0-9_]*)'>": true""")
+_compact_excluded_regex = re.compile(r""": false,\n *"([a-zA-Z0-9_]*) #Excluded: <class '([.xa-zA-Z0-9_]*)'>": true""")
 def to_compact_excluded(json_string):
     json_string = to_compact(json_string)
     return _compact_excluded_regex.sub(r""": "false #Excluded: <class '\2'>""" + '"', json_string)

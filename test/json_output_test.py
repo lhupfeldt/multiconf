@@ -44,72 +44,72 @@ class SimpleItem(ConfigItem):
 
 
 _json_dump_simple_expected_json = """{
-    "__class__": "root", 
-    "__id__": 0000, 
+    "__class__": "root",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitems": {
         "a-level1": {
-            "__class__": "NestedRepeatable", 
-            "__id__": 0000, 
-            "id": "a-level1", 
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id": "a-level1",
             "someitems": {}
-        }, 
+        },
         "b-level1": {
-            "__class__": "NestedRepeatable", 
-            "__id__": 0000, 
-            "id": "b-level1", 
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id": "b-level1",
             "someitems": {
                 "a-level2": {
-                    "__class__": "NestedRepeatable", 
-                    "__id__": 0000, 
-                    "id": "a-level2", 
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "id": "a-level2",
                     "someitems": {}
-                }, 
+                },
                 "b-level2": {
-                    "__class__": "NestedRepeatable", 
-                    "__id__": 0000, 
-                    "id": "b-level2", 
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "id": "b-level2",
                     "someitems": {
                         "a-level3": {
-                            "__class__": "NestedRepeatable", 
-                            "__id__": 0000, 
-                            "id": "a-level3", 
+                            "__class__": "NestedRepeatable",
+                            "__id__": 0000,
+                            "id": "a-level3",
                             "someitems": {}
-                        }, 
+                        },
                         "b-level3": {
-                            "__class__": "NestedRepeatable", 
-                            "__id__": 0000, 
-                            "id": "b-level3", 
-                            "someitems": {}, 
+                            "__class__": "NestedRepeatable",
+                            "__id__": 0000,
+                            "id": "b-level3",
+                            "someitems": {},
                             "a": 1
-                        }, 
+                        },
                         "c-level3": {
-                            "__class__": "NestedRepeatable", 
-                            "__id__": 0000, 
-                            "something": 1, 
-                            "id": "c-level3", 
+                            "__class__": "NestedRepeatable",
+                            "__id__": 0000,
+                            "something": 1,
+                            "id": "c-level3",
                             "someitems": {}
                         }
                     }
-                }, 
+                },
                 "c-level2": {
-                    "__class__": "NestedRepeatable", 
-                    "__id__": 0000, 
-                    "something": 2, 
-                    "id": "c-level2", 
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "something": 2,
+                    "id": "c-level2",
                     "someitems": {}
                 }
             }
-        }, 
+        },
         "c-level1": {
-            "__class__": "NestedRepeatable", 
-            "__id__": 0000, 
-            "something": 3, 
-            "id": "c-level1", 
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "something": 3,
+            "id": "c-level1",
             "someitems": {}
         }
     }
@@ -132,48 +132,48 @@ def test_json_dump_simple():
 
 
 _json_dump_cyclic_references_in_conf_items_expected_json = """{
-    "__class__": "root", 
-    "__id__": 0000, 
+    "__class__": "root",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitems": {
         "a1": {
-            "__class__": "NestedRepeatable", 
-            "__id__": 0000, 
-            "id": "a1", 
-            "someitems": {}, 
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id": "a1",
+            "someitems": {},
             "some_value": 2
-        }, 
+        },
         "b1": {
-            "__class__": "NestedRepeatable", 
-            "__id__": 0000, 
-            "someattr": 12, 
-            "id": "b1", 
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "someattr": 12,
+            "id": "b1",
             "someitems": {
                 "a2": {
-                    "__class__": "NestedRepeatable", 
-                    "__id__": 0000, 
-                    "id": "a2", 
-                    "referenced_item": "#ref id: 0000", 
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "id": "a2",
+                    "referenced_item": "#ref id: 0000",
                     "someitems": {}
-                }, 
+                },
                 "b2": {
-                    "__class__": "NestedRepeatable", 
-                    "__id__": 0000, 
-                    "id": "b2", 
-                    "someitems": {}, 
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "id": "b2",
+                    "someitems": {},
                     "a": 1
                 }
             }
         }
-    }, 
+    },
     "anitem": {
-        "__class__": "AnXItem", 
-        "__id__": 0000, 
-        "something": 3, 
+        "__class__": "AnXItem",
+        "__id__": 0000,
+        "something": 3,
         "ref": "#ref id: 0000"
     }
 }"""
@@ -198,18 +198,18 @@ def test_json_dump_cyclic_references_in_conf_items():
 
 
 __json_dump_cyclic_references_between_conf_items_and_other_objects_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "SimpleItem", 
-        "__id__": 0000, 
-        "someattr": 12, 
-        "id": "b1", 
+        "__class__": "SimpleItem",
+        "__id__": 0000,
+        "someattr": 12,
+        "id": "b1",
         "cycl": {
             "cyclic_item_ref": "#ref id: 0000"
         }
@@ -228,17 +228,17 @@ def test_json_dump_cyclic_references_between_conf_items_and_other_objects():
 
 
 _json_dump_property_method_expected = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "m": 1, 
+        "__class__": "Nested",
+        "__id__": 0000,
+        "m": 1,
         "m #calculated": true
     }
 }"""
@@ -257,18 +257,18 @@ def test_json_dump_property_method():
 
 
 _json_dump_property_method_shadows_attribute_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "m #shadowed": 7, 
-        "m": 1, 
+        "__class__": "Nested",
+        "__id__": 0000,
+        "m #shadowed": 7,
+        "m": 1,
         "m #calculated": true
     }
 }"""
@@ -288,16 +288,16 @@ def test_json_dump_property_method_shadows_attribute():
 
 
 _json_dump_property_method_raises_InvalidUsageException_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
+        "__class__": "Nested",
+        "__id__": 0000,
         "m #invalid usage context": "InvalidUsageException('No m now',)"
     }
 }"""
@@ -316,16 +316,16 @@ def test_json_dump_property_method_raises_InvalidUsageException():
 
 
 _json_dump_property_method_raises_Exception_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
+        "__class__": "Nested",
+        "__id__": 0000,
         "'m' # json_error trying to handle property method": "Exception('Something is wrong',)"
     }
 }"""
@@ -359,17 +359,17 @@ def test_json_dump_property_method_raises_ConfigException():
 
 
 _json_dump_property_method_returns_self_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "m": "#ref self, id: 0000", 
+        "__class__": "Nested",
+        "__id__": 0000,
+        "m": "#ref self, id: 0000",
         "m #calculated": true
     }
 }"""
@@ -388,22 +388,22 @@ def test_json_dump_property_method_returns_self():
 
 
 _json_dump_property_method_returns_already_seen_conf_item_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "referenced": {
-        "__class__": "X", 
-        "__id__": 0000, 
+        "__class__": "X",
+        "__id__": 0000,
         "a": 0
-    }, 
+    },
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "other_conf_item": "#ref id: 0000", 
+        "__class__": "Nested",
+        "__id__": 0000,
+        "other_conf_item": "#ref id: 0000",
         "other_conf_item #calculated": true
     }
 }"""
@@ -427,16 +427,16 @@ def test_json_dump_property_method_returns_already_seen_conf_item():
 
 
 _json_dump_property_method_calls_json_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
+        "__class__": "Nested",
+        "__id__": 0000,
         "'other_conf_item' # json_error trying to handle property method": "NestedJsonCallError('Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?',)"
     }
 }"""
@@ -465,16 +465,16 @@ def test_json_dump_property_method_calls_json(capsys):
 
 # TODO: insert information about skipped objects into json output
 _json_dump_non_conf_item_not_json_serializable_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "SimpleItem", 
-        "__id__": 0000, 
+        "__class__": "SimpleItem",
+        "__id__": 0000,
         "b": {
             
         }
@@ -493,19 +493,19 @@ def test_json_dump_non_conf_item_not_json_serializable():
 
 
 _json_dump_non_conf_item_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "SimpleItem", 
-        "__id__": 0000, 
+        "__class__": "SimpleItem",
+        "__id__": 0000,
         "a": {
-            "__class__": "SomeClass", 
-            "__id__": 0000, 
+            "__class__": "SomeClass",
+            "__id__": 0000,
             "a": 187
         }
     }
@@ -527,15 +527,15 @@ def test_json_dump_non_conf_item():
 
 
 _json_dump_unhandled_item_function_ref_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "someitem": {
-        "__class__": "SimpleItem", 
-        "__id__": 0000, 
+        "__class__": "SimpleItem",
+        "__id__": 0000,
         "func": "__json_error__ # don't know how to handle obj of type: <type 'function'>"
     }
 }"""
@@ -551,15 +551,15 @@ def test_json_dump_unhandled_item_function_ref():
 
 
 _json_dump_iterable_expected_json = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "someitem": {
-        "__class__": "SimpleItem", 
-        "__id__": 0000, 
+        "__class__": "SimpleItem",
+        "__id__": 0000,
         "a": [
             1
         ]
@@ -578,17 +578,17 @@ def test_json_dump_iterable():
 
 
 _uplevel_ref_expected_json_output = """{
-    "__class__": "NestedRepeatable", 
-    "__id__": 0000, 
-    "c": 2, 
-    "id": "n2", 
+    "__class__": "NestedRepeatable",
+    "__id__": 0000,
+    "c": 2,
+    "id": "n2",
     "someitems": {
         "n3": {
-            "__class__": "NestedRepeatable", 
-            "__id__": 0000, 
-            "d": 3, 
-            "uplevel_ref": "#outside-ref: NestedRepeatable: id: 'n1', name: 'Number 1'", 
-            "id": "n3", 
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "d": 3,
+            "uplevel_ref": "#outside-ref: NestedRepeatable: id: 'n1', name: 'Number 1'",
+            "id": "n3",
             "someitems": {}
         }
     }
@@ -613,17 +613,17 @@ Exception: Error in dir()
 """
 
 _json_dump_dir_error_expected = """{
-    "__class__": "ConfigRoot", 
-    "__id__": 0000, 
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitem": {
-        "__class__": "Nested", 
-        "__id__": 0000, 
-        "__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included": "Exception('Error in dir()',)", 
+        "__class__": "Nested",
+        "__id__": 0000,
+        "__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included": "Exception('Error in dir()',)",
         "b": 2
     }
 }"""
@@ -652,311 +652,311 @@ def test_json_dump_dir_error(capsys):
 
 
 _json_dump_configbuilder_expected_json_full = """{
-    "__class__": "ItemWithYs", 
-    "__id__": 0000, 
+    "__class__": "ItemWithYs",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "ys": {
         "server1": {
-            "__class__": "Y", 
-            "__id__": 0000, 
-            "name": "server1", 
-            "server_num": 1, 
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server1",
+            "server_num": 1,
             "y_children": {
                 "Hugo": {
-                    "__class__": "YChild", 
-                    "__id__": 0000, 
-                    "a": 10, 
+                    "__class__": "YChild",
+                    "__id__": 0000,
+                    "a": 10,
                     "name": "Hugo"
                 }
-            }, 
+            },
             "ys": {
                 "server3": {
-                    "__class__": "Y", 
-                    "__id__": 0000, 
-                    "name": "server3", 
-                    "server_num": 3, 
+                    "__class__": "Y",
+                    "__id__": 0000,
+                    "name": "server3",
+                    "server_num": 3,
                     "y_children": {
                         "Hanna": {
-                            "__class__": "YChild", 
-                            "__id__": 0000, 
-                            "a": 11, 
+                            "__class__": "YChild",
+                            "__id__": 0000,
+                            "a": 11,
                             "name": "Hanna"
-                        }, 
+                        },
                         "Herbert": {
-                            "__class__": "YChild", 
-                            "__id__": 0000, 
-                            "a": 12, 
+                            "__class__": "YChild",
+                            "__id__": 0000,
+                            "a": 12,
                             "name": "Herbert"
                         }
-                    }, 
-                    "ys": {}, 
-                    "start": 3, 
+                    },
+                    "ys": {},
+                    "start": 3,
                     "c": 28
-                }, 
+                },
                 "server4": {
-                    "__class__": "Y", 
-                    "__id__": 0000, 
-                    "name": "server4", 
-                    "server_num": 4, 
+                    "__class__": "Y",
+                    "__id__": 0000,
+                    "name": "server4",
+                    "server_num": 4,
                     "y_children": {
-                        "Hanna": "#ref id: 0000", 
+                        "Hanna": "#ref id: 0000",
                         "Herbert": "#ref id: 0000"
-                    }, 
-                    "ys": {}, 
-                    "start": 3, 
+                    },
+                    "ys": {},
+                    "start": 3,
                     "c": 28
                 }
-            }, 
-            "start": 1, 
-            "b": 27, 
+            },
+            "start": 1,
+            "b": 27,
             "YBuilder.builder.0000": "#ref later, id: 0000"
-        }, 
+        },
         "server2": {
-            "__class__": "Y", 
-            "__id__": 0000, 
-            "name": "server2", 
-            "server_num": 2, 
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server2",
+            "server_num": 2,
             "y_children": {
                 "Hugo": "#ref id: 0000"
-            }, 
+            },
             "ys": {
-                "server3": "#ref id: 0000", 
+                "server3": "#ref id: 0000",
                 "server4": "#ref id: 0000"
-            }, 
-            "start": 1, 
-            "b": 27, 
+            },
+            "start": 1,
+            "b": 27,
             "YBuilder.builder.0000": {
-                "__class__": "YBuilder", 
-                "__id__": 0000, 
-                "start": 3, 
-                "c": 28, 
+                "__class__": "YBuilder",
+                "__id__": 0000,
+                "start": 3,
+                "c": 28,
                 "y_children": {
-                    "Hanna": "#ref id: 0000", 
+                    "Hanna": "#ref id: 0000",
                     "Herbert": "#ref id: 0000"
                 }
             }
         }
-    }, 
+    },
     "YBuilder.builder.0000": {
-        "__class__": "YBuilder", 
-        "__id__": 0000, 
-        "start": 1, 
-        "b": 27, 
+        "__class__": "YBuilder",
+        "__id__": 0000,
+        "start": 1,
+        "b": 27,
         "y_children": {
             "Hugo": "#ref id: 0000"
-        }, 
-        "YBuilder.builder.0000": "#ref id: 0000", 
+        },
+        "YBuilder.builder.0000": "#ref id: 0000",
         "ys": {
-            "server3": "#ref id: 0000", 
+            "server3": "#ref id: 0000",
             "server4": "#ref id: 0000"
         }
-    }, 
-    "aaa": 2, 
+    },
+    "aaa": 2,
     "aaa #calculated": true
 }"""
 
 _json_dump_configbuilder_expected_json_repeatable_item = """{
-    "__class__": "Y", 
-    "__id__": 0000, 
-    "name": "server2", 
-    "server_num": 2, 
+    "__class__": "Y",
+    "__id__": 0000,
+    "name": "server2",
+    "server_num": 2,
     "y_children": {
         "Hugo": {
-            "__class__": "YChild", 
-            "__id__": 0000, 
-            "a": 10, 
+            "__class__": "YChild",
+            "__id__": 0000,
+            "a": 10,
             "name": "Hugo"
         }
-    }, 
+    },
     "ys": {
         "server3": {
-            "__class__": "Y", 
-            "__id__": 0000, 
-            "name": "server3", 
-            "server_num": 3, 
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server3",
+            "server_num": 3,
             "y_children": {
                 "Hanna": {
-                    "__class__": "YChild", 
-                    "__id__": 0000, 
-                    "a": 11, 
+                    "__class__": "YChild",
+                    "__id__": 0000,
+                    "a": 11,
                     "name": "Hanna"
-                }, 
+                },
                 "Herbert": {
-                    "__class__": "YChild", 
-                    "__id__": 0000, 
-                    "a": 12, 
+                    "__class__": "YChild",
+                    "__id__": 0000,
+                    "a": 12,
                     "name": "Herbert"
                 }
-            }, 
-            "ys": {}, 
-            "start": 3, 
+            },
+            "ys": {},
+            "start": 3,
             "c": 28
-        }, 
+        },
         "server4": {
-            "__class__": "Y", 
-            "__id__": 0000, 
-            "name": "server4", 
-            "server_num": 4, 
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server4",
+            "server_num": 4,
             "y_children": {
-                "Hanna": "#ref id: 0000", 
+                "Hanna": "#ref id: 0000",
                 "Herbert": "#ref id: 0000"
-            }, 
-            "ys": {}, 
-            "start": 3, 
+            },
+            "ys": {},
+            "start": 3,
             "c": 28
         }
-    }, 
-    "start": 1, 
-    "b": 27, 
+    },
+    "start": 1,
+    "b": 27,
     "YBuilder.builder.0000": {
-        "__class__": "YBuilder", 
-        "__id__": 0000, 
-        "start": 3, 
-        "c": 28, 
+        "__class__": "YBuilder",
+        "__id__": 0000,
+        "start": 3,
+        "c": 28,
         "y_children": {
-            "Hanna": "#ref id: 0000", 
+            "Hanna": "#ref id: 0000",
             "Herbert": "#ref id: 0000"
         }
     }
 }"""
 
 _json_dump_configbuilder_dont_dump_expected_json_full = """{
-    "__class__": "ItemWithYs", 
-    "__id__": 0000, 
+    "__class__": "ItemWithYs",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
+    },
     "ys": {
         "server1": {
-            "__class__": "Y", 
-            "__id__": 0000, 
-            "name": "server1", 
-            "server_num": 1, 
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server1",
+            "server_num": 1,
             "y_children": {
                 "Hugo": {
-                    "__class__": "YChild", 
-                    "__id__": 0000, 
-                    "a": 10, 
+                    "__class__": "YChild",
+                    "__id__": 0000,
+                    "a": 10,
                     "name": "Hugo"
                 }
-            }, 
+            },
             "ys": {
                 "server3": {
-                    "__class__": "Y", 
-                    "__id__": 0000, 
-                    "name": "server3", 
-                    "server_num": 3, 
+                    "__class__": "Y",
+                    "__id__": 0000,
+                    "name": "server3",
+                    "server_num": 3,
                     "y_children": {
                         "Hanna": {
-                            "__class__": "YChild", 
-                            "__id__": 0000, 
-                            "a": 11, 
+                            "__class__": "YChild",
+                            "__id__": 0000,
+                            "a": 11,
                             "name": "Hanna"
-                        }, 
+                        },
                         "Herbert": {
-                            "__class__": "YChild", 
-                            "__id__": 0000, 
-                            "a": 12, 
+                            "__class__": "YChild",
+                            "__id__": 0000,
+                            "a": 12,
                             "name": "Herbert"
                         }
-                    }, 
-                    "ys": {}, 
-                    "start": 3, 
+                    },
+                    "ys": {},
+                    "start": 3,
                     "c": 28
-                }, 
+                },
                 "server4": {
-                    "__class__": "Y", 
-                    "__id__": 0000, 
-                    "name": "server4", 
-                    "server_num": 4, 
+                    "__class__": "Y",
+                    "__id__": 0000,
+                    "name": "server4",
+                    "server_num": 4,
                     "y_children": {
-                        "Hanna": "#ref id: 0000", 
+                        "Hanna": "#ref id: 0000",
                         "Herbert": "#ref id: 0000"
-                    }, 
-                    "ys": {}, 
-                    "start": 3, 
+                    },
+                    "ys": {},
+                    "start": 3,
                     "c": 28
                 }
-            }, 
-            "start": 1, 
+            },
+            "start": 1,
             "b": 27
-        }, 
+        },
         "server2": {
-            "__class__": "Y", 
-            "__id__": 0000, 
-            "name": "server2", 
-            "server_num": 2, 
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server2",
+            "server_num": 2,
             "y_children": {
                 "Hugo": "#ref id: 0000"
-            }, 
+            },
             "ys": {
-                "server3": "#ref id: 0000", 
+                "server3": "#ref id: 0000",
                 "server4": "#ref id: 0000"
-            }, 
-            "start": 1, 
+            },
+            "start": 1,
             "b": 27
         }
-    }, 
-    "aaa": 2, 
+    },
+    "aaa": 2,
     "aaa #calculated": true
 }"""
 
 _json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
-    "__class__": "Y", 
-    "__id__": 0000, 
-    "name": "server2", 
-    "server_num": 2, 
+    "__class__": "Y",
+    "__id__": 0000,
+    "name": "server2",
+    "server_num": 2,
     "y_children": {
         "Hugo": {
-            "__class__": "YChild", 
-            "__id__": 0000, 
-            "a": 10, 
+            "__class__": "YChild",
+            "__id__": 0000,
+            "a": 10,
             "name": "Hugo"
         }
-    }, 
+    },
     "ys": {
         "server3": {
-            "__class__": "Y", 
-            "__id__": 0000, 
-            "name": "server3", 
-            "server_num": 3, 
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server3",
+            "server_num": 3,
             "y_children": {
                 "Hanna": {
-                    "__class__": "YChild", 
-                    "__id__": 0000, 
-                    "a": 11, 
+                    "__class__": "YChild",
+                    "__id__": 0000,
+                    "a": 11,
                     "name": "Hanna"
-                }, 
+                },
                 "Herbert": {
-                    "__class__": "YChild", 
-                    "__id__": 0000, 
-                    "a": 12, 
+                    "__class__": "YChild",
+                    "__id__": 0000,
+                    "a": 12,
                     "name": "Herbert"
                 }
-            }, 
-            "ys": {}, 
-            "start": 3, 
+            },
+            "ys": {},
+            "start": 3,
             "c": 28
-        }, 
+        },
         "server4": {
-            "__class__": "Y", 
-            "__id__": 0000, 
-            "name": "server4", 
-            "server_num": 4, 
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server4",
+            "server_num": 4,
             "y_children": {
-                "Hanna": "#ref id: 0000", 
+                "Hanna": "#ref id: 0000",
                 "Herbert": "#ref id: 0000"
-            }, 
-            "ys": {}, 
-            "start": 3, 
+            },
+            "ys": {},
+            "start": 3,
             "c": 28
         }
-    }, 
-    "start": 1, 
+    },
+    "start": 1,
     "b": 27
 }"""
 
@@ -1018,30 +1018,30 @@ class _NamedNestedRepeatable(ConfigItem):
 
 # TODO: Not absolutely correct output (not outside ref)
 _json_dump_property_method_returns_later_confitem_same_level_expected_json = """{
-    "__class__": "root", 
-    "__id__": 0000, 
+    "__class__": "root",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitems": {
         "one": {
-            "__class__": "NamedNestedRepeatable", 
-            "__id__": 0000, 
-            "name": "one", 
-            "someitems": {}, 
-            "x": 3, 
-            "m": "#ref later, id: 0000", 
+            "__class__": "NamedNestedRepeatable",
+            "__id__": 0000,
+            "name": "one",
+            "someitems": {},
+            "x": 3,
+            "m": "#ref later, id: 0000",
             "m #calculated": true
-        }, 
+        },
         "two": {
-            "__class__": "NamedNestedRepeatable", 
-            "__id__": 0000, 
-            "name": "two", 
-            "someitems": {}, 
-            "x": 3, 
-            "m": "#ref self, id: 0000", 
+            "__class__": "NamedNestedRepeatable",
+            "__id__": 0000,
+            "name": "two",
+            "someitems": {},
+            "x": 3,
+            "m": "#ref self, id: 0000",
             "m #calculated": true
         }
     }
@@ -1061,48 +1061,48 @@ def test_json_dump_property_method_returns_later_confitem_same_level():
 
 
 _json_dump_property_method_returns_later_confitem_list_same_level_expected_json = """{
-    "__class__": "root", 
-    "__id__": 0000, 
+    "__class__": "root",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitems": {
         "one": {
-            "__class__": "NamedNestedRepeatable", 
-            "__id__": 0000, 
-            "name": "one", 
-            "someitems": {}, 
-            "x": 3, 
+            "__class__": "NamedNestedRepeatable",
+            "__id__": 0000,
+            "name": "one",
+            "someitems": {},
+            "x": 3,
             "m": [
-                "#ref later, id: 0000", 
+                "#ref later, id: 0000",
                 "#ref later, id: 0000"
-            ], 
+            ],
             "m #calculated": true
-        }, 
+        },
         "two": {
-            "__class__": "NamedNestedRepeatable", 
-            "__id__": 0000, 
-            "name": "two", 
-            "someitems": {}, 
-            "x": 3, 
+            "__class__": "NamedNestedRepeatable",
+            "__id__": 0000,
+            "name": "two",
+            "someitems": {},
+            "x": 3,
             "m": [
-                "#ref self, id: 0000", 
+                "#ref self, id: 0000",
                 "#ref later, id: 0000"
-            ], 
+            ],
             "m #calculated": true
-        }, 
+        },
         "three": {
-            "__class__": "NamedNestedRepeatable", 
-            "__id__": 0000, 
-            "name": "three", 
-            "someitems": {}, 
-            "x": 3, 
+            "__class__": "NamedNestedRepeatable",
+            "__id__": 0000,
+            "name": "three",
+            "someitems": {},
+            "x": 3,
             "m": [
-                "#ref id: 0000", 
+                "#ref id: 0000",
                 "#ref self, id: 0000"
-            ], 
+            ],
             "m #calculated": true
         }
     }
@@ -1137,48 +1137,48 @@ def test_json_dump_property_method_returns_later_confitem_tuple_same_level():
 
 
 _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json = """{
-    "__class__": "root", 
-    "__id__": 0000, 
+    "__class__": "root",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
+    },
+    "a": 0,
     "someitems": {
         "one": {
-            "__class__": "NamedNestedRepeatable", 
-            "__id__": 0000, 
-            "name": "one", 
-            "someitems": {}, 
-            "x": 3, 
+            "__class__": "NamedNestedRepeatable",
+            "__id__": 0000,
+            "name": "one",
+            "someitems": {},
+            "x": 3,
             "m": {
-                "a": "#ref later, id: 0000", 
+                "a": "#ref later, id: 0000",
                 "b": "#ref later, id: 0000"
-            }, 
+            },
             "m #calculated": true
-        }, 
+        },
         "two": {
-            "__class__": "NamedNestedRepeatable", 
-            "__id__": 0000, 
-            "name": "two", 
-            "someitems": {}, 
-            "x": 3, 
+            "__class__": "NamedNestedRepeatable",
+            "__id__": 0000,
+            "name": "two",
+            "someitems": {},
+            "x": 3,
             "m": {
-                "a": "#ref self, id: 0000", 
+                "a": "#ref self, id: 0000",
                 "b": "#ref later, id: 0000"
-            }, 
+            },
             "m #calculated": true
-        }, 
+        },
         "three": {
-            "__class__": "NamedNestedRepeatable", 
-            "__id__": 0000, 
-            "name": "three", 
-            "someitems": {}, 
-            "x": 3, 
+            "__class__": "NamedNestedRepeatable",
+            "__id__": 0000,
+            "name": "three",
+            "someitems": {},
+            "x": 3,
             "m": {
-                "a": "#ref id: 0000", 
+                "a": "#ref id: 0000",
                 "b": "#ref self, id: 0000"
-            }, 
+            },
             "m #calculated": true
         }
     }
@@ -1262,33 +1262,33 @@ def test_json_dump_with_builders_containment_check():
 
 
 _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 = """{
-    "__class__": "root", 
-    "__id__": 0000, 
+    "__class__": "root",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
-    "someitems": {}, 
+    },
+    "a": 0,
+    "someitems": {},
     "McWithNestedClass": {
-        "__class__": "McWithNestedClass", 
-        "__id__": 0000, 
+        "__class__": "McWithNestedClass",
+        "__id__": 0000,
         "TTT": "<class 'multiconf.test.json_output_test.TTT'>"
     }
 }"""
 
 _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 = """{
-    "__class__": "root", 
-    "__id__": 0000, 
+    "__class__": "root",
+    "__id__": 0000,
     "env": {
-        "__class__": "Env", 
+        "__class__": "Env",
         "name": "prod"
-    }, 
-    "a": 0, 
-    "someitems": {}, 
+    },
+    "a": 0,
+    "someitems": {},
     "ConfigItem": {
-        "__class__": "ConfigItem", 
-        "__id__": 0000, 
+        "__class__": "ConfigItem",
+        "__id__": 0000,
         "a": "<class 'multiconf.test.json_output_test.NonMcWithNestedClass'>"
     }
 }"""
