@@ -47,6 +47,8 @@ class ConfigItemEncoder(object):
         self.start_obj = None
         self.builders = builders
         self.warn_nesting = warn_nesting
+        self.num_errors = 0
+        self.num_invalid_usages = 0    
 
     def _class_dict(self, obj):
         if self.compact:
@@ -125,6 +127,7 @@ class ConfigItemEncoder(object):
                 try:
                     entries = dir(obj)
                 except Exception as ex:
+                    self.num_errors += 1
                     print("Error in json generation:", file=sys.stderr)
                     traceback.print_exception(*sys.exc_info())
                     dd['__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included'] = repr(ex)
@@ -170,9 +173,11 @@ class ConfigItemEncoder(object):
                     try:
                         val = getattr(obj, key)
                     except InvalidUsageException as ex:
+                        self.num_invalid_usages += 1
                         dd[key + ' #invalid usage context'] = repr(ex)
                         continue
                     except Exception as ex:
+                        self.num_errors += 1
                         print("Error in json generation:", file=sys.stderr)
                         traceback.print_exception(*sys.exc_info())
                         dd[repr(key) + ' # json_error trying to handle property method'] = repr(ex)
@@ -252,6 +257,7 @@ class ConfigItemEncoder(object):
                         dd[key], _dumped = self._check_already_dumped(val)
                 return dd
 
+            self.num_errors += 1
             return "__json_error__ # don't know how to handle obj of type: " + repr(type(obj))
 
         finally:

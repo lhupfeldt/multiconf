@@ -340,7 +340,7 @@ def test_json_dump_property_method_raises_Exception():
     with ConfigRoot(prod, ef, a=0) as cr:
         Nested()
 
-    compare_json(cr, _json_dump_property_method_raises_Exception_expected_json)
+    compare_json(cr, _json_dump_property_method_raises_Exception_expected_json, expect_num_errors=1)
 
 
 _e2b_expected_json_output = _json_dump_property_method_raises_Exception_expected_json.replace('Exception', 'ConfigException')
@@ -355,7 +355,7 @@ def test_json_dump_property_method_raises_ConfigException():
     with ConfigRoot(prod, ef, a=0) as cr:
         Nested()
 
-    compare_json(cr, _e2b_expected_json_output)
+    compare_json(cr, _e2b_expected_json_output, expect_num_errors=1)
 
 
 _json_dump_property_method_returns_self_expected_json = """{
@@ -457,7 +457,7 @@ def test_json_dump_property_method_calls_json(capsys):
     with ConfigRoot(prod, ef, a=0) as cr:
         Nested()
 
-    compare_json(cr, _json_dump_property_method_calls_json_expected_json)
+    compare_json(cr, _json_dump_property_method_calls_json_expected_json, expect_num_errors=1)
     _sout, serr = capsys.readouterr()
     assert "Nested json calls detected" in serr
     assert _json_dump_property_method_calls_json_expected_stderr in replace_ids(serr)
@@ -547,7 +547,7 @@ def test_json_dump_unhandled_item_function_ref():
     with ConfigRoot(prod, ef) as cr:
         SimpleItem(func=fff)
 
-    compare_json(cr, _json_dump_unhandled_item_function_ref_expected_json)
+    compare_json(cr, _json_dump_unhandled_item_function_ref_expected_json, expect_num_errors=1)
 
 
 _json_dump_iterable_expected_json = """{
@@ -644,11 +644,10 @@ def test_json_dump_dir_error(capsys):
         Nested(b=2)
 
     cr.json()
-    mc_regexp = re.compile('json_output.py", line [0-9]*')
     _sout, serr = capsys.readouterr()
     # pylint: disable=W0212
     assert replace_user_file_line_msg(replace_multiconf_file_line_msg(serr), cr.someitem._errorline) == _json_dump_dir_error_expected_stderr % cr.someitem._errorline
-    compare_json(cr, _json_dump_dir_error_expected)
+    compare_json(cr, _json_dump_dir_error_expected, expect_num_errors=1)
 
 
 _json_dump_configbuilder_expected_json_full = """{
@@ -1335,3 +1334,36 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
             ci.a = NonMcWithNestedClass
 
     compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2)
+
+
+_json_dump_multiple_errors_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "someitem": {
+        "__class__": "SimpleItem",
+        "__id__": 0000,
+        "func": "__json_error__ # don't know how to handle obj of type: <type 'function'>",
+        "someitem": {
+            "__class__": "SimpleItem",
+            "__id__": 0000,
+            "func": "__json_error__ # don't know how to handle obj of type: <type 'function'>"
+        }
+    }
+}"""
+
+def test_json_dump_multiple_errors():
+    def fff():
+        pass
+
+    def ggg():
+        pass
+
+    with ConfigRoot(prod, ef) as cr:
+        with SimpleItem(func=fff):
+            SimpleItem(func=ggg)
+
+    compare_json(cr, _json_dump_multiple_errors_expected_json, expect_num_errors=2)

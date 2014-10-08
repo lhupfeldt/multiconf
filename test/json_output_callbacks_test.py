@@ -97,7 +97,7 @@ def test_json_fallback_handler():
         cr.unhandled_non_item = UnHandledNonItem()
         Nested(b=2)
 
-    compare_json(cr, _json_fallback_handler_expected_json)
+    compare_json(cr, _json_fallback_handler_expected_json, expect_num_errors=1)
 
 
 _json_fallback_handler_iterable_expected_json = """{

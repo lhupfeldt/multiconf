@@ -54,6 +54,7 @@ class _ConfigBase(object):
         self._mc_previous_child = None
         self._mc_is_excluded = False
         self._mc_included_envs_mask = _mc_root_conf._mc_env_factory._all_envs_mask
+        self._mc_json_errors = 0
 
         # Prepare attributes with default values
         file_name, line_num = find_user_file_line(up_level_start=3)
@@ -177,7 +178,16 @@ class _ConfigBase(object):
         fallback_callable = self._mc_find_json_fallback_callable()
         encoder = ConfigItemEncoder(filter_callable=filter_callable, fallback_callable=fallback_callable,
                                     compact=compact, property_methods=property_methods, builders=builders, warn_nesting=_warn_json_nesting)
-        return json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
+        json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
+        self._mc_json_errors = encoder.num_errors
+        return json_str
+
+    def num_json_errors(self):
+        """
+        Returns number of errors encountered when generating json
+        Return None if json() has not been called
+        """
+        return self._mc_json_errors
 
     def __enter__(self):
         assert not self._mc_frozen
@@ -416,13 +426,13 @@ class _ConfigBase(object):
                 for other_eg in seen_egs.values():
                     more_specific = eg in other_eg
                     less_specific = other_eg in eg
-        
+
                     ambiguous = 0x0
                     if not (less_specific or more_specific):
                         ambiguous = eg.mask & other_eg.mask
                         if ambiguous:
                             all_ambiguous[(other_eg, eg)] = ambiguous
-    
+
                 seen_egs[eg_name] = eg
             except EnvException as ex:
                 num_errors = _error_msg(num_errors, ex.message, file_name=mc_caller_file_name, line_num=mc_caller_line_num)

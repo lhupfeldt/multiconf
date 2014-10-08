@@ -15,7 +15,8 @@ from .utils import replace_ids, replace_ids_builder, to_compact, to_compact_excl
 from .check_containment import check_containment
 
 
-def compare_json(item, expected_json, replace_builders=False, dump_builders=True, test_decode=False, test_containment=True, test_excluded=False):
+def compare_json(item, expected_json, replace_builders=False, dump_builders=True,
+                 test_decode=False, test_containment=True, test_excluded=False, expect_num_errors=0):
     try:
         compact_json = item.json(compact=True, builders=dump_builders)
         full_json = item.json(builders=dump_builders)
@@ -34,6 +35,8 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
             assert compact_json_replaced == compact_expected_json
         assert full_json_replaced == expected_json
 
+        assert item.num_json_errors() == expect_num_errors, \
+            "item.num_json_errors(): " + repr(item.num_json_errors()) + ", expect_num_errors: " + repr(expect_num_errors)
     except AssertionError:
         print('--- full ids replaced ---')
         print(full_json_replaced)
