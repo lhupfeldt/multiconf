@@ -605,7 +605,7 @@ def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
 
 _json_dump_dir_error_expected_stderr = """Error in json generation:
 Traceback (most recent call last):
-  File "fake_multiconf_dir/json_output.py", line 999, in default
+  File "fake_multiconf_dir/json_output.py", line 999, in __call__
     entries = dir(obj)
   File "fake_dir/json_output_test.py", line %s, in __dir__
     raise Exception('Error in dir()')

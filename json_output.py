@@ -5,7 +5,6 @@ from __future__ import print_function
 
 import sys, threading, traceback
 from collections import OrderedDict
-import json
 import types
 
 import multiconf, envs
@@ -21,11 +20,11 @@ def _class_tuple(obj, obj_info=""):
     return ('__class__', obj.__class__.__name__ + obj_info)
 
 
-class ConfigItemEncoder(json.JSONEncoder):
+class ConfigItemEncoder(object):
     recursion_check = threading.local()
     recursion_check.in_default = None
 
-    def __init__(self, filter_callable=None, fallback_callable=None, compact=False, property_methods=True, builders=False, warn_nesting=False, **kwargs):
+    def __init__(self, filter_callable=None, fallback_callable=None, compact=False, property_methods=True, builders=False, warn_nesting=False):
         """
         filter_callable: func(obj, key, value)
         - filter_callable is called for each key/value pair of attributes on each ConfigItem obj.
@@ -39,7 +38,6 @@ class ConfigItemEncoder(json.JSONEncoder):
 
         property_methods: call @property methods and insert values in output, including a comment that the value is calculated.
         """
-        super(ConfigItemEncoder, self).__init__(**kwargs)
         self.filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'frozen')
         self.user_filter_callable = filter_callable
         self.user_fallback_callable = fallback_callable
@@ -99,16 +97,7 @@ class ConfigItemEncoder(json.JSONEncoder):
 
         return child_obj
 
-    def encode(self, obj, **kwargs):
-        #print(self.__class__.__name__, "encode: type(obj)", type(obj), kwargs)
-        return super(ConfigItemEncoder, self).encode(obj, **kwargs)
-
-    def iterencode(self, obj, **kwargs):
-        #print(self.__class__.__name__, "iterencode: type(obj)", type(obj), kwargs)
-        return super(ConfigItemEncoder, self).iterencode(obj, **kwargs)
-
-    # pylint: disable=E0202
-    def default(self, obj):
+    def __call__(self, obj):
         if ConfigItemEncoder.recursion_check.in_default:
             in_default = ConfigItemEncoder.recursion_check.in_default
             ConfigItemEncoder.recursion_check.in_default = None

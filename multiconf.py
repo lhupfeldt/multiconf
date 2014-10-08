@@ -15,7 +15,7 @@ from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
 from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, _line_msg as line_msg
 from .config_errors import _error_msg, _warning_msg, _error_type_msg
-from . import json_output
+from .json_output import ConfigItemEncoder
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
 _warn_json_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
@@ -175,13 +175,9 @@ class _ConfigBase(object):
         """See json_output.ConfigItemEncoder for parameters"""
         filter_callable = self._mc_find_json_filter_callable()
         fallback_callable = self._mc_find_json_fallback_callable()
-        class Encoder(json_output.ConfigItemEncoder):
-            def __init__(self, **kwargs):
-                super(Encoder, self).__init__(filter_callable=filter_callable, fallback_callable=fallback_callable,
-                                              compact=compact, property_methods=property_methods, builders=builders,
-                                              warn_nesting=_warn_json_nesting, **kwargs)
-
-        return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
+        encoder = ConfigItemEncoder(filter_callable=filter_callable, fallback_callable=fallback_callable,
+                                    compact=compact, property_methods=property_methods, builders=builders, warn_nesting=_warn_json_nesting)
+        return json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
 
     def __enter__(self):
         assert not self._mc_frozen
