@@ -37,7 +37,7 @@ class ConfigAttributeError(AttributeError):
     def message(self):
         error_message = "%(mc_object_repr_and_type)s has no attribute %(attr_name)s"
         repeatable_attr_name = self.attr_name + 's'
-        if self.mc_object._mc_attributes.get(repeatable_attr_name):
+        if object.__getattribute__(self.mc_object, '_mc_attributes').get(repeatable_attr_name):
             error_message += ", but found attribute " + repr(repeatable_attr_name)
         try:
             arg_reprs = dict(mc_object_repr_and_type=repr(self.mc_object) + ", object of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))

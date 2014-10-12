@@ -22,9 +22,7 @@ prod2 = ef2_prod_pp.Env('prod')
 
 _expected_ex_msg = "An error was detected trying to get attribute '%s' on class 'inner'"
 _extra_stderr = """
-    - Attributes starting with '_mc' are reserved for internal MultiConf usage. You probably tried to use the
-      MultiConf API in a derived class __init__ before calling the parent class __init__"""
-
+    - You did not initailize the parent class (parent __init__ method has not been called)."""
 
 def capie(line_num, *lines):
     return api_error(__file__, line_num, *lines)
@@ -56,7 +54,7 @@ def test_find_contained_in_called_before_parent___init__(capsys):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
-    eex = _expected_ex_msg % '_mc_contained_in'
+    eex = _expected_ex_msg % 'find_contained_in'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
     assert exinfo.value.message == eex
 
@@ -77,7 +75,7 @@ def test_property_method_called_before_parent___init__(capsys):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
-    eex = _expected_ex_msg % '_mc_root_conf'
+    eex = _expected_ex_msg % 'env'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
     assert exinfo.value.message == eex
 
@@ -97,7 +95,7 @@ def test_undefined_method_called_before_parent___init__(capsys):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
-    eex = _expected_ex_msg % '_mc_attributes'
+    eex = _expected_ex_msg % 'ttt'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
     assert exinfo.value.message == eex
 
@@ -117,7 +115,7 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
-    eex = _expected_ex_msg % '_mc_attributes'
+    eex = _expected_ex_msg % 'ttt'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
     assert exinfo.value.message == eex
 

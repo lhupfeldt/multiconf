@@ -25,7 +25,7 @@ def where_from_name(where_from):
     
 
 class Attribute(object):
-    def __init__(self, name):
+    def __init__(self, name, override_method=False):
         self.name = name
         self._value = _MC_NO_VALUE
         self.envs_set_mask = 0
@@ -34,6 +34,7 @@ class Attribute(object):
         self.file_name = None
         self.line_num = None
         self._mc_frozen = False
+        self.override_method = override_method
 
     def all_set(self, mask):
         return (self.envs_set_mask & mask) == mask
