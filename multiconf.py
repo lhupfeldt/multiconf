@@ -839,6 +839,10 @@ class ConfigItem(_ConfigBase):
             else:
                 self._mc_is_excluded = True
 
+        if _mc_contained_in._mc_is_excluded:
+            self._mc_is_excluded = True
+        self._mc_included_envs_mask &= _mc_contained_in._mc_included_envs_mask
+
         _mc_contained_in._mc_insert_item(self)
 
     def _error_msg_not_repeatable_in_container(self, key, containing_class):

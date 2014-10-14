@@ -134,3 +134,25 @@ def test_exclude_for_configitem_repeatable():
     cr = conf(dev2ct)
     assert cr.ritems['a'].anattr == 2
     assert cr.ritems['a'].anotherattr == 1
+
+
+def test_exclude_for_nested_configitem():
+    def conf(env):
+        with ConfigRoot(env, ef) as cr:
+            cr.a = 1
+            with item(mc_exclude=[dev2st, prod]) as it1:
+                it1.setattr('anattr', pp=1, g_dev=2)
+                it1.setattr('anotherattr', dev2ct=1, pp=2)
+                with item() as it2:
+                    it2.setattr('anattr', pp=1, g_dev=2)
+                    it2.setattr('anotherattr', dev2ct=1, pp=2)
+        return cr
+
+    cr = conf(prod)
+    assert cr.a == 1
+    assert not cr.item
+    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+
+    cr = conf(dev2ct)
+    assert cr.item.item.anattr == 2
+    assert cr.item.item.anotherattr == 1
