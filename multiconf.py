@@ -817,31 +817,28 @@ class ConfigItem(_ConfigBase):
         __class__ = object.__getattribute__(self, '__class__')
         if not __class__._mc_nested:
             raise ConfigException(__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
-        self._mc_contained_in = __class__._mc_nested[-1]
-        _mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
 
+        _mc_contained_in = __class__._mc_nested[-1]
+        self._mc_contained_in = _mc_contained_in
         _mc_root_conf = object.__getattribute__(_mc_contained_in, '_mc_root_conf')
         _mc_env_factory = object.__getattribute__(_mc_root_conf, '_mc_env_factory')
         super(ConfigItem, self).__init__(_mc_root_conf=_mc_root_conf, _mc_env_factory=_mc_env_factory,
                                          mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
 
+        _mc_included_envs_mask = object.__getattribute__(self, '_mc_included_envs_mask')
         if mc_exclude:
             for eg in mc_exclude:
-                self._mc_included_envs_mask &= ~eg.mask
-                if self.env in eg.envs:
-                    self._mc_is_excluded = True
+                _mc_included_envs_mask &= ~eg.mask
 
         if mc_include:
+            include_masks = 0b0
             for eg in mc_include:
-                self._mc_included_envs_mask &= eg.mask
-                if self.env in eg.envs:
-                    break
-            else:
-                self._mc_is_excluded = True
+                include_masks |= eg.mask
+            _mc_included_envs_mask &= include_masks
 
-        if _mc_contained_in._mc_is_excluded:
+        if not (self.env.mask & _mc_included_envs_mask) or _mc_contained_in._mc_is_excluded:
             self._mc_is_excluded = True
-        self._mc_included_envs_mask &= _mc_contained_in._mc_included_envs_mask
+        self._mc_included_envs_mask = _mc_included_envs_mask & _mc_contained_in._mc_included_envs_mask
 
         _mc_contained_in._mc_insert_item(self)
 

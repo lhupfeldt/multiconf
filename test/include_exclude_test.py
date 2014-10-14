@@ -1,10 +1,13 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .utils.utils import config_error
+# pylint: disable=E0611
+from pytest import raises
+
+from .utils.utils import config_error, lineno
 from .utils.compare_json import compare_json
 
-from .. import ConfigRoot, ConfigItem
+from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import required, repeat, nested_repeatables
 
 from ..envs import EnvFactory
@@ -55,6 +58,25 @@ def test_include_for_configitem():
     cr = conf(dev2ct)
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
+
+
+def test_include_missing_for_configitem(capsys):
+    def conf(env, errorline):
+        with ConfigRoot(env, ef) as cr:
+            cr.a = 1
+            with item(mc_include=[dev2ct, pp]) as it:
+                errorline.append(lineno() + 1)
+                it.setattr('anattr', g_dev=2)
+                it.setattr('anotherattr', dev2ct=1, pp=2)
+        return cr
+
+    errorline = []
+    with raises(ConfigException) as exinfo:
+        conf(prod, errorline)
+
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline[0], "Attribute: 'anattr' did not receive a value for env Env('pp')")
+    assert "There were 1 errors when defining attribute 'anattr' on object" in exinfo.value.message
 
 
 def test_exclude_for_configitem():
