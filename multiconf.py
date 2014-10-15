@@ -65,6 +65,11 @@ class _ConfigBase(object):
         for key, value in attr.iteritems():
             if key in _mc_deco_nested_repeatables:
                 raise ConfigException(repr(key) + ' defined as default value shadows a nested-repeatable')
+            try:
+                object.__getattribute__(__class__, key)
+                raise ConfigException("The attribute " + repr(key) + " (not ending in '!') clashes with a property or method")
+            except AttributeError:
+                pass
             attribute = Attribute(key)
             if not value in _mc_invalid_values:
                 attribute.set_env_provided(_mc_env_factory._mc_init_group)
@@ -355,7 +360,7 @@ class _ConfigBase(object):
         else:
             override_method = False
             try:
-                real_attr = object.__getattribute__(__class__, name)
+                object.__getattribute__(__class__, name)
                 raise ConfigException("The attribute " + repr(name) + " (not ending in '!') clashes with a property or method")
             except AttributeError:
                 pass

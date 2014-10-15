@@ -256,7 +256,7 @@ def test_json_dump_property_method():
     compare_json(cr, _json_dump_property_method_expected)
 
 
-_json_dump_property_method_shadows_attribute_expected_json = """{
+_json_dump_property_attribute_method_override_expected_json = """{
     "__class__": "ConfigRoot",
     "__id__": 0000,
     "env": {
@@ -273,8 +273,22 @@ _json_dump_property_method_shadows_attribute_expected_json = """{
     }
 }"""
 
-# TODO
-def test_json_dump_property_method_shadows_attribute():
+_json_dump_property_attribute_method_override_other_env_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "someitem": {
+        "__class__": "Nested",
+        "__id__": 0000,
+        "m": 1,
+        "m #calculated": true
+    }
+}"""
+
+def test_json_dump_property_attribute_method_override():
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
@@ -282,10 +296,18 @@ def test_json_dump_property_method_shadows_attribute():
             return 1
 
     with ConfigRoot(prod, ef, a=0) as cr:
-        Nested(m=7)
+        with Nested() as nn:
+            nn.setattr("m!", default=7)
 
-    compare_json(cr, _json_dump_property_method_shadows_attribute_expected_json)
+    compare_json(cr, _json_dump_property_attribute_method_override_expected_json)
     assert cr.someitem.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with Nested() as nn:
+            nn.setattr("m!", pp=7)
+
+    compare_json(cr, _json_dump_property_attribute_method_override_other_env_expected_json)
+    assert cr.someitem.m == 1
 
 
 _json_dump_property_method_raises_InvalidUsageException_expected_json = """{

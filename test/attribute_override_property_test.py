@@ -87,6 +87,12 @@ def test_attribute_clash_property_method():
 
     assert "The attribute 'm' (not ending in '!') clashes with a property or method" in exinfo.value.message
 
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef):
+            Nested(m=7)
+
+    assert "The attribute 'm' (not ending in '!') clashes with a property or method" in exinfo.value.message
+
 
 def test_attribute_overrides_property_method_failing():
     @named_as('someitem')
