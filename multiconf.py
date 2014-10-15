@@ -647,6 +647,11 @@ class _ConfigBase(object):
             if value != _MC_NO_VALUE:  # _MC_NO_VALUE should only happen in case of  a conditional attribute
                 yield key, value
 
+    def _iterattributes(self):
+        _mc_attributes = object.__getattribute__(self, '_mc_attributes')
+        for key, item in _mc_attributes.iteritems():
+            yield key, item
+
     @property
     def contained_in(self):
         _mc_contained_in = object.__getattribute__(self, '_mc_contained_in')

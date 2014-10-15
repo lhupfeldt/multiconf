@@ -8,6 +8,7 @@ from collections import OrderedDict
 import types
 
 import multiconf, envs
+from .values import _MC_NO_VALUE
 from .excluded import Excluded
 from .config_errors import InvalidUsageException
 
@@ -48,7 +49,7 @@ class ConfigItemEncoder(object):
         self.builders = builders
         self.warn_nesting = warn_nesting
         self.num_errors = 0
-        self.num_invalid_usages = 0    
+        self.num_invalid_usages = 0
 
     def _class_dict(self, obj):
         if self.compact:
@@ -137,7 +138,10 @@ class ConfigItemEncoder(object):
                     dd['env'] = obj.env
 
                 # Handle attributes
-                for key, val in obj.iteritems():
+                attributes_overriding_property = set()
+                for key, item in obj._iterattributes():
+                    val = item._mc_value()
+
                     if self.user_filter_callable:
                         key, val = self.user_filter_callable(obj, key, val)
                         if key is False:
@@ -147,31 +151,39 @@ class ConfigItemEncoder(object):
                         continue
 
                     val = self._check_nesting(obj, val)
-                    if key in entries:
-                        dd[key + ' #shadowed'] = val
-                        continue
-
                     if isinstance(val, Excluded):
                         if self.compact:
                             dd[key] = 'false #' + repr(val)
-                            continue
+                        else:
+                            dd[key] = False
+                            dd[key + ' #' + repr(val)] = True
+                    elif val != _MC_NO_VALUE:
+                        dd[key] = val
 
-                        dd[key] = False
-                        dd[key + ' #' + repr(val)] = True
-                        continue
-
-                    dd[key] = val
+                    if key in entries:
+                        if val != _MC_NO_VALUE:
+                            attributes_overriding_property.add(key)
+                            dd[key + ' #!overrides @property'] = True
+                        else:
+                            dd[key + ' #value for current env provided by @property'] = True
+                    elif val == _MC_NO_VALUE:
+                        dd[key + ' #no value for current env'] = True
 
                 if not self.property_methods:
                     return dd
 
                 # Handle @property methods (defined in subclasses)
+                overridden_property_postfix = ' #!overridden @property'
                 for key in entries:
                     if key.startswith('_') or key in self.filter_out_keys:
                         continue
 
+                    real_key = key
+                    if key in attributes_overriding_property:
+                        key += overridden_property_postfix
+
                     try:
-                        val = getattr(obj, key)
+                        val = object.__getattribute__(obj, real_key)
                     except InvalidUsageException as ex:
                         self.num_invalid_usages += 1
                         dd[key + ' #invalid usage context'] = repr(ex)
@@ -180,24 +192,23 @@ class ConfigItemEncoder(object):
                         self.num_errors += 1
                         print("Error in json generation:", file=sys.stderr)
                         traceback.print_exception(*sys.exc_info())
-                        dd[repr(key) + ' # json_error trying to handle property method'] = repr(ex)
+                        dd[key + ' # json_error trying to handle property method'] = repr(ex)
                         continue
 
                     if type(val) == types.MethodType:
                         continue
 
+                    if self.user_filter_callable:
+                        real_key, val = self.user_filter_callable(obj, real_key, val)
+                        if real_key is False:
+                            continue
+
                     if type(val) == types.TypeType:
                         dd[key] = repr(val)
                         continue
 
-                    if self.user_filter_callable:
-                        key, val = self.user_filter_callable(obj, key, val)
-                        if key is False:
-                            continue
-
                     val = self._check_nesting(obj, val)
-
-                    if self.compact and isinstance(val, (str, int, long, float)):
+                    if (self.compact or real_key in attributes_overriding_property) and isinstance(val, (str, int, long, float)):
                         dd[key] = str(val) + ' #calculated'
                         continue
 

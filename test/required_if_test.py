@@ -281,7 +281,8 @@ def test_required_if_optional_attributes_missing_some_env_other_env():
 
 _expected_regular_attributes_missing_when_required_if_used_ex = """There were 1 errors when defining attribute 'x' on object: {
     "__class__": "item #as: 'xxxx', id: 0000, not-frozen",
-    "abcd": 0
+    "abcd": 0,
+    "x #no value for current env": true
 }"""
 
 def test_regular_attributes_missing_when_required_if_used():

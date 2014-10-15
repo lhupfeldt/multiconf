@@ -43,6 +43,22 @@ class SimpleItem(ConfigItem):
         super(SimpleItem, self).__init__(**kwargs)
 
 
+_json_dump_root_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    }
+}"""
+
+def test_json_dump_root():
+    with ConfigRoot(prod, ef) as cr:
+        pass
+
+    compare_json(cr, _json_dump_root_expected_json)
+
+
 _json_dump_simple_expected_json = """{
     "__class__": "root",
     "__id__": 0000,
@@ -267,24 +283,9 @@ _json_dump_property_attribute_method_override_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m #shadowed": 7,
         "m": 7,
-        "m #calculated": true
-    }
-}"""
-
-_json_dump_property_attribute_method_override_other_env_expected_json = """{
-    "__class__": "ConfigRoot",
-    "__id__": 0000,
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "someitem": {
-        "__class__": "Nested",
-        "__id__": 0000,
-        "m": 1,
-        "m #calculated": true
+        "m #!overrides @property": true,
+        "m #!overridden @property": "1 #calculated"
     }
 }"""
 
@@ -301,6 +302,30 @@ def test_json_dump_property_attribute_method_override():
 
     compare_json(cr, _json_dump_property_attribute_method_override_expected_json)
     assert cr.someitem.m == 7
+
+
+_json_dump_property_attribute_method_override_other_env_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "someitem": {
+        "__class__": "Nested",
+        "__id__": 0000,
+        "m #value for current env provided by @property": true,
+        "m": 1,
+        "m #calculated": true
+    }
+}"""
+
+def test_json_dump_property_attribute_method_override_other_env():
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def m(self):
+            return 1
 
     with ConfigRoot(prod, ef) as cr:
         with Nested() as nn:
@@ -349,7 +374,7 @@ _json_dump_property_method_raises_Exception_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "'m' # json_error trying to handle property method": "Exception('Something is wrong',)"
+        "m # json_error trying to handle property method": "Exception('Something is wrong',)"
     }
 }"""
 
@@ -460,7 +485,7 @@ _json_dump_property_method_calls_json_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "'other_conf_item' # json_error trying to handle property method": "NestedJsonCallError('Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?',)"
+        "other_conf_item # json_error trying to handle property method": "NestedJsonCallError('Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?',)"
     }
 }"""
 

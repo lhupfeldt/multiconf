@@ -36,7 +36,8 @@ class RepeatableItem(ConfigItem):
 
 
 _stacktrace_strips_multiconf_code_exp_ex = """There were 3 errors when defining attribute 'a' on object: {
-    "__class__": "inner #as: 'xxxx', id: 0000, not-frozen"
+    "__class__": "inner #as: 'xxxx', id: 0000, not-frozen",
+    "a #no value for current env": true
 }"""
 
 def test_stacktrace_strips_multiconf_code(capsys):
