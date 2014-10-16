@@ -178,3 +178,119 @@ def test_exclude_for_nested_configitem():
     cr = conf(dev2ct)
     assert cr.item.item.anattr == 2
     assert cr.item.item.anotherattr == 1
+
+
+def test_exclude_for_repeatable_nested_configitem():
+    def conf(env):
+        with root(env, ef) as cr:
+            cr.a = 1
+            with ritem(id='a', mc_exclude=[dev2st, prod]) as rit:
+                rit.setattr('anattr', pp=1, g_dev=2)
+                rit.setattr('anotherattr', dev2ct=1, pp=2)
+                with item() as it1:
+                    it1.setattr('anattr', pp=1, g_dev=2)
+                    it1.setattr('anotherattr', dev2ct=1, pp=2)
+                    with item() as it2:
+                        it2.setattr('anattr', pp=1, g_dev=2)
+                        it2.setattr('anotherattr', dev2ct=1, pp=2)
+
+            with ritem(id='b', mc_exclude=[dev2ct]) as rit:
+                rit.setattr('anattr', prod=31, pp=1, g_dev=2)
+                rit.setattr('anotherattr', dev2ct=1, dev2st=3, pp=2, prod=44)
+                with item() as it1:
+                    it1.setattr('anattr', prod=33, pp=1, g_dev=2)
+                    it1.setattr('anotherattr', dev2ct=1, dev2st=1, pp=2, prod=43)
+
+            with ritem(id='c', mc_exclude=[dev2st, prod]) as rit:
+                rit.setattr('anattr', pp=1, g_dev=2)
+                rit.setattr('anotherattr', dev2ct=1, pp=2)
+                with item() as it1:
+                    it1.setattr('anattr', pp=1, g_dev=2)
+                    it1.setattr('anotherattr', dev2ct=1, pp=2)
+
+        return cr
+
+    cr = conf(prod)
+    assert cr.a == 1
+    assert 'a' not in cr.ritems
+    assert 'b' in cr.ritems
+    assert cr.ritems['b'].anattr == 31
+    assert cr.ritems['b'].item.anattr == 33
+    assert 'c' not in cr.ritems
+    assert len(cr.ritems) == 1
+
+    cr = conf(dev2ct)
+    assert cr.a == 1
+    assert 'a' in cr.ritems
+    assert 'b' not in cr.ritems
+    assert 'c' in cr.ritems
+    assert cr.ritems['c'].anattr == 2
+    assert cr.ritems['c'].item.anattr == 2
+    assert cr.ritems['c'].item.anotherattr == 1
+    assert len(cr.ritems) == 2
+
+
+def test_exclude_for_repeatable_nested_excludes_configitem():
+    def conf(env):
+        with root(env, ef) as cr:
+            cr.a = 1
+            with ritem(id='a', mc_exclude=[dev2st, prod]) as rit:
+                rit.setattr('anattr', pp=1, g_dev=2)
+                rit.setattr('anotherattr', dev2ct=1, pp=2)
+                with item(mc_exclude=[pp]) as it1:
+                    it1.setattr('anattr', pp=1, g_dev=2)
+                    it1.setattr('anotherattr', dev2ct=1, pp=2)
+                    with item(mc_exclude=[dev2st]) as it2:
+                        it2.setattr('anattr', pp=1, g_dev=2)
+                        it2.setattr('anotherattr', dev2ct=1, pp=2)
+
+            with ritem(id='b', mc_exclude=[dev2ct]) as rit:
+                rit.setattr('anattr', prod=31, pp=1, g_dev=2)
+                rit.setattr('anotherattr', dev2ct=1, dev2st=3, pp=2, prod=44)
+                with item(mc_exclude=[pp]) as it1:
+                    it1.setattr('anattr', prod=33, pp=1, g_dev=2)
+                    it1.setattr('anotherattr', dev2ct=1, dev2st=1, pp=2, prod=43)
+
+        return cr
+
+    cr = conf(prod)
+    assert cr.a == 1
+    assert len(cr.ritems) == 1
+
+    assert 'a' not in cr.ritems
+    assert 'b' in cr.ritems
+    assert cr.ritems['b'].anattr == 31
+    assert cr.ritems['b'].item.anattr == 33
+
+    cr = conf(dev2ct)
+    assert cr.a == 1
+    assert len(cr.ritems) == 1
+
+    assert 'a' in cr.ritems
+    assert cr.ritems['a'].anattr == 2
+    assert cr.ritems['a'].item.item.anattr == 2
+    assert 'b' not in cr.ritems
+
+    cr = conf(pp)
+    assert cr.a == 1
+    assert len(cr.ritems) == 2
+
+    assert 'a' in cr.ritems
+    assert cr.ritems['a'].anattr == 1
+    assert not cr.ritems['a'].item
+    assert 'b' in cr.ritems
+    assert cr.ritems['b'].anattr == 1
+    assert not cr.ritems['b'].item
+
+    cr = conf(dev2st)
+    assert cr.a == 1
+    assert len(cr.ritems) == 1
+
+    assert 'a' not in cr.ritems
+    with raises(KeyError):
+        _ = cr.ritems['a']
+    assert 'b' in cr.ritems
+    assert cr.ritems['b'].anattr == 2
+    assert cr.ritems['b'].anotherattr == 3
+    assert cr.ritems['b'].item.anattr == 2
+    assert cr.ritems['b'].item.anotherattr == 1
