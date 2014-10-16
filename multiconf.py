@@ -840,15 +840,19 @@ class ConfigItem(_ConfigBase):
             for eg in mc_exclude:
                 _mc_included_envs_mask &= ~eg.mask
 
+        _mc_contained_in_included_envs_mask = object.__getattribute__(_mc_contained_in, '_mc_included_envs_mask')
         if mc_include:
             include_masks = 0b0
             for eg in mc_include:
+                if eg.mask & _mc_contained_in_included_envs_mask != eg.mask:
+                    # TODO: proper error message listing envs
+                    raise ConfigException("Inner mc_include has envs excluded at outer level")
                 include_masks |= eg.mask
             _mc_included_envs_mask &= include_masks
 
         if not (self.env.mask & _mc_included_envs_mask) or _mc_contained_in._mc_is_excluded:
             self._mc_is_excluded = True
-        self._mc_included_envs_mask = _mc_included_envs_mask & _mc_contained_in._mc_included_envs_mask
+        self._mc_included_envs_mask = _mc_included_envs_mask & _mc_contained_in_included_envs_mask
 
         _mc_contained_in._mc_insert_item(self)
 

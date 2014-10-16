@@ -294,3 +294,14 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['b'].anotherattr == 3
     assert cr.ritems['b'].item.anattr == 2
     assert cr.ritems['b'].item.anotherattr == 1
+
+
+def test_child_includes_excluded():
+    with raises(ConfigException) as exinfo:
+        with root(prod, ef):
+            with ritem(id='a', mc_exclude=[g_dev, prod]):
+                with item(mc_include=[dev2st]) as it1:
+                    it1.x = 7
+
+    # TODO proper error message
+    assert "Inner mc_include has envs excluded at outer level" in exinfo.value.message
