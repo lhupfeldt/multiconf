@@ -17,9 +17,9 @@ def ce(line_num, *lines):
 
 
 ef = EnvFactory()
-dev2ct = ef.Env('dev2ct')
-dev2st = ef.Env('dev2st')
-g_dev = ef.EnvGroup('g_dev', dev2ct, dev2st)
+dev1 = ef.Env('dev1')
+dev2 = ef.Env('dev2')
+g_dev = ef.EnvGroup('g_dev', dev1, dev2)
 pp = ef.Env('pp')
 prod = ef.Env('prod')
 
@@ -45,9 +45,9 @@ def test_include_for_configitem():
     def conf(env):
         with ConfigRoot(env, ef) as cr:
             cr.a = 1
-            with item(mc_include=[dev2ct, pp]) as it:
+            with item(mc_include=[dev1, pp]) as it:
                 it.setattr('anattr', pp=1, g_dev=2)
-                it.setattr('anotherattr', dev2ct=1, pp=2)
+                it.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
     cr = conf(prod)
@@ -55,7 +55,7 @@ def test_include_for_configitem():
     assert not cr.item
     compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev2ct)
+    cr = conf(dev1)
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
 
@@ -64,10 +64,10 @@ def test_include_missing_for_configitem(capsys):
     def conf(env, errorline):
         with ConfigRoot(env, ef) as cr:
             cr.a = 1
-            with item(mc_include=[dev2ct, pp]) as it:
+            with item(mc_include=[dev1, pp]) as it:
                 errorline.append(lineno() + 1)
                 it.setattr('anattr', g_dev=2)
-                it.setattr('anotherattr', dev2ct=1, pp=2)
+                it.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
     errorline = []
@@ -83,9 +83,9 @@ def test_exclude_for_configitem():
     def conf(env):
         with ConfigRoot(env, ef) as cr:
             cr.a = 1
-            with item(mc_exclude=[dev2st, prod]) as it:
+            with item(mc_exclude=[dev2, prod]) as it:
                 it.setattr('anattr', pp=1, g_dev=2)
-                it.setattr('anotherattr', dev2ct=1, pp=2)
+                it.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
     cr = conf(prod)
@@ -93,7 +93,7 @@ def test_exclude_for_configitem():
     assert not cr.item
     compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev2ct)
+    cr = conf(dev1)
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
 
@@ -124,9 +124,9 @@ def test_include_for_configitem_repeatable():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_include=[dev2ct, pp]) as it:
+            with ritem(id='a', mc_include=[dev1, pp]) as it:
                 it.setattr('anattr', pp=1, g_dev=2)
-                it.setattr('anotherattr', dev2ct=1, pp=2)
+                it.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
     cr = conf(prod)
@@ -134,7 +134,7 @@ def test_include_for_configitem_repeatable():
     assert cr.ritems == {}
     compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
 
-    cr = conf(dev2ct)
+    cr = conf(dev1)
     assert cr.ritems['a'].anattr == 2
     assert cr.ritems['a'].anotherattr == 1
 
@@ -143,9 +143,9 @@ def test_exclude_for_configitem_repeatable():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_exclude=[dev2st, prod]) as it:
+            with ritem(id='a', mc_exclude=[dev2, prod]) as it:
                 it.setattr('anattr', pp=1, g_dev=2)
-                it.setattr('anotherattr', dev2ct=1, pp=2)
+                it.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
     cr = conf(prod)
@@ -153,7 +153,7 @@ def test_exclude_for_configitem_repeatable():
     assert cr.ritems == {}
     compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
 
-    cr = conf(dev2ct)
+    cr = conf(dev1)
     assert cr.ritems['a'].anattr == 2
     assert cr.ritems['a'].anotherattr == 1
 
@@ -162,12 +162,12 @@ def test_exclude_for_nested_configitem():
     def conf(env):
         with ConfigRoot(env, ef) as cr:
             cr.a = 1
-            with item(mc_exclude=[dev2st, prod]) as it1:
+            with item(mc_exclude=[dev2, prod]) as it1:
                 it1.setattr('anattr', pp=1, g_dev=2)
-                it1.setattr('anotherattr', dev2ct=1, pp=2)
+                it1.setattr('anotherattr', dev1=1, pp=2)
                 with item() as it2:
                     it2.setattr('anattr', pp=1, g_dev=2)
-                    it2.setattr('anotherattr', dev2ct=1, pp=2)
+                    it2.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
     cr = conf(prod)
@@ -175,7 +175,7 @@ def test_exclude_for_nested_configitem():
     assert not cr.item
     compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev2ct)
+    cr = conf(dev1)
     assert cr.item.item.anattr == 2
     assert cr.item.item.anotherattr == 1
 
@@ -184,29 +184,29 @@ def test_exclude_for_repeatable_nested_configitem():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_exclude=[dev2st, prod]) as rit:
+            with ritem(id='a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev=2)
-                rit.setattr('anotherattr', dev2ct=1, pp=2)
+                rit.setattr('anotherattr', dev1=1, pp=2)
                 with item() as it1:
                     it1.setattr('anattr', pp=1, g_dev=2)
-                    it1.setattr('anotherattr', dev2ct=1, pp=2)
+                    it1.setattr('anotherattr', dev1=1, pp=2)
                     with item() as it2:
                         it2.setattr('anattr', pp=1, g_dev=2)
-                        it2.setattr('anotherattr', dev2ct=1, pp=2)
+                        it2.setattr('anotherattr', dev1=1, pp=2)
 
-            with ritem(id='b', mc_exclude=[dev2ct]) as rit:
+            with ritem(id='b', mc_exclude=[dev1]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev=2)
-                rit.setattr('anotherattr', dev2ct=1, dev2st=3, pp=2, prod=44)
+                rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
                 with item() as it1:
                     it1.setattr('anattr', prod=33, pp=1, g_dev=2)
-                    it1.setattr('anotherattr', dev2ct=1, dev2st=1, pp=2, prod=43)
+                    it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
 
-            with ritem(id='c', mc_exclude=[dev2st, prod]) as rit:
+            with ritem(id='c', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev=2)
-                rit.setattr('anotherattr', dev2ct=1, pp=2)
+                rit.setattr('anotherattr', dev1=1, pp=2)
                 with item() as it1:
                     it1.setattr('anattr', pp=1, g_dev=2)
-                    it1.setattr('anotherattr', dev2ct=1, pp=2)
+                    it1.setattr('anotherattr', dev1=1, pp=2)
 
         return cr
 
@@ -219,7 +219,7 @@ def test_exclude_for_repeatable_nested_configitem():
     assert 'c' not in cr.ritems
     assert len(cr.ritems) == 1
 
-    cr = conf(dev2ct)
+    cr = conf(dev1)
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -234,22 +234,22 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_exclude=[dev2st, prod]) as rit:
+            with ritem(id='a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev=2)
-                rit.setattr('anotherattr', dev2ct=1, pp=2)
+                rit.setattr('anotherattr', dev1=1, pp=2)
                 with item(mc_exclude=[pp]) as it1:
                     it1.setattr('anattr', pp=1, g_dev=2)
-                    it1.setattr('anotherattr', dev2ct=1, pp=2)
-                    with item(mc_exclude=[dev2st]) as it2:
+                    it1.setattr('anotherattr', dev1=1, pp=2)
+                    with item(mc_exclude=[dev2]) as it2:
                         it2.setattr('anattr', pp=1, g_dev=2)
-                        it2.setattr('anotherattr', dev2ct=1, pp=2)
+                        it2.setattr('anotherattr', dev1=1, pp=2)
 
-            with ritem(id='b', mc_exclude=[dev2ct]) as rit:
+            with ritem(id='b', mc_exclude=[dev1]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev=2)
-                rit.setattr('anotherattr', dev2ct=1, dev2st=3, pp=2, prod=44)
+                rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
                 with item(mc_exclude=[pp]) as it1:
                     it1.setattr('anattr', prod=33, pp=1, g_dev=2)
-                    it1.setattr('anotherattr', dev2ct=1, dev2st=1, pp=2, prod=43)
+                    it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
 
         return cr
 
@@ -262,7 +262,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['b'].anattr == 31
     assert cr.ritems['b'].item.anattr == 33
 
-    cr = conf(dev2ct)
+    cr = conf(dev1)
     assert cr.a == 1
     assert len(cr.ritems) == 1
 
@@ -282,7 +282,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['b'].anattr == 1
     assert not cr.ritems['b'].item
 
-    cr = conf(dev2st)
+    cr = conf(dev2)
     assert cr.a == 1
     assert len(cr.ritems) == 1
 
@@ -300,8 +300,35 @@ def test_child_includes_excluded():
     with raises(ConfigException) as exinfo:
         with root(prod, ef):
             with ritem(id='a', mc_exclude=[g_dev, prod]):
-                with item(mc_include=[dev2st]) as it1:
+                with item(mc_include=[dev2]) as it1:
                     it1.x = 7
 
     # TODO proper error message
     assert "Inner mc_include has envs excluded at outer level" in exinfo.value.message
+
+
+#def test_exclude_include_for_configitem():
+#    """Test that most specifig group/env wins"""
+#
+#    with raises(ConfigException) as exinfo:
+#        # No most specific
+#        with ConfigRoot(prod, ef):
+#            item(mc_exclude=[dev1], mc_include=[dev1, pp])
+#
+#    assert "TODO" in exinfo.value.message
+#
+#    def conf(env):
+#        with ConfigRoot(env, ef) as cr:
+#            cr.a = 1
+#            with item(mc_include=[dev1, pp]) as it:
+#                it.setattr('anattr', pp=1, g_dev=2)
+#        return cr
+#
+#    cr = conf(prod)
+#    assert cr.a == 1
+#    assert not cr.item
+#    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+#
+#    cr = conf(dev1)
+#    assert cr.item.anattr == 2
+#    assert cr.item.anotherattr == 1
