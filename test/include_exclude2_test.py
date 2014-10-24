@@ -48,7 +48,7 @@ _include_exclude_for_configitem_expected_json = """{
 }"""
 
 
-def test_exclude_include_overlapping_groups_resolved():
+def test_exclude_include_overlapping_groups_excluded_resolved():
     def conf(env):
         """Covers exclude resolve branch"""
         with ConfigRoot(env, ef) as cr:
@@ -77,3 +77,32 @@ def test_exclude_include_overlapping_groups_resolved():
     assert cr.item.anattr == 1
     assert cr.item.b == 1
     assert cr.item.anotherattr == 111
+
+
+def test_exclude_include_overlapping_groups_included_resolved():
+    def conf(env):
+        """Covers include resolve branch"""
+        with ConfigRoot(env, ef) as cr:
+            with item(mc_include=[dev3, g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34]) as it:
+                it.setattr('anattr', pp=1, g_dev12_3=2, dev5=117, g_ppr=4)
+        return cr
+
+    cr = conf(prod)
+    assert not cr.item
+    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+
+    cr = conf(dev1)
+    assert not cr.item
+
+    cr = conf(dev2)
+    assert cr.item
+
+    cr = conf(dev3)
+    assert cr.item
+
+    cr = conf(dev4)
+    assert not cr.item
+
+    cr = conf(pp)
+    assert cr.item
+    assert cr.item.anattr == 1
