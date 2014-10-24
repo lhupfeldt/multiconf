@@ -848,7 +848,7 @@ class ConfigItem(_ConfigBase):
 
                 include_masks = 0b0
                 for eg_incl in mc_include:
-                    # Check if this is more specific than a previous eg or not overlapping, and collect bitmask of all seen and ambigous envs
+                    # Check if this is more specific than a previous eg or not overlapping, and collect bitmask of all seen and ambiguous envs
                     must_excl = eg_excl in eg_incl
                     must_incl = eg_incl in eg_excl
     
