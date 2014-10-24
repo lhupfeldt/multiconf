@@ -4,7 +4,7 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno
+from .utils.utils import config_error, lineno, assert_lines_in
 from .utils.compare_json import compare_json
 
 from .. import ConfigRoot, ConfigItem, ConfigException
@@ -313,39 +313,175 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
         _ = cr.ritems['b']
 
 
-def test_child_includes_excluded():
+def test_child_includes_excluded(capsys):
     with raises(ConfigException) as exinfo:
         with root(prod, ef):
             with ritem(id='a', mc_exclude=[g_dev12_3, prod]):
-                with item(mc_include=[dev2]) as it1:
+                errorline = lineno() + 1
+                with item(mc_include=[dev2, prod]) as it1:
                     it1.x = 7
 
-    # TODO proper error message
-    assert "Inner mc_include has envs excluded at outer level" in exinfo.value.message
+    assert "There were 2 errors when defining item" in exinfo.value.message
+    _sout, serr = capsys.readouterr()
+    print serr
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^%(lnum)s",
+        "^ConfigError: Env 'dev2' is excluded at an outer level",
+        "^%(lnum)s",
+        "^ConfigError: Env 'prod' is excluded at an outer level"
+    )
 
 
-#def test_exclude_include_for_configitem():
-#    """Test that most specifig group/env wins"""
-#
-#    with raises(ConfigException) as exinfo:
-#        # No most specific
-#        with ConfigRoot(prod, ef):
-#            item(mc_exclude=[dev1], mc_include=[dev1, pp])
-#
-#    assert "TODO" in exinfo.value.message
-#
-#    def conf(env):
-#        with ConfigRoot(env, ef) as cr:
-#            cr.a = 1
-#            with item(mc_include=[dev1, pp]) as it:
-#                it.setattr('anattr', pp=1, g_dev12_3=2)
-#        return cr
-#
-#    cr = conf(prod)
-#    assert cr.a == 1
-#    assert not cr.item
-#    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
-#
-#    cr = conf(dev1)
-#    assert cr.item.anattr == 2
-#    assert cr.item.anotherattr == 1
+def test_exclude_include_overlapping_for_configitem(capsys):
+    """Test that most specifig group/env wins"""
+
+    with raises(ConfigException) as exinfo:
+        # No most specific
+        with ConfigRoot(prod, ef):
+            errorline = lineno() + 1
+            item(mc_exclude=[dev1], mc_include=[dev1, pp])
+
+    assert "There were 1 errors when defining item" in exinfo.value.message
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+
+    def conf(env):
+        with ConfigRoot(env, ef) as cr:
+            cr.a = 1
+            with item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev12]) as it:
+                it.setattr('anattr', pp=1, g_dev12_3=2)
+                it.setattr('b', pp=1, dev3=0)
+                it.setattr('anotherattr', default=111)
+        return cr
+
+    cr = conf(prod)
+    assert cr.a == 1
+    assert not cr.item
+    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+
+    cr = conf(dev1)
+    assert cr.a == 1
+    assert not cr.item
+
+    cr = conf(dev2)
+    assert cr.a == 1
+    assert not cr.item
+
+    cr = conf(dev3)
+    assert cr.a == 1
+    assert cr.item
+    assert cr.item.anattr == 2
+    assert cr.item.b == 0
+    assert cr.item.anotherattr == 111
+
+    cr = conf(pp)
+    assert cr.a == 1
+    assert cr.item
+    assert cr.item.anattr == 1
+    assert cr.item.b == 1
+    assert cr.item.anotherattr == 111
+
+
+def test_exclude_include_overlapping_resolved_with_include_for_configitem():
+    """Test that most specifig group/env wins"""
+
+    def conf(env):
+        with ConfigRoot(env, ef) as cr:
+            cr.a = 1
+            with item(mc_include=[g_dev12, pp, dev2], mc_exclude=[g_dev23]) as it:
+                it.setattr('anattr', pp=1, g_dev12_3=2)
+                it.setattr('b', pp=1, dev2=0)
+                it.setattr('anotherattr', default=111)
+        return cr
+
+    cr = conf(prod)
+    assert not cr.item
+    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+
+    cr = conf(dev1)
+    assert not cr.item
+
+    cr = conf(dev2)
+    assert cr.item
+    assert cr.item.b == 0
+
+    cr = conf(dev3)
+    assert not cr.item
+
+    cr = conf(pp)
+    assert cr.item
+    assert cr.item.anattr == 1
+    assert cr.item.b == 1
+    assert cr.item.anotherattr == 111
+
+
+def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
+    """Test that most specifig group/env wins"""
+
+    def conf(env):
+        with ConfigRoot(env, ef) as cr:
+            cr.a = 1
+            with item(mc_include=[g_dev12, pp], mc_exclude=[dev2, g_dev23]) as it:
+                it.setattr('anattr', pp=1, g_dev12_3=2)
+                it.setattr('b', pp=1)
+                it.setattr('anotherattr', default=111)
+        return cr
+
+    cr = conf(prod)
+    assert not cr.item
+    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+
+    cr = conf(dev1)
+    assert not cr.item
+
+    cr = conf(dev2)
+    assert not cr.item
+
+    cr = conf(dev3)
+    assert not cr.item
+
+    cr = conf(pp)
+    assert cr.item
+    assert cr.item.anattr == 1
+    assert cr.item.b == 1
+    assert cr.item.anotherattr == 111
+
+
+def test_exclude_include_disjunct_for_configitem():
+    def conf(env):
+        with ConfigRoot(env, ef) as cr:
+            cr.a = 1
+            # Allowed but unnecessary 'mc_exclude'
+            with item(mc_include=[g_dev12_3], mc_exclude=[prod]) as it:
+                it.setattr('anattr', pp=1, g_dev12_3=2)
+                it.setattr('b', dev1=3, dev2=17, dev3=0, prod=1111)
+                it.setattr('anotherattr', default=111)
+        return cr
+
+    cr = conf(prod)
+    assert cr.a == 1
+    assert not cr.item
+    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+
+    cr = conf(dev1)
+    assert cr.a == 1
+    assert cr.item
+    assert cr.item.anattr == 2
+    assert cr.item.b == 3
+    assert cr.item.anotherattr == 111
+
+    cr = conf(dev2)
+    assert cr.item
+    assert cr.item.anattr == 2
+    assert cr.item.b == 17
+    assert cr.item.anotherattr == 111
+
+    cr = conf(dev3)
+    assert cr.item
+    assert cr.item.anattr == 2
+    assert cr.item.b == 0
+    assert cr.item.anotherattr == 111
+
+    cr = conf(pp)
+    assert not cr.item

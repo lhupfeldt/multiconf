@@ -478,7 +478,7 @@ class _ConfigBase(object):
                 num_errors = _error_msg(num_errors, ex.message, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
         # Clear resolved conflicts
-        for eg_name, eg in seen_egs.items():
+        for _eg_name, eg in seen_egs.items():
             cleared = []
             for conflicting_egs, ambiguous in all_ambiguous.items():
                 if eg.mask & ambiguous == eg.mask:  # mask in or equal to ambiguous
@@ -835,20 +835,92 @@ class ConfigItem(_ConfigBase):
         super(ConfigItem, self).__init__(_mc_root_conf=_mc_root_conf, _mc_env_factory=_mc_env_factory,
                                          mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
 
-        _mc_included_envs_mask = object.__getattribute__(self, '_mc_included_envs_mask')
-        if mc_exclude:
-            for eg in mc_exclude:
-                _mc_included_envs_mask &= ~eg.mask
-
+        # Resolve most specif include/exclude eg
         _mc_contained_in_included_envs_mask = object.__getattribute__(_mc_contained_in, '_mc_included_envs_mask')
-        if mc_include:
-            include_masks = 0b0
-            for eg in mc_include:
-                if eg.mask & _mc_contained_in_included_envs_mask != eg.mask:
-                    # TODO: proper error message listing envs
-                    raise ConfigException("Inner mc_include has envs excluded at outer level")
-                include_masks |= eg.mask
-            _mc_included_envs_mask &= include_masks
+        _mc_included_envs_mask = object.__getattribute__(self, '_mc_included_envs_mask')
+
+        all_ambiguous = {}
+        if mc_exclude:
+            for eg_excl in mc_exclude:
+                if mc_include is None:
+                    _mc_included_envs_mask &= ~eg_excl.mask
+                    continue
+
+                include_masks = 0b0
+                for eg_incl in mc_include:
+                    # Check if this is more specific than a previous eg or not overlapping, and collect bitmask of all seen and ambigous envs
+                    must_excl = eg_excl in eg_incl
+                    must_incl = eg_incl in eg_excl
+    
+                    ambiguous = 0x0
+                    if not (must_incl or must_excl):
+                        ambiguous = eg_excl.mask & eg_incl.mask
+                        if ambiguous:
+                            all_ambiguous[(eg_incl, eg_excl)] = ambiguous
+
+                    if not ambiguous:
+                        include_masks |= eg_incl.mask
+                        include_masks &= ~eg_excl.mask
+
+                _mc_included_envs_mask &= include_masks
+        else:
+            if mc_include is not None:
+                include_masks = 0b0
+                for eg in mc_include:
+                    include_masks |= eg.mask
+                _mc_included_envs_mask &= include_masks
+
+        # Clear resolved conflicts
+        cleared = []
+
+        for conflicting_egs, ambiguous in all_ambiguous.items():
+            for eg in mc_exclude or ():
+                if eg.mask & ambiguous == eg.mask:  # mask in or equal to ambiguous
+                    ambiguous ^= eg.mask & ambiguous
+                    if ambiguous:
+                        all_ambiguous[conflicting_egs] = ambiguous
+                    elif eg in conflicting_egs[0]:
+                        cleared.append(conflicting_egs)
+                    _mc_included_envs_mask &= ~eg.mask
+
+            for eg in mc_include or ():
+                if eg.mask & ambiguous == eg.mask:  # mask in or equal to ambiguous
+                    ambiguous ^= eg.mask & ambiguous
+                    if ambiguous:
+                        all_ambiguous[conflicting_egs] = ambiguous
+                    elif eg in conflicting_egs[1]:
+                        cleared.append(conflicting_egs)
+                    _mc_included_envs_mask |= eg.mask
+
+        for conflicting_egs in cleared:
+            del all_ambiguous[conflicting_egs]
+
+        num_errors = 0
+
+        # If we still have unresolved conflicts, it is an error
+        if all_ambiguous:
+            mc_caller_file_name, mc_caller_line_num = caller_file_line()
+            # Reorder to generate one error per ambiguous env
+            all_ambiguous_by_envs = {}
+            for conflicting_egs, ambiguous in all_ambiguous.items():
+                for env in _mc_env_factory.envs_from_mask(ambiguous):
+                    all_ambiguous_by_envs.setdefault(env, set()).update(conflicting_egs)
+
+            for env, conflicting_egs in sorted(all_ambiguous_by_envs.items()):
+                msg = "Env " + repr(env.name) + " is specified in both include and exclude, with no single most specific group or direct env:"
+                for eg in sorted(conflicting_egs):
+                    msg += "\n    from: " + repr(eg)
+                num_errors = _error_msg(num_errors, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+
+        if mc_include is not None and _mc_included_envs_mask & _mc_contained_in_included_envs_mask != _mc_included_envs_mask:
+            re_included = _mc_included_envs_mask & _mc_contained_in_included_envs_mask ^ _mc_included_envs_mask
+            mc_caller_file_name, mc_caller_line_num = caller_file_line()
+            for env in _mc_env_factory.envs_from_mask(re_included):
+                msg = "Env " + repr(env.name) + " is excluded at an outer level"
+                num_errors = _error_msg(num_errors, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+
+        if num_errors:
+            raise ConfigException("There were " + repr(num_errors) + " errors when defining item: " + repr(self))
 
         if not (self.env.mask & _mc_included_envs_mask) or _mc_contained_in._mc_is_excluded:
             self._mc_is_excluded = True
