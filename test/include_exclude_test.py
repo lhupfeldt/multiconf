@@ -346,6 +346,16 @@ def test_exclude_include_overlapping_for_configitem(capsys):
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
 
+    with raises(ConfigException) as exinfo:
+        # No most specific
+        with ConfigRoot(prod, ef):
+            errorline = lineno() + 1
+            item(mc_exclude=[pp, dev1], mc_include=[dev1])
+
+    assert "There were 1 errors when defining item" in exinfo.value.message
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+
     def conf(env):
         with ConfigRoot(env, ef) as cr:
             cr.a = 1
