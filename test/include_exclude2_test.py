@@ -106,3 +106,53 @@ def test_exclude_include_overlapping_groups_included_resolved():
     cr = conf(pp)
     assert cr.item
     assert cr.item.anattr == 1
+
+
+exclude_include_overlapping_groups_excluded_unresolved = """
+File "%(file)s", line %(line)d
+ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:
+    from: EnvGroup('g_dev12_3') {
+     EnvGroup('g_dev12') {
+       Env('dev1'),
+       Env('dev2')
+  },
+     Env('dev3')
+}
+    from: EnvGroup('g_dev2_34') {
+     Env('dev2'),
+     EnvGroup('g_dev23') {
+       Env('dev3'),
+       Env('dev4')
+  }
+}
+File "%(file)s", line %(line)d
+ConfigError: Env 'dev3' is specified in both include and exclude, with no single most specific group or direct env:
+    from: EnvGroup('g_dev23') {
+     Env('dev3'),
+     Env('dev4')
+}
+    from: EnvGroup('g_dev12_3') {
+     EnvGroup('g_dev12') {
+       Env('dev1'),
+       Env('dev2')
+  },
+     Env('dev3')
+}
+    from: EnvGroup('g_dev2_34') {
+     Env('dev2'),
+     EnvGroup('g_dev23') {
+       Env('dev3'),
+       Env('dev4')
+  }
+}
+""".strip()
+
+def test_exclude_include_overlapping_groups_excluded_unresolved(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef):
+            errorline = lineno() + 1
+            item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
+
+    assert "There were 2 errors when defining item" in exinfo.value.message
+    _sout, serr = capsys.readouterr()
+    assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
