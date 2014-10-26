@@ -1,5 +1,6 @@
 from collections import OrderedDict
-from .attribute import Attribute
+from .excluded import Excluded
+
 
 class Repeatable(OrderedDict):
     _mc_frozen = False
@@ -16,3 +17,20 @@ class Repeatable(OrderedDict):
 
     def _mc_value(self):
         return self
+
+
+class UserRepeatable(Repeatable):
+    _mc_frozen = False
+
+    def __init__(self, item):
+        super(UserRepeatable, self).__init__()
+        self.item = item
+        self._mc_is_excluded = False
+
+    def __getitem__(self, key):
+        try:
+            return super(UserRepeatable, self).__getitem__(key)
+        except KeyError:
+            if not self.item.root_conf.frozen and self._mc_is_excluded:
+                return Excluded(self.item)
+            raise

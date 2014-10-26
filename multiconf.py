@@ -10,7 +10,7 @@ import json
 from .envs import EnvFactory, Env, EnvException
 from .attribute import Attribute, mc_where_from_nowhere, mc_where_from_init, mc_where_from_with, mc_where_from_mc_init
 from .values import MC_TODO, _MC_NO_VALUE, _mc_invalid_values
-from .repeatable import Repeatable
+from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
 from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, _line_msg as line_msg
@@ -79,7 +79,7 @@ class _ConfigBase(object):
             _mc_attributes[key] = attribute
 
         for key in _mc_deco_nested_repeatables:
-            _mc_attributes[key] = Repeatable()
+            _mc_attributes[key] = UserRepeatable(self)
 
         # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class mc_init
         _mc_deco_unchecked = object.__getattribute__(self, '_mc_deco_unchecked')
@@ -142,17 +142,19 @@ class _ConfigBase(object):
         attributes = _mc_build_attributes if _mc_in_build else _mc_attributes
 
         if child_item.__class__._mc_deco_repeatable:
-            # Repeatable excluded items are simply excluded
-            if child_item._mc_is_excluded:
-                return
-
             # Validate that this class specifies item as repeatable
             if isinstance(self, ConfigBuilder):
-                attributes.setdefault(child_key, Repeatable())
+                attributes.setdefault(child_key, UserRepeatable(self))
             elif not child_key in self.__class__._mc_deco_nested_repeatables:
                 raise ConfigException(child_item._error_msg_not_repeatable_in_container(child_key, self))
-            elif self._mc_in_mc_init or self._mc_in_build:
-                attributes.setdefault(child_key, Repeatable())
+
+            repeatable = attributes[child_key]
+
+            # Repeatable excluded items are simply excluded, but in order to lookup excluded keys during config setup
+            # we mark the repeatable as _mc_is_excluded
+            if child_item._mc_is_excluded:
+                repeatable._mc_is_excluded = child_item._mc_is_excluded
+                return
 
             # Calculate key to use when inserting repeatable item in Repeatable dict
             # Key is calculated as 'obj.id', 'obj.name' or id(obj) in that preferred order
@@ -160,7 +162,7 @@ class _ConfigBase(object):
             specified_key = cha.get('id') or cha.get('name')
             # specified_key._value will be the __init__ value at this point if set
             obj_key = specified_key._value if specified_key is not None and not specified_key._value in _mc_invalid_values else id(child_item)
-            item = attributes[child_key].setdefault(obj_key, child_item)
+            item = repeatable.setdefault(obj_key, child_item)
 
             if item is not child_item and not self._mc_in_mc_init:
                 # We are trying to replace an object with the same id/name
@@ -624,6 +626,9 @@ class _ConfigBase(object):
         if mc_value != _MC_NO_VALUE:
             return mc_value
 
+        if self._mc_is_excluded:
+            return Excluded(self)
+
         if attr.override_method:
             try:
                 return object.__getattribute__(self, name)
@@ -973,7 +978,7 @@ class ConfigBuilder(ConfigItem):
                     set_my_attributes_on_item_from_build(rep_value, clone=clone)
 
                     if isinstance(parent, ConfigBuilder):
-                        parent_attributes.setdefault(build_key, Repeatable())
+                        parent_attributes.setdefault(build_key, UserRepeatable(self))
                     elif not build_key in parent.__class__._mc_deco_nested_repeatables:
                         raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key, parent))
 

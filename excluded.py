@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from . config_errors import ConfigException
+
 
 class Excluded(object):
     _mc_frozen = True
@@ -21,4 +23,14 @@ class Excluded(object):
         pass
 
     def _mc_value(self):
+        return self
+
+    def __getattr__(self, name):
+        if self.item.root_conf.frozen:
+            raise ConfigException("Accessing attribute " + repr(name) + " on an excluded object:", self.item)
+        return self
+
+    def __getitem__(self, key):
+        if self.item.root_conf.frozen:
+            raise ConfigException("Accessing key " + repr(key) + " on an excluded repeatable object:", self.item)
         return self
