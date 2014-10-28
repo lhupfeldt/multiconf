@@ -258,7 +258,7 @@ class _ConfigBase(object):
         If self is ready to be validated (exit from with_statement or not declared in a with_statement),
         then self will be frozen and validated
         """
-        if self._mc_frozen or self._mc_is_excluded:
+        if self._mc_frozen:
             return True
 
         self._mc_frozen = self._mc_deco_unchecked != self.__class__ and not self._mc_root_conf._mc_under_proxy_build
@@ -297,7 +297,7 @@ class _ConfigBase(object):
                     self._mc_nested.pop()
                 self._mc_built = True
 
-        if self._mc_frozen:
+        if self._mc_frozen and not self._mc_is_excluded:
             self._mc_freeze_validation()
 
         return self._mc_frozen
@@ -814,7 +814,8 @@ class ConfigRoot(_ConfigBase):
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
-            self._user_validate_recursively()
+            if not self._mc_is_excluded:
+                self._user_validate_recursively()
         except Exception as ex:
             if not exc_type:
                 if hasattr(ex, '_mc_in_user_code') or _debug_exc:
@@ -988,6 +989,8 @@ class ConfigBuilder(ConfigItem):
                                               " overwrites existing entry in parent: " + repr(parent))
 
                     parent_attributes[build_key][rep_key] = rep_value
+
+                parent_attributes[build_key]._mc_is_excluded |= self._mc_is_excluded
                 return
 
             if isinstance(build_value, ConfigItem):
@@ -996,7 +999,10 @@ class ConfigBuilder(ConfigItem):
 
             # Set non-repeatable items on parent
             # TODO validation
-            parent_attributes[build_key] = build_value
+            if not self._mc_is_excluded:
+                parent_attributes[build_key] = build_value
+            else:
+                parent_attributes[build_key] = Excluded(build_value)
 
         def move_items_around():
             # Loop over attributes created in build
