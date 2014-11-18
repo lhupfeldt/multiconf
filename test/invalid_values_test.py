@@ -59,8 +59,8 @@ _attribute_mc_required_override_env_expected = """
 File "fake_dir/invalid_values_test.py", line %(line)s
 ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')
 File "fake_dir/invalid_values_test.py", line %(line)s
-ConfigError: %(prod_err)s
-""".strip()
+ConfigError: %(prod_err)s"""
+
 
 def test_attribute_mc_required_override_env(capsys):
     with raises(ConfigException) as exinfo:
@@ -69,7 +69,7 @@ def test_attribute_mc_required_override_env(capsys):
             cr.override('a', MC_REQUIRED)
 
     _sout, serr = capsys.readouterr()
-    expected = _attribute_mc_required_override_env_expected % dict(line=errorline, prod_err=_attribute_mc_required_expected)
+    expected = _attribute_mc_required_override_env_expected.strip() % dict(line=errorline, prod_err=_attribute_mc_required_expected)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == expected
     assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_env_expected_ex % dict(num_errors=2)
 
@@ -166,6 +166,41 @@ def test_attribute_mc_required_default_all_overridden():
         cr.setattr('a', default=MC_REQUIRED, pp="hello", prod="hi")
 
     assert cr.a == "hi"
+
+
+def test_attribute_mc_required_init_args_all_overridden():
+    class Requires(ConfigItem):
+        def __init__(self, a=MC_REQUIRED):
+            super(Requires, self).__init__(a=a)
+
+    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        Requires(a=3)
+
+    assert cr.Requires.a == 3
+
+    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        with Requires() as rq:
+            rq.a = 3
+
+    assert cr.Requires.a == 3
+
+
+def test_attribute_mc_required_init_assign_all_overridden():
+    class Requires(ConfigItem):
+        def __init__(self, a=MC_REQUIRED):
+            super(Requires, self).__init__()
+            self.a = a
+
+    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        Requires(a=3)
+
+    assert cr.Requires.a == 3
+
+    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        with Requires() as rq:
+            rq.a = 3
+
+    assert cr.Requires.a == 3
 
 
 # MC_TODO

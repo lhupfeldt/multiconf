@@ -504,7 +504,7 @@ class _ConfigBase(object):
             for env, conflicting_egs in sorted(all_ambiguous_by_envs.items()):
                 num_errors = repeated_env_error(env, conflicting_egs, num_errors)
 
-        if self._mc_check:
+        if self._mc_check and not _mc_in_init:
             try:
                 self.check_attr_fully_defined(attribute, num_errors, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             except ConfigBaseException as ex:
