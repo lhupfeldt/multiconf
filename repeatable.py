@@ -1,4 +1,8 @@
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
 from collections import OrderedDict
+
 from .excluded import Excluded
 
 
@@ -31,6 +35,6 @@ class UserRepeatable(Repeatable):
         try:
             return super(UserRepeatable, self).__getitem__(key)
         except KeyError:
-            if not self.item.root_conf.frozen and self._mc_is_excluded:
+            if not self.item.root_conf._mc_config_loaded and self._mc_is_excluded:
                 return Excluded(self.item)
             raise

@@ -279,3 +279,79 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
     assert cr.ritems['a'].anattr == 2
     assert not cr.ritems['a'].item
     assert len(cr.ritems) == 1
+
+
+def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
+    def conf(env):
+        with root(env, ef) as cr:
+            cr.a = 1
+            with ritem(id='a') as rit:
+                rit.mc_exclude_envs(exclude=[dev2, prod])
+                rit.setattr('anattr', pp=1, g_dev12_3=2)
+                rit.setattr('anotherattr', dev1=1, pp=2, dev3=117)
+
+                with item() as it1:
+                    it1.mc_exclude_envs(exclude=[dev3])
+                    it1.setattr('anattr', pp=1, g_dev12_3=2)
+                    it1.setattr('anotherattr', dev1=1, pp=2)
+
+                    with ritem(name='a') as it2:
+                        it2.setattr('anattr', pp=1, g_dev12_3=2)
+                        it2.setattr('anotherattr', dev1=1, pp=2)
+
+                    with ritem(name='b') as it2:
+                        it2.mc_exclude_envs(exclude=[dev1])
+                        it2.setattr('anattr', pp=1, g_dev12_3=2)
+                        it2.setattr('anotherattr', dev1=1, pp=2)
+
+                        it1.x = it1.ritems['a']
+                        it1.y = it1.ritems['b'].anattr
+
+                cr.x = rit.item.ritems['a'].anotherattr
+
+            with ritem(id='b') as rit:
+                rit.mc_exclude_envs(exclude=[dev1, dev3])
+                rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
+                rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
+
+                with item() as it1:
+                    it1.setattr('anattr', prod=33, pp=1, g_dev12_3=2)
+                    it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
+
+        return cr
+
+    cr = conf(prod)
+    assert cr.a == 1
+    assert 'a' not in cr.ritems
+    assert 'b' in cr.ritems
+    assert cr.ritems['b'].anattr == 31
+    assert cr.ritems['b'].item.anattr == 33
+
+    cr = conf(dev1)
+    assert cr.a == 1
+    assert 'a' in cr.ritems
+    assert 'b' not in cr.ritems
+    assert cr.ritems['a'].anattr == 2
+    assert cr.ritems['a'].anotherattr == 1
+    assert cr.ritems['a'].item.ritems['a'].anattr == 2
+    assert cr.ritems['a'].item.ritems['a'].anotherattr == 1
+    with raises(KeyError):
+        _ = cr.ritems['a'].item.ritems['b']
+    assert len(cr.ritems) == 1
+
+    cr = conf(dev2)
+    assert cr.a == 1
+    assert not 'a' in cr.ritems
+    assert not hasattr(cr, 'x')
+    with raises(AttributeError):
+        _ = cr.x.a
+    with raises(AttributeError):
+        _ = cr.x['q']
+
+    cr = conf(dev3)
+    assert cr.a == 1
+    assert 'a' in cr.ritems
+    assert 'b' not in cr.ritems
+    assert cr.ritems['a'].anattr == 2
+    assert not cr.ritems['a'].item
+    assert len(cr.ritems) == 1

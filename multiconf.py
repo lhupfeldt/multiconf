@@ -23,6 +23,9 @@ _warn_json_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() 
 
 # pylint: disable=protected-access
 
+class _McExcludedException(Exception):
+    pass
+
 
 def debug(*args):
     print(*args)
@@ -153,7 +156,7 @@ class _ConfigBase(object):
             # Repeatable excluded items are simply excluded, but in order to lookup excluded keys during config setup
             # we mark the repeatable as _mc_is_excluded
             if child_item._mc_is_excluded:
-                repeatable._mc_is_excluded = child_item._mc_is_excluded
+                repeatable._mc_is_excluded = True
                 return
 
             # Calculate key to use when inserting repeatable item in Repeatable dict
@@ -167,10 +170,12 @@ class _ConfigBase(object):
             if item is not child_item and not self._mc_in_mc_init:
                 # We are trying to replace an object with the same id/name
                 raise ConfigException("Re-used id/name " + repr(obj_key) + " in nested objects")
+            child_item._mc_repeatable_item_key = obj_key
             return
 
         if child_key in attributes:
             if self._mc_in_mc_init:
+                # TODO? override value from __init__
                 return
 
             if isinstance(attributes[child_key], ConfigItem):
@@ -261,6 +266,10 @@ class _ConfigBase(object):
         if self._mc_frozen:
             return True
 
+        if self._mc_is_excluded:
+            self._mc_frozen = True
+            return True
+
         self._mc_frozen = self._mc_deco_unchecked != self.__class__ and not self._mc_root_conf._mc_under_proxy_build
         _mc_attributes = object.__getattribute__(self, '_mc_attributes')
         for _child_name, child_value in _mc_attributes.iteritems():
@@ -283,7 +292,10 @@ class _ConfigBase(object):
                 if isinstance(self, ConfigBuilder):
                     self._mc_in_build = True
                     self._mc_root_conf._mc_under_proxy_build = True
-                    self.build()
+                    try:
+                        self.build()
+                    except _McExcludedException:
+                        pass
                     for _name, value in self._mc_build_attributes.iteritems():
                         self._mc_frozen &= value._mc_freeze()
                     self._mc_post_build_update()
@@ -297,7 +309,7 @@ class _ConfigBase(object):
                     self._mc_nested.pop()
                 self._mc_built = True
 
-        if self._mc_frozen and not self._mc_is_excluded:
+        if self._mc_frozen:
             self._mc_freeze_validation()
 
         return self._mc_frozen
@@ -309,6 +321,8 @@ class _ConfigBase(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
+            if exc_type is _McExcludedException:
+                return True
             self._mc_freeze()
         except Exception as ex:
             ex._mc_in_exit = True
@@ -344,10 +358,11 @@ class _ConfigBase(object):
         if not mc_caller_file_name:
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
-        _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-        _mc_build_attributes = object.__getattribute__(self, '_mc_build_attributes')
         _mc_in_build = object.__getattribute__(self, '_mc_in_build')
-        attributes = _mc_build_attributes if _mc_in_build else _mc_attributes
+        if _mc_in_build:
+            attributes = object.__getattribute__(self, '_mc_build_attributes')
+        else:
+            attributes = object.__getattribute__(self, '_mc_attributes')
 
         __class__ = object.__getattribute__(self, '__class__')
         if name.endswith('!'):
@@ -810,12 +825,14 @@ class ConfigRoot(_ConfigBase):
         self._mc_contained_in = None
         self._mc_under_proxy_build = False
         self._mc_num_warnings = 0
+        self._mc_config_loaded = False
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
             if not self._mc_is_excluded:
                 self._user_validate_recursively()
+            self._mc_config_loaded = True
         except Exception as ex:
             if not exc_type:
                 if hasattr(ex, '_mc_in_user_code') or _debug_exc:
@@ -840,20 +857,26 @@ class ConfigItem(_ConfigBase):
         _mc_env_factory = object.__getattribute__(_mc_root_conf, '_mc_env_factory')
         super(ConfigItem, self).__init__(_mc_root_conf=_mc_root_conf, _mc_env_factory=_mc_env_factory,
                                          mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
+        self._mc_exclude_envs(mc_include, mc_exclude)
+        _mc_contained_in._mc_insert_item(self)
 
+
+    def _mc_exclude_envs(self, include, exclude, file_name=None, line_num=None):
+        """Determine if item (and children) is included in specified env"""
         # Resolve most specif include/exclude eg
+        _mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
         _mc_contained_in_included_envs_mask = object.__getattribute__(_mc_contained_in, '_mc_included_envs_mask')
         _mc_included_envs_mask = object.__getattribute__(self, '_mc_included_envs_mask')
 
         all_ambiguous = {}
-        if mc_exclude:
-            for eg_excl in mc_exclude:
-                if mc_include is None:
+        if exclude:
+            for eg_excl in exclude:
+                if include is None:
                     _mc_included_envs_mask &= ~eg_excl.mask
                     continue
 
                 include_masks = 0b0
-                for eg_incl in mc_include:
+                for eg_incl in include:
                     # Check if this is more specific than a previous eg or not overlapping, and collect bitmask of all seen and ambiguous envs
                     must_excl = eg_excl in eg_incl
                     must_incl = eg_incl in eg_excl
@@ -870,9 +893,9 @@ class ConfigItem(_ConfigBase):
 
                 _mc_included_envs_mask &= include_masks
         else:
-            if mc_include is not None:
+            if include is not None:
                 include_masks = 0b0
-                for eg in mc_include:
+                for eg in include:
                     include_masks |= eg.mask
                 _mc_included_envs_mask &= include_masks
 
@@ -880,7 +903,7 @@ class ConfigItem(_ConfigBase):
         cleared = []
 
         for conflicting_egs, ambiguous in all_ambiguous.items():
-            for eg in mc_exclude or ():
+            for eg in exclude or ():
                 if eg.mask & ambiguous == eg.mask:  # mask in or equal to ambiguous
                     ambiguous ^= eg.mask & ambiguous
                     if ambiguous:
@@ -889,7 +912,7 @@ class ConfigItem(_ConfigBase):
                         cleared.append(conflicting_egs)
                     _mc_included_envs_mask &= ~eg.mask
 
-            for eg in mc_include or ():
+            for eg in include or ():
                 if eg.mask & ambiguous == eg.mask:  # mask in or equal to ambiguous
                     ambiguous ^= eg.mask & ambiguous
                     if ambiguous:
@@ -905,9 +928,12 @@ class ConfigItem(_ConfigBase):
 
         # If we still have unresolved conflicts, it is an error
         if all_ambiguous:
-            mc_caller_file_name, mc_caller_line_num = caller_file_line()
+            if not file_name:
+                file_name, line_num = caller_file_line(3)
             # Reorder to generate one error per ambiguous env
             all_ambiguous_by_envs = {}
+            _mc_root_conf = object.__getattribute__(_mc_contained_in, '_mc_root_conf')
+            _mc_env_factory = object.__getattribute__(_mc_root_conf, '_mc_env_factory')
             for conflicting_egs, ambiguous in all_ambiguous.items():
                 for env in _mc_env_factory.envs_from_mask(ambiguous):
                     all_ambiguous_by_envs.setdefault(env, set()).update(conflicting_egs)
@@ -916,31 +942,64 @@ class ConfigItem(_ConfigBase):
                 msg = "Env " + repr(env.name) + " is specified in both include and exclude, with no single most specific group or direct env:"
                 for eg in sorted(conflicting_egs):
                     msg += "\n    from: " + repr(eg)
-                num_errors = _error_msg(num_errors, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+                num_errors = _error_msg(num_errors, msg, file_name=file_name, line_num=line_num)
 
-        if mc_include is not None and _mc_included_envs_mask & _mc_contained_in_included_envs_mask != _mc_included_envs_mask:
+        if include is not None and _mc_included_envs_mask & _mc_contained_in_included_envs_mask != _mc_included_envs_mask:
             re_included = _mc_included_envs_mask & _mc_contained_in_included_envs_mask ^ _mc_included_envs_mask
-            mc_caller_file_name, mc_caller_line_num = caller_file_line()
+            if not file_name:
+                file_name, line_num = caller_file_line(3)
+            _mc_root_conf = object.__getattribute__(_mc_contained_in, '_mc_root_conf')
+            _mc_env_factory = object.__getattribute__(_mc_root_conf, '_mc_env_factory')
             for env in _mc_env_factory.envs_from_mask(re_included):
                 msg = "Env " + repr(env.name) + " is excluded at an outer level"
-                num_errors = _error_msg(num_errors, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+                num_errors = _error_msg(num_errors, msg, file_name=file_name, line_num=line_num)
 
         if num_errors:
             raise ConfigException("There were " + repr(num_errors) + " errors when defining item: " + repr(self))
 
         if not (self.env.mask & _mc_included_envs_mask) or _mc_contained_in._mc_is_excluded:
             self._mc_is_excluded = True
+            _mc_attributes = object.__getattribute__(self, '_mc_attributes')
+            for _key, item in _mc_attributes.iteritems():
+                item._mc_is_excluded = True
         self._mc_included_envs_mask = _mc_included_envs_mask & _mc_contained_in_included_envs_mask
 
-        _mc_contained_in._mc_insert_item(self)
+    def mc_exclude_envs(self, include=None, exclude=None, mc_caller_file_name=None, mc_caller_line_num=None):
+        """Skip with block if item is excluded"""
+        if not self._mc_is_excluded:
+            self._mc_exclude_envs(include=include, exclude=exclude, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            if self._mc_is_excluded:
+                _mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
+                _mc_in_build = object.__getattribute__(_mc_contained_in, '_mc_in_build')
+                if _mc_in_build:
+                    attributes = object.__getattribute__(_mc_contained_in, '_mc_build_attributes')
+                else:
+                    attributes = object.__getattribute__(_mc_contained_in, '_mc_attributes')
+                if self.__class__._mc_deco_repeatable:
+                    # Remove repeatable item
+                    del attributes[self.named_as()][self._mc_repeatable_item_key]
+                else:
+                    attributes[self.named_as()] = Excluded(self)
+
+        if self._mc_is_excluded:
+            raise _McExcludedException()
 
     def _error_msg_not_repeatable_in_container(self, key, containing_class):
         return repr(key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
             repr(containing_class.named_as())
 
+    def __nonzero__(self):
+        return not object.__getattribute__(self, '_mc_is_excluded')
+
 
 class ConfigBuilder(ConfigItem):
     __metaclass__ = abc.ABCMeta
+    _num = 0
+
+    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None, **attr):
+        super(ConfigBuilder, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
+                                            mc_include=mc_include, mc_exclude=mc_exclude, **attr)
+        ConfigBuilder._num += 1
 
     def _mc_post_build_update(self):
         def set_my_attributes_on_item_from_build(item_from_build, clone):
@@ -999,10 +1058,7 @@ class ConfigBuilder(ConfigItem):
 
             # Set non-repeatable items on parent
             # TODO validation
-            if not self._mc_is_excluded:
-                parent_attributes[build_key] = build_value
-            else:
-                parent_attributes[build_key] = Excluded(build_value)
+            parent_attributes[build_key] = build_value if not self._mc_is_excluded else Excluded(build_value)
 
         def move_items_around():
             # Loop over attributes created in build
@@ -1024,4 +1080,4 @@ class ConfigBuilder(ConfigItem):
         return OrderedDict([(key, attr._mc_value()) for key, attr in self._mc_build_attributes.iteritems()])
 
     def named_as(self):
-        return super(ConfigBuilder, self).named_as() + '.builder.' + repr(id(self))
+        return super(ConfigBuilder, self).named_as() + '.builder.' + repr(ConfigBuilder._num)

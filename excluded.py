@@ -5,13 +5,14 @@ from . config_errors import ConfigException
 
 
 class Excluded(object):
-    _mc_frozen = True
+    __slots__ = ("_repr", "_mc_root_conf", "__weakref__")
 
     def __init__(self, item):
-        self.item = item
+        self._repr = "Excluded: " + repr(type(item))
+        self._mc_root_conf = item._mc_root_conf
 
     def __repr__(self):
-        return "Excluded: " + repr(type(self.item))
+        return self._repr
 
     def __nonzero__(self):
         return False
@@ -26,11 +27,11 @@ class Excluded(object):
         return self
 
     def __getattr__(self, name):
-        if self.item.root_conf.frozen:
-            raise ConfigException("Accessing attribute " + repr(name) + " on an excluded object:", self.item)
+        if self._mc_root_conf._mc_config_loaded:
+            raise ConfigException("Accessing attribute " + repr(name) + " on an excluded object:", self)
         return self
 
     def __getitem__(self, key):
-        if self.item.root_conf.frozen:
-            raise ConfigException("Accessing key " + repr(key) + " on an excluded repeatable object:", self.item)
+        if self._mc_root_conf._mc_config_loaded:
+            raise ConfigException("Accessing [key] " + repr(key) + " on an excluded object:", self)
         return self
