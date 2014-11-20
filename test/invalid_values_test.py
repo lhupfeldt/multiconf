@@ -6,7 +6,7 @@ from pytest import raises, mark  # pylint: disable=no-name-in-module
 
 from .utils.utils import config_error, config_warning, lineno, replace_ids, assert_lines_in, replace_user_file_line_msg
 
-from .. import ConfigRoot, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
+from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED, MC_TODO
 from ..envs import EnvFactory
 
 ef1_prod_pp = EnvFactory()
@@ -183,6 +183,84 @@ def test_attribute_mc_required_init_args_all_overridden():
             rq.a = 3
 
     assert cr.Requires.a == 3
+
+
+_attribute_mc_required_other_env_requires_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "Requires #as: 'Requires', id: 0000, not-frozen",
+    "a": "hi"
+}"""
+
+
+def test_attribute_mc_required_init_args_missing_env_value(capsys):
+    class Requires(ConfigItem):
+        def __init__(self, a=MC_REQUIRED):
+            super(Requires, self).__init__(a=a)
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod1, ef1_prod_pp):
+            with Requires() as rq:
+                errorline = lineno() + 1
+                rq.setattr('a', prod='hi')
+
+    _sout, serr = capsys.readouterr()
+    print _sout
+    assert serr == ce(errorline, """Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')""")
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_other_env_requires_expected_ex
+
+
+_attribute_mc_required_init_args_missing_env_values_builder_expected_ex = """There were 2 errors when defining attribute 'a' on object: {
+    "__class__": "Requires #as: 'Requires', id: 0000",
+    "a": "MC_REQUIRED"
+}"""
+
+def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
+    class Requires(ConfigItem):
+        def __init__(self, a=MC_REQUIRED):
+            super(Requires, self).__init__(a=a)
+
+    class Builder(ConfigBuilder):
+        def __init__(self):
+            super(Builder, self).__init__()
+
+        def build(self):
+            Requires()
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod1, ef1_prod_pp):
+            with Builder():
+                errorline = lineno()
+
+    _sout, serr = capsys.readouterr()
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^%(lnum)s",
+        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
+        "^%(lnum)s",
+        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
+    )
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_init_args_missing_env_values_builder_expected_ex
+
+
+_attribute_mc_required_other_env_required_init_arg_missing_with_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "Requires #as: 'Requires', id: 0000",
+    "a": "hi"
+}"""
+
+def test_attribute_mc_required_init_args_missing_with(capsys):
+    class Requires(ConfigItem):
+        def __init__(self, a=MC_REQUIRED):
+            super(Requires, self).__init__()
+            self.setattr('a', default=a, prod='hi')
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod1, ef1_prod_pp):
+            errorline = lineno() + 1
+            Requires()
+
+    _sout, serr = capsys.readouterr()
+    print _sout
+    assert serr == ce(errorline, """Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')""")
+    assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_other_env_required_init_arg_missing_with_expected_ex
 
 
 def test_attribute_mc_required_init_assign_all_overridden():
