@@ -286,12 +286,12 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
         with root(env, ef) as cr:
             cr.a = 1
             with ritem(id='a') as rit:
-                rit.mc_exclude_envs(exclude=[dev2, prod])
+                rit.mc_select_envs(exclude=[dev2, prod])
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, pp=2, dev3=117)
 
                 with item() as it1:
-                    it1.mc_exclude_envs(exclude=[dev3])
+                    it1.mc_select_envs(exclude=[dev3])
                     it1.setattr('anattr', pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, pp=2)
 
@@ -300,7 +300,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
                         it2.setattr('anotherattr', dev1=1, pp=2)
 
                     with ritem(name='b') as it2:
-                        it2.mc_exclude_envs(exclude=[dev1])
+                        it2.mc_select_envs(exclude=[dev1])
                         it2.setattr('anattr', pp=1, g_dev12_3=2)
                         it2.setattr('anotherattr', dev1=1, pp=2)
 
@@ -310,7 +310,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
                 cr.x = rit.item.ritems['a'].anotherattr
 
             with ritem(id='b') as rit:
-                rit.mc_exclude_envs(exclude=[dev1, dev3])
+                rit.mc_select_envs(exclude=[dev1, dev3])
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
 

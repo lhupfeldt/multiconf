@@ -112,8 +112,8 @@ class ExclInBuild2(ConfigBuilder):
     def build(self):        
         RepeatableItem(name='ccc', mc_exclude=None)
         with RepeatableItem(name='ddd') as ddd:
-            ddd.mc_exclude_envs(exclude=[prod])
-        self.mc_exclude_envs(exclude=[prod])
+            ddd.mc_select_envs(exclude=[prod])
+        self.mc_select_envs(exclude=[prod])
         RepeatableItem(name='bbb', mc_exclude=None)
 
 

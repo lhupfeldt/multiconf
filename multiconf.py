@@ -857,11 +857,11 @@ class ConfigItem(_ConfigBase):
         _mc_env_factory = object.__getattribute__(_mc_root_conf, '_mc_env_factory')
         super(ConfigItem, self).__init__(_mc_root_conf=_mc_root_conf, _mc_env_factory=_mc_env_factory,
                                          mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
-        self._mc_exclude_envs(mc_include, mc_exclude)
+        self._mc_select_envs(mc_include, mc_exclude)
         _mc_contained_in._mc_insert_item(self)
 
 
-    def _mc_exclude_envs(self, include, exclude, file_name=None, line_num=None):
+    def _mc_select_envs(self, include, exclude, file_name=None, line_num=None):
         """Determine if item (and children) is included in specified env"""
         # Resolve most specif include/exclude eg
         _mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
@@ -964,10 +964,10 @@ class ConfigItem(_ConfigBase):
                 item._mc_is_excluded = True
         self._mc_included_envs_mask = _mc_included_envs_mask & _mc_contained_in_included_envs_mask
 
-    def mc_exclude_envs(self, include=None, exclude=None, mc_caller_file_name=None, mc_caller_line_num=None):
+    def mc_select_envs(self, include=None, exclude=None, mc_caller_file_name=None, mc_caller_line_num=None):
         """Skip with block if item is excluded"""
         if not self._mc_is_excluded:
-            self._mc_exclude_envs(include=include, exclude=exclude, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            self._mc_select_envs(include=include, exclude=exclude, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             if self._mc_is_excluded:
                 _mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
                 _mc_in_build = object.__getattribute__(_mc_contained_in, '_mc_in_build')
