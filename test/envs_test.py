@@ -58,6 +58,39 @@ def test_repr_of_valid_envs():
     assert repr(valid_envs) == valid_envs_repr.strip()
 
 
+def test_eq():
+    # Compare Envs
+    assert prod == prod
+    assert dev1 == dev1
+    assert prod != dev1
+    assert dev1 != prod
+
+    # Compare Groups
+    assert g_dev_tst == g_dev_tst
+    assert g_prod == g_prod
+    assert g_dev_tst != g_prod
+    assert g_prod != g_dev_tst
+
+    # Compare Groups to Envs
+    assert g_dev_tst != dev1
+    assert g_prod != prod
+    assert dev1 != g_dev_tst
+    assert prod != g_prod
+
+    # Compare to other types
+    assert g_dev_tst != None
+    assert g_prod != 1
+    assert dev1 != None
+    assert prod != "Hello"
+    assert not prod == "Hello"
+
+    # Compare other types to self
+    assert None != g_dev_tst
+    assert 1 != g_prod
+    assert None != dev1
+    assert "Hello" != prod
+    
+
 def test_membership():
     # Env is not in itself
     assert prod not in prod
@@ -163,7 +196,7 @@ def test_repeated_nested_env_member():
     hh1 = efl.Env('hh1')
     hh2 = efl.EnvGroup('hh2', hh1)
     hh3 = efl.EnvGroup('hh3', hh1, hh2)
-    
+
     assert hh3.envs == [hh1]
 
 
@@ -257,7 +290,7 @@ def test_repeated_nested_group_member():
     jj2 = myef.EnvGroup('jj2', jj1)
     jj3 = myef.EnvGroup('jj3', jj2)
     jj4 = myef.EnvGroup('jj4', jj3, jj2)
-    
+
     assert jj1 in jj4
     assert jj2 in jj4
     assert jj3 in jj4

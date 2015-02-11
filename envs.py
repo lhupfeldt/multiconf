@@ -61,9 +61,6 @@ class BaseEnv(object):
     def __repr__(self):
         return self.irepr(0)
 
-    def __eq__(self, other):
-        return self.bit == other.bit
-
     def __lt__(self, other):
         return self.bit < other.bit
 
