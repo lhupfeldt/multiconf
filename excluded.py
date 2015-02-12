@@ -7,9 +7,9 @@ from . config_errors import ConfigException
 class Excluded(object):
     __slots__ = ("_repr", "_mc_root_conf", "__weakref__")
 
-    def __init__(self, item):
-        self._repr = "Excluded: " + repr(type(item))
-        self._mc_root_conf = item._mc_root_conf
+    def __init__(self, excluded_item):
+        self._repr = "Excluded: " + repr(type(excluded_item))
+        self._mc_root_conf = excluded_item._mc_root_conf
 
     def __repr__(self):
         return self._repr
