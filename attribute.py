@@ -22,7 +22,7 @@ def where_from_name(where_from):
     if where_from == mc_where_from_mc_init:
         return "from_mc_init"
     raise Exception("Not a where_from value:" + repr(where_from))
-    
+
 
 class Attribute(object):
     def __init__(self, name, override_method=False):

@@ -26,7 +26,7 @@ class BaseEnv(object):
     @classmethod
     def validate(cls, name):
         if not isinstance(name, type("")):
-            raise EnvException(cls.__name__ + ": 'name' must be instance of " + type("").__name__ + ", found: " +  type(name).__name__)
+            raise EnvException(cls.__name__ + ": 'name' must be instance of " + type("").__name__ + ", found: " + type(name).__name__)
         if not len(name):
             raise EnvException(cls.__name__ + ": 'name' must not be empty")
         if name[0] == '_':
@@ -51,7 +51,7 @@ class BaseEnv(object):
             ("name", self.name),
             ("bit", self.bit),
             ("mask", int_to_bin_str(self.mask)),
-            #("hash", self.__hash__()),
+            # ("hash", self.__hash__()),
             ("members", self.members))
         )
 
@@ -92,10 +92,10 @@ class EnvGroup(BaseEnv, Container):
         mask = 0b0
         for eg in members:
             if not isinstance(eg, BaseEnv):
-                raise EnvException(self.__class__.__name__ +  ': Group members args must be instance of ' +
+                raise EnvException(self.__class__.__name__ + ': Group members args must be instance of ' +
                                    repr(Env.__name__) + ' or ' + repr(EnvGroup.__name__) + ', found: ' + repr(eg))
-            if not eg.factory is factory:
-                raise EnvException(self.__class__.__name__ +  ": The group members must be from the same 'env_factory' as the group being declared. " +
+            if eg.factory is not factory:
+                raise EnvException(self.__class__.__name__ + ": The group members must be from the same 'env_factory' as the group being declared. " +
                                    repr(Env.__name__) + ' or ' + repr(EnvGroup.__name__) + ' found: ' + repr(eg))
             mask |= eg.mask
 
@@ -127,7 +127,6 @@ class EnvGroup(BaseEnv, Container):
         self.envs = list(envs.values())
 
         self.all = self.groups + self.envs
-
 
     def irepr(self, indent_level):
         indent1 = '  ' * indent_level

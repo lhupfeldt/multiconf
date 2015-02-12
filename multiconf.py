@@ -74,7 +74,7 @@ class _ConfigBase(object):
             except AttributeError:
                 pass
             attribute = Attribute(key)
-            if not value in _mc_invalid_values:
+            if value not in _mc_invalid_values:
                 attribute.set_env_provided(_mc_env_factory._mc_init_group)
                 attribute.set_current_env_value(value, _mc_env_factory._mc_init_group, mc_where_from_init, file_name, line_num)
             else:
@@ -84,7 +84,7 @@ class _ConfigBase(object):
         for key in _mc_deco_nested_repeatables:
             ur = UserRepeatable()
             ur.contained_in = self
-            _mc_attributes[key] = ur 
+            _mc_attributes[key] = ur
 
         # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class mc_init
         _mc_deco_unchecked = object.__getattribute__(self, '_mc_deco_unchecked')
@@ -152,7 +152,7 @@ class _ConfigBase(object):
                 ur = UserRepeatable()
                 ur.contained_in = self
                 attributes.setdefault(child_key, UserRepeatable())
-            elif not child_key in self.__class__._mc_deco_nested_repeatables:
+            elif child_key not in self.__class__._mc_deco_nested_repeatables:
                 raise ConfigException(child_item._error_msg_not_repeatable_in_container(child_key, self))
 
             repeatable = attributes[child_key]
@@ -168,7 +168,7 @@ class _ConfigBase(object):
             cha = child_item._mc_attributes
             specified_key = cha.get('id') or cha.get('name')
             # specified_key._value will be the __init__ value at this point if set
-            obj_key = specified_key._value if specified_key is not None and not specified_key._value in _mc_invalid_values else id(child_item)
+            obj_key = specified_key._value if specified_key is not None and specified_key._value not in _mc_invalid_values else id(child_item)
             item = repeatable.setdefault(obj_key, child_item)
 
             if item is not child_item and not self._mc_in_mc_init:
@@ -231,7 +231,7 @@ class _ConfigBase(object):
         # Validate @required
         missing = []
         for req in self.__class__._mc_deco_required:
-            if not req in _mc_attributes:
+            if req not in _mc_attributes:
                 missing.append(req)
         if missing:
             raise ConfigException("No value given for required attributes: " + repr(missing))
@@ -251,7 +251,7 @@ class _ConfigBase(object):
 
         missing = []
         for req in self.__class__._mc_deco_required_if[1]:
-            if not req in _mc_attributes:
+            if req not in _mc_attributes:
                 missing.append(req)
             else:
                 attr = _mc_attributes[req]
@@ -405,11 +405,11 @@ class _ConfigBase(object):
 
         def repeated_env_error(env, conflicting_egs, num_errors):
             # TODO __file__ line of attribute set in any scope!
-            #new_eg_msg = repr(self._mc_root_conf._mc_selected_env) + ("" if isinstance(eg, EnvGroup) else " from group " + repr(eg))
-            #new_vfl = (value, (mc_caller_file_name, mc_caller_line_num))
-            #prev_eg_msg = repr(previous_eg)
-            #prev_vfl = (attribute._value, (attribute.file_name, attribute.line_num))
-            #msg = "A value is already specified for: " + new_eg_msg + '=' + repr(new_vfl) + ", previous value: " + prev_eg_msg + '=' + repr(prev_vfl)
+            # new_eg_msg = repr(self._mc_root_conf._mc_selected_env) + ("" if isinstance(eg, EnvGroup) else " from group " + repr(eg))
+            # new_vfl = (value, (mc_caller_file_name, mc_caller_line_num))
+            # prev_eg_msg = repr(previous_eg)
+            # prev_vfl = (attribute._value, (attribute.file_name, attribute.line_num))
+            # msg = "A value is already specified for: " + new_eg_msg + '=' + repr(new_vfl) + ", previous value: " + prev_eg_msg + '=' + repr(prev_vfl)
             msg = "Value for env " + repr(env.name) + " is specified more than once, with no single most specific group or direct env:"
             for eg in sorted(conflicting_egs):
                 value = kwargs[eg.name]
@@ -438,7 +438,7 @@ class _ConfigBase(object):
 
         # Validate given env values, assign current env value from most specific argument
         for eg_name, value in kwargs.iteritems():
-            #debug("eg_name:", eg_name)
+            # debug("eg_name:", eg_name)
             try:
                 eg = self._mc_root_conf._mc_env_factory.env_or_group_from_name(eg_name)
                 if value not in _mc_invalid_values:
@@ -465,18 +465,18 @@ class _ConfigBase(object):
                         update_value = True
                         if orig_attr_where_from != mc_where_from_nowhere:
                             if eg in orig_attr_eg:
-                                #debug("New eg is more specific than orig, new:", eg, "orig:", orig_attr_eg)
+                                # debug("New eg is more specific than orig, new:", eg, "orig:", orig_attr_eg)
                                 pass
                             elif orig_attr_eg == eg:
-                                #debug("Same eg, new:", eg.name, "orig:", orig_attr_eg.name)
+                                # debug("Same eg, new:", eg.name, "orig:", orig_attr_eg.name)
                                 if orig_attr_where_from < where_from or orig_attr_where_from in (mc_where_from_init, mc_where_from_mc_init):
-                                    #debug("orig where_from < where_from or orig_attr_where_from == mc_where_from_init")
+                                    # debug("orig where_from < where_from or orig_attr_where_from == mc_where_from_init")
                                     pass
                                 else:
-                                    #debug("orig where_from > where_from")
+                                    # debug("orig where_from > where_from")
                                     update_value = False
                             elif orig_attr_eg in eg:
-                                #debug("Orig eg is the more specific, new", eg.name, "orig:", orig_attr_eg.name)
+                                # debug("Orig eg is the more specific, new", eg.name, "orig:", orig_attr_eg.name)
                                 update_value = False
 
                         if update_value:
@@ -596,14 +596,14 @@ class _ConfigBase(object):
                 # Check for which envs the attribute is MC_TODO
                 value = _MC_NO_VALUE
                 for inv_value, inv_eg, inv_where_from, inv_file_name, inv_line_num in attribute.invalid_values if hasattr(attribute, 'invalid_values') else ():
-                    #debug("Checking MC_TODO, env, inv_value, inv_eg:", env, inv_value, inv_eg)
+                    # debug("Checking MC_TODO, env, inv_value, inv_eg:", env, inv_value, inv_eg)
                     if env.bit & inv_eg.mask:
                         if self._mc_root_conf._mc_selected_env == env:
                             attribute._value = inv_value
                         value = inv_value
                         break
 
-                #debug("attribute._value, value:", attribute._value, value)
+                # debug("attribute._value, value:", attribute._value, value)
                 value_msg = (' ' + repr(value)) if value in _mc_invalid_values and value != _MC_NO_VALUE else ''
                 current_env_msg = " current" if env == self.env else ''
                 msg = "Attribute: " + repr(attribute.name) + value_msg + " did not receive a value for" + current_env_msg + " env " + repr(env)
@@ -637,7 +637,7 @@ class _ConfigBase(object):
         except AttributeError:
             __class__ = object.__getattribute__(self, '__class__')
             ex_msg = "An error was detected trying to get attribute " + repr(name) + " on class " + repr(__class__.__name__)
-            msg  = "\n    - You did not initailize the parent class (parent __init__ method has not been called)."
+            msg = "\n    - You did not initailize the parent class (parent __init__ method has not been called)."
             _api_error_msg(1, ex_msg + msg)
             raise ConfigApiException(ex_msg)
 
@@ -807,11 +807,11 @@ class ConfigRoot(_ConfigBase):
     def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None, mc_allow_todo=False, mc_allow_current_env_todo=False, **attr):
         __class__ = object.__getattribute__(self, '__class__')
         if not isinstance(env_factory, EnvFactory):
-            raise ConfigException(__class__.__name__ + ': env_factory arg must be instance of ' + repr(EnvFactory.__name__) + '; found type ' \
+            raise ConfigException(__class__.__name__ + ': env_factory arg must be instance of ' + repr(EnvFactory.__name__) + '; found type '
                                   + repr(env_factory.__class__.__name__) + ': ' + repr(env_factory))
 
         if not isinstance(selected_env, Env):
-            raise ConfigException(__class__.__name__ + ': env must be instance of ' + repr(Env.__name__) + '; found type ' \
+            raise ConfigException(__class__.__name__ + ': env must be instance of ' + repr(Env.__name__) + '; found type '
                                   + repr(selected_env.__class__.__name__) + ': ' + repr(selected_env))
 
         if selected_env.factory != env_factory:
@@ -864,7 +864,6 @@ class ConfigItem(_ConfigBase):
         self._mc_select_envs(mc_include, mc_exclude)
         _mc_contained_in._mc_insert_item(self)
 
-
     def _mc_select_envs(self, include, exclude, file_name=None, line_num=None):
         """Determine if item (and children) is included in specified env"""
         # Resolve most specif include/exclude eg
@@ -884,7 +883,7 @@ class ConfigItem(_ConfigBase):
                     # Check if this is more specific than a previous eg or not overlapping, and collect bitmask of all seen and ambiguous envs
                     must_excl = eg_excl in eg_incl
                     must_incl = eg_incl in eg_excl
-    
+
                     ambiguous = 0x0
                     if not (must_incl or must_excl):
                         ambiguous = eg_excl.mask & eg_incl.mask
@@ -1014,7 +1013,7 @@ class ConfigBuilder(ConfigItem):
 
                 if isinstance(override_value, Repeatable):
                     for rep_override_key, rep_override_value in override_value.iteritems():
-                        if not override_key in item_from_build.__class__._mc_deco_nested_repeatables:
+                        if override_key not in item_from_build.__class__._mc_deco_nested_repeatables:
                             raise ConfigException(rep_override_value._error_msg_not_repeatable_in_container(override_key, item_from_build))
                         ov = copy.copy(rep_override_value) if clone else rep_override_value
                         ov._mc_contained_in = item_from_build
@@ -1045,7 +1044,7 @@ class ConfigBuilder(ConfigItem):
                         ur = UserRepeatable()
                         ur.contained_in = self
                         parent_attributes.setdefault(build_key, ur)
-                    elif not build_key in parent.__class__._mc_deco_nested_repeatables:
+                    elif build_key not in parent.__class__._mc_deco_nested_repeatables:
                         raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key, parent))
 
                     if rep_key in parent_attributes[build_key]:

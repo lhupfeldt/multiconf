@@ -84,6 +84,7 @@ def _warning_type_msg(num_warnings, message):
     print('ConfigWarning:', message, file=sys.stderr)
     return num_warnings + 1
 
+
 def _warning_msg(num_warnings, message, up_level=2, file_name=None, line_num=None):
     _line_msg(up_level, file_name, line_num)
     return _warning_type_msg(num_warnings, message)

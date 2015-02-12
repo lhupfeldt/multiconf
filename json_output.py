@@ -61,7 +61,7 @@ class ConfigItemEncoder(object):
         if self.compact:
             msg = " #as: '" + obj.named_as() + "', id: " + str(id(obj)) + not_frozen_msg
             return OrderedDict((_class_tuple(obj, msg),))
-        return OrderedDict(( _class_tuple(obj, not_frozen_msg), ('__id__', id(obj))))
+        return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', id(obj))))
 
     def _check_already_dumped(self, objval):
         # Return (new)objval, done
@@ -233,7 +233,7 @@ class ConfigItemEncoder(object):
                 return dd
 
             if isinstance(obj, envs.BaseEnv):
-                #print "# Handle Env objects", type(obj)
+                # print "# Handle Env objects", type(obj)
                 dd = OrderedDict((_class_tuple(obj),))
                 for eg in obj.all:
                     dd['name'] = eg.name
@@ -251,7 +251,7 @@ class ConfigItemEncoder(object):
             except TypeError:
                 pass
             else:
-                #print "# Handle iterable objects", type(obj)
+                # print "# Handle iterable objects", type(obj)
                 return list(iterable)
 
             if self.user_fallback_callable:
@@ -260,7 +260,7 @@ class ConfigItemEncoder(object):
                     return obj
 
             if isinstance(obj, types.InstanceType):
-                #print "# Handle instances of old style classes", type(obj)
+                # print "# Handle instances of old style classes", type(obj)
                 # Note that new style class instances are practically indistinguishable from other types of objects
                 dd = self._class_dict(obj)
                 for key, val in obj.__dict__.iteritems():
