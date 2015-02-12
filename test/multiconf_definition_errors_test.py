@@ -707,3 +707,19 @@ def test_mc_init_override_underscore_mc_error(capsys):
     # TODO: missing error message
     assert replace_user_file_line_msg(serr) == ""
     assert exinfo.value.message == """Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
+
+
+def test_attribute_mc_required_args_partial_set_in_init_unfinished():
+    class Requires(ConfigItem):
+        def __init__(self, a=13):
+            super(Requires, self).__init__()
+            # Partial assignment is allowed in init
+            self.setattr('a', prod=a)
+            self.setattr('b', default=17, prod=2)
+
+        def mc_init(self):
+            self.b = 7
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+            Requires()

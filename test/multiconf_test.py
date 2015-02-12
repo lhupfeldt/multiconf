@@ -772,3 +772,28 @@ def test_mc_init_setattr_ref_env_value_from_with():
         with X() as x:
             x.setattr('aa', default=13)
     assert x.aa == 13
+
+
+def test_attribute_mc_required_args_partial_set_in_init_overridden_or_finished_in_mc_init():
+    class Requires(ConfigItem):
+        def __init__(self, a=13):
+            super(Requires, self).__init__()
+            # Partial assignment is allowed in init
+            self.setattr('a', prod=a)
+            self.setattr('b', default=17, prod=2)
+
+        def mc_init(self):
+            self.setattr('a', pp=7)
+            self.b = 7
+
+    with ConfigRoot(prod2, ef2_pp_prod) as cr:
+        Requires()
+
+    assert cr.Requires.a == 13
+    assert cr.Requires.b == 2
+
+    with ConfigRoot(pp2, ef2_pp_prod) as cr:
+        Requires()
+
+    assert cr.Requires.a == 7
+    assert cr.Requires.b == 7

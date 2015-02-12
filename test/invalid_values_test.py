@@ -185,6 +185,47 @@ def test_attribute_mc_required_init_args_all_overridden():
     assert cr.Requires.a == 3
 
 
+def test_attribute_mc_required_args_all_overridden_in_mc_init():
+    class Requires(ConfigItem):
+        def __init__(self, a=MC_REQUIRED):
+            super(Requires, self).__init__()
+            self.a = a
+
+        def mc_init(self):
+            if self.a == MC_REQUIRED:
+                self.a = 7
+
+    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        Requires()
+
+    assert cr.Requires.a == 7
+
+
+def test_attribute_mc_required_args_partial_set_in_init_overridden_in_mc_init():
+    class Requires(ConfigItem):
+        def __init__(self, a=MC_REQUIRED):
+            super(Requires, self).__init__()
+            # Partial assignment is allowed in init
+            self.setattr('a', prod=a)
+            self.setattr('b', default=MC_REQUIRED, prod=2)
+
+        def mc_init(self):
+            self.a = 7
+            self.b = 7
+
+    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        Requires()
+
+    assert cr.Requires.a == 7
+    assert cr.Requires.b == 2
+
+    with ConfigRoot(pp1, ef1_prod_pp) as cr:
+        Requires()
+
+    assert cr.Requires.a == 7
+    assert cr.Requires.b == 7
+
+
 _attribute_mc_required_other_env_requires_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "Requires #as: 'Requires', id: 0000, not-frozen",
     "a": "hi"

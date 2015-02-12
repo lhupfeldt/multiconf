@@ -9,7 +9,7 @@ import json
 
 from .envs import EnvFactory, Env, EnvException
 from .attribute import Attribute, mc_where_from_nowhere, mc_where_from_init, mc_where_from_with, mc_where_from_mc_init
-from .values import MC_TODO, _MC_NO_VALUE, _mc_invalid_values
+from .values import MC_TODO, MC_REQUIRED, _MC_NO_VALUE, _mc_invalid_values
 from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
@@ -464,7 +464,10 @@ class _ConfigBase(object):
                         # Check against already set value from another scope
                         update_value = True
                         if orig_attr_where_from != mc_where_from_nowhere:
-                            if eg in orig_attr_eg:
+                            if attribute._value == MC_REQUIRED or attribute._value is None:
+                                # debug("Existing value is overridable:", attribute._value)
+                                pass
+                            elif eg in orig_attr_eg:
                                 # debug("New eg is more specific than orig, new:", eg, "orig:", orig_attr_eg)
                                 pass
                             elif orig_attr_eg == eg:
