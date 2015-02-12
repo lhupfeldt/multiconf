@@ -26,15 +26,15 @@ class Repeatable(OrderedDict):
 class UserRepeatable(Repeatable):
     _mc_frozen = False
 
-    def __init__(self, item):
-        super(UserRepeatable, self).__init__()
-        self.item = item
+    def __init__(self, *args, **kwds):
+        super(UserRepeatable, self).__init__(*args, **kwds)
+        self.contained_in = None
         self._mc_is_excluded = False
 
     def __getitem__(self, key):
         try:
             return super(UserRepeatable, self).__getitem__(key)
         except KeyError:
-            if not self.item.root_conf._mc_config_loaded and self._mc_is_excluded:
-                return Excluded(self.item)
+            if not self.contained_in.root_conf._mc_config_loaded and self._mc_is_excluded:
+                return Excluded(self.contained_in)
             raise

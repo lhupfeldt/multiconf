@@ -82,7 +82,9 @@ class _ConfigBase(object):
             _mc_attributes[key] = attribute
 
         for key in _mc_deco_nested_repeatables:
-            _mc_attributes[key] = UserRepeatable(self)
+            ur = UserRepeatable()
+            ur.contained_in = self
+            _mc_attributes[key] = ur 
 
         # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class mc_init
         _mc_deco_unchecked = object.__getattribute__(self, '_mc_deco_unchecked')
@@ -147,7 +149,9 @@ class _ConfigBase(object):
         if child_item.__class__._mc_deco_repeatable:
             # Validate that this class specifies item as repeatable
             if isinstance(self, ConfigBuilder):
-                attributes.setdefault(child_key, UserRepeatable(self))
+                ur = UserRepeatable()
+                ur.contained_in = self
+                attributes.setdefault(child_key, UserRepeatable())
             elif not child_key in self.__class__._mc_deco_nested_repeatables:
                 raise ConfigException(child_item._error_msg_not_repeatable_in_container(child_key, self))
 
@@ -1038,7 +1042,9 @@ class ConfigBuilder(ConfigItem):
                     set_my_attributes_on_item_from_build(rep_value, clone=clone)
 
                     if isinstance(parent, ConfigBuilder):
-                        parent_attributes.setdefault(build_key, UserRepeatable(self))
+                        ur = UserRepeatable()
+                        ur.contained_in = self
+                        parent_attributes.setdefault(build_key, ur)
                     elif not build_key in parent.__class__._mc_deco_nested_repeatables:
                         raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key, parent))
 
