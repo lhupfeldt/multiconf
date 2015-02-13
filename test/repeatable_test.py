@@ -26,3 +26,7 @@ def test_copy_user_repeatable():
     attr2 = attr1.copy()
     assert attr1 == attr2
     assert attr1 is not attr2
+    assert attr2['a'] == 1
+    assert attr2['b'] == 2
+    assert attr2.contained_in == attr1.contained_in
+    assert attr2._mc_is_excluded == attr1._mc_is_excluded

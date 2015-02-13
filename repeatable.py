@@ -31,6 +31,12 @@ class UserRepeatable(Repeatable):
         self.contained_in = None
         self._mc_is_excluded = False
 
+    def copy(self):
+        res = super(UserRepeatable, self).copy()
+        res.contained_in = self.contained_in
+        res._mc_is_excluded = self._mc_is_excluded
+        return res
+        
     def __getitem__(self, key):
         try:
             return super(UserRepeatable, self).__getitem__(key)
