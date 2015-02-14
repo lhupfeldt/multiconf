@@ -7,7 +7,8 @@ import sys, threading, traceback
 from collections import OrderedDict
 import types
 
-import multiconf, envs
+import multiconf
+from . import envs
 from .values import _MC_NO_VALUE
 from .excluded import Excluded
 from .config_errors import InvalidUsageException
