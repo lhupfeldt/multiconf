@@ -4,7 +4,7 @@
 from .utils.utils import config_error, replace_ids
 
 from .. import ConfigRoot, ConfigItem
-from ..decorators import  required, named_as, optional
+from ..decorators import required, required_if, named_as, optional, nested_repeatables
 
 from ..envs import EnvFactory
 
@@ -30,7 +30,7 @@ _g_expected = """{
 }"""
 
 
-def test_required_attributes_for_configroot():
+def test_required_attributes_for_configroot_as_str():
     @required('anattr, anotherattr')
     class root(ConfigRoot):
         pass
@@ -42,11 +42,40 @@ def test_required_attributes_for_configroot():
     assert cr.anotherattr == 2
 
 
-def test_required_attributes_for_configitem():
+def test_required_attributes_for_configroot_as_args():
+    @required('anattr', 'anotherattr')
+    class root(ConfigRoot):
+        pass
+
+    with root(prod1, ef1_prod) as cr:
+        cr.setattr('anattr', prod=1)
+        cr.setattr('anotherattr', prod=2)
+    assert cr.anattr == 1
+    assert cr.anotherattr == 2
+    
+
+def test_required_attributes_for_configitem_as_str():
     class root(ConfigRoot):
         pass
 
     @required('a, b')
+    class item(ConfigItem):
+        pass
+
+    with root(prod1, ef1_prod) as cr:
+        with item() as ii:
+            ii.setattr('a', prod=1)
+            ii.setattr('b', prod=2)
+
+    assert cr.item.a == 1
+    assert cr.item.b == 2
+
+
+def test_required_attributes_for_configitem_as_args():
+    class root(ConfigRoot):
+        pass
+
+    @required('a', 'b')
     class item(ConfigItem):
         pass
 
@@ -118,3 +147,51 @@ def test_required_attributes_inherited_ok():
     assert cr.anotherattr == 2
     assert cr.someattr2 == 3
     assert cr.someotherattr2 == 4
+
+
+def test_nested_repeatables_attributes_for_configroot_as_str():
+    @nested_repeatables('ritm1, ritm2')
+    class root(ConfigRoot):
+        pass
+
+    with root(prod1, ef1_prod) as cr:
+        cr
+    assert cr.ritm1 == {}
+    assert cr.ritm2 == {}
+
+
+def test_nested_repeatables_attributes_for_configroot_as_args():
+    @nested_repeatables('ritm1', 'ritm2')
+    class root(ConfigRoot):
+        pass
+
+    with root(prod1, ef1_prod) as cr:
+        cr
+    assert cr.ritm1 == {}
+    assert cr.ritm2 == {}
+
+
+def test_required_if_attributes_for_configroot_as_str():
+    # TODO improve
+    @required_if('condattr', 'anattr, anotherattr')
+    class root(ConfigRoot):
+        pass
+
+    with root(prod1, ef1_prod) as cr:
+        cr.setattr('anattr', prod=1)
+        cr.setattr('anotherattr', prod=2)
+    assert cr.anattr == 1
+    assert cr.anotherattr == 2
+
+
+def test_required_if_attributes_for_configroot_as_args():
+    # TODO improve
+    @required_if('condatt', 'anattr', 'anotherattr')
+    class root(ConfigRoot):
+        pass
+
+    with root(prod1, ef1_prod) as cr:
+        cr.setattr('anattr', prod=1)
+        cr.setattr('anotherattr', prod=2)
+    assert cr.anattr == 1
+    assert cr.anotherattr == 2

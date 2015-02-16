@@ -16,9 +16,14 @@ def _isidentifier(name):
 
 def _not_config_builder(cls, decorator_name):
     if issubclass(cls, ConfigBuilder):
-        msg = "Decorator '@" + decorator_name + "' is not allowed on instance of ConfigBuilder."
+        msg = "Decorator '@" + decorator_name + "' is not allowed on instance of " + ConfigBuilder.__name__ + "."
         error(0, msg)
         raise ConfigDefinitionException(msg)
+
+
+def _check_valid_identifier(name):
+    if not _isidentifier(name):
+        raise ConfigDefinitionException(repr(name) + " is not a valid identifier")
 
 
 def _check_valid_identifiers(names):
@@ -33,8 +38,7 @@ def _check_valid_identifiers(names):
     raise ConfigDefinitionException(repr(invalid) + " are not valid identifiers")
 
 
-def _add_super_list_deco_values(cls, attr_names_str, deco_attr_name):
-    attr_names = [attr.strip() for attr in attr_names_str.split(',')]
+def _add_super_list_deco_values(cls, attr_names, deco_attr_name):
     _check_valid_identifiers(attr_names)
 
     super_names = getattr(super(cls, cls), '_mc_deco_' + deco_attr_name)
@@ -49,7 +53,7 @@ def _add_super_list_deco_values(cls, attr_names_str, deco_attr_name):
 def named_as(insert_as_name):
     def deco(cls):
         _not_config_builder(cls, 'named_as')
-        _check_valid_identifiers((insert_as_name,))
+        _check_valid_identifier(insert_as_name)
         cls._mc_deco_named_as = insert_as_name
         return cls
 
@@ -65,26 +69,28 @@ def repeat():
     return deco
 
 
-def nested_repeatables(attr_names):
+def nested_repeatables(attr_names, *more_attr_names):
     def deco(cls):
         _not_config_builder(cls, 'nested_repeatables')
-        cls._mc_deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
+        names = [attr.strip() for attr in attr_names.split(',')] + list(more_attr_names)
+        cls._mc_deco_nested_repeatables = _add_super_list_deco_values(cls, names, 'nested_repeatables')
         return cls
 
     return deco
 
 
-def required(attr_names):
+def required(attr_names, *more_attr_names):
     def deco(cls):
-        cls._mc_deco_required = _add_super_list_deco_values(cls, attr_names, 'required')
+        names = [attr.strip() for attr in attr_names.split(',')] + list(more_attr_names)
+        cls._mc_deco_required = _add_super_list_deco_values(cls, names, 'required')
         return cls
 
     return deco
 
 
-def required_if(attr_name, attr_names):
+def required_if(attr_name, attr_names, *more_attr_names):
     def deco(cls):
-        attributes = [attr.strip() for attr in attr_names.split(',')]
+        attributes = [attr.strip() for attr in attr_names.split(',')] + list(more_attr_names)
         _check_valid_identifiers([attr_name] + attributes)
         cls._mc_deco_required_if = attr_name, attributes
         return cls
@@ -93,7 +99,7 @@ def required_if(attr_name, attr_names):
 
 
 def optional(attr_name):
-    # TODO: Implement this cleanly so the a reasonable error message will be given
+    # TODO: Implement this cleanly so that a reasonable error message will be given
     return required_if(attr_name, attr_name)
 
 

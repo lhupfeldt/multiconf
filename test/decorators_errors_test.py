@@ -8,7 +8,7 @@ from pytest import raises
 from .utils.utils import config_error, config_warning, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigException
-from ..decorators import required, required_if, optional, nested_repeatables, ConfigDefinitionException
+from ..decorators import named_as, required, required_if, optional, nested_repeatables, ConfigDefinitionException
 from ..envs import EnvFactory
 
 ef1_prod = EnvFactory()
@@ -93,9 +93,18 @@ def test_decorator_args_are_keywords_in_required_decorator():
     assert exinfo.value.message == "['class', '99'] are not valid identifiers"
 
 
-def test_decorator_arg_not_a_valid_identifier_in_required_if_decorator():
+def test_decorator_arg_not_a_valid_identifier_in_required_if_decorator_as_str():
     with raises(ConfigDefinitionException) as exinfo:
         @required_if('-a', 'a, a-b, b, 99')
+        class root(ConfigRoot):
+            pass
+
+    assert exinfo.value.message == "['-a', 'a-b', '99'] are not valid identifiers"
+
+
+def test_decorator_arg_not_a_valid_identifier_in_required_if_decorator_as_args():
+    with raises(ConfigDefinitionException) as exinfo:
+        @required_if('-a', 'a', 'a-b', 'b', '99')
         class root(ConfigRoot):
             pass
 
@@ -132,3 +141,12 @@ def test_required_attributes_inherited_redefined(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == cw(errorline, "Attribute name: 'anattr' re-specified as 'required' on class: 'root2' , was already inherited from a super class.")
+
+
+def test_decorator_arg_not_a_valid_identifier_in_named_as_decorator():
+    with raises(ConfigDefinitionException) as exinfo:
+        @named_as('a-b')
+        class root(ConfigRoot):
+            pass
+
+    assert exinfo.value.message == "'a-b' is not a valid identifier"
