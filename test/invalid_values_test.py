@@ -163,6 +163,7 @@ def test_attribute_mc_required_other_env_different_types(capsys):
 
 def test_attribute_mc_required_default_all_overridden():
     with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        # TODO: This should actually not be allowed, it does not make sense!
         cr.setattr('a', default=MC_REQUIRED, pp="hello", prod="hi")
 
     assert cr.a == "hi"
@@ -224,6 +225,50 @@ def test_attribute_mc_required_args_partial_set_in_init_overridden_in_mc_init():
 
     assert cr.Requires.a == 7
     assert cr.Requires.b == 7
+
+
+def test_attribute_mc_required_args_partial_set_in_init_overridden_in_with():
+    class Requires(ConfigItem):
+        def __init__(self, a=MC_REQUIRED):
+            super(Requires, self).__init__()
+            # Partial assignment is allowed in init
+            self.setattr('a', prod=a)
+            self.setattr('b', default=MC_REQUIRED, prod=2)
+
+    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        with Requires() as rq:
+            rq.a = 7
+            rq.setattr('b', pp=7)
+
+    assert cr.Requires.a == 7
+    assert cr.Requires.b == 2
+
+    with ConfigRoot(pp1, ef1_prod_pp) as cr:
+        with Requires() as rq:
+            rq.a = 7
+            rq.setattr('b', pp=7)
+
+    assert cr.Requires.a == 7
+    assert cr.Requires.b == 7
+
+
+def test_attribute_mc_required_args_set_in_init_overridden_in_with():
+    class Requires(ConfigItem):
+        def __init__(self, a=MC_REQUIRED):
+            super(Requires, self).__init__()
+            self.a = a
+
+    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        with Requires() as rq:
+            rq.a = 7
+
+    assert cr.Requires.a == 7
+
+    with ConfigRoot(pp1, ef1_prod_pp) as cr:
+        with Requires() as rq:
+            rq.a = 7
+
+    assert cr.Requires.a == 7
 
 
 _attribute_mc_required_other_env_requires_expected_ex = """There were 1 errors when defining attribute 'a' on object: {

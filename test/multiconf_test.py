@@ -774,7 +774,7 @@ def test_mc_init_setattr_ref_env_value_from_with():
     assert x.aa == 13
 
 
-def test_attribute_mc_required_args_partial_set_in_init_overridden_or_finished_in_mc_init():
+def test_attribute_args_partial_set_in_init_overridden_or_finished_in_mc_init():
     class Requires(ConfigItem):
         def __init__(self, a=13):
             super(Requires, self).__init__()
