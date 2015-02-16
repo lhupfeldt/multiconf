@@ -36,4 +36,4 @@ def test_init_inherited():
         X2(version=1)
 
     assert project.X1.version == 1
-    assert project.X2.version == None
+    assert project.X2.version is None

@@ -47,7 +47,7 @@ def test_direct_env_in_mc_init_overrides_default_and_group_in_with():
         with item1() as it:
             it.setattr('aa', default=1, g_dev=13)
     assert it.aa == 7
-    
+
     with ConfigRoot(dev1, ef):
         with item1() as it:
             it.setattr('aa', default=1, g_dev_tst=13)

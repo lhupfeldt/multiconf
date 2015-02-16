@@ -62,7 +62,7 @@ def test_configbuilder_override():
     assert cr.xses['server1'].server_num == 1
     assert cr.xses['server3'].server_num == 3
     assert cr.xses['server4'].server_num == 4
-    assert cr.xses['server4'].none_is_not_used == False
+    assert cr.xses['server4'].none_is_not_used is False
     # TODO: override of conditional attributes (required_if)
     check_containment(cr)
 

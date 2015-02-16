@@ -162,7 +162,7 @@ def test_exclude_refs_for_repeatable_nested_configitem():
 
     cr = conf(dev2)
     assert cr.a == 1
-    assert not 'a' in cr.ritems
+    assert 'a' not in cr.ritems
     assert not cr.x
     with raises(ConfigException):
         _ = cr.x.a
@@ -265,7 +265,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
 
     cr = conf(dev2)
     assert cr.a == 1
-    assert not 'a' in cr.ritems
+    assert 'a' not in cr.ritems
     assert not cr.x
     with raises(ConfigException):
         _ = cr.x.a
@@ -341,7 +341,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
 
     cr = conf(dev2)
     assert cr.a == 1
-    assert not 'a' in cr.ritems
+    assert 'a' not in cr.ritems
     assert not hasattr(cr, 'x')
     with raises(AttributeError):
         _ = cr.x.a

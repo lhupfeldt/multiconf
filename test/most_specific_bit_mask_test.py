@@ -78,7 +78,7 @@ def ttt(current_env, *env_masks):
         if mask_in_or_eq_other(current_env, mask):
             if current_env_from_index is not None:
                 current_env_from_mask = env_masks[current_env_from_index]
-                if  mask_in_other(mask, current_env_from_mask):
+                if mask_in_other(mask, current_env_from_mask):
                     current_env_from_index = ii
                     trace("Current env value reset at index:", current_env_from_index, "from mask:", int_to_bin_str(mask))
             else:
@@ -120,29 +120,37 @@ def ttt(current_env, *env_masks):
 def test1():
     assert ttt(e0, e0, e1, e2) == (0, 0b111, {})
 
+
 def test2():
     assert ttt(e0, e0, e1, e2, e3, e4, e5, e6, e7) == (0, 0b11111111, {})
+
 
 def test3():
     assert ttt(e0, ga, gc) == (0, 0b00111111, {(1, 0): 0b00001100})
 
+
 def test4():
     assert ttt(e0, ga, gc, e2, e3) == (0, 0b00111111, {})
+
 
 def test5():
     assert ttt(e0, e2, ga, e3, gc) == (1, 0b00111111, {})
 
+
 def test6():
     assert ttt(e0, e0, e1, e2, e3, e4, e5, e6, e7, ga, gb, gc) == (0, 0b11111111, {})
 
+
 def test7():
-    assert ttt(e0, ga, gb, gc, e0, e1, e2, e3, e4, e5, e6, e7) == (3 , 0b11111111, {})
+    assert ttt(e0, ga, gb, gc, e0, e1, e2, e3, e4, e5, e6, e7) == (3, 0b11111111, {})
+
 
 def test8():
     assert ttt(e0, ga, gb, gc) == (0, 0b11111111, {(2, 0): 0b00001100, (2, 1): 0b00110000})
     assert ttt(e0, gb, gc, ga) == (2, 0b11111111, {(1, 0): 0b00110000, (2, 1): 0b00001100})
     assert ttt(e0, gc, ga, gb) == (1, 0b11111111, {(1, 0): 0b00001100, (2, 0): 0b00110000})
     assert ttt(e0, ga, gc, gb) == (0, 0b11111111, {(1, 0): 0b00001100, (2, 1): 0b00110000})
+
 
 def test9():
     exp1 = {
@@ -164,6 +172,7 @@ def test9():
     res5 = ttt(e0, gb, gc, gd, ge, ga)
     assert sorted(res5[2].values()) == masks
 
+
 def test10():
     exp1 = {
         (2, 1): 0b00110000,
@@ -184,6 +193,7 @@ def test10():
     assert sorted(res5[2].values()) == masks
     res6 = ttt(e0, gb, gc, gd, ge, e0, ga)
     assert sorted(res6[2].values()) == masks
+
 
 def test11():
     assert ttt(e0, ga) == (0, ga, {})
@@ -234,6 +244,7 @@ def test11():
     assert ttt(e7, gd) == (None, gd, {})
     assert ttt(e7, ge) == (None, ge, {})
 
+
 def test12():
     assert ttt(e0, ga, gb, gc) == (0, 0b11111111, {(2, 0): 0b00001100, (2, 1): 0b00110000})
     assert ttt(e1, gb, gc, ga) == (2, 0b11111111, {(1, 0): 0b00110000, (2, 1): 0b00001100})
@@ -243,6 +254,7 @@ def test12():
     assert ttt(e5, gb, gc, ga) == (0, 0b11111111, {(1, 0): 0b00110000, (2, 1): 0b00001100})
     assert ttt(e6, gc, ga, gb) == (2, 0b11111111, {(1, 0): 0b00001100, (2, 0): 0b00110000})
     assert ttt(e7, ga, gc, gb) == (2, 0b11111111, {(1, 0): 0b00001100, (2, 1): 0b00110000})
+
 
 def test13():
     """Resolve ambigueties, set correct value"""
@@ -263,6 +275,7 @@ def test13():
     assert ttt(e5, gb, gc, gd, e5, ga) == (3, 0b11111111, {(1, 0): 0b00010000})
     assert ttt(e6, gc, ga, gd, e6, gb) == (3, 0b11111111, {(4, 0): 0b00110000})
     assert ttt(e7, ga, gc, gd, e7, gb) == (3, 0b11111111, {(4, 1): 0b00110000})
+
 
 def test14():
     """Resolve multiple overlapping ambigueties, set correct value"""

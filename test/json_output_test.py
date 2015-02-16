@@ -535,7 +535,7 @@ def test_json_dump_non_conf_item_not_json_serializable():
             return "<Key object>"
 
     with ConfigRoot(prod, ef, a=0) as cr:
-        SimpleItem(b={Key():2})
+        SimpleItem(b={Key(): 2})
 
     compare_json(cr, _json_dump_non_conf_item_not_json_serializable_expected_json)
 
@@ -680,6 +680,7 @@ def test_json_dump_dir_error(capsys):
     @named_as('someitem')
     class Nested(ConfigItem):
         _errorline = 0
+
         def __dir__(self):
             self._errorline = lineno() + 1
             raise Exception('Error in dir()')

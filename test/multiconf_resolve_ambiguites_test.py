@@ -53,15 +53,15 @@ def test_value_defined_through_three_groups_resolved_immediately_multiple2():
         with ConfigRoot(env, ef_dev_prod) as cr:
             cr.setattr('a', g_dev_overlap23ct=7, default=7, dev2cta=15, prod=1, g_dev2=2, g_dev_overlap23st=3, dev2sta=8, g_dev_overlap23ctst=23, dev3st=0)
         assert cr.a == expected_value
-        
+
         with ConfigRoot(env, ef_dev_prod) as cr:
             cr.setattr('a', g_dev_overlap23ct=7, default=7, prod=1, g_dev_overlap23st=3, g_dev_overlap23ctst=23, g_dev2=2, dev3st=0, dev2sta=8, dev2cta=15)
         assert cr.a == expected_value
-        
+
         with ConfigRoot(env, ef_dev_prod) as cr:
             cr.setattr('a', g_dev_overlap23ct=7, g_dev_overlap23st=3, g_dev_overlap23ctst=23, g_dev2=2, dev3st=0, dev2sta=8, dev2cta=15, default=7, prod=1)
         assert cr.a == expected_value
-        
+
         with ConfigRoot(env, ef_dev_prod) as cr:
             cr.setattr('a', default=7, prod=1, g_dev_overlap23st=3, g_dev_overlap23ctst=23, g_dev2=2, dev3st=0, dev2sta=8, dev2cta=15, g_dev_overlap23ct=7)
         assert cr.a == expected_value
@@ -76,17 +76,17 @@ def test_value_defined_through_three_groups_resolved_loop_multiple():
             cr.setattr('a', g_dev_overlap23ct=7, default=7, dev2sta=8, prod=1, g_dev2ctst1=22, g_dev2ctst2=33,
                        g_dev_overlap23st=3, g_dev_overlap23ctst=23, dev3st=0, dev2cta=15, dev2ctb=155)
         assert cr.a == expect_value
-    
+
         with ConfigRoot(env, ef_dev_prod) as cr:
             cr.setattr('a', g_dev_overlap23ct=7, default=7, prod=1, g_dev_overlap23st=3, g_dev_overlap23ctst=23, g_dev2ctst1=22, g_dev2ctst2=33,
                        dev3st=0, dev2cta=15, dev2ctb=155, dev2sta=8)
         assert cr.a == expect_value
-    
+
         with ConfigRoot(env, ef_dev_prod) as cr:
             cr.setattr('a', g_dev_overlap23ct=7, g_dev_overlap23st=3, g_dev_overlap23ctst=23, g_dev2ctst1=22, g_dev2ctst2=33,
                        dev3st=0, dev2cta=15, dev2ctb=155, dev2sta=8, default=7, prod=1)
         assert cr.a == expect_value
-    
+
         with ConfigRoot(env, ef_dev_prod) as cr:
             cr.setattr('a', default=7, prod=1, g_dev_overlap23st=3, g_dev_overlap23ctst=23, g_dev2ctst1=22, g_dev2ctst2=33,
                        dev3st=0, dev2cta=15, dev2ctb=155, dev2sta=8, g_dev_overlap23ct=7)
@@ -128,18 +128,18 @@ def test_value_defined_through_three_groups_resolved_loop_multiple_x():
         with ConfigRoot(env, ef2_x_prod) as cr:
             cr.setattr('a', g_x_overlap23ct=7, default=7, x2st=8, prod=1, g_x2ctst=2, g_x_overlap23st=3, g_x_overlap23ctst=23, x3st=0, x2ct=15)
         assert cr.a == expect_value
-    
+
         with ConfigRoot(env, ef2_x_prod) as cr:
             cr.setattr('a', g_x_overlap23ct=7, default=7, prod=1, g_x_overlap23st=3, g_x_overlap23ctst=23, g_x2ctst=2, x3st=0, x2ct=15, x2st=8)
         assert cr.a == expect_value
-    
+
         with ConfigRoot(env, ef2_x_prod) as cr:
             cr.setattr('a', g_x_overlap23ct=7, g_x_overlap23st=3, g_x_overlap23ctst=23, g_x2ctst=2, x3st=0, x2ct=15, x2st=8, default=7, prod=1)
         assert cr.a == expect_value
-    
+
         with ConfigRoot(env, ef2_x_prod) as cr:
             cr.setattr('a', default=7, prod=1, g_x_overlap23st=3, g_x_overlap23ctst=23, g_x2ctst=2, x3st=0, x2ct=15, x2st=8, g_x_overlap23ct=7)
         assert cr.a == expect_value
-    
+
     tst(prod2, 1)
     tst(x2ct2, 15)

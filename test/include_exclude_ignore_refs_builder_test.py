@@ -109,7 +109,7 @@ class ExclInBuild2(ConfigBuilder):
     def __init__(self):
         super(ExclInBuild2, self).__init__()
 
-    def build(self):        
+    def build(self):
         RepeatableItem(name='ccc', mc_exclude=None)
         with RepeatableItem(name='ddd') as ddd:
             ddd.mc_select_envs(exclude=[prod])
@@ -132,4 +132,3 @@ def test_exclude_in_build():
     assert cr.HasRepeatables.reps['bbb'].name == 'bbb'
     assert cr.HasRepeatables.reps['ccc']
     assert len(cr.HasRepeatables.reps) == 2
-

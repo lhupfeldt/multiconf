@@ -8,7 +8,7 @@ from ..repeatable import Repeatable, UserRepeatable
 
 
 def test_copy_repeatable():
-    attr1 = Repeatable((('a', 1),('b', 2)))
+    attr1 = Repeatable((('a', 1), ('b', 2)))
     attr1['c'] = 3
     attr2 = attr1.copy()
     assert attr1 == attr2

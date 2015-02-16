@@ -28,11 +28,13 @@ g_prod = ef.EnvGroup('g_prod', pp, prod)
 
 valid_envs = ef.EnvGroup('g_all', g_dev, g_prod)
 
+
 @named_as('someitem')
 class Nested(ConfigItem):
     @property
     def other_conf_item(self):
         self.json()
+
 
 class X(ConfigItem):
     def __init__(self, aa=1):

@@ -78,18 +78,18 @@ def test_eq():
     assert prod != g_prod
 
     # Compare to other types
-    assert g_dev_tst != None
+    assert g_dev_tst is not None
     assert g_prod != 1
-    assert dev1 != None
+    assert dev1 is not None
     assert prod != "Hello"
     assert not prod == "Hello"
 
     # Compare other types to self
-    assert None != g_dev_tst
+    assert g_dev_tst is not None
     assert 1 != g_prod
-    assert None != dev1
+    assert dev1 is not None
     assert "Hello" != prod
-    
+
 
 def test_membership():
     # Env is not in itself
@@ -182,7 +182,7 @@ def test_envs_from_mask():
 
 
 def test_eg_bits():
-    assert g_dev_tst.eg_bits == [1, 2 ,3, 4, 5, 6, 7]
+    assert g_dev_tst.eg_bits == [1, 2, 3, 4, 5, 6, 7]
     assert g_prod.eg_bits == [8, 9, 10]
 
 

@@ -29,7 +29,7 @@ def test_many_envs():
         conf.setattr('i', default=None, e0_0=10, e15_127=8)
 
     assert conf.a == 0
-    assert conf.b == None
+    assert conf.b is None
     assert conf.i == 10
 
 
@@ -41,5 +41,5 @@ def test_many_groups():
         conf.setattr('i', default=None, e0_0=10, g15=8)
 
     assert conf.a == 0
-    assert conf.b == None
+    assert conf.b is None
     assert conf.i == 10

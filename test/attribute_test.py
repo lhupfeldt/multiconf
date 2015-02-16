@@ -46,13 +46,13 @@ def test_attribute_default():
     assert not attr1.all_set(0b1111)
     assert not attr1.all_set(default_group.bit)
     assert not attr1.all_set(default_group.mask)
-    assert attr1._mc_frozen == False  # pylint: disable=protected-access
+    assert attr1._mc_frozen is False  # pylint: disable=protected-access
 
     attr1.set_env_provided(default_group)
     attr1.set_current_env_value(None, default_group, mc_where_from_with, __file__, 999)
     assert attr1.all_set(default_group.mask)
-    assert attr1._mc_value() == None  # pylint: disable=protected-access
-    assert attr1._mc_frozen == True  # pylint: disable=protected-access
+    assert attr1._mc_value() is None  # pylint: disable=protected-access
+    assert attr1._mc_frozen is True  # pylint: disable=protected-access
 
     attr2 = Attribute(name='some_name2b')
     assert not attr2.all_set(init_group.bit)

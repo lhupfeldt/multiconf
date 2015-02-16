@@ -61,7 +61,7 @@ class NestedRepeatable(ConfigItem):
 def test_contained_in_root_conf():
     with ConfigRoot(prod2, ef2_pp_prod) as conf:
         assert conf.root_conf == conf
-        assert conf.contained_in == None
+        assert conf.contained_in is None
 
         with ConfigItem() as c1:
             assert c1.root_conf == conf
@@ -99,7 +99,7 @@ def test_empty_nested_repeatable_items():
         pass
 
     for _ci in cr.children.values():
-        fail ("list should be empty")
+        fail("list should be empty")
 
 
 def test_unnamed_nested_repeatable_item_no_name_or_id():
@@ -153,7 +153,7 @@ def test_property_defined_with_same_type_and_none():
 def test_property_defined_with_none_and_same_type():
     with ConfigRoot(prod2, ef2_pp_prod, a=1) as cr:
         cr.setattr('a', prod=None, pp=2)
-    assert cr.a == None
+    assert cr.a is None
 
 
 def test_automatic_freeze_of_child_on_exit():
@@ -712,7 +712,7 @@ def test_find_contained_in_or_none():
         with ConfigItem(a=1) as i1:
             ConfigItem(a=2)
 
-    assert cr.ConfigItem.ConfigItem.find_contained_in_or_none('notthere') == None
+    assert cr.ConfigItem.ConfigItem.find_contained_in_or_none('notthere') is None
     assert cr.ConfigItem.ConfigItem.find_contained_in_or_none('ConfigItem') == i1
 
 
@@ -722,7 +722,7 @@ def test_find_attribute_or_none():
             i1.my_attr = 7
             ConfigItem(a=2)
 
-    assert cr.ConfigItem.ConfigItem.find_attribute_or_none('notthere') == None
+    assert cr.ConfigItem.ConfigItem.find_attribute_or_none('notthere') is None
     assert cr.ConfigItem.ConfigItem.find_attribute_or_none('my_attr') == 7
 
 

@@ -54,5 +54,3 @@ class managed_servers(ConfigBuilder):
 class datasource(ConfigItem):
     def __init__(self, **attr):
         super(datasource, self).__init__(**attr)
-
-

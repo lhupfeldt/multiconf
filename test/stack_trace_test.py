@@ -76,7 +76,6 @@ def test_stacktrace_from_user_validate_code():
                 validate_errorline = lineno() + 1
                 raise Exception("In inner validate")
 
-
         with root(prod, ef, a=0):
             with inner():
                 errorline = lineno() + 1
@@ -103,7 +102,6 @@ def test_stacktrace_from_user_build_code():
                 global build_errorline
                 build_errorline = lineno() + 1
                 raise Exception("In inner build")
-
 
         with root(prod, ef, a=0):
             with inner():

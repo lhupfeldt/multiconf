@@ -310,7 +310,6 @@ def test_attribute_defined_with_different_types_init_default(capsys):
     _sout, serr1 = capsys.readouterr()
     assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
 
-
     with raises(ConfigException) as exinfo:
         with project(prod1, ef1_prod):
             init_line2 = lineno() + 1
