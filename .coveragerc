@@ -10,4 +10,6 @@ exclude_lines =
     if _debug_exc:
     def debug\(
 
-omit = test/*
+omit =
+    test/*
+    setup.py

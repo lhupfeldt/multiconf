@@ -1,22 +1,37 @@
-#!/usr/bin/python
+#!/bin/env python
 
 from __future__ import print_function
 
 import sys, os, subprocess
 
+try:
+    import pytest
+except ImportError:
+    print("See setup.py for test requirements, or use 'python setup.py test'", file=sys.stderr)
+    raise
+
 here = os.path.abspath(os.path.dirname(__file__))
-os.environ['MULTICONF_WARN_JSON_NESTING'] = 'true'
 
-print("Running tests")
-if len(sys.argv) > 1:
-    sys.exit(subprocess.call(['python2', '-m', 'pytest', '--capture=sys'] + sys.argv[1:]))
-else:
-    rc = subprocess.call(('python2', '-m', 'pytest', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing'))
-#rc = subprocess.call(('nosetests', '--with-coverage', '--cover-branches', '--cover-package=multiconf'))
 
-print("Validating demo for all envs")
-for env_name in 'prod', 'preprod', 'devlocal', 'devs', 'devi':
-    print()
-    rc |= subprocess.call(('python2', here + '/../demo/demo.py', '--env', env_name))
+def main(args):
+    os.environ['MULTICONF_WARN_JSON_NESTING'] = 'true'
 
-sys.exit(rc)
+    print("Running tests", args)
+    if args:
+        return pytest.main(['--capture=sys'] + list(args))
+    rc = pytest.main(['--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing'])
+
+    print("Validating demo for all envs")
+    try:
+        del os.environ['PYTHONPATH']
+    except KeyError:
+        pass
+    for env_name in 'prod', 'preprod', 'devlocal', 'devs', 'devi':
+        print()
+        rc |= subprocess.call((sys.executable, here + '/../demo/demo.py', '--env', env_name))
+
+    return rc
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
