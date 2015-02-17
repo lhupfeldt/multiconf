@@ -209,7 +209,7 @@ class ConfigItemEncoder(object):
                         if real_key is False:
                             continue
 
-                    if type(val) == types.TypeType:
+                    if type(val) == type:
                         dd[key] = repr(val)
                         continue
 
@@ -245,7 +245,7 @@ class ConfigItemEncoder(object):
                     dd['name'] = eg.name
                 return dd
 
-            if type(obj) == types.TypeType:
+            if type(obj) == type:
                 return repr(obj)
 
             # If obj defines json_equivalent, then return the result of that
