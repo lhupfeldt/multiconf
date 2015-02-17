@@ -228,7 +228,7 @@ class ConfigItemEncoder(object):
 
                     if isinstance(val, dict):
                         new_dict = OrderedDict()
-                        for item_key, item in val.iteritems():
+                        for item_key, item in val.items():
                             new_dict[item_key] = self._check_nesting(obj, item)
                         dd[key] = new_dict
                         dd[key + ' #calculated'] = True
@@ -269,7 +269,7 @@ class ConfigItemEncoder(object):
                 # print "# Handle instances of old style classes", type(obj)
                 # Note that new style class instances are practically indistinguishable from other types of objects
                 dd = self._class_dict(obj)
-                for key, val in obj.__dict__.iteritems():
+                for key, val in obj.__dict__.items():
                     if key[0] != '_':
                         dd[key], _dumped = self._check_already_dumped(val)
                 return dd

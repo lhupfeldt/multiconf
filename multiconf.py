@@ -65,7 +65,7 @@ class _ConfigBase(object):
 
         __class__ = object.__getattribute__(self, '__class__')
         _mc_deco_nested_repeatables = __class__._mc_deco_nested_repeatables
-        for key, value in attr.iteritems():
+        for key, value in attr.items():
             if key in _mc_deco_nested_repeatables:
                 raise ConfigException(repr(key) + ' defined as default value shadows a nested-repeatable')
             try:
@@ -106,7 +106,7 @@ class _ConfigBase(object):
     #     # + ':' + self.__class__.__name__
     #     not_frozen_msg = "" if self._mc_frozen else " not-frozen"
     #     return self.named_as() + not_frozen_msg + ' {\n' + \
-    #         ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.iteritems()]) + \
+    #         ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.items()]) + \
     #         indent1 + '}'
 
     def __repr__(self):
@@ -225,7 +225,7 @@ class _ConfigBase(object):
     def _mc_freeze_validation(self):
         # Validate all unfrozen attributes
         _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-        for attr in _mc_attributes.itervalues():
+        for attr in _mc_attributes.values():
             if not attr._mc_frozen and isinstance(attr, Attribute):
                 self.check_attr_fully_defined(attr, num_errors=0)
 
@@ -277,7 +277,7 @@ class _ConfigBase(object):
 
         self._mc_frozen = self._mc_deco_unchecked != self.__class__ and not self._mc_root_conf._mc_under_proxy_build
         _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-        for _child_name, child_value in _mc_attributes.iteritems():
+        for _child_name, child_value in _mc_attributes.items():
             self._mc_frozen &= child_value._mc_freeze()
 
         if not self._mc_built:
@@ -291,7 +291,7 @@ class _ConfigBase(object):
                 self._mc_in_mc_init = True
                 self.mc_init()
                 self._mc_in_mc_init = False
-                for _name, value in _mc_attributes.iteritems():
+                for _name, value in _mc_attributes.items():
                     self._mc_frozen &= value._mc_freeze()
 
                 if isinstance(self, ConfigBuilder):
@@ -301,7 +301,7 @@ class _ConfigBase(object):
                         self.build()
                     except _McExcludedException:
                         pass
-                    for _name, value in self._mc_build_attributes.iteritems():
+                    for _name, value in self._mc_build_attributes.items():
                         self._mc_frozen &= value._mc_freeze()
                     self._mc_post_build_update()
                     self._mc_in_build = False
@@ -438,7 +438,7 @@ class _ConfigBase(object):
         seen_egs = OrderedDict()
 
         # Validate given env values, assign current env value from most specific argument
-        for eg_name, value in kwargs.iteritems():
+        for eg_name, value in kwargs.items():
             # debug("eg_name:", eg_name)
             try:
                 eg = self._mc_root_conf._mc_env_factory.env_or_group_from_name(eg_name)
@@ -668,16 +668,19 @@ class _ConfigBase(object):
         _mc_selected_env = object.__getattribute__(_mc_root_conf, '_mc_selected_env')
         raise AttributeError("Attribute " + repr(name) + " undefined for env " + repr(_mc_selected_env))
 
-    def iteritems(self):
+    def items(self):
         _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-        for key, item in _mc_attributes.iteritems():
+        for key, item in _mc_attributes.items():
             value = item._mc_value()
             if value != _MC_NO_VALUE:  # _MC_NO_VALUE should only happen in case of  a conditional attribute
                 yield key, value
 
+    # For backwards compatibility
+    iteritems = items
+
     def _iterattributes(self):
         _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-        for key, item in _mc_attributes.iteritems():
+        for key, item in _mc_attributes.items():
             yield key, item
 
     @property
@@ -967,7 +970,7 @@ class ConfigItem(_ConfigBase):
         if not (self.env.mask & _mc_included_envs_mask) or _mc_contained_in._mc_is_excluded:
             self._mc_is_excluded = True
             _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-            for _key, item in _mc_attributes.iteritems():
+            for _key, item in _mc_attributes.items():
                 item._mc_is_excluded = True
         self._mc_included_envs_mask = _mc_included_envs_mask & _mc_contained_in_included_envs_mask
 
@@ -1011,12 +1014,12 @@ class ConfigBuilder(ConfigItem):
     def _mc_post_build_update(self):
         def set_my_attributes_on_item_from_build(item_from_build, clone):
             _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-            for override_key, override_value in _mc_attributes.iteritems():
+            for override_key, override_value in _mc_attributes.items():
                 if override_value._mc_value() == None:
                     continue
 
                 if isinstance(override_value, Repeatable):
-                    for rep_override_key, rep_override_value in override_value.iteritems():
+                    for rep_override_key, rep_override_value in override_value.items():
                         if override_key not in item_from_build.__class__._mc_deco_nested_repeatables:
                             raise ConfigException(rep_override_value._error_msg_not_repeatable_in_container(override_key, item_from_build))
                         ov = copy.copy(rep_override_value) if clone else rep_override_value
@@ -1040,7 +1043,7 @@ class ConfigBuilder(ConfigItem):
 
             # Merge repeatable items into parent
             if isinstance(build_value, Repeatable):
-                for rep_key, rep_value in build_value.iteritems():
+                for rep_key, rep_value in build_value.items():
                     rep_value._mc_contained_in = parent
                     set_my_attributes_on_item_from_build(rep_value, clone=clone)
 
@@ -1074,7 +1077,7 @@ class ConfigBuilder(ConfigItem):
             # Items and attributes created in 'build' goes into parent
             # Attributes/Items on builder are copied to items created in build
             clone = False
-            for build_key, build_value in self._mc_build_attributes.iteritems():
+            for build_key, build_value in self._mc_build_attributes.items():
                 from_build_to_parent(build_key, build_value, clone)
                 clone = True
 
@@ -1086,7 +1089,7 @@ class ConfigBuilder(ConfigItem):
         raise Exception("AbstractNotImplemented")
 
     def what_built(self):
-        return OrderedDict([(key, attr._mc_value()) for key, attr in self._mc_build_attributes.iteritems()])
+        return OrderedDict([(key, attr._mc_value()) for key, attr in self._mc_build_attributes.items()])
 
     def named_as(self):
         return super(ConfigBuilder, self).named_as() + '.builder.' + repr(ConfigBuilder._num)

@@ -11,7 +11,7 @@ class Repeatable(OrderedDict):
 
     def _mc_freeze(self):
         self._mc_frozen = True
-        for item in self.itervalues():
+        for item in self.values():
             self._mc_frozen &= item._mc_freeze()
         return self._mc_frozen
 

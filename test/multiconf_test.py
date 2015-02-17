@@ -127,7 +127,7 @@ def test_iteritems_root_attributes():
     with ConfigRoot(prod2, ef2_pp_prod, a=1, b=2) as cr:
         pass
 
-    for exp, actual in zip([('a', 1), ('b', 2)], list(cr.iteritems())):
+    for exp, actual in zip([('a', 1), ('b', 2)], list(cr.items())):
         exp_key, exp_value = exp
         key, value = actual
         assert exp_key == key
@@ -139,7 +139,7 @@ def test_iteritems_item_attributes():
         with ConfigItem(a=1, b=2) as ci:
             pass
 
-    for exp, actual in zip([('a', 1), ('b', 2)], list(ci.iteritems())):
+    for exp, actual in zip([('a', 1), ('b', 2)], list(ci.items())):
         exp_key, exp_value = exp
         key, value = actual
         assert exp_key == key
@@ -229,7 +229,7 @@ def test_automatic_contained_item_freeze_on_exit():
 
     ids = ['a', 'b', 'c']
     index = 0
-    for item_id, item in cr.recursive_items['b'].recursive_items.iteritems():
+    for item_id, item in cr.recursive_items['b'].recursive_items.items():
         assert item.id == ids[index]
         assert item_id == ids[index]
         index += 1

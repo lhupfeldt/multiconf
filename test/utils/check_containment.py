@@ -6,9 +6,9 @@ from multiconf import ConfigItem, ConfigBuilder
 
 
 def check_containment(start_item, level=0, prefix="  "):
-    for key, item in start_item.iteritems():
+    for key, item in start_item.items():
         if isinstance(item, Repeatable):
-            for _rkey, ritem in item.iteritems():
+            for _rkey, ritem in item.items():
                 check_containment(ritem, level+1, "R ")
         if isinstance(item, ConfigItem) and not isinstance(item, ConfigBuilder):
             assert id(item.contained_in) == id(start_item), \

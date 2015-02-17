@@ -48,7 +48,7 @@ def test_required_if_attributes_condition_true_prod_and_condition_unset_dev2ct()
     # Test iteritems
     expected_keys = ['a', 'b', 'c', 'd']
     index = 0
-    for key, val in cr.iteritems():
+    for key, val in cr.items():
         assert key == expected_keys[index]
         assert val == (index + 1) * 10
         index += 1
@@ -77,7 +77,7 @@ def test_required_if_attributes_condition_false_instantiated_env():
     # Test iteritems
     expected_keys = ['a', 'b']
     index = 0
-    for key, val in cr.iteritems():
+    for key, val in cr.items():
         assert key == expected_keys[index]
         assert val == index * 10
         index += 1
@@ -93,7 +93,7 @@ def test_required_if_attributes_condition_true_other_env():
     # Test iteritems
     expected_keys = ['a', 'b', 'c']
     index = 0
-    for key, val in cr.iteritems():
+    for key, val in cr.items():
         assert key == expected_keys[index]
         assert val == index * 10 + 1
         index += 1
