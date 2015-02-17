@@ -13,3 +13,4 @@ exclude_lines =
 omit =
     test/*
     setup.py
+    .eggs/*
