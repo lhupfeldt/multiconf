@@ -27,7 +27,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
             self.number = self.contained_in.aaa
 
         def build(self):
-            for num in xrange(self.start, self.start + self.number):
+            for num in range(self.start, self.start + self.number):
                 with Ys(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
 
@@ -68,7 +68,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_detache
             self.number = self.contained_in.aaa
 
         def build(self):
-            for num in xrange(self.start, self.start + self.number):
+            for num in range(self.start, self.start + self.number):
                 with Ys(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
 

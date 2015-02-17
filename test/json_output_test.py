@@ -1015,7 +1015,7 @@ def test_json_dump_configbuilder():
             self.start = start
 
         def build(self):
-            for num in xrange(self.start, self.start + self.contained_in.aaa):
+            for num in range(self.start, self.start + self.contained_in.aaa):
                 Y(name='server%d' % num, server_num=num)
 
     @nested_repeatables('ys')

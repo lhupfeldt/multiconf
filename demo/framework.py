@@ -43,7 +43,7 @@ class managed_servers(ConfigBuilder):
         super(managed_servers, self).__init__(num_servers=num_servers, host_pattern=host_pattern, base_port=base_port, **attr)
 
     def build(self):
-        for server_num in xrange(1, self.num_servers+1):
+        for server_num in range(1, self.num_servers+1):
             # Here we are generating the managed_server's name and host name, from a pattern and the managed server number
             server_name = 'ms%d' % server_num
             host_name = self.host_pattern % dict(n=server_num)

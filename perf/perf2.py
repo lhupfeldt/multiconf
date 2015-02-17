@@ -68,14 +68,14 @@ def perf1():
     third_range = 2000
 
     with root(prod, ef) as cr:
-        for ii in xrange(0, first_range):
+        for ii in range(0, first_range):
             rchild_init(name=repr(ii), aa=1, bb=1, xx="hello", yy="hi")
 
-        for ii in xrange(0, second_range):
+        for ii in range(0, second_range):
             with rchild_default(name=repr(ii), aa=4) as ci:
                 ci.setattr('bb', default=2)
 
-        for ii in xrange(0, third_range):
+        for ii in range(0, third_range):
             with rchild_env(name=repr(ii)) as ci:
                 ci.setattr('aa', dev1=7, dev2=8, tst=9, pp=18, prod=5)
                 ci.setattr('bb', g_dev=8, tst=9, pp=19, prod=3)
@@ -87,7 +87,7 @@ def perf1():
                     ci.setattr('aa', dev1=7, dev2=8, tst=9, pp=18, prod=5)
                     ci.setattr('bb', g_dev=8, tst=9, pp=19, prod=3)
 
-                    for ii in xrange(0, 10):
+                    for ii in range(0, 10):
                         with rchild_default(name='a' + repr(ii), aa=4) as ci:
                             ci.setattr('bb', default=2, pp=3, prod=4)
 
@@ -111,11 +111,11 @@ def perf1():
                     ci.setattr('bb', g_dev=8, tst=9, pp=19, prod=3)
     
     for ii in range(0, 5):
-        for ii in xrange(0, first_range):
+        for ii in range(0, first_range):
             assert cr.children_init[repr(ii)].bb == 1
-        for ii in xrange(0, second_range):
+        for ii in range(0, second_range):
             assert cr.children_default[repr(ii)].bb == 2
-        for ii in xrange(0, third_range):
+        for ii in range(0, third_range):
             assert cr.children_env[repr(ii)].bb == 3
 
 

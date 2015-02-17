@@ -65,7 +65,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
             super(XBuilder, self).__init__(num_servers=num_servers)
 
         def build(self):
-            for server_num in xrange(1, self.num_servers+1):
+            for server_num in range(1, self.num_servers+1):
                 with Xses(name='server%d' % server_num, server_num=server_num) as c:
                     c.setattr('something', prod=1, pp=2)
 

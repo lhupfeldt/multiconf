@@ -38,7 +38,7 @@ def test_configbuilder_override():
             super(XBuilder, self).__init__(num_servers=num_servers, **kwargs)
 
         def build(self):
-            for server_num in xrange(1, self.num_servers+1):
+            for server_num in range(1, self.num_servers+1):
                 with Xses(name='server%d' % server_num, server_num=server_num) as c:
                     c.setattr('something', prod=1, pp=2)
                     c.none_is_not_used = False
@@ -72,7 +72,7 @@ def test_configbuilder_build_at_freeze():
             super(XBuilder, self).__init__(num_servers=num_servers, **kwargs)
 
         def build(self):
-            for server_num in xrange(1, self.num_servers+1):
+            for server_num in range(1, self.num_servers+1):
                 with Xses(name='server%d' % server_num) as c:
                     pass
 
@@ -200,7 +200,7 @@ def test_configbuilder_nested_items():
             self.number = self.contained_in.aaa
 
         def build(self):
-            for num in xrange(1, self.number+1):
+            for num in range(1, self.number+1):
                 with Xses(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
 
@@ -233,7 +233,7 @@ def test_configbuilder_nested_items_access_to_contained_in():
             self.number = self.contained_in.aaa
 
         def build(self):
-            for num in xrange(1, self.number+1):
+            for num in range(1, self.number+1):
                 with Xses(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
 
@@ -270,7 +270,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
 
         def build(self):
             ybuilder_in_build_contained_in.append(self.contained_in)
-            for num in xrange(self.start, self.start + self.contained_in.aaa):
+            for num in range(self.start, self.start + self.contained_in.aaa):
                 with Y(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
 
@@ -339,7 +339,7 @@ def test_configbuilder_repeated():
             self.last = last
 
         def build(self):
-            for num in xrange(self.first, self.last+1):
+            for num in range(self.first, self.last+1):
                 with Xses(name='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
             self.q = self.last
