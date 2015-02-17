@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 from .. import ConfigRoot, ConfigItem, ConfigBuilder
 from ..decorators import named_as, repeat, nested_repeatables
 
@@ -123,7 +125,7 @@ def test_exclude_in_build():
             with HasRepeatables(name='r1', mc_exclude=None) as it:
                 ExclInBuild1()
                 ExclInBuild2()
-                print it
+                print(it)
                 _x = it.reps['bbb']
         return cr
 

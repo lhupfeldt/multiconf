@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 # pylint: disable=E0611
 from pytest import raises
 from .utils.utils import replace_user_file_line_msg
@@ -253,7 +255,7 @@ def test_env_name_used():
         myef1.EnvGroup('g_dev', mydev1)
         mydev1 = myef1.Env('g_dev')
 
-    print exinfo.value.message
+    print(exinfo.value.message)
     assert exinfo.value.message == _eg_name_used_expected_ex
 
 
@@ -362,5 +364,5 @@ def test_json():
     jj3 = myef.EnvGroup('jj3', jj2)
     jj4 = myef.EnvGroup('jj4', jj2, jj3)
 
-    print jj4.json()
+    print(jj4.json())
     assert jj4.json() == test_json_json

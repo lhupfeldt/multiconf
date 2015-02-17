@@ -3,6 +3,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import sys
 import os.path
 from os.path import join as jp
@@ -48,4 +50,4 @@ with ConfigRoot(prod, [prod, pp]):
     with X() as x:
         x.setattr('aa', default=7, pp=17, prod=4)
 
-print x.aa
+print(x.aa)

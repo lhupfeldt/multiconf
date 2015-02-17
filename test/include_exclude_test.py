@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 # pylint: disable=E0611
 from pytest import raises
 
@@ -323,7 +325,7 @@ def test_child_includes_excluded(capsys):
 
     assert "There were 2 errors when defining item" in exinfo.value.message
     _sout, serr = capsys.readouterr()
-    print serr
+    print(serr)
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",

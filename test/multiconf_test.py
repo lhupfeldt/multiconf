@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 from collections import OrderedDict
 # pylint: disable=E0611
 from pytest import fail
@@ -410,10 +412,10 @@ def test_more_specific_group_overrides_less_specific_group_value_and_default_val
             ci.setattr('ee', g_prod=3, prod1=1, g_prod_like=2, a=17, dev1=18)
             ci.setattr('ff', a=17, dev1=18, g_prod_like=2, prod1=3, g_prod=3)
 
-    print "aa:", cr1.ConfigItem.aa
+    print("aa:", cr1.ConfigItem.aa)
     assert cr1.ConfigItem.aa == 1
     assert cr1.ConfigItem.bb == 3
-    print "cc:", cr1.ConfigItem.cc
+    print("cc:", cr1.ConfigItem.cc)
     assert cr1.ConfigItem.cc == 1
     assert cr1.ConfigItem.dd == 3
     assert cr1.ConfigItem.ee == 1

@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 # pylint: disable=E0611
 from pytest import raises
 
@@ -462,7 +464,7 @@ def test_value_defined_through_two_groups(capsys):
             cr.setattr('a', default=7, prod=1, g_dev2=2, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    print serr
+    print(serr)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _value_defined_through_two_groups_expected % dict(line=errorline)
     assert replace_ids(exinfo.value.message, False) == _value_defined_through_two_groups_expected_ex
 
@@ -496,7 +498,7 @@ def test_value_defined_through_three_groups(capsys):
             cr.setattr('a', g_dev_overlap2=7, default=7, prod=1, g_dev2=2, g_dev_overlap1=3)
 
     _sout, serr = capsys.readouterr()
-    print serr
+    print(serr)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _value_defined_through_three_groups_expected % dict(line=errorline)
     assert replace_ids(exinfo.value.message, False) == _value_defined_through_three_groups_expected_ex
 
@@ -508,7 +510,7 @@ def test_two_values_defined_through_two_groups(capsys):
             cr.setattr('a', prod=1, dev3st=14, pp=33, g_dev2=2, g_dev3=12, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    print _sout, serr
+    print(_sout, serr)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _p_expected.strip() % dict(line=errorline)
     assert replace_ids(exinfo.value.message, False) == _p_expected_ex
 

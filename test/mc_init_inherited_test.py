@@ -1,3 +1,8 @@
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
+from __future__ import print_function
+
 from multiconf.envs import EnvFactory
 from multiconf import ConfigRoot, ConfigItem
 
@@ -26,7 +31,7 @@ def test_mc_init_inherited():
         X1()
         X2()
 
-    print "project.X1.version:", project.X1.version
+    print("project.X1.version:", project.X1.version)
     assert project.X1.version == 2
     assert project.X2.version == 3
 

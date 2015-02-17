@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import pytest
 from pytest import raises, mark  # pylint: disable=no-name-in-module
 
@@ -90,7 +92,7 @@ def test_attribute_mc_required_default(capsys):
             cr.setattr('a', default=MC_REQUIRED, pp="hello")
 
     _sout, serr = capsys.readouterr()
-    print _sout
+    print(_sout)
     assert serr == ce(errorline, _attribute_mc_required_expected)
     assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_default_expected_ex
 
@@ -128,7 +130,7 @@ def test_attribute_mc_required_other_env(capsys):
             cr.setattr('a', prod="hi", pp=MC_REQUIRED)
 
     _sout, serr = capsys.readouterr()
-    print _sout
+    print(_sout)
     assert serr == ce(errorline, """Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')""")
     assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_other_env_expected_ex
 
@@ -289,7 +291,7 @@ def test_attribute_mc_required_init_args_missing_env_value(capsys):
                 rq.setattr('a', prod='hi')
 
     _sout, serr = capsys.readouterr()
-    print _sout
+    print(_sout)
     assert serr == ce(errorline, """Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')""")
     assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_other_env_requires_expected_ex
 
@@ -344,7 +346,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
             Requires()
 
     _sout, serr = capsys.readouterr()
-    print _sout
+    print(_sout)
     assert serr == ce(errorline, """Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')""")
     assert replace_ids(exinfo.value.message, False) == _attribute_mc_required_other_env_required_init_arg_missing_with_expected_ex
 
@@ -392,7 +394,7 @@ def test_attribute_mc_todo_env(capsys, allow_todo):
             cr.setattr('a', prod=MC_TODO, pp="hello")
 
     _sout, serr = capsys.readouterr()
-    print _sout
+    print(_sout)
     assert serr == ce(errorline, _attribute_mc_current_env_todo_expected)
     assert replace_ids(exinfo.value.message, False) == _attribute_mc_todo_env_expected_ex
 
