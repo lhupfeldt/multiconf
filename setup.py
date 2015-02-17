@@ -49,7 +49,7 @@ if __name__ == "__main__":
         include_package_data=False,
         install_requires=[],
         test_suite='test',
-        tests_require=['pytest', 'pytest-cov'],
+        tests_require=['pytest', 'pytest-cov', 'demjson'],
         cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
