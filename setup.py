@@ -17,11 +17,11 @@ LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.md")).read()
 
 
 class Test(TestCommand):
-    user_options = [('test-args=', 'a', "Arguments to pass to test/test.py")]
+    user_options = [('pytest-args=', 'a', "Arguments to pass to test/test.py")]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.test_args = []
+        self.pytest_args = ""
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -33,7 +33,7 @@ class Test(TestCommand):
         here = os.path.abspath(os.path.dirname(__file__))
         sys.path.insert(0, os.path.join(here, 'test'))
         import test
-        errno = test.main(self.test_args)
+        errno = test.main(self.pytest_args.split())
         sys.exit(errno)
 
 

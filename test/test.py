@@ -17,9 +17,9 @@ def main(args):
     os.environ['MULTICONF_WARN_JSON_NESTING'] = 'true'
 
     print("Running tests", args)
-    if args:
-        return pytest.main(['--capture=sys'] + list(args))
-    rc = pytest.main(['--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing'])
+    if args and args != ['-v']:
+        return pytest.main(['--capture=sys'] + args)
+    rc = pytest.main(['--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing'] + (args if args == ['-v'] else []))
 
     print("Validating demo for all envs")
     try:
