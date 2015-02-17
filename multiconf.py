@@ -203,7 +203,8 @@ class _ConfigBase(object):
         filter_callable = self._mc_find_json_filter_callable()
         fallback_callable = self._mc_find_json_fallback_callable()
         encoder = ConfigItemEncoder(filter_callable=filter_callable, fallback_callable=fallback_callable,
-                                    compact=compact, property_methods=property_methods, builders=builders, warn_nesting=_warn_json_nesting)
+                                    compact=compact, property_methods=property_methods, builders=builders, warn_nesting=_warn_json_nesting,
+                                    multiconf_base_type=_ConfigBase, multiconf_root_type=ConfigRoot, multiconf_builder_type=ConfigBuilder)
         json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
         self._mc_json_errors = encoder.num_errors
         return json_str

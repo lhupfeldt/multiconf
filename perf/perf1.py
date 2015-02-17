@@ -115,6 +115,12 @@ def perf1():
         for ii in xrange(0, third_range):
             assert cr.children_env[repr(ii)].bb == 3
 
+    return cr
+
+
+def perf1_json():
+    perf1().json()
+
 
 cProfile.run("perf1()", "perf1.profile")
-
+cProfile.run("perf1_json()", "perf1_json.profile")

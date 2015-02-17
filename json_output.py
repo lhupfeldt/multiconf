@@ -7,7 +7,6 @@ import sys, threading, traceback
 from collections import OrderedDict
 import types
 
-import multiconf
 from . import envs
 from .values import _MC_NO_VALUE
 from .excluded import Excluded
@@ -26,7 +25,8 @@ class ConfigItemEncoder(object):
     recursion_check = threading.local()
     recursion_check.in_default = None
 
-    def __init__(self, filter_callable=None, fallback_callable=None, compact=False, property_methods=True, builders=False, warn_nesting=False):
+    def __init__(self, filter_callable, fallback_callable, compact, property_methods, builders, warn_nesting,
+                 multiconf_base_type, multiconf_root_type, multiconf_builder_type):
         """
         filter_callable: func(obj, key, value)
         - filter_callable is called for each key/value pair of attributes on each ConfigItem obj.
@@ -40,15 +40,20 @@ class ConfigItemEncoder(object):
 
         property_methods: call @property methods and insert values in output, including a comment that the value is calculated.
         """
-        self.filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'frozen')
         self.user_filter_callable = filter_callable
         self.user_fallback_callable = fallback_callable
         self.compact = compact
         self.property_methods = property_methods
-        self.seen = {}
-        self.start_obj = None
         self.builders = builders
         self.warn_nesting = warn_nesting
+        self.multiconf_base_type = multiconf_base_type
+        self.multiconf_root_type = multiconf_root_type
+        self.multiconf_builder_type = multiconf_builder_type
+
+        
+        self.filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'frozen')
+        self.seen = {}
+        self.start_obj = None
         self.num_errors = 0
         self.num_invalid_usages = 0
 
@@ -82,7 +87,7 @@ class ConfigItemEncoder(object):
 
         child_obj, done = self._check_already_dumped(child_obj)
 
-        if not done and isinstance(child_obj, multiconf._ConfigBase):
+        if not done and isinstance(child_obj, self.multiconf_base_type):
             top = child_obj
             contained_in = child_obj._mc_contained_in
             if contained_in is obj:
@@ -94,7 +99,7 @@ class ConfigItemEncoder(object):
                 top = contained_in
                 contained_in = contained_in._mc_contained_in
             else:
-                ref_msg = '#original-cloned-item-ref: ' if not isinstance(top, multiconf.ConfigRoot) else "#outside-ref: "
+                ref_msg = '#original-cloned-item-ref: ' if not isinstance(top, self.multiconf_root_type) else "#outside-ref: "
                 id_msg = ": id: " + repr(child_obj.id) if hasattr(child_obj, 'id') else ''
                 name_msg = ", name: " + repr(child_obj.name) if hasattr(child_obj, 'name') else ''
                 return ref_msg + child_obj.__class__.__name__ + id_msg + name_msg
@@ -121,7 +126,7 @@ class ConfigItemEncoder(object):
                 return obj
             self._set_already_dumped(obj)
 
-            if isinstance(obj, multiconf._ConfigBase):
+            if isinstance(obj, self.multiconf_base_type):
                 # print("# Handle ConfigItems", type(obj))
                 dd = self._mc_class_dict(obj)
 
@@ -135,7 +140,7 @@ class ConfigItemEncoder(object):
                     dd['__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included'] = repr(ex)
 
                 # Order 'env' first on root object
-                if isinstance(obj, multiconf.ConfigRoot):
+                if isinstance(obj, self.multiconf_root_type):
                     dd['env'] = obj.env
 
                 # Handle attributes
@@ -148,7 +153,7 @@ class ConfigItemEncoder(object):
                         if key is False:
                             continue
 
-                    if not self.builders and isinstance(val, multiconf.ConfigBuilder):
+                    if not self.builders and isinstance(val, self.multiconf_builder_type):
                         continue
 
                     val = self._check_nesting(obj, val)
