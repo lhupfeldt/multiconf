@@ -3,6 +3,8 @@
 
 
 def int_to_bin_str(value, max_bits=8192):
+    """Convert an int to a string representation of a bitmask (binary number)"""
+
     mask = value
 
     bits = 1
