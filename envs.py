@@ -207,7 +207,7 @@ class EnvFactory(object):
         after this i called, no more envs or groups may be created by this factory.
         """
         if not self._mc_frozen:
-            self._mc_default_group = self._EnvGroup('default', members=self.groups.values() + self.envs.values())
+            self._mc_default_group = self._EnvGroup('default', members=list(self.groups.values()) + list(self.envs.values()))
             self._mc_init_group = self._EnvGroup('__init__', members=[self._mc_default_group])
             self._mc_frozen = True
 
