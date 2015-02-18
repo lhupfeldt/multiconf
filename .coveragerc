@@ -9,6 +9,7 @@ exclude_lines =
 
     if _debug_exc:
     def debug\(
+    long = int
 
 omit =
     test/*

@@ -13,6 +13,10 @@ from .excluded import Excluded
 from .config_errors import InvalidUsageException
 
 
+if sys.version > '3':
+    long = int
+
+
 class NestedJsonCallError(Exception):
     pass
 
