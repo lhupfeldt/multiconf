@@ -1,7 +1,15 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import sys
+
 # pylint: disable=unused-import
-from .multiconf import ConfigRoot, ConfigBuilder, ConfigItem
+from .multiconf import ConfigRoot, ConfigItem
+
+if sys.version < '3':
+    from .multiconf_builder_py2 import ConfigBuilder
+else:
+    from .multiconf_builder_py3 import ConfigBuilder
+
 from .config_errors import caller_file_line, ConfigException, ConfigDefinitionException, ConfigApiException, InvalidUsageException
 from .values import MC_REQUIRED, MC_TODO

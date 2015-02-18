@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, abc, os, copy
+import sys, os, copy
 from collections import OrderedDict
 import json
 
@@ -148,7 +148,7 @@ class _ConfigBase(object):
 
         if child_item.__class__._mc_deco_repeatable:
             # Validate that this class specifies item as repeatable
-            if isinstance(self, ConfigBuilder):
+            if isinstance(self, _ConfigBuilder):
                 ur = UserRepeatable()
                 ur.contained_in = self
                 attributes.setdefault(child_key, UserRepeatable())
@@ -204,7 +204,7 @@ class _ConfigBase(object):
         fallback_callable = self._mc_find_json_fallback_callable()
         encoder = ConfigItemEncoder(filter_callable=filter_callable, fallback_callable=fallback_callable,
                                     compact=compact, property_methods=property_methods, builders=builders, warn_nesting=_warn_json_nesting,
-                                    multiconf_base_type=_ConfigBase, multiconf_root_type=ConfigRoot, multiconf_builder_type=ConfigBuilder)
+                                    multiconf_base_type=_ConfigBase, multiconf_root_type=ConfigRoot, multiconf_builder_type=_ConfigBuilder)
         # python3 doesn't need  separators=(',', ': ')
         json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
         self._mc_json_errors = encoder.num_errors
@@ -295,7 +295,7 @@ class _ConfigBase(object):
                 for _name, value in _mc_attributes.items():
                     self._mc_frozen &= value._mc_freeze()
 
-                if isinstance(self, ConfigBuilder):
+                if isinstance(self, _ConfigBuilder):
                     self._mc_in_build = True
                     self._mc_root_conf._mc_under_proxy_build = True
                     try:
@@ -687,7 +687,7 @@ class _ConfigBase(object):
     @property
     def contained_in(self):
         _mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
-        if not isinstance(_mc_contained_in, ConfigBuilder):
+        if not isinstance(_mc_contained_in, _ConfigBuilder):
             return _mc_contained_in
         if self._mc_root_conf._mc_under_proxy_build:
             return self._mc_contained_in.contained_in
@@ -1006,14 +1006,13 @@ class ConfigItem(_ConfigBase):
     __nonzero__ = __bool__
 
 
-class ConfigBuilder(ConfigItem):
-    __metaclass__ = abc.ABCMeta
+class _ConfigBuilder(ConfigItem):
     _num = 0
 
     def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None, **attr):
-        super(ConfigBuilder, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
+        super(_ConfigBuilder, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
                                             mc_include=mc_include, mc_exclude=mc_exclude, **attr)
-        ConfigBuilder._num += 1
+        _ConfigBuilder._num += 1
 
     def _mc_post_build_update(self):
         def set_my_attributes_on_item_from_build(item_from_build, clone):
@@ -1051,7 +1050,7 @@ class ConfigBuilder(ConfigItem):
                     rep_value._mc_contained_in = parent
                     set_my_attributes_on_item_from_build(rep_value, clone=clone)
 
-                    if isinstance(parent, ConfigBuilder):
+                    if isinstance(parent, _ConfigBuilder):
                         ur = UserRepeatable()
                         ur.contained_in = self
                         parent_attributes.setdefault(build_key, ur)
@@ -1087,13 +1086,8 @@ class ConfigBuilder(ConfigItem):
 
         move_items_around()
 
-    @abc.abstractmethod
-    def build(self):
-        """Override this in derived classes. This is where child ConfigItems are declared"""
-        raise Exception("AbstractNotImplemented")
-
     def what_built(self):
         return OrderedDict([(key, attr._mc_value()) for key, attr in self._mc_build_attributes.items()])
 
     def named_as(self):
-        return super(ConfigBuilder, self).named_as() + '.builder.' + repr(ConfigBuilder._num)
+        return super(_ConfigBuilder, self).named_as() + '.builder.' + repr(_ConfigBuilder._num)

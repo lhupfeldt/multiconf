@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import re, abc
+import sys
 from collections import OrderedDict
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
@@ -1049,20 +1049,11 @@ def test_json_dump_configbuilder():
     compare_json(cr.ys['server2'], _json_dump_configbuilder_dont_dump_expected_json_repeatable_item, replace_builders=False, dump_builders=False, test_decode=True)
 
 
-@named_as('someitems')
-@nested_repeatables('someitems')
-@repeat()
-class _NamedNestedRepeatable(ConfigItem):
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(self, name):
-        super(_NamedNestedRepeatable, self).__init__(name=name)
-        self.x = 3
-
-    @abc.abstractproperty
-    def m(self):
-        pass
-
+if sys.version < '3':
+    from .json_output_test_py2 import _NamedNestedRepeatable
+else:
+    from .json_output_test_py3 import _NamedNestedRepeatable
+    
 
 # TODO: Not absolutely correct output (not outside ref)
 _json_dump_property_method_returns_later_confitem_same_level_expected_json = """{

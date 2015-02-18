@@ -10,6 +10,7 @@ exclude_lines =
     if _debug_exc:
     def debug\(
     long = int
+    _py3 import
 
 omit =
     test/*
