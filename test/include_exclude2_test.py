@@ -153,7 +153,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved(capsys):
             errorline = lineno() + 1
             item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
 
-    assert "There were 2 errors when defining item" in exinfo.value.message
+    assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
 
@@ -164,6 +164,6 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_reversed(capsys)
             errorline = lineno() + 1
             item(mc_include=[g_dev34, g_dev2_34], mc_exclude=[g_dev12_3, pp])
 
-    assert "There were 2 errors when defining item" in exinfo.value.message
+    assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr

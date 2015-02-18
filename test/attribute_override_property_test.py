@@ -51,7 +51,7 @@ def test_attribute_overrides_property_method_not_existing():
             with Nested() as nn:
                 nn.setattr('m!', default=7)
 
-    assert "m! specifies overriding a property method, but no property named 'm' exists" in exinfo.value.message
+    assert "m! specifies overriding a property method, but no property named 'm' exists" in str(exinfo.value)
 
 
 def test_attribute_overrides_property_method_is_regular_method():
@@ -70,7 +70,7 @@ def test_attribute_overrides_property_method_is_regular_method():
                 nn.setattr('n!', default=7)
                 nn.setattr('m!', default=7)
 
-    assert "m! specifies overriding a property method, but 'm' is not a property" in exinfo.value.message
+    assert "m! specifies overriding a property method, but 'm' is not a property" in str(exinfo.value)
 
 
 def test_attribute_clash_property_method():
@@ -85,13 +85,13 @@ def test_attribute_clash_property_method():
             with Nested() as nn:
                 nn.setattr('m', default=7)
 
-    assert "The attribute 'm' (not ending in '!') clashes with a property or method" in exinfo.value.message
+    assert "The attribute 'm' (not ending in '!') clashes with a property or method" in str(exinfo.value)
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, ef):
             Nested(m=7)
 
-    assert "The attribute 'm' (not ending in '!') clashes with a property or method" in exinfo.value.message
+    assert "The attribute 'm' (not ending in '!') clashes with a property or method" in str(exinfo.value)
 
 
 def test_attribute_overrides_property_method_failing():
@@ -113,5 +113,5 @@ def test_attribute_overrides_property_method_failing():
     with raises(AttributeError) as exinfo:
         print(nn.m)
 
-    print(exinfo.value.message)
-    assert "Attribute 'm' is defined as muticonf attribute and as property method, but value is undefined for env Env('prod') and method call failed" in exinfo.value.message
+    print(str(exinfo.value))
+    assert "Attribute 'm' is defined as muticonf attribute and as property method, but value is undefined for env Env('prod') and method call failed" in str(exinfo.value)

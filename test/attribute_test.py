@@ -104,7 +104,7 @@ def test_attribute_where_from_repr():
 
     with raises(Exception) as exinfo:
         where_from_name(12312334234)
-    assert exinfo.value.message == "Not a where_from value:12312334234"
+    assert str(exinfo.value) == "Not a where_from value:12312334234"
 
 
 def test_attribute_env_provided():

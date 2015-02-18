@@ -56,7 +56,7 @@ def test_find_contained_in_called_before_parent___init__(capsys):
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % 'find_contained_in'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
-    assert exinfo.value.message == eex
+    assert str(exinfo.value) == eex
 
 
 def test_property_method_called_before_parent___init__(capsys):
@@ -77,7 +77,7 @@ def test_property_method_called_before_parent___init__(capsys):
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % 'env'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
-    assert exinfo.value.message == eex
+    assert str(exinfo.value) == eex
 
 
 def test_undefined_method_called_before_parent___init__(capsys):
@@ -97,7 +97,7 @@ def test_undefined_method_called_before_parent___init__(capsys):
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % 'ttt'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
-    assert exinfo.value.message == eex
+    assert str(exinfo.value) == eex
 
 
 def test_undefined_property_method_called_before_parent___init__(capsys):
@@ -117,7 +117,7 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % 'ttt'
     assert serr == capie(inner_errorline, eex + _extra_stderr)
-    assert exinfo.value.message == eex
+    assert str(exinfo.value) == eex
 
 
 def test_setattr_multiconf_private_attribute():
@@ -133,14 +133,14 @@ def test_setattr_multiconf_private_attribute():
         with root(prod2, ef2_prod_pp, a=0) as cr:
             cr.setattr('_mc_whatever', default=1)
 
-    assert exinfo.value.message == ex_msg
+    assert str(exinfo.value) == ex_msg
 
     with raises(ConfigException) as exinfo:
         with root(prod2, ef2_prod_pp, a=0) as cr:
             with inner(id='n1', b=1) as ci:
                 ci.setattr('_mc_whatever', default=1)
 
-    assert exinfo.value.message == ex_msg
+    assert str(exinfo.value) == ex_msg
 
 
 def test_setattr_to_attribute_underscore_attribute():
@@ -150,7 +150,7 @@ def test_setattr_to_attribute_underscore_attribute():
             with ConfigItem() as ci:
                 ci.setattr('_b', default=7)
 
-    assert exinfo.value.message == ex_msg
+    assert str(exinfo.value) == ex_msg
 
 
 def test_getattr_repr_error():
@@ -163,5 +163,5 @@ def test_getattr_repr_error():
             x = X()
             _ = x.a
 
-    assert "X'> has no attribute 'a'" in exinfo.value.message
+    assert "X'> has no attribute 'a'" in str(exinfo.value)
     assert "X'> has no attribute 'a'" in str(exinfo.value)

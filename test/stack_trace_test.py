@@ -59,7 +59,7 @@ def test_stacktrace_strips_multiconf_code(capsys):
                       "No such Env or EnvGroup: 'qq'",
                       "Attribute: 'a' did not receive a value for env Env('pp')",
                       "Attribute: 'a' did not receive a value for current env Env('prod')")
-    assert replace_ids(exinfo.value.message) == _stacktrace_strips_multiconf_code_exp_ex
+    assert replace_ids(str(exinfo.value)) == _stacktrace_strips_multiconf_code_exp_ex
     assert len(exinfo.traceback) == 2, "Traceback: " + repr(exinfo.traceback)
     # TODO py.test exinfo.traceback[0].lineno is off by 1!
     assert exinfo.traceback[0].lineno == errorline - 1

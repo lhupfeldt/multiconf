@@ -79,7 +79,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
             with XBuilder():
                 pass
 
-    assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
+    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
 
 
 def test_configbuilder_without_build():
@@ -90,7 +90,7 @@ def test_configbuilder_without_build():
         with ConfigRoot(prod2, ef2_prod_pp):
             ABuilder()
 
-    assert exinfo.value.message == "Can't instantiate abstract class ABuilder with abstract methods build"
+    assert str(exinfo.value) == "Can't instantiate abstract class ABuilder with abstract methods build"
 
 
 _unexpected_repeatable_child_builder_expected_ex = """'r': {
@@ -111,7 +111,7 @@ def test_unexpected_repeatable_child_builder():
         with ConfigRoot(prod1, ef1_prod):
             UnexpectedRepeatableChildBuilder()
 
-    assert replace_ids(exinfo.value.message, False) == _unexpected_repeatable_child_builder_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _unexpected_repeatable_child_builder_expected_ex
 
 
 _unexpected_repeatable_child_nested_builders_expected_ex = """'arepeatable': {
@@ -146,7 +146,7 @@ def test_unexpected_repeatable_child_nested_builders():
             with ItemWithoutARepeatable():
                 OuterBuilder()
 
-    assert replace_ids(exinfo.value.message, False) == _unexpected_repeatable_child_nested_builders_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _unexpected_repeatable_child_nested_builders_expected_ex
 
 
 _configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex = """'x_children': {
@@ -170,7 +170,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
         with Root(prod2, ef2_prod_pp):
             XBuilder()
 
-    assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex
+    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex
 
 
 _configbuilder_child_with_nested_repeatables_undeclared_in_with_expected_ex = """'x_children': {
@@ -196,7 +196,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
                 xb.b = 27
                 XChild(a=10)
 
-    assert replace_ids_builder(exinfo.value.message, False) == _configbuilder_child_with_nested_repeatables_undeclared_in_with_expected_ex
+    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_child_with_nested_repeatables_undeclared_in_with_expected_ex
 
 
 def test_configbuilders_repeated_non_repeatable_in_build():
@@ -221,10 +221,10 @@ def test_configbuilders_repeated_non_repeatable_in_build():
             with OuterItem():
                 MiddleBuilder('base1')
 
-    assert replace_ids(exinfo.value.message, False) == "Repeated non repeatable conf item: 'MiddleItem'"
+    assert replace_ids(str(exinfo.value), False) == "Repeated non repeatable conf item: 'MiddleItem'"
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod, name='myp'):
             MiddleBuilder('base2')
 
-    assert replace_ids(exinfo.value.message, False) == "Repeated non repeatable conf item: 'MiddleItem'"
+    assert replace_ids(str(exinfo.value), False) == "Repeated non repeatable conf item: 'MiddleItem'"

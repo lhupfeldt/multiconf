@@ -62,7 +62,7 @@ def test_env_factories_ef1(capsys):
         "^%(lnum)s",
         "^ConfigError: Attribute: 'aa' did not receive a value for env Env('prod')",
     )
-    assert replace_ids(exinfo.value.message, False) == _env_factories_ef1_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _env_factories_ef1_expected_ex
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(dev1, ef):
@@ -119,7 +119,7 @@ def test_env_factories_ef2(capsys):
         "^%(lnum)s",
         "^ConfigError: Attribute: 'aa' did not receive a value for env Env('dev3')",
     )
-    assert replace_ids(exinfo.value.message, False) == _env_factories_ef2_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _env_factories_ef2_expected_ex
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(dev1, ef):

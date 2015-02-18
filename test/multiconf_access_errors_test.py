@@ -35,7 +35,7 @@ def test_access_undefined_attribute():
     with raises(AttributeError) as exinfo:
         print(cr.b)
 
-    assert replace_ids(exinfo.value.message, named_as=False) == _access_undefined_attribute_expected_repr
+    assert replace_ids(str(exinfo.value), named_as=False) == _access_undefined_attribute_expected_repr
 
 
 _t2_expected_repr = """{
@@ -54,7 +54,7 @@ def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_
     with raises(AttributeError) as exinfo:
         print(cr.b)
 
-    assert replace_ids(exinfo.value.message, named_as=False) == _t2_expected_repr
+    assert replace_ids(str(exinfo.value), named_as=False) == _t2_expected_repr
 
 
 _find_contained_in_named_as_not_found_expected = """Searching from: <class 'multiconf.test.multiconf_access_errors_test.Y'>: Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root']"""
@@ -96,7 +96,7 @@ def test_find_contained_in_named_as_not_found():
     with raises(ConfigException) as exinfo:
         cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
 
-    assert replace_ids(exinfo.value.message) == _find_contained_in_named_as_not_found_expected
+    assert replace_ids(str(exinfo.value)) == _find_contained_in_named_as_not_found_expected
 
 
 _find_attribute_with_attribute_name_not_found = """Searching from: <class 'multiconf.test.multiconf_access_errors_test.X'>: Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"""
@@ -134,7 +134,7 @@ def test_find_attribute_with_attribute_name_not_found():
     with raises(ConfigException) as exinfo:
         assert cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e') == 3
 
-    assert replace_ids(exinfo.value.message) == _find_attribute_with_attribute_name_not_found
+    assert replace_ids(str(exinfo.value)) == _find_attribute_with_attribute_name_not_found
 
 
 # TODO
@@ -156,4 +156,4 @@ def test_find_attribute_with_attribute_name_not_found():
 #    with raises(ConfigException) as exinfo:
 #        a = cr.x.method
 #
-#    assert exinfo.value.message == ""
+#    assert str(exinfo.value) == ""

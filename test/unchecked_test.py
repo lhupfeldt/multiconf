@@ -130,7 +130,7 @@ def test_required_missing_unchecked_super_for_configitem(capsys):
                       _required_missing_unchecked_super_for_configitem_expected1a,
                       _required_missing_unchecked_super_for_configitem_expected1b,
                       )
-    assert replace_ids(exinfo.value.message, False) == _required_missing_unchecked_super_for_configitem_expected1_ex
+    assert replace_ids(str(exinfo.value), False) == _required_missing_unchecked_super_for_configitem_expected1_ex
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(dev1, ef):
@@ -140,7 +140,7 @@ def test_required_missing_unchecked_super_for_configitem(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Attribute: 'anattr' did not receive a value for env Env('pp')")
-    assert replace_ids(exinfo.value.message, False) == _required_missing_unchecked_super_for_configitem_expected2_ex
+    assert replace_ids(str(exinfo.value), False) == _required_missing_unchecked_super_for_configitem_expected2_ex
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(dev1, ef):
@@ -151,7 +151,7 @@ def test_required_missing_unchecked_super_for_configitem(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Attribute: 'anattr' did not receive a value for env Env('pp')")
-    assert replace_ids(exinfo.value.message, False) == _required_missing_unchecked_super_for_configitem_expected3_ex
+    assert replace_ids(str(exinfo.value), False) == _required_missing_unchecked_super_for_configitem_expected3_ex
 
 
 def test_unchecked_inheritance():

@@ -217,7 +217,7 @@ def test_required_if_optional_attributes_missing_fully_instantiated_env():
                 ii.setattr('abcd', prod=1, dev2ct=0)
                 ii.setattr('ihasit', prod=7, dev2ct=8)
 
-    assert exinfo.value.message == _missing_fully_expected
+    assert str(exinfo.value) == _missing_fully_expected
 
 
 # NOTE: This cannot be reliably determined and may cause false errors in case of derived attributes
@@ -236,7 +236,7 @@ def test_required_if_optional_attributes_missing_fully_instantiated_env():
 #                ii.setattr('abcd', prod=1, dev2ct=0)
 #                ii.setattr('ihasit', prod=7, dev2ct=8)
 #
-#    assert exinfo.value.message == _missing_fully_expected
+#    assert str(exinfo.value) == _missing_fully_expected
 
 
 def test_required_if_optional_attributes_missing_some_env_instantiated_env():
@@ -300,4 +300,4 @@ def test_regular_attributes_missing_when_required_if_used():
                 ii.setattr('x', dev2ct=0)
                 ii.setattr('y', prod=0)
 
-    assert replace_ids(exinfo.value.message) == _expected_regular_attributes_missing_when_required_if_used_ex
+    assert replace_ids(str(exinfo.value)) == _expected_regular_attributes_missing_when_required_if_used_ex

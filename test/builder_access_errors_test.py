@@ -57,7 +57,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
 
     _sout, serr = capsys.readouterr()
     # assert serr == ce(errorline, '')
-    assert replace_ids(exinfo.value.message, False) == "Use of 'contained_in' in not allowed in object while under a ConfigBuilder"
+    assert replace_ids(str(exinfo.value), False) == "Use of 'contained_in' in not allowed in object while under a ConfigBuilder"
 
 
 def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_detached_item(capsys):
@@ -98,4 +98,4 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_detache
 
     _sout, serr = capsys.readouterr()
     # assert serr == ce(errorline, '')
-    assert replace_ids(exinfo.value.message, False) == "Use of 'contained_in' in not allowed in object while under a ConfigBuilder"
+    assert replace_ids(str(exinfo.value), False) == "Use of 'contained_in' in not allowed in object while under a ConfigBuilder"

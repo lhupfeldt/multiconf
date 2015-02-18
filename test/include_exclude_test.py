@@ -83,7 +83,7 @@ def test_include_missing_for_configitem(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline[0], "Attribute: 'anattr' did not receive a value for env Env('pp')")
-    assert "There were 1 errors when defining attribute 'anattr' on object" in exinfo.value.message
+    assert "There were 1 errors when defining attribute 'anattr' on object" in str(exinfo.value)
 
 
 def test_exclude_for_configitem():
@@ -323,7 +323,7 @@ def test_child_includes_excluded(capsys):
                 with item(mc_include=[dev2, prod]) as it1:
                     it1.x = 7
 
-    assert "There were 2 errors when defining item" in exinfo.value.message
+    assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     print(serr)
     assert_lines_in(
@@ -344,7 +344,7 @@ def test_exclude_include_overlapping_for_configitem(capsys):
             errorline = lineno() + 1
             item(mc_exclude=[dev1], mc_include=[dev1, pp])
 
-    assert "There were 1 errors when defining item" in exinfo.value.message
+    assert "There were 1 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
 
@@ -354,7 +354,7 @@ def test_exclude_include_overlapping_for_configitem(capsys):
             errorline = lineno() + 1
             item(mc_exclude=[pp, dev1], mc_include=[dev1])
 
-    assert "There were 1 errors when defining item" in exinfo.value.message
+    assert "There were 1 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
 

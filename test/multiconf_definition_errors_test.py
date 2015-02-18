@@ -193,14 +193,14 @@ def test_non_env_for_instantiatiation_env():
     with raises(ConfigException) as exinfo:
         project('Why?', ef1_prod)
 
-    assert exinfo.value.message == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
+    assert str(exinfo.value) == "project: env must be instance of 'Env'; found type 'str': 'Why?'"
 
 
 def test_env_factory_is_not_an_env_factory():
     with raises(ConfigException) as exinfo:
         project(prod3, 1)
 
-    assert exinfo.value.message == "project: env_factory arg must be instance of 'EnvFactory'; found type 'int': 1"
+    assert str(exinfo.value) == "project: env_factory arg must be instance of 'EnvFactory'; found type 'int': 1"
 
 
 _env_factory_arg_as_envgroup_exp = """ConfigRoot: env_factory arg must be instance of 'EnvFactory'; found type 'EnvGroup': EnvGroup('g_all') {
@@ -224,14 +224,14 @@ def test_env_factory_arg_as_envgroup():
     with raises(ConfigException) as exinfo:
         ConfigRoot(prod3, g_all3)
 
-    assert exinfo.value.message == _env_factory_arg_as_envgroup_exp
+    assert str(exinfo.value) == _env_factory_arg_as_envgroup_exp
 
 
 def test_selected_conf_not_from_env_factory():
     with raises(ConfigException) as exinfo:
         ConfigRoot(prod3, EnvFactory())
 
-    assert exinfo.value.message == """The selected env Env('prod') must be from the specified 'env_factory'"""
+    assert str(exinfo.value) == """The selected env Env('prod') must be from the specified 'env_factory'"""
 
 
 def test_assign_to_undefine_env(capsys):
@@ -242,7 +242,7 @@ def test_assign_to_undefine_env(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "No such Env or EnvGroup: 'pros'")
-    assert replace_ids(exinfo.value.message, False) == _e_expected
+    assert replace_ids(str(exinfo.value), False) == _e_expected
 
 
 def test_value_not_assigned_to_all_envs(capsys):
@@ -253,7 +253,7 @@ def test_value_not_assigned_to_all_envs(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
-    assert replace_ids(exinfo.value.message, False) == _f_expected
+    assert replace_ids(str(exinfo.value), False) == _f_expected
 
 
 _attribute_defined_with_different_types_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
@@ -278,7 +278,7 @@ def test_attribute_defined_with_different_types(capsys):
         "^%(lnum)s, pp <type 'str'>",
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
-    assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_expected_ex
 
 
 def test_attribute_defined_with_different_types_default(capsys):
@@ -294,7 +294,7 @@ def test_attribute_defined_with_different_types_default(capsys):
         "^%(lnum)s, default <type 'str'>",
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
-    assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_expected_ex
 
 
 _attribute_defined_with_different_types_item_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
@@ -310,7 +310,7 @@ def test_attribute_defined_with_different_types_init_default(capsys):
             cr.setattr('a', default=1)
 
     _sout, serr1 = capsys.readouterr()
-    assert replace_ids(exinfo.value.message, False) == _attribute_defined_with_different_types_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_expected_ex
 
     with raises(ConfigException) as exinfo:
         with project(prod1, ef1_prod):
@@ -320,7 +320,7 @@ def test_attribute_defined_with_different_types_init_default(capsys):
                 ci.a = 1
 
     _sout, serr2 = capsys.readouterr()
-    assert replace_ids(exinfo.value.message, named_as=False) == _attribute_defined_with_different_types_item_expected_ex
+    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_expected_ex
 
     for init_line, errorline, serr in ((init_line1, errorline1, serr1), (init_line2, errorline2, serr2)):
         assert_lines_in(
@@ -340,7 +340,7 @@ def test_attribute_redefinition_attempt(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, _h_expected)
-    assert replace_ids(exinfo.value.message, named_as=False) == _h_expected_ex
+    assert replace_ids(str(exinfo.value), named_as=False) == _h_expected_ex
 
 
 def test_nested_item_overrides_simple_attribute():
@@ -349,7 +349,7 @@ def test_nested_item_overrides_simple_attribute():
             cr.setattr('ConfigItem', prod="hello")
             ConfigItem()
 
-    assert replace_ids(exinfo.value.message, named_as=False) == _i_expected
+    assert replace_ids(str(exinfo.value), named_as=False) == _i_expected
 
 
 def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class():
@@ -357,7 +357,7 @@ def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class(
         with ConfigRoot(prod1, ef1_prod) as cr:
             RepeatableItem()
 
-    assert replace_ids(exinfo.value.message, named_as=False) == _j_expected
+    assert replace_ids(str(exinfo.value), named_as=False) == _j_expected
 
 
 def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repeatable():
@@ -367,7 +367,7 @@ def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repe
             cr.setattr('RepeatableItems', prod="hello")
             RepeatableItem()
 
-    assert replace_ids(exinfo.value.message, named_as=False) == _k1_expected
+    assert replace_ids(str(exinfo.value), named_as=False) == _k1_expected
 
 
 def test_nested_repeatable_item_shadowed_by_default_attribute():
@@ -376,7 +376,7 @@ def test_nested_repeatable_item_shadowed_by_default_attribute():
         with project(prod1, ef1_prod, RepeatableItems=1):
             RepeatableItem()
 
-    assert replace_ids(exinfo.value.message, named_as=False) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
+    assert replace_ids(str(exinfo.value), named_as=False) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
 
 
 # def nested_repeatable_item_overrides_simple_attribute_contained_in_repeatable(self):
@@ -394,7 +394,7 @@ def test_nested_repeatable_item_shadowed_by_default_attribute():
 # TODO: 'cr' is an OrderedDict, so this call is not possible, which is fine, but the error message is not good
 #             cr.children(prod="hello")
 #             rchild()
-#     assert exinfo.value.message == "'children' is defined both as simple value and a contained item: children {\n}"
+#     assert str(exinfo.value) == "'children' is defined both as simple value and a contained item: children {\n}"
 
 
 def test_non_repeatable_but_container_expects_repeatable():
@@ -406,7 +406,7 @@ def test_non_repeatable_but_container_expects_repeatable():
         with project(prod1, ef1_prod):
             RepeatableItems()
 
-    assert replace_ids(exinfo.value.message, named_as=False) == _k4_expected
+    assert replace_ids(str(exinfo.value), named_as=False) == _k4_expected
 
 
 def test_simple_attribute_attempt_to_override_contained_item():
@@ -416,7 +416,7 @@ def test_simple_attribute_attempt_to_override_contained_item():
             errorline = lineno() + 1
             cr.ConfigItem(prod="hello")
 
-    assert exinfo.value.message == "'ConfigItem' object is not callable"
+    assert str(exinfo.value) == "'ConfigItem' object is not callable"
 
 
 def test_repeated_non_repeatable_item():
@@ -426,7 +426,7 @@ def test_repeated_non_repeatable_item():
             errorline = lineno() + 1
             ConfigItem()
 
-    assert exinfo.value.message == "Repeated non repeatable conf item: 'ConfigItem'"
+    assert str(exinfo.value) == "Repeated non repeatable conf item: 'ConfigItem'"
 
 
 def test_nested_repeatable_items_with_repeated_name():
@@ -435,7 +435,7 @@ def test_nested_repeatable_items_with_repeated_name():
             RepeatableItem(id='my_name')
             RepeatableItem(id='my_name')
 
-    assert exinfo.value.message == "Re-used id/name 'my_name' in nested objects"
+    assert str(exinfo.value) == "Re-used id/name 'my_name' in nested objects"
 
 
 _value_defined_through_two_groups_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
@@ -466,7 +466,7 @@ def test_value_defined_through_two_groups(capsys):
     _sout, serr = capsys.readouterr()
     print(serr)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _value_defined_through_two_groups_expected % dict(line=errorline)
-    assert replace_ids(exinfo.value.message, False) == _value_defined_through_two_groups_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _value_defined_through_two_groups_expected_ex
 
 
 _value_defined_through_three_groups_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
@@ -500,7 +500,7 @@ def test_value_defined_through_three_groups(capsys):
     _sout, serr = capsys.readouterr()
     print(serr)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _value_defined_through_three_groups_expected % dict(line=errorline)
-    assert replace_ids(exinfo.value.message, False) == _value_defined_through_three_groups_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _value_defined_through_three_groups_expected_ex
 
 
 def test_two_values_defined_through_two_groups(capsys):
@@ -512,7 +512,7 @@ def test_two_values_defined_through_two_groups(capsys):
     _sout, serr = capsys.readouterr()
     print(_sout, serr)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _p_expected.strip() % dict(line=errorline)
-    assert replace_ids(exinfo.value.message, False) == _p_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _p_expected_ex
 
 
 _assigning_owerwrites_attribute_root_expected = """The attribute 'a' is already fully defined"""
@@ -535,7 +535,7 @@ def test_assigning_owerwrites_attribute_root(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, _assigning_owerwrites_attribute_root_expected)
-    assert replace_ids(exinfo.value.message, named_as=False) == _assigning_owerwrites_attribute_root_expected_ex
+    assert replace_ids(str(exinfo.value), named_as=False) == _assigning_owerwrites_attribute_root_expected_ex
 
 
 _assigning_owerwrites_attribute_nested_item_expected_ex = _assigning_owerwrites_attribute_root_expected + """ on object {
@@ -553,14 +553,14 @@ def test_assigning_owerwrites_attribute_nested_item(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, _assigning_owerwrites_attribute_root_expected)
-    assert replace_ids(exinfo.value.message, named_as=False) == _assigning_owerwrites_attribute_nested_item_expected_ex
+    assert replace_ids(str(exinfo.value), named_as=False) == _assigning_owerwrites_attribute_nested_item_expected_ex
 
 
 def test_configitem_outside_of_root():
     with raises(ConfigException) as exinfo:
         ConfigItem()
 
-    assert exinfo.value.message == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
+    assert str(exinfo.value) == "ConfigItem object must be nested (indirectly) in a 'ConfigRoot'"
 
 
 _group_for_selected_env_expected = """project: env must be instance of 'Env'; found type 'EnvGroup': EnvGroup('g_dev3') {
@@ -572,7 +572,7 @@ def test_using_group_for_selected_env():
     with raises(ConfigException) as exinfo:
         project(g_dev33, ef3_dev_prod)
 
-    assert exinfo.value.message == _group_for_selected_env_expected
+    assert str(exinfo.value) == _group_for_selected_env_expected
 
 
 _exception_in___exit___and_build = (
@@ -595,7 +595,7 @@ def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_i
 
     _sout, serr = capsys.readouterr()
     assert serr == _exception_in___exit___and_build
-    assert exinfo.value.message == 'in with'
+    assert str(exinfo.value) == 'in with'
 
 
 _double_error_for_configroot_expected_stderr = (
@@ -614,7 +614,7 @@ def test_double_error_for_configroot(capsys):
 
     _sout, serr = capsys.readouterr()
     assert replace_user_file_line_msg(serr) == _double_error_for_configroot_expected_stderr
-    assert exinfo.value.message == "Error in root with block"
+    assert str(exinfo.value) == "Error in root with block"
 
 
 def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
@@ -627,7 +627,7 @@ def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
     _sout, serr = capsys.readouterr()
     err_msg = "File \"fake_dir/multiconf_definition_errors_test.py\", line 999\nConfigError: Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder.\n"
     assert replace_user_file_line_msg(serr) == err_msg
-    assert exinfo.value.message == "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."
+    assert str(exinfo.value) == "Decorator '@nested_repeatables' is not allowed on instance of ConfigBuilder."
 
 
 def test_root_attribute_exception_in_with_block():
@@ -635,7 +635,7 @@ def test_root_attribute_exception_in_with_block():
         with ConfigRoot(prod2, ef2_pp_prod):
             raise Exception("Error in root with block")
 
-    assert exinfo.value.message == "Error in root with block"
+    assert str(exinfo.value) == "Error in root with block"
 
 
 _exception_previous_object_expected_stderr = """Exception validating previously defined object -
@@ -660,7 +660,7 @@ def test_error_freezing_previous_sibling__build(capsys):
 
     _sout, serr = capsys.readouterr()
     assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr
-    assert exinfo.value.message == "Error in build"
+    assert str(exinfo.value) == "Error in build"
 
 
 def test_error_freezing_previous_sibling__validation(capsys):
@@ -677,7 +677,7 @@ def test_error_freezing_previous_sibling__validation(capsys):
 
     _sout, serr = capsys.readouterr()
     assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr
-    assert exinfo.value.message == "No value given for required attributes: ['a']"
+    assert str(exinfo.value) == "No value given for required attributes: ['a']"
 
 
 def test_mc_init_override_underscore_error(capsys):
@@ -692,7 +692,7 @@ def test_mc_init_override_underscore_error(capsys):
     _sout, serr = capsys.readouterr()
     # TODO: missing error message
     assert replace_user_file_line_msg(serr) == ""
-    assert exinfo.value.message == """Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.override. Use assignment instead."""
+    assert str(exinfo.value) == """Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.override. Use assignment instead."""
 
 
 def test_mc_init_override_underscore_mc_error(capsys):
@@ -707,7 +707,7 @@ def test_mc_init_override_underscore_mc_error(capsys):
     _sout, serr = capsys.readouterr()
     # TODO: missing error message
     assert replace_user_file_line_msg(serr) == ""
-    assert exinfo.value.message == """Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
+    assert str(exinfo.value) == """Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
 
 
 def test_attribute_mc_required_args_partial_set_in_init_unfinished():

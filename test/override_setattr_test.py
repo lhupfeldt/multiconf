@@ -45,7 +45,7 @@ def test_override_setattr1(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "No such Env or EnvGroup: 'pros'")
-    assert replace_ids(exinfo.value.message, False) == _override_setattr1_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _override_setattr1_expected_ex
 
 
 def test_override_setattr2(capsys):
@@ -57,4 +57,4 @@ def test_override_setattr2(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
-    assert replace_ids(exinfo.value.message, False) == _override_setattr2_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _override_setattr2_expected_ex

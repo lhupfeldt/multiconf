@@ -143,11 +143,11 @@ def test_env_from_name():
 
     with raises(EnvException) as exinfo:
         ef.env("g_dev_tst")
-    assert exinfo.value.message == "No such Env: 'g_dev_tst'"
+    assert str(exinfo.value) == "No such Env: 'g_dev_tst'"
 
     with raises(EnvException) as exinfo:
         ef.env("no-way")
-    assert exinfo.value.message == "No such Env: 'no-way'"
+    assert str(exinfo.value) == "No such Env: 'no-way'"
 
 
 def test_env_or_group_from_name():
@@ -156,7 +156,7 @@ def test_env_or_group_from_name():
 
     with raises(EnvException) as exinfo:
         ef.env_or_group_from_name("no-way")
-    assert exinfo.value.message == "No such Env or EnvGroup: 'no-way'"
+    assert str(exinfo.value) == "No such Env or EnvGroup: 'no-way'"
 
 
 def test_env_or_group_from_bit():
@@ -171,7 +171,7 @@ def test_env_or_group_from_bit():
 
     with raises(EnvException) as exinfo:
         ef.env_or_group_from_bit(0b1000000000000000)
-    assert exinfo.value.message == "No Env or EnvGroup with bit 0b1000000000000000"
+    assert str(exinfo.value) == "No Env or EnvGroup with bit 0b1000000000000000"
 
 
 def test_envs_from_mask():
@@ -210,7 +210,7 @@ def test_env_factory_in_use(capsys):
         myef.EnvGroup('g_dev12', mydev1)
 
     _sout, serr = capsys.readouterr()
-    assert exinfo.value.message == "EnvFactory is already in use. No more groups may be added."
+    assert str(exinfo.value) == "EnvFactory is already in use. No more groups may be added."
     assert replace_user_file_line_msg(serr) == ''  # TODO empty error message
 
     with raises(EnvException) as exinfo:
@@ -220,7 +220,7 @@ def test_env_factory_in_use(capsys):
         myef.Env('dev2')
 
     _sout, serr = capsys.readouterr()
-    assert exinfo.value.message == "EnvFactory is already in use. No more envs may be added."
+    assert str(exinfo.value) == "EnvFactory is already in use. No more envs may be added."
     assert replace_user_file_line_msg(serr) == ''  # TODO empty error message
 
 
@@ -233,7 +233,7 @@ def test_group_members_not_same_factory(capsys):
         myef2.EnvGroup('g_dev12', mydev1, mydev2)
 
     _sout, serr = capsys.readouterr()
-    assert exinfo.value.message == "EnvGroup: The group members must be from the same 'env_factory' as the group being declared. 'Env' or 'EnvGroup' found: Env('dev1')"
+    assert str(exinfo.value) == "EnvGroup: The group members must be from the same 'env_factory' as the group being declared. 'Env' or 'EnvGroup' found: Env('dev1')"
     assert replace_user_file_line_msg(serr) == ''  # TODO empty error message
 
 
@@ -247,7 +247,7 @@ def test_env_name_used():
         myef1.Env('dev1')
         myef1.Env('dev1')
 
-    assert exinfo.value.message == "Name 'dev1' is already used by env: Env('dev1')"
+    assert str(exinfo.value) == "Name 'dev1' is already used by env: Env('dev1')"
 
     with raises(EnvException) as exinfo:
         myef1 = EnvFactory()
@@ -255,8 +255,8 @@ def test_env_name_used():
         myef1.EnvGroup('g_dev', mydev1)
         mydev1 = myef1.Env('g_dev')
 
-    print(exinfo.value.message)
-    assert exinfo.value.message == _eg_name_used_expected_ex
+    print(str(exinfo.value))
+    assert str(exinfo.value) == _eg_name_used_expected_ex
 
 
 def test_group_name_used():
@@ -265,7 +265,7 @@ def test_group_name_used():
         myef1.Env('dev1')
         myef1.EnvGroup('dev1')
 
-    assert exinfo.value.message == "Name 'dev1' is already used by env: Env('dev1')"
+    assert str(exinfo.value) == "Name 'dev1' is already used by env: Env('dev1')"
 
     with raises(EnvException) as exinfo:
         myef1 = EnvFactory()
@@ -273,7 +273,7 @@ def test_group_name_used():
         myef1.EnvGroup('g_dev', mydev1)
         myef1.EnvGroup('g_dev', mydev1)
 
-    assert exinfo.value.message == _eg_name_used_expected_ex
+    assert str(exinfo.value) == _eg_name_used_expected_ex
 
 
 def test_repeated_nested_env_member_reversed():

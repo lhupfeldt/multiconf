@@ -21,7 +21,7 @@ def test_repeated_direct_env_member(capsys):
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert exinfo.value.message == "Repeated group member: Env('ff1') in EnvGroup('ff2') {\n\n}"
+    assert str(exinfo.value) == "Repeated group member: Env('ff1') in EnvGroup('ff2') {\n\n}"
 
 
 def test_repeated_direct_group_member(capsys):
@@ -34,7 +34,7 @@ def test_repeated_direct_group_member(capsys):
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert exinfo.value.message == "Repeated group member: EnvGroup('gg2') {\n     Env('gg1')\n} in EnvGroup('gg3') {\n\n}"
+    assert str(exinfo.value) == "Repeated group member: EnvGroup('gg2') {\n     Env('gg1')\n} in EnvGroup('gg3') {\n\n}"
 
 
 def test_env_or_group_from_string_undefined():
@@ -42,7 +42,7 @@ def test_env_or_group_from_string_undefined():
         ef = EnvFactory()
         ef.env_or_group_from_name("undefined")
 
-    assert exinfo.value.message == "No such Env or EnvGroup: 'undefined'"
+    assert str(exinfo.value) == "No such Env or EnvGroup: 'undefined'"
 
 
 def test_env_name_is_not_a_str(capsys):
@@ -52,7 +52,7 @@ def test_env_name_is_not_a_str(capsys):
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert exinfo.value.message == "Env: 'name' must be instance of str, found: int"
+    assert str(exinfo.value) == "Env: 'name' must be instance of str, found: int"
 
 
 def test_env_name_is_empty(capsys):
@@ -62,7 +62,7 @@ def test_env_name_is_empty(capsys):
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert exinfo.value.message == "Env: 'name' must not be empty"
+    assert str(exinfo.value) == "Env: 'name' must not be empty"
 
 
 def test_env_name_startswith_underscore(capsys):
@@ -72,7 +72,7 @@ def test_env_name_startswith_underscore(capsys):
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert exinfo.value.message == "Env: 'name' must not start with '_', got: '_a'"
+    assert str(exinfo.value) == "Env: 'name' must not start with '_', got: '_a'"
 
 
 def test_env_name_eq_default(capsys):
@@ -82,7 +82,7 @@ def test_env_name_eq_default(capsys):
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert exinfo.value.message == "Env: name 'default' is reserved"
+    assert str(exinfo.value) == "Env: name 'default' is reserved"
 
 
 def test_group_name_eq_default(capsys):
@@ -93,7 +93,7 @@ def test_group_name_eq_default(capsys):
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert exinfo.value.message == "EnvGroup: name 'default' is reserved"
+    assert str(exinfo.value) == "EnvGroup: name 'default' is reserved"
 
 
 def test_no_group_members(capsys):
@@ -103,7 +103,7 @@ def test_no_group_members(capsys):
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert exinfo.value.message == "EnvGroup: No group members specified"
+    assert str(exinfo.value) == "EnvGroup: No group members specified"
 
 
 def test_group_member_is_not_instanceof_env(capsys):
@@ -113,4 +113,4 @@ def test_group_member_is_not_instanceof_env(capsys):
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert exinfo.value.message == "EnvGroup: Group members args must be instance of 'Env' or 'EnvGroup', found: 1"
+    assert str(exinfo.value) == "EnvGroup: Group members args must be instance of 'Env' or 'EnvGroup', found: 1"
