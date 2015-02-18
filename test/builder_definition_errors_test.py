@@ -66,7 +66,8 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
 
         def build(self):
             for server_num in range(1, self.num_servers+1):
-                with Xses(name='server%d' % server_num, server_num=server_num) as c:
+                with Xses(name='server%d' % server_num) as c:
+                    c.server_num = server_num
                     c.setattr('something', prod=1, pp=2)
 
     @nested_repeatables('xses')
@@ -79,6 +80,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
             with XBuilder():
                 pass
 
+    print(str(exinfo.value))
     assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
 
 
