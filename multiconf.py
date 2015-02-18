@@ -500,7 +500,7 @@ class _ConfigBase(object):
 
                 seen_egs[eg_name] = eg
             except EnvException as ex:
-                num_errors = _error_msg(num_errors, ex.message, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+                num_errors = _error_msg(num_errors, str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
         # Clear resolved conflicts
         for _eg_name, eg in seen_egs.items():
