@@ -43,7 +43,8 @@ class BaseEnv(object):
             def default(self, env):  # pylint: disable=method-hidden
                 return env.json_equivalent()
 
-        return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=True, sort_keys=False, indent=4)
+        # python3 doesn't need  separators=(',', ': ')
+        return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=True, sort_keys=False, indent=4, separators=(',', ': '))
 
     def json_equivalent(self):
         return OrderedDict((

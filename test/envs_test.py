@@ -311,43 +311,43 @@ def test_repeated_nested_group_member_reversed():
 
 
 test_json_json = """{
-    "type": "<class 'multiconf.envs.EnvGroup'>", 
-    "name": "jj4", 
-    "bit": 16, 
-    "mask": "0b0000000000011110", 
+    "type": "<class 'multiconf.envs.EnvGroup'>",
+    "name": "jj4",
+    "bit": 16,
+    "mask": "0b0000000000011110",
     "members": [
         {
-            "type": "<class 'multiconf.envs.EnvGroup'>", 
-            "name": "jj2", 
-            "bit": 4, 
-            "mask": "0b0000000000000110", 
+            "type": "<class 'multiconf.envs.EnvGroup'>",
+            "name": "jj2",
+            "bit": 4,
+            "mask": "0b0000000000000110",
             "members": [
                 {
-                    "type": "<class 'multiconf.envs.Env'>", 
-                    "name": "jj1", 
-                    "bit": 2, 
-                    "mask": "0b0000000000000010", 
+                    "type": "<class 'multiconf.envs.Env'>",
+                    "name": "jj1",
+                    "bit": 2,
+                    "mask": "0b0000000000000010",
                     "members": []
                 }
             ]
-        }, 
+        },
         {
-            "type": "<class 'multiconf.envs.EnvGroup'>", 
-            "name": "jj3", 
-            "bit": 8, 
-            "mask": "0b0000000000001110", 
+            "type": "<class 'multiconf.envs.EnvGroup'>",
+            "name": "jj3",
+            "bit": 8,
+            "mask": "0b0000000000001110",
             "members": [
                 {
-                    "type": "<class 'multiconf.envs.EnvGroup'>", 
-                    "name": "jj2", 
-                    "bit": 4, 
-                    "mask": "0b0000000000000110", 
+                    "type": "<class 'multiconf.envs.EnvGroup'>",
+                    "name": "jj2",
+                    "bit": 4,
+                    "mask": "0b0000000000000110",
                     "members": [
                         {
-                            "type": "<class 'multiconf.envs.Env'>", 
-                            "name": "jj1", 
-                            "bit": 2, 
-                            "mask": "0b0000000000000010", 
+                            "type": "<class 'multiconf.envs.Env'>",
+                            "name": "jj1",
+                            "bit": 2,
+                            "mask": "0b0000000000000010",
                             "members": []
                         }
                     ]
