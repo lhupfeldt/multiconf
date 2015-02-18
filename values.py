@@ -6,8 +6,11 @@ class MCInvalidValue(object):
     def __init__(self, name):
         self.name = name
 
-    def __nonzero__(self):
+    def __bool__(self):
         return False
+
+    # Python2 compatibility
+    __nonzero__ = __bool__
 
     def __repr__(self):
         return self.name

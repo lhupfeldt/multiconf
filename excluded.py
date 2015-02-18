@@ -14,8 +14,11 @@ class Excluded(object):
     def __repr__(self):
         return self._repr
 
-    def __nonzero__(self):
+    def __bool__(self):
         return False
+
+    # Python2 compatibility
+    __nonzero__ = __bool__
 
     def _mc_freeze(self):
         return True

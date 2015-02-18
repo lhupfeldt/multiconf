@@ -998,8 +998,11 @@ class ConfigItem(_ConfigBase):
         return repr(key) + ': ' + repr(self) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
             repr(containing_class.named_as())
 
-    def __nonzero__(self):
+    def __bool__(self):
         return not object.__getattribute__(self, '_mc_is_excluded')
+
+    # Python2 compatibility
+    __nonzero__ = __bool__
 
 
 class ConfigBuilder(ConfigItem):
