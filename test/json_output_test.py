@@ -106,8 +106,8 @@ _json_dump_simple_expected_json = """{
                         "c-level3": {
                             "__class__": "NestedRepeatable",
                             "__id__": 0000,
-                            "something": 1,
                             "id": "c-level3",
+                            "something": 1,
                             "someitems": {}
                         }
                     }
@@ -115,8 +115,8 @@ _json_dump_simple_expected_json = """{
                 "c-level2": {
                     "__class__": "NestedRepeatable",
                     "__id__": 0000,
-                    "something": 2,
                     "id": "c-level2",
+                    "something": 2,
                     "someitems": {}
                 }
             }
@@ -124,8 +124,8 @@ _json_dump_simple_expected_json = """{
         "c-level1": {
             "__class__": "NestedRepeatable",
             "__id__": 0000,
-            "something": 3,
             "id": "c-level1",
+            "something": 3,
             "someitems": {}
         }
     }
@@ -166,8 +166,8 @@ _json_dump_cyclic_references_in_conf_items_expected_json = """{
         "b1": {
             "__class__": "NestedRepeatable",
             "__id__": 0000,
-            "someattr": 12,
             "id": "b1",
+            "someattr": 12,
             "someitems": {
                 "a2": {
                     "__class__": "NestedRepeatable",
@@ -224,11 +224,11 @@ __json_dump_cyclic_references_between_conf_items_and_other_objects_expected_json
     "someitem": {
         "__class__": "SimpleItem",
         "__id__": 0000,
-        "someattr": 12,
-        "id": "b1",
         "cycl": {
             "cyclic_item_ref": "#ref id: 0000"
-        }
+        },
+        "id": "b1",
+        "someattr": 12
     }
 }"""
 
@@ -635,8 +635,8 @@ _uplevel_ref_expected_json_output = """{
             "__class__": "NestedRepeatable",
             "__id__": 0000,
             "d": 3,
-            "uplevel_ref": "#outside-ref: NestedRepeatable: id: 'n1', name: 'Number 1'",
             "id": "n3",
+            "uplevel_ref": "#outside-ref: NestedRepeatable: id: 'n1', name: 'Number 1'",
             "someitems": {}
         }
     }

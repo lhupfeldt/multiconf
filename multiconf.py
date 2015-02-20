@@ -65,7 +65,7 @@ class _ConfigBase(object):
 
         __class__ = object.__getattribute__(self, '__class__')
         _mc_deco_nested_repeatables = __class__._mc_deco_nested_repeatables
-        for key, value in attr.items():
+        for key, value in sorted(attr.items()):
             if key in _mc_deco_nested_repeatables:
                 raise ConfigException(repr(key) + ' defined as default value shadows a nested-repeatable')
             try:
