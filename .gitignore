@@ -2,4 +2,6 @@
 *.pyc
 .cache
 .coverage
+*.egg
+*.egg-info
 TAGS
