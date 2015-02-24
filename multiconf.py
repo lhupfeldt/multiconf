@@ -116,12 +116,12 @@ class _ConfigBase(object):
         # TODO proper pythonic repr, but until indentation is fixed, json is better
         # return self.irepr(len(self.__class__._mc_nested) -1)
 
-    def _mc_freeze_previous_child(self):
+    def _mc_insert_item(self, child_item):
         # Freeze attributes on previously defined child
         previous_item = self._mc_previous_child
         if previous_item and not previous_item.frozen:
             try:
-                return previous_item._mc_freeze()
+                previous_item._mc_freeze()
             except Exception as ex:
                 print("Exception validating previously defined object -", file=sys.stderr)
                 print("  type:", type(previous_item), file=sys.stderr)
@@ -134,8 +134,6 @@ class _ConfigBase(object):
                     raise
                 raise ex
 
-    def _mc_insert_item(self, child_item):
-        self._mc_freeze_previous_child()
         if not child_item._mc_is_excluded:
             self._mc_previous_child = child_item
 
