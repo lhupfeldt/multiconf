@@ -16,3 +16,4 @@ omit =
     test/*
     setup.py
     .eggs/*
+    *.egg/*
