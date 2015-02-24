@@ -8,7 +8,9 @@ from .. import ConfigRoot, ConfigItem
 from ..decorators import named_as
 from ..envs import EnvFactory
 
+from .utils.utils import py3_lcls
 from .utils.compare_json import compare_json
+
 
 ef = EnvFactory()
 
@@ -65,7 +67,7 @@ _json_fallback_handler_expected_json = """{
         1,
         2
     ],
-    "unhandled_non_item": "__json_error__ # don't know how to handle obj of type: <class 'multiconf.test.json_output_callbacks_test.UnHandledNonItem'>",
+    "unhandled_non_item": "__json_error__ # don't know how to handle obj of type: <class 'multiconf.test.json_output_callbacks_test%(py3_lcls)s.UnHandledNonItem'>",
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
@@ -99,7 +101,7 @@ def test_json_fallback_handler():
         cr.unhandled_non_item = UnHandledNonItem()
         Nested(b=2)
 
-    compare_json(cr, _json_fallback_handler_expected_json, expect_num_errors=1)
+    compare_json(cr, _json_fallback_handler_expected_json % dict(py3_lcls=py3_lcls()), expect_num_errors=1)
 
 
 _json_fallback_handler_iterable_expected_json = """{
