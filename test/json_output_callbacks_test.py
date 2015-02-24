@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from collections import OrderedDict
+
 from .. import ConfigRoot, ConfigItem
 
 from ..decorators import named_as
@@ -159,7 +161,7 @@ _json_equivalent_expected_json = """{
 def test_json_equivalent():
     class NonItemWithEquiv(object):
         def json_equivalent(self):
-            return dict(a=1, b='Hi')
+            return OrderedDict((('a', 1), ('b', 'Hi')))
 
     @named_as('someitem')
     class Item(ConfigItem):

@@ -3,10 +3,13 @@
 
 from __future__ import print_function
 
+import sys
+
 # pylint: disable=E0611
 from pytest import raises
 
 from .utils.utils import config_error, replace_ids
+from .utils.utils import py3_lcls
 
 from .. import ConfigRoot, ConfigItem, ConfigException
 from ..decorators import nested_repeatables, named_as, repeat
@@ -57,7 +60,7 @@ def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_
     assert replace_ids(str(exinfo.value), named_as=False) == _t2_expected_repr
 
 
-_find_contained_in_named_as_not_found_expected = """Searching from: <class 'multiconf.test.multiconf_access_errors_test.Y'>: Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root']"""
+_find_contained_in_named_as_not_found_expected = """Searching from: <class 'multiconf.test.multiconf_access_errors_test%(py3_lcls)s.Y'>: Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root']"""
 
 def test_find_contained_in_named_as_not_found():
     @named_as('someitems')
@@ -96,10 +99,10 @@ def test_find_contained_in_named_as_not_found():
     with raises(ConfigException) as exinfo:
         cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
 
-    assert replace_ids(str(exinfo.value)) == _find_contained_in_named_as_not_found_expected
+    assert replace_ids(str(exinfo.value)) == _find_contained_in_named_as_not_found_expected % dict(py3_lcls=py3_lcls())
 
 
-_find_attribute_with_attribute_name_not_found = """Searching from: <class 'multiconf.test.multiconf_access_errors_test.X'>: Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"""
+_find_attribute_with_attribute_name_not_found = """Searching from: <class 'multiconf.test.multiconf_access_errors_test%(py3_lcls)s.X'>: Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root']"""
 
 def test_find_attribute_with_attribute_name_not_found():
     @named_as('someitems')
@@ -134,7 +137,7 @@ def test_find_attribute_with_attribute_name_not_found():
     with raises(ConfigException) as exinfo:
         assert cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e') == 3
 
-    assert replace_ids(str(exinfo.value)) == _find_attribute_with_attribute_name_not_found
+    assert replace_ids(str(exinfo.value)) == _find_attribute_with_attribute_name_not_found % dict(py3_lcls=py3_lcls())
 
 
 # TODO

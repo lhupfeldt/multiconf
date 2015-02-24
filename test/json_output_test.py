@@ -3,6 +3,7 @@
 
 import sys
 from collections import OrderedDict
+import pytest
 
 from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
 
@@ -10,8 +11,9 @@ from ..decorators import nested_repeatables, named_as, repeat
 from ..envs import EnvFactory
 
 from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg, config_error
-
+from .utils.utils import py3_lcls
 from .utils.compare_json import compare_json
+
 
 ef = EnvFactory()
 pp = ef.Env('pp')
@@ -490,8 +492,8 @@ _json_dump_property_method_calls_json_expected_json = """{
 }"""
 
 _json_dump_property_method_calls_json_expected_stderr = """Warning: Nested json calls:
-outer object type: <class 'multiconf.test.json_output_test.Nested'>
-inner object type: <class 'multiconf.test.json_output_test.Nested'>, inner obj: {
+outer object type: <class 'multiconf.test.json_output_test%(py3_lcls)s.Nested'>
+inner object type: <class 'multiconf.test.json_output_test%(py3_lcls)s.Nested'>, inner obj: {
     "__class__": "Nested #as: 'xxxx', id: 0000"
 }"""
 
@@ -508,7 +510,7 @@ def test_json_dump_property_method_calls_json(capsys):
     compare_json(cr, _json_dump_property_method_calls_json_expected_json, expect_num_errors=1)
     _sout, serr = capsys.readouterr()
     assert "Nested json calls detected" in serr
-    assert _json_dump_property_method_calls_json_expected_stderr in replace_ids(serr)
+    assert _json_dump_property_method_calls_json_expected_stderr % dict(py3_lcls=py3_lcls()) in replace_ids(serr)
 
 
 # TODO: insert information about skipped objects into json output
@@ -559,6 +561,7 @@ _json_dump_non_conf_item_expected_json = """{
     }
 }"""
 
+@pytest.mark.skipif(sys.version >= '3', reason="Python3 does not have old style classes.")
 def test_json_dump_non_conf_item():
     # This is an old style class
     class SomeClass():
@@ -584,7 +587,7 @@ _json_dump_unhandled_item_function_ref_expected_json = """{
     "someitem": {
         "__class__": "SimpleItem",
         "__id__": 0000,
-        "func": "__json_error__ # don't know how to handle obj of type: <type 'function'>"
+        "func": "__json_error__ # don't know how to handle obj of type: <%(type_or_class)s 'function'>"
     }
 }"""
 
@@ -1227,7 +1230,7 @@ def test_json_dump_property_method_returns_later_confitem_dict_same_level():
     class NamedNestedRepeatable(_NamedNestedRepeatable):
         @property
         def m(self):
-            return dict(a=self.contained_in.someitems['two'], b=self.contained_in.someitems['three'])
+            return OrderedDict((('a', self.contained_in.someitems['two']), ('b', self.contained_in.someitems['three'])))
 
     with root(prod, ef, a=0) as cr:
         NamedNestedRepeatable(name='one')
@@ -1312,7 +1315,7 @@ _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 = """{
     "McWithNestedClass": {
         "__class__": "McWithNestedClass",
         "__id__": 0000,
-        "TTT": "<class 'multiconf.test.json_output_test.TTT'>"
+        "TTT": "<class 'multiconf.test.json_output_test%(py3_lcls)s.TTT'>"
     }
 }"""
 
@@ -1328,7 +1331,7 @@ _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 = """{
     "ConfigItem": {
         "__class__": "ConfigItem",
         "__id__": 0000,
-        "a": "<class 'multiconf.test.json_output_test.NonMcWithNestedClass'>"
+        "a": "<class 'multiconf.test.json_output_test%(py3_lcls)s.NonMcWithNestedClass'>"
     }
 }"""
 
@@ -1339,8 +1342,7 @@ def test_json_dump_nested_class_non_mc():
 
     with root(prod, ef, a=0) as cr:
         McWithNestedClass()
-
-    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1)
+    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(py3_lcls=py3_lcls('.McWithNestedClass')))
 
     class NonMcWithNestedClass(object):
         class TTT(object):
@@ -1349,8 +1351,7 @@ def test_json_dump_nested_class_non_mc():
     with root(prod, ef, a=0) as cr:
         with ConfigItem() as ci:
             ci.a = NonMcWithNestedClass
-
-    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2)
+    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_lcls=py3_lcls()))
 
 
 def test_json_dump_nested_class_with_json_equiv_non_mc():
@@ -1361,8 +1362,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
 
     with root(prod, ef, a=0) as cr:
         McWithNestedClass()
-
-    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1)
+    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(py3_lcls=py3_lcls('.McWithNestedClass')))
 
     class NonMcWithNestedClass(object):
         class TTT(object):
@@ -1372,8 +1372,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
     with root(prod, ef, a=0) as cr:
         with ConfigItem() as ci:
             ci.a = NonMcWithNestedClass
-
-    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2)
+    compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_lcls=py3_lcls()))
 
 
 _json_dump_multiple_errors_expected_json = """{
@@ -1386,11 +1385,11 @@ _json_dump_multiple_errors_expected_json = """{
     "someitem": {
         "__class__": "SimpleItem",
         "__id__": 0000,
-        "func": "__json_error__ # don't know how to handle obj of type: <type 'function'>",
+        "func": "__json_error__ # don't know how to handle obj of type: <%(type_or_class)s 'function'>",
         "someitem": {
             "__class__": "SimpleItem",
             "__id__": 0000,
-            "func": "__json_error__ # don't know how to handle obj of type: <type 'function'>"
+            "func": "__json_error__ # don't know how to handle obj of type: <%(type_or_class)s 'function'>"
         }
     }
 }"""

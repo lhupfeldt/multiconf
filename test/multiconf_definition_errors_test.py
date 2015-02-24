@@ -6,7 +6,8 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg, assert_lines_in
+from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in
+from .utils.utils import py3_lcls
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
 from ..decorators import nested_repeatables, repeat, required
@@ -274,8 +275,7 @@ def test_attribute_defined_with_different_types(capsys):
     _sout, serr = capsys.readouterr()
     assert_lines_in(
         __file__, errorline, serr,
-        "^%(lnum)s, prod <type 'int'>",
-        "^%(lnum)s, pp <type 'str'>",
+        ("^%(lnum)s, prod <%(type_or_class)s 'int'>", "^%(lnum)s, pp <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_expected_ex
@@ -290,8 +290,7 @@ def test_attribute_defined_with_different_types_default(capsys):
     _sout, serr = capsys.readouterr()
     assert_lines_in(
         __file__, errorline, serr,
-        "^%(lnum)s, prod <type 'int'>",
-        "^%(lnum)s, default <type 'str'>",
+        ("^%(lnum)s, prod <%(type_or_class)s 'int'>", "^%(lnum)s, default <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_expected_ex
@@ -325,8 +324,8 @@ def test_attribute_defined_with_different_types_init_default(capsys):
     for init_line, errorline, serr in ((init_line1, errorline1, serr1), (init_line2, errorline2, serr2)):
         assert_lines_in(
             __file__, errorline, serr,
-            "^%(lnum)s, default <type 'int'>",
-            """^File "%(file_name)s", line {line_num}, __init__ <type 'str'>""".format(line_num=init_line),
+            "^%(lnum)s, default <%(type_or_class)s 'int'>",
+            """^File "%(file_name)s", line {line_num}, __init__ <%(type_or_class)s 'str'>""".format(line_num=init_line),
             "^ConfigError: Found different value types for property 'a' for different envs",
         )
 
@@ -639,7 +638,7 @@ def test_root_attribute_exception_in_with_block():
 
 
 _exception_previous_object_expected_stderr = """Exception validating previously defined object -
-  type: <class 'multiconf.test.multiconf_definition_errors_test.inner'>
+  type: <class 'multiconf.test.multiconf_definition_errors_test%(py3_lcls)s.inner'>
 Stack trace will be misleading!
 This happens if there is an error (e.g. missing required attributes) in an object that was not
 directly enclosed in a with statement. Objects that are not arguments to a with statement will
@@ -659,7 +658,7 @@ def test_error_freezing_previous_sibling__build(capsys):
             inner()
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr
+    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr % dict(py3_lcls=py3_lcls())
     assert str(exinfo.value) == "Error in build"
 
 
@@ -676,7 +675,7 @@ def test_error_freezing_previous_sibling__validation(capsys):
             inner()
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr
+    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr % dict(py3_lcls=py3_lcls())
     assert str(exinfo.value) == "No value given for required attributes: ['a']"
 
 

@@ -12,6 +12,7 @@ except ImportError:
 
 
 from .utils import replace_ids, replace_ids_builder, to_compact, to_compact_excluded
+from .utils import py3_tc
 from .check_containment import check_containment
 
 
@@ -26,6 +27,8 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
         else:
             compact_json_replaced = replace_ids(compact_json)
             full_json_replaced = replace_ids(full_json)
+
+        expected_json %= {'type_or_class': py3_tc}
 
         if test_excluded:
             compact_expected_json = to_compact_excluded(expected_json)

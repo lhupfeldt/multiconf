@@ -154,8 +154,7 @@ def test_attribute_mc_required_other_env_different_types(capsys):
 
     assert_lines_in(
         __file__, errorline, serr,
-        "^%(lnum)s, dev <type 'int'>",
-        "^%(lnum)s, prod <type 'str'>",
+        ("^%(lnum)s, dev <%(type_or_class)s 'int'>", "^%(lnum)s, prod <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'a' for different envs",
         "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')"
@@ -458,8 +457,7 @@ def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
 
     assert_lines_in(
         __file__, errorline, serr,
-        "^%(lnum)s, dev <type 'int'>",
-        "^%(lnum)s, tst <type 'str'>",
+        ("^%(lnum)s, dev <%(type_or_class)s 'int'>", "^%(lnum)s, tst <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'a' for different envs",
         "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
