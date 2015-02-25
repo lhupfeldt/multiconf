@@ -10,10 +10,22 @@ exclude_lines =
     if _debug_exc:
     def debug\(
     long = int
+    <?py if major_version == 2: ?>
     _py3 import
+    long = int
+    <?py else: ?>
+    _py2 import
+    if sys.version_info.major < 3
+    <?py #endif ?>
 
 omit =
     test/*
     setup.py
     .eggs/*
     *.egg/*
+    <?py if major_version == 2: ?>
+    *_py3.py
+    <?py else: ?>
+    *_py2.py
+    <?py #endif ?>
+    

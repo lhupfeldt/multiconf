@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import sys, os, subprocess
+from os.path import join as jp
 
 try:
     import pytest
@@ -10,16 +11,26 @@ except ImportError:
     print("See setup.py for test requirements, or use 'python setup.py test'", file=sys.stderr)
     raise
 
+import tenjin
+from tenjin.helpers import *
+
 here = os.path.abspath(os.path.dirname(__file__))
 
 
 def main(args):
     os.environ['MULTICONF_WARN_JSON_NESTING'] = 'true'
-
+    
     print("Running tests", args)
     if args and args != ['-v']:
         return pytest.main(['--capture=sys'] + args)
-    rc = pytest.main(['--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing'] + (args if args == ['-v'] else []))
+
+    engine = tenjin.Engine()
+    major_version = sys.version_info.major
+    cov_rc_file_name = jp(here, '.coverage_rc_' +  str(major_version))
+    with open(cov_rc_file_name, 'w') as cov_rc_file:
+        cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(major_version=major_version)))
+
+    rc = pytest.main(['--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else []))
 
     print("Validating demo for all envs")
     try:
