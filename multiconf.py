@@ -374,10 +374,12 @@ class _ConfigBase(object):
             name = name.strip('!')
             try:
                 real_attr = object.__getattribute__(__class__, name)
-                if not isinstance(real_attr, property):
-                    raise ConfigException(name + "! specifies overriding a property method, but " + repr(name) + " is not a property.")
             except AttributeError:
-                raise ConfigException(name + "! specifies overriding a property method, but no property named " + repr(name) + " exists.")
+                if not isinstance(self, _ConfigBuilder):
+                    raise ConfigException(name + "! specifies overriding a property method, but no property named " + repr(name) + " exists.")
+            else:
+                if not isinstance(real_attr, property) and not isinstance(self, _ConfigBuilder):
+                    raise ConfigException(name + "! specifies overriding a property method, but " + repr(name) + " is not a property.")
         else:
             override_method = False
             try:

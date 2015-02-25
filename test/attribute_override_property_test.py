@@ -2,9 +2,9 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-from pytest import raises
+from pytest import raises, xfail
 
-from .. import ConfigRoot, ConfigItem, ConfigException
+from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
 
 from ..decorators import named_as
 from ..envs import EnvFactory
@@ -115,3 +115,83 @@ def test_attribute_overrides_property_method_failing():
 
     print(str(exinfo.value))
     assert "Attribute 'm' is defined as muticonf attribute and as property method, but value is undefined for env Env('prod') and method call failed" in str(exinfo.value)
+
+
+def test_attribute_overrides_property_method_builder():
+    @named_as('n1')
+    class Nested1(ConfigItem):
+        @property
+        def m(self):
+            return 1
+
+    @named_as('n2')
+    class Nested2(ConfigItem):
+        @property
+        def m(self):
+            return 1
+
+    class NestedBuilder(ConfigBuilder):
+        def build(self):
+            Nested1()
+            Nested2()
+
+    with ConfigRoot(prod, ef) as cr:
+        with NestedBuilder() as nn:
+            nn.setattr('m!', default=7)
+    assert cr.n1.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with NestedBuilder() as nn:
+            nn.setattr('m!', prod=7)
+    assert cr.n1.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with NestedBuilder() as nn:
+            nn.setattr('m!', pp=7)
+    assert cr.n1.m == 1
+
+
+def test_attribute_overrides_errors_builder():
+    @named_as('n1')
+    class Nested1(ConfigItem):
+        @property
+        def m(self):
+            return 1
+
+    @named_as('n2')
+    class Nested2(ConfigItem):
+        pass
+
+    @named_as('n3')
+    class Nested3(ConfigItem):
+        def m(self):
+            return 1
+
+    class NestedBuilder(ConfigBuilder):
+        def build(self):
+            Nested1()
+            Nested2()
+            Nested3()
+
+    xfail("TODO: Fix check override through builder")
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef) as cr:
+            with NestedBuilder() as nn:
+                nn.setattr('m!', default=7)
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef) as cr:
+            with NestedBuilder() as nn:
+                nn.setattr('m!', prod=7)
+                assert cr.n1.m == 7
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef) as cr:
+            with NestedBuilder() as nn:
+                nn.setattr('m!', pp=7)
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef) as cr:
+            with NestedBuilder() as nn:
+                nn.setattr('y!', pp=7)
