@@ -281,7 +281,7 @@ class _ConfigBase(object):
 
         if not self._mc_built:
             must_pop = False
-            self._mc_in_init = False
+            #self._mc_in_init = False
             if self._mc_nested[-1] != self:
                 must_pop = True
                 self._mc_nested.append(self)
