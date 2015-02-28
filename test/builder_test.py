@@ -66,6 +66,7 @@ def test_configbuilder_override():
     # TODO: override of conditional attributes (required_if)
     check_containment(cr)
 
+
 def test_configbuilder_build_at_freeze():
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers=4, **kwargs):
