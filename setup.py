@@ -37,6 +37,12 @@ class Test(TestCommand):
         sys.exit(errno)
 
 
+if sys.version_info.major < 3:
+    py_version_requires = ['enum34']
+else:
+    py_version_requires = []
+
+
 if __name__ == "__main__":
     setup(
         name=PROJECT_NAME.lower(),
@@ -47,7 +53,7 @@ if __name__ == "__main__":
         package_dir={'multiconf': '.'},
         zip_safe=True,
         include_package_data=False,
-        install_requires=[],
+        install_requires=[] + py_version_requires,
         test_suite='test',
         tests_require=['pytest', 'pytest-cov', 'demjson', 'tenjin'],
         cmdclass={'test': Test},
