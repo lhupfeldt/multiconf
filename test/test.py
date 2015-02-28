@@ -39,7 +39,8 @@ def main(args):
         pass
     for env_name in 'prod', 'preprod', 'devlocal', 'devs', 'devi':
         print()
-        rc |= subprocess.call((sys.executable, here + '/../demo/demo.py', '--env', env_name))
+        osenv = {'PYTHONPATH': ':'.join(sys.path)}
+        rc |= subprocess.call((sys.executable, here + '/../demo/demo.py', '--env', env_name), env=osenv)
 
     return rc
 
