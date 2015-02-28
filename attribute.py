@@ -1,27 +1,22 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from enum import Enum
+
 from .values import _MC_NO_VALUE
 from .bits import int_to_bin_str
 
 
-# Ordered values!
-mc_where_from_nowhere = 0
-mc_where_from_init = 1
-mc_where_from_mc_init = 2
-mc_where_from_with = 3
+class Where(Enum):
+    # Ordered values!
+    NOWHERE = 0
+    IN_INIT = 1
+    IN_MC_INIT = 2
+    IN_BUILD = 3
+    IN_WITH = 4
 
-
-def where_from_name(where_from):
-    if where_from == mc_where_from_nowhere:
-        return "from_nowhere"
-    if where_from == mc_where_from_init:
-        return "from_init"
-    if where_from == mc_where_from_with:
-        return "from_with"
-    if where_from == mc_where_from_mc_init:
-        return "from_mc_init"
-    raise Exception("Not a where_from value:" + repr(where_from))
+    def __lt__(self, other):
+        return self.value < other.value
 
 
 class Attribute(object):
@@ -30,7 +25,7 @@ class Attribute(object):
         self._value = _MC_NO_VALUE
         self.envs_set_mask = 0
         self.value_from_eg_bit = 0
-        self.where_from = mc_where_from_nowhere
+        self.where_from = Where.NOWHERE
         self.file_name = None
         self.line_num = None
         self._mc_frozen = False
@@ -74,4 +69,4 @@ class Attribute(object):
 
     def __repr__(self):
         return self.__class__.__name__ + ': ' + repr(self.name) + ':' + ('frozen' if self._mc_frozen else 'not-frozen') + \
-            ", value: " + repr(self._value) + " " + self.mask_to_str() + ", " + repr(self.file_name) + ':' + repr(self.line_num) + ' ' + where_from_name(self.where_from)
+            ", value: " + repr(self._value) + " " + self.mask_to_str() + ", " + repr(self.file_name) + ':' + repr(self.line_num) + ' ' + str(self.where_from)

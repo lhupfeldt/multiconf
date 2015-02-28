@@ -709,6 +709,47 @@ def test_override_repeated_attr():
     assert ci.a == 7
 
 
+def test_builder_ref_env_attr_and_override():
+    class X(ConfigItem):
+        def __init__(self, aa=1):
+            super(X, self).__init__()
+            self.aa = aa
+
+        def mc_init(self):
+            self.override('aa', self.aa + 1)
+
+    class XBuilder(ConfigBuilder):
+        def __init__(self, aa=17):
+            super(XBuilder, self).__init__()
+            self.aa = aa
+
+        def mc_init(self):
+            self.override('aa', self.aa - 1)
+
+        def build(self):
+            # Everything in builder will be set on parent!
+            # Maybe override should be forbidden here
+            self.override('aa', self.aa + 3)
+            X()
+
+    with ConfigRoot(prod2, ef2_pp_prod) as cr:
+        XBuilder()
+    assert cr.aa == 19
+    assert cr.X.aa == 16
+
+    with ConfigRoot(pp2, ef2_pp_prod) as cr:
+        with XBuilder(aa=2) as x:
+            x.aa = 3
+    assert cr.aa == 5
+    assert cr.X.aa == 2
+
+    with ConfigRoot(pp2, ef2_pp_prod) as cr:
+        with XBuilder(aa=2) as x:
+            x.setattr('aa', default=3, pp=5)
+    assert cr.aa == 7
+    assert cr.X.aa == 4
+
+
 def test_find_contained_in_or_none():
     with ConfigRoot(prod2, ef2_pp_prod) as cr:
         with ConfigItem(a=1) as i1:

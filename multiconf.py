@@ -8,7 +8,7 @@ from collections import OrderedDict
 import json
 
 from .envs import EnvFactory, Env, EnvException
-from .attribute import Attribute, mc_where_from_nowhere, mc_where_from_init, mc_where_from_with, mc_where_from_mc_init
+from .attribute import Attribute, Where
 from .values import MC_TODO, MC_REQUIRED, _MC_NO_VALUE, _mc_invalid_values
 from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
@@ -51,9 +51,7 @@ class _ConfigBase(object):
         self._mc_build_attributes = Repeatable()
         self._mc_frozen = False
         self._mc_built = False
-        self._mc_in_init = True
-        self._mc_in_mc_init = False
-        self._mc_in_build = False
+        self._mc_where = Where.IN_INIT
         self._mc_user_validated = False
         self._mc_previous_child = None
         self._mc_is_excluded = False
@@ -76,9 +74,9 @@ class _ConfigBase(object):
             attribute = Attribute(key)
             if value not in _mc_invalid_values:
                 attribute.set_env_provided(_mc_env_factory._mc_init_group)
-                attribute.set_current_env_value(value, _mc_env_factory._mc_init_group, mc_where_from_init, file_name, line_num)
+                attribute.set_current_env_value(value, _mc_env_factory._mc_init_group, Where.IN_INIT, file_name, line_num)
             else:
-                attribute.set_invalid_value(value, _mc_env_factory._mc_init_group, mc_where_from_init, file_name, line_num)
+                attribute.set_invalid_value(value, _mc_env_factory._mc_init_group, Where.IN_INIT, file_name, line_num)
             _mc_attributes[key] = attribute
 
         for key in _mc_deco_nested_repeatables:
@@ -141,8 +139,8 @@ class _ConfigBase(object):
         child_key = child_item.named_as()
         _mc_attributes = object.__getattribute__(self, '_mc_attributes')
         _mc_build_attributes = object.__getattribute__(self, '_mc_build_attributes')
-        _mc_in_build = object.__getattribute__(self, '_mc_in_build')
-        attributes = _mc_build_attributes if _mc_in_build else _mc_attributes
+        in_build = object.__getattribute__(self, '_mc_where') == Where.IN_BUILD
+        attributes = _mc_build_attributes if in_build else _mc_attributes
 
         if child_item.__class__._mc_deco_repeatable:
             # Validate that this class specifies item as repeatable
@@ -169,14 +167,14 @@ class _ConfigBase(object):
             obj_key = specified_key._value if specified_key is not None and specified_key._value not in _mc_invalid_values else id(child_item)
             item = repeatable.setdefault(obj_key, child_item)
 
-            if item is not child_item and not self._mc_in_mc_init:
+            if item is not child_item and self._mc_where != Where.IN_MC_INIT:
                 # We are trying to replace an object with the same id/name
                 raise ConfigException("Re-used id/name " + repr(obj_key) + " in nested objects")
             child_item._mc_repeatable_item_key = obj_key
             return
 
         if child_key in attributes:
-            if self._mc_in_mc_init:
+            if self._mc_where == Where.IN_MC_INIT:
                 # TODO? override value from __init__
                 return
 
@@ -217,7 +215,7 @@ class _ConfigBase(object):
 
     def __enter__(self):
         assert not self._mc_frozen
-        self._mc_in_init = False
+        self._mc_where = Where.IN_WITH
         self.__class__._mc_nested.append(self)
         return self
 
@@ -281,20 +279,20 @@ class _ConfigBase(object):
 
         if not self._mc_built:
             must_pop = False
-            #self._mc_in_init = False
             if self._mc_nested[-1] != self:
                 must_pop = True
                 self._mc_nested.append(self)
             try:
                 was_under_proxy_build = self._mc_root_conf._mc_under_proxy_build
-                self._mc_in_mc_init = True
+                where = self._mc_where
+                self._mc_where = Where.IN_MC_INIT
                 self.mc_init()
-                self._mc_in_mc_init = False
+                self._mc_where = where
                 for _name, value in _mc_attributes.items():
                     self._mc_frozen &= value._mc_freeze()
 
                 if isinstance(self, _ConfigBuilder):
-                    self._mc_in_build = True
+                    self._mc_where = Where.IN_BUILD
                     self._mc_root_conf._mc_under_proxy_build = True
                     try:
                         self.build()
@@ -303,7 +301,7 @@ class _ConfigBase(object):
                     for _name, value in self._mc_build_attributes.items():
                         self._mc_frozen &= value._mc_freeze()
                     self._mc_post_build_update()
-                    self._mc_in_build = False
+                    self._mc_where = where
             except Exception as ex:
                 ex._mc_in_user_code = True
                 raise
@@ -362,8 +360,8 @@ class _ConfigBase(object):
         if not mc_caller_file_name:
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
-        _mc_in_build = object.__getattribute__(self, '_mc_in_build')
-        if _mc_in_build:
+        in_build = object.__getattribute__(self, '_mc_where') == Where.IN_BUILD
+        if in_build:
             attributes = object.__getattribute__(self, '_mc_build_attributes')
         else:
             attributes = object.__getattribute__(self, '_mc_attributes')
@@ -389,8 +387,8 @@ class _ConfigBase(object):
                 pass
         attribute = attributes.setdefault(name, Attribute(name, override_method=override_method))
 
-        _mc_in_mc_init = object.__getattribute__(self, '_mc_in_mc_init')
-        if attribute._mc_frozen and not _mc_in_mc_init:
+        in_mc_init = object.__getattribute__(self, '_mc_where') == Where.IN_MC_INIT
+        if attribute._mc_frozen and not in_mc_init:
             msg = "The attribute " + repr(name) + " is already fully defined"
             num_errors = _error_msg(num_errors, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             raise ConfigException(msg + " on object " + repr(self))
@@ -418,8 +416,9 @@ class _ConfigBase(object):
                 msg += "\nvalue: " + repr(value) + ", from: " + repr(eg)
             return _error_msg(num_errors, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
-        _mc_in_init = object.__getattribute__(self, '_mc_in_init')
-        if not _mc_in_init and self._mc_check:
+        where_from = object.__getattribute__(self, '_mc_where')
+        in_init = where_from == Where.IN_INIT
+        if not in_init and self._mc_check:
             attribute._mc_frozen = True
 
         other_env = None
@@ -427,11 +426,9 @@ class _ConfigBase(object):
         other_type = type(other_value) if other_value is not None and other_value not in _mc_invalid_values else None
 
         orig_attr_where_from = attribute.where_from
-        if orig_attr_where_from != mc_where_from_nowhere:
+        if orig_attr_where_from != Where.NOWHERE:
             orig_attr_value_from_eg_bit = attribute.value_from_eg_bit
             orig_attr_eg = self._mc_root_conf._mc_env_factory.env_or_group_from_bit(orig_attr_value_from_eg_bit)
-
-        where_from = mc_where_from_init if _mc_in_init else mc_where_from_mc_init if _mc_in_mc_init else mc_where_from_with
 
         selected_env = self._mc_root_conf._mc_selected_env
         current_env_from_eg = None
@@ -465,7 +462,7 @@ class _ConfigBase(object):
                     else:
                         # Check against already set value from another scope
                         update_value = True
-                        if orig_attr_where_from != mc_where_from_nowhere:
+                        if orig_attr_where_from != Where.NOWHERE:
                             if attribute._value == MC_REQUIRED or attribute._value is None:
                                 # debug("Existing value is overridable:", attribute._value)
                                 pass
@@ -474,7 +471,7 @@ class _ConfigBase(object):
                                 pass
                             elif orig_attr_eg == eg:
                                 # debug("Same eg, new:", eg.name, "orig:", orig_attr_eg.name)
-                                if orig_attr_where_from < where_from or orig_attr_where_from in (mc_where_from_init, mc_where_from_mc_init):
+                                if orig_attr_where_from < where_from or orig_attr_where_from in (Where.IN_INIT, Where.IN_MC_INIT):
                                     # debug("orig where_from < where_from or orig_attr_where_from == mc_where_from_init")
                                     pass
                                 else:
@@ -528,7 +525,7 @@ class _ConfigBase(object):
             for env, conflicting_egs in sorted(all_ambiguous_by_envs.items()):
                 num_errors = repeated_env_error(env, conflicting_egs, num_errors)
 
-        if self._mc_check and not _mc_in_init:
+        if self._mc_check and not in_init:
             try:
                 self.check_attr_fully_defined(attribute, num_errors, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             except ConfigBaseException as ex:
@@ -546,17 +543,19 @@ class _ConfigBase(object):
 
         mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
-        _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-        attributes = self._mc_build_attributes if self._mc_in_build else _mc_attributes
+        where = object.__getattribute__(self, '_mc_where')
+        if where == Where.IN_BUILD:
+            attributes = object.__getattribute__(self, '_mc_build_attributes')
+        else:
+            attributes = object.__getattribute__(self, '_mc_attributes')
         attribute = attributes[name] = Attribute(name)
 
-        if not self._mc_in_init and self._mc_check:
+        if where != Where.IN_INIT and self._mc_check:
             attribute._mc_frozen = True
 
-        where_from = mc_where_from_init if self._mc_in_init else mc_where_from_mc_init if self._mc_in_mc_init else mc_where_from_with
         default_group = self._mc_root_conf._mc_env_factory._mc_default_group
         if value in _mc_invalid_values:
-            attribute.set_invalid_value(value, default_group, where_from, mc_caller_file_name, mc_caller_line_num)
+            attribute.set_invalid_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
             if self._mc_check:
                 try:
                     self.check_attr_fully_defined(attribute, 0)
@@ -567,8 +566,8 @@ class _ConfigBase(object):
             return
 
         attribute.set_env_provided(default_group)
-        attribute.set_current_env_value(value, default_group, where_from, mc_caller_file_name, mc_caller_line_num)
-
+        attribute.set_current_env_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
+        
     def check_attr_fully_defined(self, attribute, num_errors, file_name=None, line_num=None):
         # In case of override_method, the attribute need not be fully defined, the property method will handle remaining values
         if not attribute.all_set(self._mc_included_envs_mask) and not hasattr(attribute, 'already_checked') and not attribute.override_method:
@@ -981,8 +980,8 @@ class ConfigItem(_ConfigBase):
             self._mc_select_envs(include=include, exclude=exclude, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             if self._mc_is_excluded:
                 _mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
-                _mc_in_build = object.__getattribute__(_mc_contained_in, '_mc_in_build')
-                if _mc_in_build:
+                where = object.__getattribute__(_mc_contained_in, '_mc_where')
+                if where == Where.IN_BUILD:
                     attributes = object.__getattribute__(_mc_contained_in, '_mc_build_attributes')
                 else:
                     attributes = object.__getattribute__(_mc_contained_in, '_mc_attributes')
@@ -1042,7 +1041,11 @@ class _ConfigBuilder(ConfigItem):
         def from_build_to_parent(build_key, build_value, clone):
             """Copy/Merge all items/attributes defined in 'build' into parent object"""
             parent = self._mc_contained_in
-            parent_attributes = parent._mc_build_attributes if parent._mc_in_build else parent._mc_attributes
+            parent_where = object.__getattribute__(parent, '_mc_where')
+            if parent_where == Where.IN_BUILD:
+                parent_attributes = object.__getattribute__(parent, '_mc_build_attributes')
+            else:
+                parent_attributes = object.__getattribute__(parent, '_mc_attributes')
 
             # Merge repeatable items into parent
             if isinstance(build_value, Repeatable):
