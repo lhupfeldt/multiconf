@@ -257,6 +257,21 @@ def test_value_not_assigned_to_all_envs(capsys):
     assert replace_ids(str(exinfo.value), False) == _f_expected
 
 
+def test_value_not_assigned_to_all_envs_in_builder(capsys):
+    with raises(ConfigException) as exinfo:
+        class B(ConfigBuilder):
+            def build(self):
+                pass
+
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+            with B() as bb:
+                errorline = lineno() + 1
+                bb.setattr('a', prod="hello")
+
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
+
+
 _attribute_defined_with_different_types_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
