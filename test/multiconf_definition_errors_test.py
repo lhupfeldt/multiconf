@@ -7,7 +7,7 @@ from __future__ import print_function
 from pytest import raises
 
 from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in
-from .utils.utils import py3_lcls
+from .utils.utils import py3_local
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
 from ..decorators import nested_repeatables, repeat, required
@@ -653,7 +653,7 @@ def test_root_attribute_exception_in_with_block():
 
 
 _exception_previous_object_expected_stderr = """Exception validating previously defined object -
-  type: <class 'multiconf.test.multiconf_definition_errors_test%(py3_lcls)s.inner'>
+  type: <class 'multiconf.test.multiconf_definition_errors_test.%(py3_local)sinner'>
 Stack trace will be misleading!
 This happens if there is an error (e.g. missing required attributes) in an object that was not
 directly enclosed in a with statement. Objects that are not arguments to a with statement will
@@ -673,7 +673,7 @@ def test_error_freezing_previous_sibling__build(capsys):
             inner()
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr % dict(py3_lcls=py3_lcls())
+    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr % dict(py3_local=py3_local())
     assert str(exinfo.value) == "Error in build"
 
 
@@ -690,7 +690,7 @@ def test_error_freezing_previous_sibling__validation(capsys):
             inner()
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr % dict(py3_lcls=py3_lcls())
+    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr % dict(py3_local=py3_local())
     assert str(exinfo.value) == "No value given for required attributes: ['a']"
 
 

@@ -5,19 +5,19 @@ import sys, re
 from pytest import fail  # pylint: disable=no-name-in-module
 
 
-def py3_lcls(extra_class_levels=''):
-    """Return extra string for python 3 representation of a test-funtion-local class.
+def py3_local(extra_class_levels=''):
+    """Return extra string for python 3 representation of a test-funtion-local function or class.
 
-    This is different the python 2 representation which has no information about parent classes or functions.
-    
+    This is different from the python 2 representation which has no information about parent classes or functions.
+
     Arguments:
-        extra_class_levels (str): If the class is nested inside another class inside the test function
+        extra_class_levels (str): If the function or class is nested inside a class inside the test function
     """
     if sys.version_info.major < 3:
         return ''
 
     frame = sys._getframe(1)
-    return '.' + frame.f_code.co_name + '.<locals>' + extra_class_levels
+    return frame.f_code.co_name + '.<locals>.' + extra_class_levels
 
 
 py3_tc = 'type' if sys.version_info.major < 3 else 'class'
