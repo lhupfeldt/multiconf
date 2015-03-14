@@ -103,22 +103,10 @@ class _ConfigBase(object):
         else:
             return object.__getattribute__(self, '_mc_attributes'), where
 
-    # def irepr(self, indent_level):
-    #     """Indented repr"""
-    #     indent1 = '  ' * indent_level
-    #     indent2 =  indent1 + '     '
-    #     # + ':' + self.__class__.__name__
-    #     not_frozen_msg = "" if self._mc_frozen else " not-frozen"
-    #     return self.named_as() + not_frozen_msg + ' {\n' + \
-    #         ''.join([indent2 + name + ': ' + repr(value) + ',\n' for name, value in self.items()]) + \
-    #         indent1 + '}'
-
     def __repr__(self):
         # Don't call property methods in repr, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
         json_method = object.__getattribute__(self, 'json')
         return json_method(compact=True, property_methods=False, builders=True)
-        # TODO proper pythonic repr, but until indentation is fixed, json is better
-        # return self.irepr(len(self.__class__._mc_nested) -1)
 
     def _mc_insert_item(self, child_item):
         # Freeze attributes on previously defined child
