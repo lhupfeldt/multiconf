@@ -20,8 +20,9 @@ class Where(Enum):
 
 
 class Attribute(object):
-    def __init__(self, name, override_method=False):
+    def __init__(self, name, override_method):
         self.name = name
+        self.override_method = override_method
         self._value = _MC_NO_VALUE
         self.envs_set_mask = 0
         self.value_from_eg_bit = 0
@@ -29,7 +30,6 @@ class Attribute(object):
         self.file_name = None
         self.line_num = None
         self._mc_frozen = False
-        self.override_method = override_method
 
     def all_set(self, mask):
         return (self.envs_set_mask & mask) == mask
@@ -58,6 +58,19 @@ class Attribute(object):
             self.invalid_values = []
         self.invalid_values.append((value, eg, where_from, file_name, line_num))
 
+    def override(self, other, current_env):
+        """Override self with value of other if other sets value for current env, otherwise just update envs_set_mask"""
+        if other.envs_set_mask & current_env.bit:
+            self._value = other._value
+            self.value_from_eg_bit = other.value_from_eg_bit
+            self.where_from = other.where_from
+            self.file_name = other.file_name
+            self.line_num = other.line_num
+
+        self.envs_set_mask |= other.envs_set_mask
+        self._mc_frozen = other._mc_frozen or self._mc_frozen
+        return self
+
     def _mc_value(self):
         """Freeze and return value"""
         if self._value != _MC_NO_VALUE:
@@ -70,3 +83,9 @@ class Attribute(object):
     def __repr__(self):
         return self.__class__.__name__ + ': ' + repr(self.name) + ':' + ('frozen' if self._mc_frozen else 'not-frozen') + \
             ", value: " + repr(self._value) + " " + self.mask_to_str() + ", " + repr(self.file_name) + ':' + repr(self.line_num) + ' ' + str(self.where_from)
+
+
+def new_attribute(name):
+    if name.endswith('!'):
+        return Attribute(name[:-1], override_method=True)
+    return Attribute(name, override_method=False)

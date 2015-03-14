@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import re
+
 # pylint: disable=E0611
 from pytest import raises, xfail
 
@@ -8,6 +10,8 @@ from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
 
 from ..decorators import named_as
 from ..envs import EnvFactory
+
+from .utils.utils import py3_local
 
 
 ef = EnvFactory()
@@ -70,7 +74,10 @@ def test_attribute_overrides_property_method_is_regular_method():
                 nn.setattr('n!', default=7)
                 nn.setattr('m!', default=7)
 
-    assert "m! specifies overriding a property method, but 'm' is not a property" in str(exinfo.value)
+    ex_msg = re.sub(r"m at [^>]*>", "m at 1234>", str(exinfo.value))
+    expected = "m! specifies overriding a property method, but attribute 'm' with value '<function %(py3_local)sm at 1234>' is not a property." % \
+               dict(py3_local=py3_local('Nested.'))
+    assert expected in ex_msg
 
 
 def test_attribute_clash_property_method():
@@ -139,24 +146,149 @@ def test_attribute_overrides_property_method_builder():
         with NestedBuilder() as nn:
             nn.setattr('m!', default=7)
     assert cr.n1.m == 7
+    assert cr.n2.m == 7
 
     with ConfigRoot(prod, ef) as cr:
         with NestedBuilder() as nn:
             nn.setattr('m!', prod=7)
     assert cr.n1.m == 7
+    assert cr.n2.m == 7
 
     with ConfigRoot(prod, ef) as cr:
         with NestedBuilder() as nn:
             nn.setattr('m!', pp=7)
     assert cr.n1.m == 1
+    assert cr.n2.m == 1
 
 
-def test_attribute_overrides_errors_builder():
+def test_attribute_overrides_property_no_property_mix_builder():
+    """We have one @property, so overriding with '!' is ok"""
+
     @named_as('n1')
     class Nested1(ConfigItem):
         @property
         def m(self):
             return 1
+
+    @named_as('n2')
+    class Nested2(ConfigItem):
+        pass
+
+    @named_as('n3')
+    class Nested3(ConfigItem):
+        m = 13
+
+    @named_as('n4')
+    class Nested4(ConfigItem):
+        def __init__(self):
+            super(Nested4, self).__init__()
+            self.m = 23
+
+    @named_as('n5')
+    class Nested5(ConfigItem):
+        def mc_init(self):
+            super(Nested5, self).mc_init()
+            self.m = 24
+
+    class NestedBuilder(ConfigBuilder):
+        def build(self):
+            Nested1()
+            Nested2()
+            Nested3()
+            Nested4()
+            Nested5()
+
+    # Validate 'm' values without override
+    with ConfigRoot(prod, ef) as cr:
+        Nested1()
+        Nested2()
+        Nested3()
+        Nested4()
+        Nested5()
+    assert cr.n1.m == 1
+    assert not hasattr(cr.n2, 'm')
+    assert cr.n3.m == 13
+    assert cr.n4.m == 23
+    assert cr.n5.m == 24
+
+    with ConfigRoot(prod, ef) as cr:
+        with NestedBuilder() as nn:
+            nn.setattr('m!', default=7)
+    assert cr.n1.m == 7
+    assert cr.n2.m == 7
+    assert cr.n3.m == 7
+    assert cr.n4.m == 7
+    assert cr.n5.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with NestedBuilder() as nn:
+            nn.setattr('m!', prod=7)
+    assert cr.n1.m == 7
+    assert cr.n2.m == 7
+    assert cr.n3.m == 7
+    assert cr.n4.m == 7
+    assert cr.n5.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with NestedBuilder() as nn:
+            nn.setattr('m!', pp=7)
+    assert cr.n1.m == 1
+    assert not hasattr(cr.n2, 'm')
+    assert cr.n3.m == 13
+    assert cr.n4.m == 23
+    assert cr.n5.m == 24
+
+
+def test_attribute_overrides_property_inherited_builder():
+    """
+    Test overriding an inherited property method in builder
+    """
+
+    class NestedBase1(ConfigItem):
+        @property
+        def m(self):
+            return 1
+
+    class NestedBase(NestedBase1):
+        pass
+
+    @named_as('n1')
+    class Nested1(NestedBase):
+        pass
+
+    @named_as('n2')
+    class Nested2(ConfigItem):
+        pass
+
+    class NestedBuilder(ConfigBuilder):
+        def build(self):
+            Nested1()
+            Nested2()
+
+    with ConfigRoot(prod, ef) as cr:
+        with NestedBuilder() as nn:
+            nn.setattr('m!', default=7)
+    assert cr.n1.m == 7
+    assert cr.n2.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with NestedBuilder() as nn:
+            nn.setattr('m!', prod=7)
+    assert cr.n1.m == 7
+    assert cr.n2.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with NestedBuilder() as nn:
+            nn.setattr('m!', pp=7)
+    assert cr.n1.m == 1
+    assert not hasattr(cr.n2, 'm')
+
+
+def test_attribute_overrides_errors_builder():
+    @named_as('n1')
+    class Nested1(ConfigItem):
+        m = 222
+        n = 1
 
     @named_as('n2')
     class Nested2(ConfigItem):
@@ -173,25 +305,38 @@ def test_attribute_overrides_errors_builder():
             Nested2()
             Nested3()
 
-    xfail("TODO: Fix check override through builder")
+    expected_ex_header = "The following errors were found when setting values on items from build()\n"
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, ef) as cr:
             with NestedBuilder() as nn:
                 nn.setattr('m!', default=7)
+    expected_ex = expected_ex_header + \
+                  "  m! specifies overriding a property method, but attribute 'm' with value '222' is not a property."
+    assert str(exinfo.value) == expected_ex
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, ef) as cr:
             with NestedBuilder() as nn:
                 nn.setattr('m!', prod=7)
-                assert cr.n1.m == 7
+                nn.setattr('n!', default=333)
+    expected_ex = expected_ex_header + \
+                  "  m! specifies overriding a property method, but attribute 'm' with value '222' is not a property.\n" \
+                  "  n! specifies overriding a property method, but attribute 'n' with value '1' is not a property."
+    assert str(exinfo.value) == expected_ex
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, ef) as cr:
             with NestedBuilder() as nn:
                 nn.setattr('m!', pp=7)
+    expected_ex = expected_ex_header + \
+                  "  m! specifies overriding a property method, but attribute 'm' with value '222' is not a property."
+    assert str(exinfo.value) == expected_ex
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, ef) as cr:
             with NestedBuilder() as nn:
                 nn.setattr('y!', pp=7)
+    expected_ex = expected_ex_header + \
+                  "  y! specifies overriding a property method, but no property named 'y' exists."
+    assert str(exinfo.value) == expected_ex

@@ -8,7 +8,7 @@ from collections import OrderedDict
 import json
 
 from .envs import EnvFactory, Env, EnvException
-from .attribute import Attribute, Where
+from .attribute import new_attribute, Attribute, Where
 from .values import MC_TODO, MC_REQUIRED, _MC_NO_VALUE, _mc_invalid_values
 from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
@@ -71,7 +71,7 @@ class _ConfigBase(object):
                 raise ConfigException("The attribute " + repr(key) + " (not ending in '!') clashes with a property or method")
             except AttributeError:
                 pass
-            attribute = Attribute(key)
+            attribute = Attribute(key, override_method=False)
             if value not in _mc_invalid_values:
                 attribute.set_env_provided(env_factory._mc_init_group)
                 attribute.set_current_env_value(value, env_factory._mc_init_group, Where.IN_INIT, file_name, line_num)
@@ -349,45 +349,21 @@ class _ConfigBase(object):
         mc_caller_file_name, mc_caller_line_num = caller_file_line()
         self.setattr(name, mc_caller_file_name=mc_caller_file_name, mc_caller_line_num=mc_caller_line_num, default=value)
 
-    def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
-        """Set attributes with environment specific values"""
+    @staticmethod
+    def _mc_check_reserved_name(name, method_name):
         if name[0] == '_':
             msg = "Trying to set attribute " + repr(name) + " on a config item. "
             if name.startswith('_mc'):
                 raise ConfigException(msg + "Atributes starting with '_mc' are reserved for multiconf internal usage.")
-            raise ConfigException(msg + "Atributes starting with '_' can not be set using item.setattr. Use assignment instead.")
+            raise ConfigException(msg + "Atributes starting with '_' can not be set using item." + method_name + ". Use assignment instead.")
+        
+    def _mc_setattr_common(self, attribute, mc_caller_file_name, mc_caller_line_num, **kwargs):
+        """Set attributes with environment specific values"""
+        name = attribute.name
+        self._mc_check_reserved_name(name, 'setattr')        
 
         # For error messages
         num_errors = 0
-        if not mc_caller_file_name:
-            mc_caller_file_name, mc_caller_line_num = caller_file_line()
-
-        in_build = object.__getattribute__(self, '_mc_where') == Where.IN_BUILD
-        if in_build:
-            attributes = object.__getattribute__(self, '_mc_build_attributes')
-        else:
-            attributes = object.__getattribute__(self, '_mc_attributes')
-
-        __class__ = object.__getattribute__(self, '__class__')
-        if name.endswith('!'):
-            override_method = True
-            name = name.strip('!')
-            try:
-                real_attr = object.__getattribute__(__class__, name)
-            except AttributeError:
-                if not isinstance(self, _ConfigBuilder):
-                    raise ConfigException(name + "! specifies overriding a property method, but no property named " + repr(name) + " exists.")
-            else:
-                if not isinstance(real_attr, property) and not isinstance(self, _ConfigBuilder):
-                    raise ConfigException(name + "! specifies overriding a property method, but " + repr(name) + " is not a property.")
-        else:
-            override_method = False
-            try:
-                object.__getattribute__(__class__, name)
-                raise ConfigException("The attribute " + repr(name) + " (not ending in '!') clashes with a property or method")
-            except AttributeError:
-                pass
-        attribute = attributes.setdefault(name, Attribute(name, override_method=override_method))
 
         in_mc_init = object.__getattribute__(self, '_mc_where') == Where.IN_MC_INIT
         if attribute._mc_frozen and not in_mc_init:
@@ -531,32 +507,61 @@ class _ConfigBase(object):
                 num_errors = repeated_env_error(env, conflicting_egs, num_errors)
 
         if self._mc_check and not in_init:
+            self.check_attr_fully_defined(attribute, num_errors, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+
+    @staticmethod
+    def _mc_check_override_common(item, attribute):
+        def get_bases(cls):
+            yield cls
+            for cls1 in cls.__bases__:
+                for cls2 in get_bases(cls1):
+                    yield cls2
+
+        found = False
+        for cls in get_bases(object.__getattribute__(item, '__class__')):
             try:
-                self.check_attr_fully_defined(attribute, num_errors, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
-            except ConfigBaseException as ex:
-                if _debug_exc:
-                    raise
-                raise ex
+                real_attr = object.__getattribute__(cls, attribute.name)
+                found = True
+                break
+            except AttributeError:
+                pass
 
-    def override(self, name, value):
+        if found:
+            if not attribute.override_method:                
+                raise ConfigException("The attribute " + repr(attribute.name) + " (not ending in '!') clashes with a property or method")
+            elif not isinstance(real_attr, property):
+                return "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property.", real_attr
+        elif attribute.override_method:
+            return "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists.", None            
+
+        return None, None
+
+    def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
+        if not mc_caller_file_name:
+            mc_caller_file_name, mc_caller_line_num = caller_file_line()
+
+        try:
+            attribute = new_attribute(name)
+            err_msg, value = self._mc_check_override_common(self, attribute)
+            if err_msg:
+                raise ConfigException(err_msg % dict(name=attribute.name, value=value))
+            attributes = object.__getattribute__(self, '_mc_attributes')
+            attribute = attributes.setdefault(attribute.name, attribute)
+            self._mc_setattr_common(attribute, mc_caller_file_name, mc_caller_line_num, **kwargs)
+        except ConfigBaseException as ex:
+            if _debug_exc:
+                raise
+            raise ex
+
+    def _mc_override_common(self, name, attributes, where, mc_caller_file_name, mc_caller_line_num, value):
         """Set attributes with environment specific values"""
-        if name[0] == '_':
-            msg = "Trying to set attribute " + repr(name) + " on a config item. "
-            if name.startswith('_mc'):
-                raise ConfigException(msg + "Atributes starting with '_mc' are reserved for multiconf internal usage.")
-            raise ConfigException(msg + "Atributes starting with '_' can not be set using item.override. Use assignment instead.")
+        self._mc_check_reserved_name(name, 'override')
 
-        mc_caller_file_name, mc_caller_line_num = caller_file_line()
+        attribute = new_attribute(name)
+        attributes[attribute.name] = attribute        
 
         root_conf = object.__getattribute__(self, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
-
-        where = object.__getattribute__(self, '_mc_where')
-        if where == Where.IN_BUILD:
-            attributes = object.__getattribute__(self, '_mc_build_attributes')
-        else:
-            attributes = object.__getattribute__(self, '_mc_attributes')
-        attribute = attributes[name] = Attribute(name)
 
         if where != Where.IN_INIT and self._mc_check:
             attribute._mc_frozen = True
@@ -565,16 +570,24 @@ class _ConfigBase(object):
         if value in _mc_invalid_values:
             attribute.set_invalid_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
             if self._mc_check:
-                try:
-                    self.check_attr_fully_defined(attribute, 0)
-                except ConfigBaseException as ex:
-                    if _debug_exc:
-                        raise
-                    raise ex
+                self.check_attr_fully_defined(attribute, 0)
             return
 
         attribute.set_env_provided(default_group)
         attribute.set_current_env_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
+
+    def override(self, name, value):
+        """Set attributes with environment specific values"""
+        mc_caller_file_name, mc_caller_line_num = caller_file_line()
+
+        where = object.__getattribute__(self, '_mc_where')
+        attributes = object.__getattribute__(self, '_mc_attributes')
+        try:
+            self._mc_override_common(name, attributes, where, mc_caller_file_name, mc_caller_line_num, value)
+        except ConfigBaseException as ex:
+            if _debug_exc:
+                raise
+            raise ex
 
     def check_attr_fully_defined(self, attribute, num_errors, file_name=None, line_num=None):
         # In case of override_method, the attribute need not be fully defined, the property method will handle remaining values
@@ -1030,9 +1043,47 @@ class _ConfigBuilder(ConfigItem):
                                             mc_include=mc_include, mc_exclude=mc_exclude, **attr)
         _ConfigBuilder._num += 1
 
-    def _mc_post_build_update(self):
+    def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
+        if not mc_caller_file_name:
+            mc_caller_file_name, mc_caller_line_num = caller_file_line()
+
+        try:
+            attribute = new_attribute(name)
+            if object.__getattribute__(self, '_mc_where') == Where.IN_BUILD:
+                attributes = object.__getattribute__(self, '_mc_build_attributes')
+            else:
+                attributes = object.__getattribute__(self, '_mc_attributes')
+            attribute = attributes.setdefault(attribute.name, attribute)
+            self._mc_setattr_common(attribute, mc_caller_file_name, mc_caller_line_num, **kwargs)
+        except ConfigBaseException as ex:
+            if _debug_exc:
+                raise
+            raise ex
+
+    def override(self, name, value):
+        """Set attributes with environment specific values"""
+        mc_caller_file_name, mc_caller_line_num = caller_file_line()
+
+        where = object.__getattribute__(self, '_mc_where')
+        if where == Where.IN_BUILD:
+            attributes = object.__getattribute__(self, '_mc_build_attributes')
+        else:
+            attributes = object.__getattribute__(self, '_mc_attributes')
+        try:
+            self._mc_override_common(name, attributes, where, mc_caller_file_name, mc_caller_line_num, value)
+        except ConfigBaseException as ex:
+            if _debug_exc:
+                raise
+            raise ex
+        
+    def _mc_post_build_update(self): 
+        root_conf = object.__getattribute__(self, '_mc_root_conf')
+        selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
+        _mc_attributes = object.__getattribute__(self, '_mc_attributes')
+       
+        override_attribute_errors = OrderedDict()
+
         def set_my_attributes_on_item_from_build(item_from_build, clone):
-            _mc_attributes = object.__getattribute__(self, '_mc_attributes')
             for override_key, override_value in _mc_attributes.items():
                 if override_value._mc_value() == None:
                     continue
@@ -1053,8 +1104,22 @@ class _ConfigBuilder(ConfigItem):
                     item_from_build._mc_attributes[override_key] = ov
                     continue
 
-                item_from_build._mc_attributes[override_key] = override_value
+                # override_value is an Attribute
+                name = override_value.name
+                err_msg, value = self._mc_check_override_common(item_from_build, override_value)
+                if err_msg:
+                    if name not in override_attribute_errors:
+                        override_attribute_errors[name] = (err_msg, value)
+                else:
+                    override_attribute_errors[name] = False
 
+                existing_attr = item_from_build._mc_attributes.get(override_key)
+                if existing_attr:
+                    item_from_build._mc_attributes[override_key] = existing_attr.override(override_value, selected_env)
+                    continue
+
+                item_from_build._mc_attributes[override_key] = override_value
+                
         def from_build_to_parent(build_key, build_value, clone):
             """Copy/Merge all items/attributes defined in 'build' into parent object"""
             parent = self._mc_contained_in
@@ -1105,6 +1170,11 @@ class _ConfigBuilder(ConfigItem):
                 clone = True
 
         move_items_around()
+
+        errors = [(name, err_value) for name, err_value in override_attribute_errors.items() if err_value]
+        errors = [err % dict(name=name, value=value) for name, (err, value) in errors]
+        if errors:
+            raise ConfigException('The following errors were found when setting values on items from build()\n  ' + '\n  '.join(errors))
 
     def what_built(self):
         return OrderedDict([(key, attr._mc_value()) for key, attr in self._mc_build_attributes.items()])

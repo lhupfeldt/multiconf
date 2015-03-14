@@ -724,6 +724,21 @@ def test_mc_init_override_underscore_mc_error(capsys):
     assert str(exinfo.value) == """Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
 
 
+def test_build_override_underscore_mc_error(capsys):
+    class B(ConfigBuilder):
+        def build(self):
+            self.override("_mca", "Hello")
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            B()
+
+    _sout, serr = capsys.readouterr()
+    # TODO: missing error message
+    assert replace_user_file_line_msg(serr) == ""
+    assert str(exinfo.value) == """Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
+
+
 def test_attribute_mc_required_args_partial_set_in_init_unfinished():
     class Requires(ConfigItem):
         def __init__(self, a=13):

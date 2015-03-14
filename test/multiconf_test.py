@@ -709,6 +709,19 @@ def test_override_repeated_attr():
     assert ci.a == 7
 
 
+def test_override_override_method():
+    """Test that 'override' method combined with '!' method override works."""
+    class HasMethod(ConfigItem):
+        @property
+        def a(self):
+            return 1
+
+    with ConfigRoot(prod2, ef2_pp_prod):
+        with HasMethod() as ci:
+            ci.override('a!', 7)
+    assert ci.a == 7
+
+    
 def test_builder_ref_env_attr_and_override():
     class X(ConfigItem):
         def __init__(self, aa=1):
