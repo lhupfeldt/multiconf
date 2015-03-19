@@ -134,3 +134,26 @@ def test_exclude_in_build():
     assert cr.HasRepeatables.reps['bbb'].name == 'bbb'
     assert cr.HasRepeatables.reps['ccc']
     assert len(cr.HasRepeatables.reps) == 2
+
+
+def test_mc_select_envs_with_builder():
+    @nested_repeatables('reps')
+    class HasRepeatables2(ConfigItem):
+        def __init__(self, name):
+            super(HasRepeatables2, self).__init__(name=name)
+    
+    def conf(env):
+        with root(env, ef, name='x') as cr:
+            with HasRepeatables2(name='r1') as it:
+                with BB('bbb') as bbb:
+                    bbb.mc_select_envs(exclude=[prod])
+
+        return cr
+
+    cr = conf(prod)
+    assert not cr.HasRepeatables2.reps
+
+    cr = conf(dev1)
+    assert cr.HasRepeatables2.reps
+    assert cr.HasRepeatables2.reps['bbb']
+    assert cr.HasRepeatables2.reps['bbb'].aa == 'bbb'
