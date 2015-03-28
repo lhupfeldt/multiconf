@@ -38,9 +38,9 @@ class XChild(ConfigItem):
 _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Nested repeatable from 'build', key: 'server1', value: {
     "__class__": "Xses #as: 'xses', id: 0000, not-frozen",
     "name": "server1",
+    "num_servers": 2,
     "server_num": 1,
-    "something": 1,
-    "num_servers": 2
+    "something": 1
 } overwrites existing entry in parent: {
     "__class__": "Root #as: 'Root', id: 0000, not-frozen",
     "env": {

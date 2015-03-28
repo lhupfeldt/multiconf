@@ -536,8 +536,8 @@ _assigning_owerwrites_attribute_root_expected_ex = _assigning_owerwrites_attribu
         "__class__": "Env",
         "name": "prod"
     },
-    "RepeatableItems": {},
-    "a": 1
+    "a": 1,
+    "RepeatableItems": {}
 }"""
 
 def test_assigning_owerwrites_attribute_root(capsys):

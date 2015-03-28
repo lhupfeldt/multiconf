@@ -101,9 +101,9 @@ _json_dump_simple_expected_json = """{
                         "b-level3": {
                             "__class__": "NestedRepeatable",
                             "__id__": 0000,
+                            "a": 1,
                             "id": "b-level3",
-                            "someitems": {},
-                            "a": 1
+                            "someitems": {}
                         },
                         "c-level3": {
                             "__class__": "NestedRepeatable",
@@ -162,8 +162,8 @@ _json_dump_cyclic_references_in_conf_items_expected_json = """{
             "__class__": "NestedRepeatable",
             "__id__": 0000,
             "id": "a1",
-            "someitems": {},
-            "some_value": 2
+            "some_value": 2,
+            "someitems": {}
         },
         "b1": {
             "__class__": "NestedRepeatable",
@@ -181,9 +181,9 @@ _json_dump_cyclic_references_in_conf_items_expected_json = """{
                 "b2": {
                     "__class__": "NestedRepeatable",
                     "__id__": 0000,
+                    "a": 1,
                     "id": "b2",
-                    "someitems": {},
-                    "a": 1
+                    "someitems": {}
                 }
             }
         }
@@ -713,8 +713,10 @@ _json_dump_configbuilder_expected_json_full = """{
         "server1": {
             "__class__": "Y",
             "__id__": 0000,
+            "b": 27,
             "name": "server1",
             "server_num": 1,
+            "start": 1,
             "y_children": {
                 "Hugo": {
                     "__class__": "YChild",
@@ -727,8 +729,10 @@ _json_dump_configbuilder_expected_json_full = """{
                 "server3": {
                     "__class__": "Y",
                     "__id__": 0000,
+                    "c": 28,
                     "name": "server3",
                     "server_num": 3,
+                    "start": 3,
                     "y_children": {
                         "Hanna": {
                             "__class__": "YChild",
@@ -743,33 +747,31 @@ _json_dump_configbuilder_expected_json_full = """{
                             "name": "Herbert"
                         }
                     },
-                    "ys": {},
-                    "start": 3,
-                    "c": 28
+                    "ys": {}
                 },
                 "server4": {
                     "__class__": "Y",
                     "__id__": 0000,
+                    "c": 28,
                     "name": "server4",
                     "server_num": 4,
+                    "start": 3,
                     "y_children": {
                         "Hanna": "#ref id: 0000",
                         "Herbert": "#ref id: 0000"
                     },
-                    "ys": {},
-                    "start": 3,
-                    "c": 28
+                    "ys": {}
                 }
             },
-            "start": 1,
-            "b": 27,
             "YBuilder.builder.0000": "#ref later, id: 0000"
         },
         "server2": {
             "__class__": "Y",
             "__id__": 0000,
+            "b": 27,
             "name": "server2",
             "server_num": 2,
+            "start": 1,
             "y_children": {
                 "Hugo": "#ref id: 0000"
             },
@@ -777,13 +779,11 @@ _json_dump_configbuilder_expected_json_full = """{
                 "server3": "#ref id: 0000",
                 "server4": "#ref id: 0000"
             },
-            "start": 1,
-            "b": 27,
             "YBuilder.builder.0000": {
                 "__class__": "YBuilder",
                 "__id__": 0000,
-                "start": 3,
                 "c": 28,
+                "start": 3,
                 "y_children": {
                     "Hanna": "#ref id: 0000",
                     "Herbert": "#ref id: 0000"
@@ -794,8 +794,8 @@ _json_dump_configbuilder_expected_json_full = """{
     "YBuilder.builder.0000": {
         "__class__": "YBuilder",
         "__id__": 0000,
-        "start": 1,
         "b": 27,
+        "start": 1,
         "y_children": {
             "Hugo": "#ref id: 0000"
         },
@@ -812,8 +812,10 @@ _json_dump_configbuilder_expected_json_full = """{
 _json_dump_configbuilder_expected_json_repeatable_item = """{
     "__class__": "Y",
     "__id__": 0000,
+    "b": 27,
     "name": "server2",
     "server_num": 2,
+    "start": 1,
     "y_children": {
         "Hugo": {
             "__class__": "YChild",
@@ -826,8 +828,10 @@ _json_dump_configbuilder_expected_json_repeatable_item = """{
         "server3": {
             "__class__": "Y",
             "__id__": 0000,
+            "c": 28,
             "name": "server3",
             "server_num": 3,
+            "start": 3,
             "y_children": {
                 "Hanna": {
                     "__class__": "YChild",
@@ -842,31 +846,27 @@ _json_dump_configbuilder_expected_json_repeatable_item = """{
                     "name": "Herbert"
                 }
             },
-            "ys": {},
-            "start": 3,
-            "c": 28
+            "ys": {}
         },
         "server4": {
             "__class__": "Y",
             "__id__": 0000,
+            "c": 28,
             "name": "server4",
             "server_num": 4,
+            "start": 3,
             "y_children": {
                 "Hanna": "#ref id: 0000",
                 "Herbert": "#ref id: 0000"
             },
-            "ys": {},
-            "start": 3,
-            "c": 28
+            "ys": {}
         }
     },
-    "start": 1,
-    "b": 27,
     "YBuilder.builder.0000": {
         "__class__": "YBuilder",
         "__id__": 0000,
-        "start": 3,
         "c": 28,
+        "start": 3,
         "y_children": {
             "Hanna": "#ref id: 0000",
             "Herbert": "#ref id: 0000"
@@ -885,8 +885,10 @@ _json_dump_configbuilder_dont_dump_expected_json_full = """{
         "server1": {
             "__class__": "Y",
             "__id__": 0000,
+            "b": 27,
             "name": "server1",
             "server_num": 1,
+            "start": 1,
             "y_children": {
                 "Hugo": {
                     "__class__": "YChild",
@@ -899,8 +901,10 @@ _json_dump_configbuilder_dont_dump_expected_json_full = """{
                 "server3": {
                     "__class__": "Y",
                     "__id__": 0000,
+                    "c": 28,
                     "name": "server3",
                     "server_num": 3,
+                    "start": 3,
                     "y_children": {
                         "Hanna": {
                             "__class__": "YChild",
@@ -915,41 +919,37 @@ _json_dump_configbuilder_dont_dump_expected_json_full = """{
                             "name": "Herbert"
                         }
                     },
-                    "ys": {},
-                    "start": 3,
-                    "c": 28
+                    "ys": {}
                 },
                 "server4": {
                     "__class__": "Y",
                     "__id__": 0000,
+                    "c": 28,
                     "name": "server4",
                     "server_num": 4,
+                    "start": 3,
                     "y_children": {
                         "Hanna": "#ref id: 0000",
                         "Herbert": "#ref id: 0000"
                     },
-                    "ys": {},
-                    "start": 3,
-                    "c": 28
+                    "ys": {}
                 }
-            },
-            "start": 1,
-            "b": 27
+            }
         },
         "server2": {
             "__class__": "Y",
             "__id__": 0000,
+            "b": 27,
             "name": "server2",
             "server_num": 2,
+            "start": 1,
             "y_children": {
                 "Hugo": "#ref id: 0000"
             },
             "ys": {
                 "server3": "#ref id: 0000",
                 "server4": "#ref id: 0000"
-            },
-            "start": 1,
-            "b": 27
+            }
         }
     },
     "aaa": 2,
@@ -959,8 +959,10 @@ _json_dump_configbuilder_dont_dump_expected_json_full = """{
 _json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
     "__class__": "Y",
     "__id__": 0000,
+    "b": 27,
     "name": "server2",
     "server_num": 2,
+    "start": 1,
     "y_children": {
         "Hugo": {
             "__class__": "YChild",
@@ -973,8 +975,10 @@ _json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
         "server3": {
             "__class__": "Y",
             "__id__": 0000,
+            "c": 28,
             "name": "server3",
             "server_num": 3,
+            "start": 3,
             "y_children": {
                 "Hanna": {
                     "__class__": "YChild",
@@ -989,26 +993,22 @@ _json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
                     "name": "Herbert"
                 }
             },
-            "ys": {},
-            "start": 3,
-            "c": 28
+            "ys": {}
         },
         "server4": {
             "__class__": "Y",
             "__id__": 0000,
+            "c": 28,
             "name": "server4",
             "server_num": 4,
+            "start": 3,
             "y_children": {
                 "Hanna": "#ref id: 0000",
                 "Herbert": "#ref id: 0000"
             },
-            "ys": {},
-            "start": 3,
-            "c": 28
+            "ys": {}
         }
-    },
-    "start": 1,
-    "b": 27
+    }
 }"""
 
 def test_json_dump_configbuilder():
@@ -1072,8 +1072,8 @@ _json_dump_property_method_returns_later_confitem_same_level_expected_json = """
             "__class__": "NamedNestedRepeatable",
             "__id__": 0000,
             "name": "one",
-            "someitems": {},
             "x": 3,
+            "someitems": {},
             "m": "#ref later, id: 0000",
             "m #calculated": true
         },
@@ -1081,8 +1081,8 @@ _json_dump_property_method_returns_later_confitem_same_level_expected_json = """
             "__class__": "NamedNestedRepeatable",
             "__id__": 0000,
             "name": "two",
-            "someitems": {},
             "x": 3,
+            "someitems": {},
             "m": "#ref self, id: 0000",
             "m #calculated": true
         }
@@ -1115,8 +1115,8 @@ _json_dump_property_method_returns_later_confitem_list_same_level_expected_json 
             "__class__": "NamedNestedRepeatable",
             "__id__": 0000,
             "name": "one",
-            "someitems": {},
             "x": 3,
+            "someitems": {},
             "m": [
                 "#ref later, id: 0000",
                 "#ref later, id: 0000"
@@ -1127,8 +1127,8 @@ _json_dump_property_method_returns_later_confitem_list_same_level_expected_json 
             "__class__": "NamedNestedRepeatable",
             "__id__": 0000,
             "name": "two",
-            "someitems": {},
             "x": 3,
+            "someitems": {},
             "m": [
                 "#ref self, id: 0000",
                 "#ref later, id: 0000"
@@ -1139,8 +1139,8 @@ _json_dump_property_method_returns_later_confitem_list_same_level_expected_json 
             "__class__": "NamedNestedRepeatable",
             "__id__": 0000,
             "name": "three",
-            "someitems": {},
             "x": 3,
+            "someitems": {},
             "m": [
                 "#ref id: 0000",
                 "#ref self, id: 0000"
@@ -1191,8 +1191,8 @@ _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json 
             "__class__": "NamedNestedRepeatable",
             "__id__": 0000,
             "name": "one",
-            "someitems": {},
             "x": 3,
+            "someitems": {},
             "m": {
                 "a": "#ref later, id: 0000",
                 "b": "#ref later, id: 0000"
@@ -1203,8 +1203,8 @@ _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json 
             "__class__": "NamedNestedRepeatable",
             "__id__": 0000,
             "name": "two",
-            "someitems": {},
             "x": 3,
+            "someitems": {},
             "m": {
                 "a": "#ref self, id: 0000",
                 "b": "#ref later, id: 0000"
@@ -1215,8 +1215,8 @@ _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json 
             "__class__": "NamedNestedRepeatable",
             "__id__": 0000,
             "name": "three",
-            "someitems": {},
             "x": 3,
+            "someitems": {},
             "m": {
                 "a": "#ref id: 0000",
                 "b": "#ref self, id: 0000"

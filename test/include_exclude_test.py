@@ -123,8 +123,8 @@ _include_exclude_for_configitem_repeatable_expected_json = """{
         "__class__": "Env",
         "name": "prod"
     },
-    "ritems": {},
-    "a": 1
+    "a": 1,
+    "ritems": {}
 }"""
 
 def test_include_for_configitem_repeatable():

@@ -43,11 +43,18 @@ class X(ConfigItem):
         super(X, self).__init__()
         self.aa = aa
 
-    def mc_init(self):
-        self.setattr("aa", default=17, prod=self.aa)
 
-with ConfigRoot(prod, [prod, pp]):
-    with X() as x:
-        x.setattr('aa', default=7, pp=17, prod=4)
+@named_as('anitem')
+class AnXItem(ConfigItem):
+    pass
 
-print(x.aa)
+with ConfigRoot(prod, ef, a=0) as cr:
+    print("cr id:", id(cr))
+    with X(aa='b2') as ref_x:
+        print("ref_x id:", id(ref_x))
+        ref_x.setattr('a', default=1, pp=2)
+    with AnXItem(something=3) as last_item:
+        print("last_item id:", id(last_item))
+        last_item.setattr('ref', default=ref_x, prod=ref_x)
+
+print(cr)

@@ -10,6 +10,7 @@ import types
 from . import envs
 from .values import _MC_NO_VALUE
 from .excluded import Excluded
+from .repeatable import Repeatable
 from .config_errors import InvalidUsageException
 
 
@@ -54,14 +55,13 @@ class ConfigItemEncoder(object):
         self.multiconf_root_type = multiconf_root_type
         self.multiconf_builder_type = multiconf_builder_type
 
-        
         self.filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'frozen')
         self.seen = {}
         self.start_obj = None
         self.num_errors = 0
         self.num_invalid_usages = 0
 
-    if sys.version_info.major < 3:    
+    if sys.version_info.major < 3:
         def _class_dict(self, obj):
             if self.compact:
                 return OrderedDict((_class_tuple(obj, ' #id: ' + repr(id(obj))),))
@@ -74,13 +74,8 @@ class ConfigItemEncoder(object):
             return OrderedDict((_class_tuple(obj, msg),))
         return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', id(obj))))
 
-    def _check_already_dumped(self, objval):
-        # Return (new)objval, done
-        # Check for reference to already dumped objects
-        return ("#ref id: " + repr(id(objval)), True) if self.seen.get(id(objval)) else (objval, False)
-
-    def _set_already_dumped(self, obj):
-        self.seen[id(obj)] = obj
+    def _already_dumped_str(self, objval):
+        return "#ref id: " + repr(id(objval))
 
     def _check_nesting(self, obj, child_obj):
         # Returns child_obj or reference info string
@@ -90,9 +85,10 @@ class ConfigItemEncoder(object):
         if child_obj is obj:
             return "#ref self, id: " + repr(id(child_obj))
 
-        child_obj, done = self._check_already_dumped(child_obj)
+        if self.seen.get(id(child_obj)):
+            return self._already_dumped_str(child_obj)
 
-        if not done and isinstance(child_obj, self.multiconf_base_type):
+        if isinstance(child_obj, self.multiconf_base_type):
             top = child_obj
             contained_in = child_obj._mc_contained_in
             if contained_in is obj:
@@ -126,10 +122,9 @@ class ConfigItemEncoder(object):
             if not self.start_obj:
                 self.start_obj = obj
 
-            obj, dumped = self._check_already_dumped(obj)
-            if dumped:
-                return obj
-            self._set_already_dumped(obj)
+            if self.seen.get(id(obj)):
+                return self._already_dumped_str(obj)
+            self.seen[id(obj)] = obj
 
             if isinstance(obj, self.multiconf_base_type):
                 # print("# Handle ConfigItems", type(obj))
@@ -150,8 +145,10 @@ class ConfigItemEncoder(object):
 
                 # Handle attributes
                 attributes_overriding_property = set()
+                attr_dict = {}
+                item_dict = OrderedDict()
                 for key, item in obj._iterattributes():
-                    val = item._mc_value()
+                    val = orig_val = item._mc_value()
 
                     if self.user_filter_callable:
                         key, val = self.user_filter_callable(obj, key, val)
@@ -164,22 +161,28 @@ class ConfigItemEncoder(object):
                     val = self._check_nesting(obj, val)
                     if isinstance(val, Excluded):
                         if self.compact:
-                            dd[key] = 'false #' + repr(val)
+                            item_dict[key] = 'false #' + repr(val)
                         else:
-                            dd[key] = False
-                            dd[key + ' #' + repr(val)] = True
+                            item_dict[key] = False
+                            item_dict[key + ' #' + repr(val)] = True
                     elif val != _MC_NO_VALUE:
-                        dd[key] = val
+                        if isinstance(orig_val, (self.multiconf_base_type, Repeatable)):
+                            item_dict[key] = val
+                        else:
+                            attr_dict[key] = val
 
                     if key in entries:
                         if val != _MC_NO_VALUE:
                             attributes_overriding_property.add(key)
-                            dd[key + ' #!overrides @property'] = True
+                            attr_dict[key + ' #!overrides @property'] = True
                         else:
-                            dd[key + ' #value for current env provided by @property'] = True
+                            attr_dict[key + ' #value for current env provided by @property'] = True
                     elif val == _MC_NO_VALUE:
-                        dd[key + ' #no value for current env'] = True
+                        attr_dict[key + ' #no value for current env'] = True
 
+                for key in sorted(attr_dict):
+                    dd[key] = attr_dict[key]
+                dd.update(item_dict)
                 if not self.property_methods:
                     return dd
 
@@ -276,7 +279,7 @@ class ConfigItemEncoder(object):
                 dd = self._class_dict(obj)
                 for key, val in obj.__dict__.items():
                     if key[0] != '_':
-                        dd[key], _dumped = self._check_already_dumped(val)
+                        dd[key] = self._already_dumped_str(val) if self.seen.get(id(val)) else val
                 return dd
 
             self.num_errors += 1
