@@ -348,9 +348,11 @@ class _ConfigBase(object):
                 raise ConfigException(msg + "Atributes starting with '_mc' are reserved for multiconf internal usage.")
             raise ConfigException(msg + "Atributes starting with '_' can not be set using item." + method_name + ". Use assignment instead.")
 
-    def _mc_setattr_common(self, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs):
+    def _mc_setattr_common(self, name, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs):
         """Set attributes with environment specific values"""
-        name = attribute.name
+        if not isinstance(attribute, Attribute):
+            raise ConfigException(repr(name) + ' ' + repr(type(attribute)) + ' is already defined and may not be replaced with an attribute.')
+
         self._mc_check_reserved_name(name, 'setattr')
 
         # For error messages
@@ -529,14 +531,14 @@ class _ConfigBase(object):
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
         try:
-            attribute = new_attribute(name)
+            attribute, name = new_attribute(name)
             err_msg, value = self._mc_check_override_common(self, attribute)
             if err_msg:
-                raise ConfigException(err_msg % dict(name=attribute.name, value=value))
+                raise ConfigException(err_msg % dict(name=name, value=value))
             attributes = object.__getattribute__(self, '_mc_attributes')
             where = object.__getattribute__(self, '_mc_where')
-            attribute = attributes.setdefault(attribute.name, attribute)
-            self._mc_setattr_common(attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
+            attribute = attributes.setdefault(name, attribute)
+            self._mc_setattr_common(name, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
@@ -546,8 +548,8 @@ class _ConfigBase(object):
         """Set attributes with environment specific values"""
         self._mc_check_reserved_name(name, 'override')
 
-        attribute = new_attribute(name)
-        attributes[attribute.name] = attribute
+        attribute, name = new_attribute(name)
+        attributes[name] = attribute
 
         root_conf = object.__getattribute__(self, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
@@ -1034,10 +1036,10 @@ class _ConfigBuilder(ConfigItem):
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
         try:
-            attribute = new_attribute(name)
+            attribute, name = new_attribute(name)
             attributes, where = self._mc_get_attributes_where()
-            attribute = attributes.setdefault(attribute.name, attribute)
-            self._mc_setattr_common(attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
+            attribute = attributes.setdefault(name, attribute)
+            self._mc_setattr_common(name, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise

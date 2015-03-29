@@ -87,5 +87,6 @@ class Attribute(object):
 
 def new_attribute(name):
     if name.endswith('!'):
-        return Attribute(name[:-1], override_method=True)
-    return Attribute(name, override_method=False)
+        name = name[:-1]
+        return Attribute(name, override_method=True), name
+    return Attribute(name, override_method=False), name

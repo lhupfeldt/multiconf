@@ -423,7 +423,7 @@ def test_non_repeatable_but_container_expects_repeatable():
     assert replace_ids(str(exinfo.value), named_as=False) == _k4_expected
 
 
-def test_simple_attribute_attempt_to_override_contained_item():
+def test_attempt_to_call_contained_item():
     with raises(TypeError) as exinfo:
         with ConfigRoot(prod1, ef1_prod) as cr:
             ConfigItem()
@@ -431,6 +431,27 @@ def test_simple_attribute_attempt_to_override_contained_item():
             cr.ConfigItem(prod="hello")
 
     assert str(exinfo.value) == "'ConfigItem' object is not callable"
+
+
+def test_simple_attribute_attempt_to_override_contained_item():
+    ex_msg = "'ConfigItem' <class 'multiconf.multiconf.ConfigItem'> is already defined and may not be replaced with an attribute."
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod1, ef1_prod) as cr:
+            with ConfigItem():
+                pass
+            errorline = lineno() + 1
+            cr.setattr('ConfigItem', prod="hello")
+
+    assert str(exinfo.value) == ex_msg
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod1, ef1_prod) as cr:
+            ConfigItem()
+            errorline = lineno() + 1
+            cr.setattr('ConfigItem', prod="hello")
+
+    assert str(exinfo.value) == ex_msg
 
 
 def test_repeated_non_repeatable_item():
