@@ -14,7 +14,8 @@ class _NamedNestedRepeatable(ConfigItem):
     __metaclass__ = abc.ABCMeta
     
     def __init__(self, name):
-        super(_NamedNestedRepeatable, self).__init__(name=name)
+        super(_NamedNestedRepeatable, self).__init__(mc_key=name)
+        self.name = name
         self.x = 3
     
     @abc.abstractproperty

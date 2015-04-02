@@ -35,6 +35,12 @@ def cw(line_num, *lines):
     return config_warning(__file__, line_num, *lines)
 
 
+class ItemWithA(ConfigItem):
+    def __init__(self, a=MC_REQUIRED):
+        super(ItemWithA, self).__init__()
+        self.a = a
+
+
 _attribute_mc_required_expected = """Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')"""
 
 _attribute_mc_required_env_expected_ex = """There were %(num_errors)s errors when defining attribute 'a' on object: {
@@ -98,14 +104,14 @@ def test_attribute_mc_required_default(capsys):
 
 
 _attribute_mc_required_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
+    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000, not-frozen",
     "a": "MC_REQUIRED"
 }"""
 
 def test_attribute_mc_required_init(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod_pp):
-            with ConfigItem(a=MC_REQUIRED) as ci:
+            with ItemWithA(a=MC_REQUIRED) as ci:
                 errorline = lineno() + 1
                 ci.setattr('a', pp="hello")
 
@@ -173,7 +179,8 @@ def test_attribute_mc_required_default_all_overridden():
 def test_attribute_mc_required_init_args_all_overridden():
     class Requires(ConfigItem):
         def __init__(self, a=MC_REQUIRED):
-            super(Requires, self).__init__(a=a)
+            super(Requires, self).__init__()
+            self.a = a
 
     with ConfigRoot(prod1, ef1_prod_pp) as cr:
         Requires(a=3)
@@ -281,7 +288,8 @@ _attribute_mc_required_other_env_requires_expected_ex = """There were 1 errors w
 def test_attribute_mc_required_init_args_missing_env_value(capsys):
     class Requires(ConfigItem):
         def __init__(self, a=MC_REQUIRED):
-            super(Requires, self).__init__(a=a)
+            super(Requires, self).__init__()
+            self.a = a
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod_pp):
@@ -303,7 +311,8 @@ _attribute_mc_required_init_args_missing_env_values_builder_expected_ex = """The
 def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
     class Requires(ConfigItem):
         def __init__(self, a=MC_REQUIRED):
-            super(Requires, self).__init__(a=a)
+            super(Requires, self).__init__()
+            self.a = a
 
     class Builder(ConfigBuilder):
         def __init__(self):
@@ -420,7 +429,7 @@ def test_attribute_mc_todo_default(capsys, allow_todo):
 
 
 _attribute_mc_todo_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
+    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000, not-frozen",
     "a": "MC_TODO"
 }"""
 
@@ -428,7 +437,7 @@ _attribute_mc_todo_init_expected_ex = """There were 1 errors when defining attri
 def test_attribute_mc_todo_init(capsys, allow_todo):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod_pp, mc_allow_todo=allow_todo):
-            with ConfigItem(a=MC_TODO) as ci:
+            with ItemWithA(a=MC_TODO) as ci:
                 errorline = lineno() + 1
                 ci.setattr('a', pp="hello")
 
@@ -510,14 +519,14 @@ def test_attribute_mc_todo_other_env_default(capsys):
 
 
 _attribute_mc_todo_other_env_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
+    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000, not-frozen",
     "a": "hello"
 }"""
 
 def test_attribute_mc_todo_other_env_init(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(pp1, ef1_prod_pp):
-            with ConfigItem(a=MC_TODO) as ci:
+            with ItemWithA(a=MC_TODO) as ci:
                 errorline = lineno() + 1
                 ci.setattr('a', pp="hello")
 
@@ -549,7 +558,7 @@ def test_attribute_mc_todo_default_allowed_other_env(capsys):
 
 def test_attribute_mc_todo_init_allowed_other_env(capsys):
     with ConfigRoot(pp1, ef1_prod_pp, mc_allow_todo=True, mc_allow_current_env_todo=False):
-        with ConfigItem(a=MC_TODO) as ci:
+        with ItemWithA(a=MC_TODO) as ci:
             errorline = lineno() + 1
             ci.setattr('a', pp="hello")
 
@@ -583,7 +592,7 @@ def test_attribute_mc_todo_default_allowed_other_envs(capsys):
 
 def test_attribute_mc_todo_init_allowed_other_envs(capsys):
     with ConfigRoot(prod1, ef1_prod_pp, mc_allow_current_env_todo=True):
-        with ConfigItem(a=MC_TODO) as ci:
+        with ItemWithA(a=MC_TODO) as ci:
             errorline = lineno() + 1
             ci.setattr('a', pp="hello")
 

@@ -22,15 +22,23 @@ class weblogic_config(ConfigRoot):
 
 # Weblogic's standalone administration server. Used to control domain.
 class admin_server(ConfigItem):
-    def __init__(self, **attr):
-        super(admin_server, self).__init__(name='admin', server_type='admin', **attr)
+    def __init__(self, host, port):
+        super(admin_server, self).__init__()
+        self.host = host
+        self.port = port
+        self.name = 'admin'
+        self.server_type = 'admin'
 
 
 # Here specify that a managed_server can be repeated within it's parent (domain)
 @repeat()
 class managed_server(ConfigItem):
-    def __init__(self, name, **attr):
-        super(managed_server, self).__init__(name=name, server_type='managed', **attr)
+    def __init__(self, name, host, port):
+        super(managed_server, self).__init__(mc_key=name)
+        self.host = host
+        self.port = port
+        self.name = name
+        self.server_type = 'managed'
 
 
 # Here we specify that a parameter num_servers is required when defining a
@@ -39,8 +47,11 @@ class managed_server(ConfigItem):
 class managed_servers(ConfigBuilder):
     ''' Builder for managed_server objects. Used in environment configuration to
     automatically create proper number of managed_server objects '''
-    def __init__(self, num_servers, host_pattern, base_port, **attr):
-        super(managed_servers, self).__init__(num_servers=num_servers, host_pattern=host_pattern, base_port=base_port, **attr)
+    def __init__(self, num_servers, host_pattern, base_port):
+        super(managed_servers, self).__init__()
+        self.num_servers = num_servers
+        self.host_pattern = host_pattern
+        self.base_port = base_port
 
     def build(self):
         for server_num in range(1, self.num_servers+1):
@@ -52,5 +63,7 @@ class managed_servers(ConfigBuilder):
 
 @repeat()
 class datasource(ConfigItem):
-    def __init__(self, **attr):
-        super(datasource, self).__init__(**attr)
+    def __init__(self, name, database_type):
+        super(datasource, self).__init__(mc_key=name)
+        self.name = name
+        self.database_type = database_type

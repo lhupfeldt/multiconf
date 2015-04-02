@@ -42,7 +42,7 @@ class _ConfigBase(object):
     _mc_deco_required_if = (None, ())
     _mc_deco_unchecked = None
 
-    def __init__(self, root_conf, env_factory, mc_json_filter=None, mc_json_fallback=None, **attr):
+    def __init__(self, root_conf, env_factory, mc_json_filter=None, mc_json_fallback=None):
         self._mc_json_filter = mc_json_filter
         self._mc_json_fallback = mc_json_fallback
         self._mc_root_conf = root_conf
@@ -62,22 +62,6 @@ class _ConfigBase(object):
 
         __class__ = object.__getattribute__(self, '__class__')
         _mc_deco_nested_repeatables = __class__._mc_deco_nested_repeatables
-        for key, value in sorted(attr.items()):
-            if key in _mc_deco_nested_repeatables:
-                raise ConfigException(repr(key) + ' defined as default value shadows a nested-repeatable')
-            try:
-                object.__getattribute__(__class__, key)
-                raise ConfigException("The attribute " + repr(key) + " (not ending in '!') clashes with a property or method")
-            except AttributeError:
-                pass
-            attribute = Attribute(key, override_method=False)
-            if value not in _mc_invalid_values:
-                attribute.set_env_provided(env_factory._mc_init_group)
-                attribute.set_current_env_value(value, env_factory._mc_init_group, Where.IN_INIT, file_name, line_num)
-            else:
-                attribute.set_invalid_value(value, env_factory._mc_init_group, Where.IN_INIT, file_name, line_num)
-            _mc_attributes[key] = attribute
-
         for key in _mc_deco_nested_repeatables:
             ur = UserRepeatable()
             ur.contained_in = self
@@ -108,7 +92,7 @@ class _ConfigBase(object):
         json_method = object.__getattribute__(self, 'json')
         return json_method(compact=True, property_methods=False, builders=True)
 
-    def _mc_insert_item(self, child_item):
+    def _mc_insert_item(self, repeatable_child_item_key, child_item):
         # Freeze attributes on previously defined child
         previous_item = self._mc_previous_child
         if previous_item and not previous_item.frozen:
@@ -151,16 +135,12 @@ class _ConfigBase(object):
                 return
 
             # Calculate key to use when inserting repeatable item in Repeatable dict
-            # Key is calculated as 'obj.id', 'obj.name' or id(obj) in that preferred order
-            cha = child_item._mc_attributes
-            specified_key = cha.get('id') or cha.get('name')
-            # specified_key._value will be the __init__ value at this point if set
-            obj_key = specified_key._value if specified_key is not None and specified_key._value not in _mc_invalid_values else id(child_item)
+            obj_key = repeatable_child_item_key if repeatable_child_item_key is not None else id(child_item)
             item = repeatable.setdefault(obj_key, child_item)
 
             if item is not child_item and where != Where.IN_MC_INIT:
                 # We are trying to replace an object with the same id/name
-                raise ConfigException("Re-used id/name " + repr(obj_key) + " in nested objects")
+                raise ConfigException("Re-used key " + repr(obj_key) + " in nested objects")
             child_item._mc_repeatable_item_key = obj_key
             return
 
@@ -351,6 +331,8 @@ class _ConfigBase(object):
     def _mc_setattr_common(self, name, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs):
         """Set attributes with environment specific values"""
         if not isinstance(attribute, Attribute):
+            if name in self._mc_deco_nested_repeatables:
+                raise ConfigException(repr(name) + ' is already defined as a nested-repeatable and may not be replaced with an attribute.')
             raise ConfigException(repr(name) + ' ' + repr(type(attribute)) + ' is already defined and may not be replaced with an attribute.')
 
         self._mc_check_reserved_name(name, 'setattr')
@@ -832,7 +814,7 @@ class _ConfigBase(object):
 
 
 class ConfigRoot(_ConfigBase):
-    def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None, mc_allow_todo=False, mc_allow_current_env_todo=False, **attr):
+    def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None, mc_allow_todo=False, mc_allow_current_env_todo=False):
         __class__ = object.__getattribute__(self, '__class__')
         if not isinstance(env_factory, EnvFactory):
             raise ConfigException(__class__.__name__ + ': env_factory arg must be instance of ' + repr(EnvFactory.__name__) + '; found type '
@@ -852,8 +834,8 @@ class ConfigRoot(_ConfigBase):
         self._mc_allow_todo = mc_allow_todo or mc_allow_current_env_todo
         self._mc_allow_current_env_todo = mc_allow_current_env_todo
         env_factory = object.__getattribute__(self, '_mc_env_factory')
-        env_factory._mc_init_and_default_groups()
-        super(ConfigRoot, self).__init__(root_conf=self, env_factory=env_factory, mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
+        env_factory._mc_create_default_group()
+        super(ConfigRoot, self).__init__(root_conf=self, env_factory=env_factory, mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback)
         self._mc_contained_in = None
         self._mc_under_proxy_build = False
         self._mc_num_warnings = 0
@@ -877,7 +859,7 @@ class ConfigRoot(_ConfigBase):
 
 
 class ConfigItem(_ConfigBase):
-    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None, **attr):
+    def __init__(self, mc_key=None, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
         # Set back reference to containing Item and root item
         __class__ = object.__getattribute__(self, '__class__')
         if not __class__._mc_nested:
@@ -888,9 +870,9 @@ class ConfigItem(_ConfigBase):
         root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
         super(ConfigItem, self).__init__(root_conf=root_conf, env_factory=env_factory,
-                                         mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, **attr)
+                                         mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback)
         self._mc_select_envs(mc_include, mc_exclude)
-        contained_in._mc_insert_item(self)
+        contained_in._mc_insert_item(mc_key, self)
 
     def _mc_select_envs(self, include, exclude, file_name=None, line_num=None):
         """Determine if item (and children) is included in specified env"""
@@ -1025,9 +1007,9 @@ class ConfigItem(_ConfigBase):
 class _ConfigBuilder(ConfigItem):
     _num = 0
 
-    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None, **attr):
+    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
         super(_ConfigBuilder, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
-                                            mc_include=mc_include, mc_exclude=mc_exclude, **attr)
+                                            mc_include=mc_include, mc_exclude=mc_exclude)
         self._mc_build_attributes = Repeatable()
         _ConfigBuilder._num += 1
 

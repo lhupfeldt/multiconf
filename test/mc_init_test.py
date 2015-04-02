@@ -37,7 +37,8 @@ class item2(ConfigItem):
 
 def test_direct_env_in_mc_init_overrides_default_and_group_in_with():
     with ConfigRoot(dev1, ef):
-        it = item1(aa=13)
+        with item1() as it:
+            it.aa = 13
     assert it.aa == 7
 
     with ConfigRoot(dev1, ef):

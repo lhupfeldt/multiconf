@@ -108,7 +108,9 @@ def test_exclude_for_configitem():
 @required('anattr, anotherattr')
 @repeat()
 class ritem(ConfigItem):
-    pass
+    def __init__(self, name, mc_exclude=None, mc_include=None):
+        super(ritem, self).__init__(mc_key=name, mc_exclude=mc_exclude, mc_include=mc_include)
+        self.name = name
 
 
 @nested_repeatables('ritems')
@@ -131,7 +133,7 @@ def test_include_for_configitem_repeatable():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_include=[dev1, pp]) as it:
+            with ritem(name='a', mc_include=[dev1, pp]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
                 it.setattr('anotherattr', dev1=1, pp=2)
         return cr
@@ -150,7 +152,7 @@ def test_exclude_for_configitem_repeatable():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_exclude=[dev2, prod]) as it:
+            with ritem(name='a', mc_exclude=[dev2, prod]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
                 it.setattr('anotherattr', dev1=1, dev3=0, pp=2)
         return cr
@@ -191,7 +193,7 @@ def test_exclude_for_repeatable_nested_configitem():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_exclude=[dev2, dev3, prod]) as rit:
+            with ritem(name='a', mc_exclude=[dev2, dev3, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, pp=2)
                 with item() as it1:
@@ -201,14 +203,14 @@ def test_exclude_for_repeatable_nested_configitem():
                         it2.setattr('anattr', pp=1, g_dev12_3=2)
                         it2.setattr('anotherattr', dev1=1, pp=2)
 
-            with ritem(id='b', mc_exclude=[dev1, dev3]) as rit:
+            with ritem(name='b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
                 with item() as it1:
                     it1.setattr('anattr', prod=33, pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
 
-            with ritem(id='c', mc_exclude=[dev2, prod]) as rit:
+            with ritem(name='c', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev3=0, pp=2)
                 with item() as it1:
@@ -241,7 +243,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_exclude=[dev2, prod]) as rit:
+            with ritem(name='a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev3=0, pp=2)
                 with item(mc_exclude=[pp, dev3]) as it1:
@@ -251,7 +253,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
                         it2.setattr('anattr', pp=1, g_dev12_3=2)
                         it2.setattr('anotherattr', dev1=1, pp=2)
 
-            with ritem(id='b', mc_exclude=[dev1, dev3]) as rit:
+            with ritem(name='b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
                 with item(mc_exclude=[pp]) as it1:
@@ -318,7 +320,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
 def test_child_includes_excluded(capsys):
     with raises(ConfigException) as exinfo:
         with root(prod, ef):
-            with ritem(id='a', mc_exclude=[g_dev12_3, prod]):
+            with ritem(name='a', mc_exclude=[g_dev12_3, prod]):
                 errorline = lineno() + 1
                 with item(mc_include=[dev2, prod]) as it1:
                     it1.x = 7

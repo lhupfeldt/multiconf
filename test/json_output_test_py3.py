@@ -12,7 +12,8 @@ from ..decorators import nested_repeatables, named_as, repeat
 @repeat()
 class _NamedNestedRepeatable(ConfigItem, metaclass=abc.ABCMeta):
     def __init__(self, name):
-        super(_NamedNestedRepeatable, self).__init__(name=name)
+        super(_NamedNestedRepeatable, self).__init__(mc_key=name)
+        self.name = name
         self.x = 3
     
     @abc.abstractproperty

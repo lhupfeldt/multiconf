@@ -184,7 +184,8 @@ def test_required_if_condition_attribute_missing_other_attribute_default_value()
         pass
 
     with root(prod1, ef1_prod):
-        item(a=1)
+        with item() as it:
+            it.a = 1
     assert 1 == 1
 
 

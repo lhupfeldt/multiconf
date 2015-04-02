@@ -31,7 +31,7 @@ class BaseEnv(object):
             raise EnvException(cls.__name__ + ": 'name' must not be empty")
         if name[0] == '_':
             raise EnvException(cls.__name__ + ": 'name' must not start with '_', got: " + repr(name))
-        if name in ('default', '__init__'):
+        if name == 'default':
             raise EnvException(cls.__name__ + ": name '" + name + "' is reserved")
 
     @property
@@ -168,7 +168,6 @@ class EnvFactory(object):
         self._all_egs_mask = 0
         self._all_envs_mask = 0
         self._mc_default_group = None
-        self._mc_init_group = None
         self._mc_frozen = False
 
     def Env(self, name):
@@ -200,16 +199,14 @@ class EnvFactory(object):
         EnvGroup.validate(name)
         return self._EnvGroup(name=name, members=members)
 
-    def _mc_init_and_default_groups(self):
+    def _mc_create_default_group(self):
         """
         Must be called after all user defined envs and groups are defined.
         creates 'default' group which is the superset of all user defined groups and envs
-        creates '__init__' group which is the superset of 'default' group.
-        after this i called, no more envs or groups may be created by this factory.
+        after this is called, no more envs or groups may be created by this factory.
         """
         if not self._mc_frozen:
             self._mc_default_group = self._EnvGroup('default', members=list(self.groups.values()) + list(self.envs.values()))
-            self._mc_init_group = self._EnvGroup('__init__', members=[self._mc_default_group])
             self._mc_frozen = True
 
     def env(self, name):

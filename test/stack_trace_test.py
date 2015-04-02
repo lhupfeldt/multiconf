@@ -51,7 +51,7 @@ def test_stacktrace_strips_multiconf_code(capsys):
         class inner(ConfigItem):
             pass
 
-        with root(prod, ef, a=0):
+        with root(prod, ef):
             with inner():
                 with inner() as ii2:
                     errorline = lineno() + 1
@@ -82,7 +82,7 @@ def test_stacktrace_from_user_validate_code():
                 validate_errorline = lineno() + 1
                 raise Exception("In inner validate")
 
-        with root(prod, ef, a=0):
+        with root(prod, ef):
             with inner():
                 errorline = lineno() + 1
                 inner()
@@ -109,7 +109,7 @@ def test_stacktrace_from_user_build_code():
                 build_errorline = lineno() + 1
                 raise Exception("In inner build")
 
-        with root(prod, ef, a=0):
+        with root(prod, ef):
             with inner():
                 errorline = lineno() + 1
                 inner()

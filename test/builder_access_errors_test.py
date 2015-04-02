@@ -44,7 +44,9 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
     @named_as('y_children')
     @repeat()
     class YChild(ConfigItem):
-        pass
+        def __init__(self, a):
+            super(YChild, self).__init__()
+            self.a = a
 
     with raises(ConfigApiException) as exinfo:
         with ConfigRoot(prod, ef):
@@ -85,7 +87,9 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_detache
     @named_as('y_children')
     @repeat()
     class YChild(ConfigItem):
-        pass
+        def __init__(self, a):
+            super(YChild, self).__init__()
+            self.a = a
 
     with raises(ConfigApiException) as exinfo:
         with ConfigRoot(prod, ef):

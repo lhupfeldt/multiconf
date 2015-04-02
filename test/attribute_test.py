@@ -25,9 +25,8 @@ pp = ef.Env('pp')
 prod = ef.Env('prod')
 g_prod = ef.EnvGroup('g_prod', pp, prod)
 
-ef._mc_init_and_default_groups()
+ef._mc_create_default_group()
 default_group = ef.env_or_group_from_name('default')
-init_group = ef.env_or_group_from_name('__init__')
 
 
 def test_unset_attribute_repr():
@@ -55,7 +54,6 @@ def test_attribute_default():
     assert attr1._mc_frozen is True  # pylint: disable=protected-access
 
     attr2 = Attribute(name='some_name2b', override_method=False)
-    assert not attr2.all_set(init_group.bit)
     assert not attr2.all_set(default_group.mask)
 
     attr2.set_env_provided(default_group)

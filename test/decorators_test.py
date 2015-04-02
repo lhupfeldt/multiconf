@@ -95,7 +95,9 @@ def test_required_attributes_accept_override_of_single_property():
     @required('a, b')
     class item(ConfigItem):
         def __init__(self, a, b):
-            super(item, self).__init__(a=a, b=b)
+            super(item, self).__init__()
+            self.a = a
+            self.b = b
 
     with root(prod1, ef1_prod) as cr:
         with item(a=1, b=1) as ii:
@@ -124,8 +126,8 @@ def test_named_as():
     class root(ConfigRoot):
         pass
 
-    with root(prod2, ef2_prod_dev2ct, name='abc') as proj:
-        pass
+    with root(prod2, ef2_prod_dev2ct) as proj:
+        proj.name = 'abc'
     assert replace_ids(repr(proj), named_as=False) == _g_expected
 
 

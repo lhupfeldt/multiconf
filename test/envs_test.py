@@ -160,14 +160,13 @@ def test_env_or_group_from_name():
 
 
 def test_env_or_group_from_bit():
-    ef._mc_init_and_default_groups()  # pylint: disable=protected-access
+    ef._mc_create_default_group()  # pylint: disable=protected-access
 
     assert ef.env_or_group_from_bit(0b0000000000000010).name == "dev1"
     assert ef.env_or_group_from_bit(prod.mask) == prod
     assert ef.env_or_group_from_bit(0b0000001000000000) == prod
     assert ef.env_or_group_from_bit(0b0000010000000000) == g_prod
     assert ef.env_or_group_from_bit(0b0001000000000000).name == "default"
-    assert ef.env_or_group_from_bit(0b0010000000000000).name == "__init__"
 
     with raises(EnvException) as exinfo:
         ef.env_or_group_from_bit(0b1000000000000000)
@@ -175,7 +174,7 @@ def test_env_or_group_from_bit():
 
 
 def test_envs_from_mask():
-    ef._mc_init_and_default_groups()  # pylint: disable=protected-access
+    ef._mc_create_default_group()  # pylint: disable=protected-access
 
     found_envs = []
     for env in ef.envs_from_mask(0b100010100):
@@ -206,7 +205,7 @@ def test_env_factory_in_use(capsys):
     with raises(EnvException) as exinfo:
         myef = EnvFactory()
         mydev1 = myef.Env('dev1')
-        myef._mc_init_and_default_groups()  # pylint: disable=protected-access
+        myef._mc_create_default_group()  # pylint: disable=protected-access
         myef.EnvGroup('g_dev12', mydev1)
 
     _sout, serr = capsys.readouterr()
@@ -216,7 +215,7 @@ def test_env_factory_in_use(capsys):
     with raises(EnvException) as exinfo:
         myef = EnvFactory()
         mydev1 = myef.Env('dev1')
-        myef._mc_init_and_default_groups()  # pylint: disable=protected-access
+        myef._mc_create_default_group()  # pylint: disable=protected-access
         myef.Env('dev2')
 
     _sout, serr = capsys.readouterr()

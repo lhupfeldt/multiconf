@@ -26,13 +26,17 @@ prod2 = ef2_prod_pp.Env('prod')
 @named_as('xses')
 @repeat()
 class Xses(ConfigItem):
-    pass
+    def __init__(self, name=None):
+        super(Xses, self).__init__(mc_key=name)
+        self.name = name
 
 
 @named_as('x_children')
 @repeat()
 class XChild(ConfigItem):
-    pass
+    def __init__(self, mc_key=None, a=None):
+        super(XChild, self).__init__(mc_key=mc_key)
+        self.a = a
 
 
 _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Nested repeatable from 'build', key: 'server1', value: {
@@ -62,7 +66,8 @@ _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expe
 def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item():
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers=2):
-            super(XBuilder, self).__init__(num_servers=num_servers)
+            super(XBuilder, self).__init__()
+            self.num_servers = num_servers
 
         def build(self):
             for server_num in range(1, self.num_servers+1):
@@ -126,7 +131,8 @@ def test_unexpected_repeatable_child_nested_builders():
     @named_as('arepeatable')
     class RepItem(ConfigItem):
         def __init__(self):
-            super(RepItem, self).__init__(name='a')
+            super(RepItem, self).__init__(mc_key='a')
+            self.name = 'a'
 
     class InnerBuilder(ConfigBuilder):
         def build(self):
@@ -204,11 +210,13 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
 def test_configbuilders_repeated_non_repeatable_in_build():
     class MiddleItem(ConfigItem):
         def __init__(self, name):
-            super(MiddleItem, self).__init__(id=name)
+            super(MiddleItem, self).__init__()
+            self.id = name
 
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MiddleBuilder, self).__init__(name=name)
+            super(MiddleBuilder, self).__init__()
+            self.name = name
 
         def build(self):
             MiddleItem('middleitem1')
@@ -219,14 +227,16 @@ def test_configbuilders_repeated_non_repeatable_in_build():
         pass
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod, name='myp'):
+        with ConfigRoot(prod1, ef1_prod) as root:
+            root.name = 'myp'
             with OuterItem():
                 MiddleBuilder('base1')
 
     assert replace_ids(str(exinfo.value), False) == "Repeated non repeatable conf item: 'MiddleItem'"
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod, name='myp'):
+        with ConfigRoot(prod1, ef1_prod) as root:
+            root.name = 'myp'
             MiddleBuilder('base2')
 
     assert replace_ids(str(exinfo.value), False) == "Repeated non repeatable conf item: 'MiddleItem'"

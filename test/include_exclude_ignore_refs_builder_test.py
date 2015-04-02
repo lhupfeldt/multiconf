@@ -15,20 +15,24 @@ prod = ef.Env('prod')
 
 
 class root(ConfigRoot):
-    pass
+    def __init__(self, env, env_factory, name=None):
+        super(root, self).__init__(env, env_factory)
+        self.name = name
 
 
 @nested_repeatables('reps')
 class HasRepeatables(ConfigItem):
     def __init__(self, name, mc_exclude):
-        super(HasRepeatables, self).__init__(name=name, mc_exclude=mc_exclude)
+        super(HasRepeatables, self).__init__(mc_exclude=mc_exclude)
+        self.name = name
 
 
 @repeat()
 @named_as('reps')
 class RepeatableItem(ConfigItem):
     def __init__(self, name, mc_exclude=None):
-        super(RepeatableItem, self).__init__(name=name, mc_exclude=mc_exclude)
+        super(RepeatableItem, self).__init__(mc_key=name, mc_exclude=mc_exclude)
+        self.name = name
 
 
 class BB(ConfigBuilder):
@@ -61,7 +65,7 @@ def test_exclude_with_builder():
 
 def test_exclude_no_builder():
     def conf(env):
-        with root(env, ef, name='esb', scrb_hostnames=[]) as cr:
+        with root(env, ef, name='esb') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
                 with RepeatableItem('bbb'):
                     pass
@@ -140,7 +144,8 @@ def test_mc_select_envs_with_builder():
     @nested_repeatables('reps')
     class HasRepeatables2(ConfigItem):
         def __init__(self, name):
-            super(HasRepeatables2, self).__init__(name=name)
+            super(HasRepeatables2, self).__init__()
+            self.name = name
     
     def conf(env):
         with root(env, ef, name='x') as cr:

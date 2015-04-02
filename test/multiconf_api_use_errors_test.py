@@ -50,7 +50,7 @@ def test_find_contained_in_called_before_parent___init__(capsys):
                 inner_errorline = lineno() + 1
                 self.find_contained_in('a')
 
-        with root(prod2, ef2_prod_pp, a=0):
+        with root(prod2, ef2_prod_pp):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
@@ -71,7 +71,7 @@ def test_property_method_called_before_parent___init__(capsys):
                 inner_errorline = lineno() + 1
                 print(self.env)
 
-        with root(prod2, ef2_prod_pp, a=0):
+        with root(prod2, ef2_prod_pp):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
@@ -91,7 +91,7 @@ def test_undefined_method_called_before_parent___init__(capsys):
                 inner_errorline = lineno() + 1
                 self.ttt('')
 
-        with root(prod2, ef2_prod_pp, a=0):
+        with root(prod2, ef2_prod_pp):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
@@ -111,7 +111,7 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
                 inner_errorline = lineno() + 1
                 self.ttt
 
-        with root(prod2, ef2_prod_pp, a=0):
+        with root(prod2, ef2_prod_pp):
             inner(id='n1', b=1)
 
     _sout, serr = capsys.readouterr()
@@ -130,14 +130,15 @@ def test_setattr_multiconf_private_attribute():
     ex_msg = """Trying to set attribute '_mc_whatever' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
 
     with raises(ConfigException) as exinfo:
-        with root(prod2, ef2_prod_pp, a=0) as cr:
+        with root(prod2, ef2_prod_pp) as cr:
             cr.setattr('_mc_whatever', default=1)
 
     assert str(exinfo.value) == ex_msg
 
     with raises(ConfigException) as exinfo:
-        with root(prod2, ef2_prod_pp, a=0) as cr:
-            with inner(id='n1', b=1) as ci:
+        with root(prod2, ef2_prod_pp) as cr:
+            with inner() as ci:
+                ci.b = 1
                 ci.setattr('_mc_whatever', default=1)
 
     assert str(exinfo.value) == ex_msg

@@ -83,6 +83,10 @@ def test_attribute_overrides_property_method_is_regular_method():
 def test_attribute_clash_property_method():
     @named_as('someitem')
     class Nested(ConfigItem):
+        def __init__(self, m=None):
+            super(Nested, self).__init__()
+            self.m = m
+
         @property
         def m(self):
             return 2

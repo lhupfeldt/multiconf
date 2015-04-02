@@ -272,7 +272,7 @@ def test_value_not_assigned_to_all_envs_in_builder(capsys):
     assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
 
 
-_attribute_defined_with_different_types_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_defined_with_different_types_root_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
@@ -281,7 +281,7 @@ _attribute_defined_with_different_types_expected_ex = """There were 1 errors whe
     "a": 1
 }"""
 
-def test_attribute_defined_with_different_types(capsys):
+def test_attribute_defined_with_different_types_root(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
@@ -293,10 +293,10 @@ def test_attribute_defined_with_different_types(capsys):
         ("^%(lnum)s, prod <%(type_or_class)s 'int'>", "^%(lnum)s, pp <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
-    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_root_expected_ex
 
 
-def test_attribute_defined_with_different_types_default(capsys):
+def test_attribute_defined_with_different_types_root_default(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
@@ -308,7 +308,7 @@ def test_attribute_defined_with_different_types_default(capsys):
         ("^%(lnum)s, prod <%(type_or_class)s 'int'>", "^%(lnum)s, default <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
-    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_root_expected_ex
 
 
 _attribute_defined_with_different_types_item_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
@@ -316,31 +316,95 @@ _attribute_defined_with_different_types_item_expected_ex = """There were 1 error
     "a": 1
 }"""
 
-def test_attribute_defined_with_different_types_init_default(capsys):
+def test_attribute_defined_with_different_types_item(capsys):
     with raises(ConfigException) as exinfo:
-        init_line1 = lineno() + 1
-        with ConfigRoot(prod2, ef2_pp_prod, a="hello") as cr:
+        with project(prod2, ef2_pp_prod):
+            init_line = lineno() + 1
+            with ConfigItem() as ci:
+                errorline = lineno() + 1
+                ci.setattr('a', pp="hello", prod=1)
+
+    _sout, serr = capsys.readouterr()
+    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_expected_ex
+
+    assert_lines_in(
+        __file__, errorline, serr,
+        ("^%(lnum)s, prod <%(type_or_class)s 'int'>", "^%(lnum)s, pp <%(type_or_class)s 'str'>"),
+        "^ConfigError: Found different value types for property 'a' for different envs",
+    )
+
+
+def test_attribute_defined_with_different_types_item_default(capsys):
+    with raises(ConfigException) as exinfo:
+        with project(prod1, ef1_prod):
+            init_line = lineno() + 1
+            with ConfigItem() as ci:
+                errorline = lineno() + 1
+                ci.setattr('a', default="hello", prod=1)
+
+    _sout, serr = capsys.readouterr()
+    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_expected_ex
+
+    assert_lines_in(
+        __file__, errorline, serr,
+        ("^%(lnum)s, prod <%(type_or_class)s 'int'>", "^%(lnum)s, default <%(type_or_class)s 'str'>"),
+        "^ConfigError: Found different value types for property 'a' for different envs",
+    )
+
+
+_attribute_defined_with_different_types_root_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "root #as: 'root', id: 0000, not-frozen",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "a": 1
+}"""
+
+_attribute_defined_with_different_types_item_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+    "__class__": "item #as: 'item', id: 0000, not-frozen",
+    "a": 1
+}"""
+
+def test_attribute_defined_with_different_types_init(capsys):
+    class root(ConfigRoot):
+        init_line = 0
+
+        def __init__(self, selected_env, env_factory, a):
+            super(root, self).__init__(selected_env=selected_env, env_factory=env_factory)
+            root.init_line = lineno() + 1
+            self.a = a
+
+    with raises(ConfigException) as exinfo:
+        with root(prod2, ef2_pp_prod, a="hello") as cr:
             errorline1 = lineno() + 1
             cr.setattr('a', default=1)
 
     _sout, serr1 = capsys.readouterr()
-    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_root_init_expected_ex
+
+    class item(ConfigItem):
+        init_line = 0
+
+        def __init__(self, a):
+            super(item, self).__init__()
+            item.init_line = lineno() + 1
+            self.a = a
 
     with raises(ConfigException) as exinfo:
         with project(prod1, ef1_prod):
-            init_line2 = lineno() + 1
-            with ConfigItem(a="hello") as ci:
+            with item(a="hello") as ci:
                 errorline2 = lineno() + 1
                 ci.a = 1
 
     _sout, serr2 = capsys.readouterr()
-    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_expected_ex
+    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_init_expected_ex
 
-    for init_line, errorline, serr in ((init_line1, errorline1, serr1), (init_line2, errorline2, serr2)):
+    for init_line, errorline, serr in ((root.init_line, errorline1, serr1), (item.init_line, errorline2, serr2)):
         assert_lines_in(
             __file__, errorline, serr,
             "^%(lnum)s, default <%(type_or_class)s 'int'>",
-            """^File "%(file_name)s", line {line_num}, __init__ <%(type_or_class)s 'str'>""".format(line_num=init_line),
+            """^File "%(file_name)s", line {line_num}, default <%(type_or_class)s 'str'>""".format(line_num=init_line),
             "^ConfigError: Found different value types for property 'a' for different envs",
         )
 
@@ -387,10 +451,12 @@ def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repe
 def test_nested_repeatable_item_shadowed_by_default_attribute():
     with raises(ConfigException) as exinfo:
         # RepeatableItems is just an attribute named like an item
-        with project(prod1, ef1_prod, RepeatableItems=1):
+        with project(prod1, ef1_prod) as cr:
+            cr.RepeatableItems = 1
             RepeatableItem()
 
-    assert replace_ids(str(exinfo.value), named_as=False) == "'RepeatableItems' defined as default value shadows a nested-repeatable"
+    exp_msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
+    assert replace_ids(str(exinfo.value), named_as=False) == exp_msg
 
 
 # def nested_repeatable_item_overrides_simple_attribute_contained_in_repeatable(self):
@@ -467,10 +533,10 @@ def test_repeated_non_repeatable_item():
 def test_nested_repeatable_items_with_repeated_name():
     with raises(ConfigException) as exinfo:
         with project(prod1, ef1_prod):
-            RepeatableItem(id='my_name')
-            RepeatableItem(id='my_name')
+            RepeatableItem(mc_key='my_name')
+            RepeatableItem(mc_key='my_name')
 
-    assert str(exinfo.value) == "Re-used id/name 'my_name' in nested objects"
+    assert str(exinfo.value) == "Re-used key 'my_name' in nested objects"
 
 
 _value_defined_through_two_groups_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
@@ -624,8 +690,8 @@ def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_i
             def build(self):
                 raise Exception("in build")
 
-        with root(prod2, ef2_pp_prod, a=0):
-            with inner(id='n1', b=1):
+        with root(prod2, ef2_pp_prod):
+            with inner():
                 raise Exception("in with")
 
     _sout, serr = capsys.readouterr()

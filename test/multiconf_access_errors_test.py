@@ -67,7 +67,9 @@ def test_find_contained_in_named_as_not_found():
     @nested_repeatables('someitems')
     @repeat()
     class NestedRepeatable(ConfigItem):
-        pass
+        def __init__(self, id):
+            super(NestedRepeatable, self).__init__(mc_key=id)
+            self.id = id
 
     @named_as('x')
     @nested_repeatables('someitems')
@@ -82,8 +84,9 @@ def test_find_contained_in_named_as_not_found():
     class root(ConfigRoot):
         pass
 
-    with root(prod, ef1_prod, a=0) as cr:
-        NestedRepeatable()
+    with root(prod, ef1_prod) as cr:
+        cr.a = 0
+        NestedRepeatable(id=0)
         with X() as ci:
             ci.setattr('a', prod=0)
             NestedRepeatable(id='a')
@@ -109,7 +112,9 @@ def test_find_attribute_with_attribute_name_not_found():
     @nested_repeatables('someitems')
     @repeat()
     class NestedRepeatable(ConfigItem):
-        pass
+        def __init__(self, id):
+            super(NestedRepeatable, self).__init__(mc_key=id)
+            self.id = id
 
     @named_as('x')
     @nested_repeatables('someitems')
@@ -120,13 +125,17 @@ def test_find_attribute_with_attribute_name_not_found():
     class root(ConfigRoot):
         pass
 
-    with root(prod, ef1_prod, a=0, q=17) as cr:
-        NestedRepeatable()
+    with root(prod, ef1_prod) as cr:
+        cr.a = 0
+        cr.q = 17
+        NestedRepeatable(id=1)
         with X() as ci:
             ci.setattr('a', prod=0)
-            NestedRepeatable(id='a', a=9)
+            with NestedRepeatable(id='a') as nr:
+                nr.a = 9
             with NestedRepeatable(id='b') as ci:
-                NestedRepeatable(id='c', a=7)
+                with NestedRepeatable(id='c') as nr:
+                    nr.a = 7
                 with X() as ci:
                     ci.setattr('b', prod=1)
                     with NestedRepeatable(id='d') as ci:

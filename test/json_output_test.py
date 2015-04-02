@@ -26,23 +26,38 @@ prod2 = ef2_prod.Env('prod')
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
+@named_as('ConfigRoot')
+class RootWithA(ConfigRoot):
+    def __init__(self, selected_env, env_factory, a):
+        super(RootWithA, self).__init__(selected_env=selected_env, env_factory=env_factory)
+        self.a = a
+
 
 @nested_repeatables('someitems')
 class root(ConfigRoot):
-    pass
+    def __init__(self, selected_env, env_factory, a=None):
+        super(root, self).__init__(selected_env=selected_env, env_factory=env_factory)
+        if a is not None:
+            self.a = a
 
 
 @named_as('someitems')
 @nested_repeatables('someitems')
 @repeat()
 class NestedRepeatable(ConfigItem):
-    pass
+    def __init__(self, **kwargs):
+        mc_key = kwargs.get('id') or kwargs.get('name') or None
+        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        for key, val in kwargs.items():
+            setattr(self, key, val)
 
 
 @named_as('someitem')
 class SimpleItem(ConfigItem):
     def __init__(self, **kwargs):
-        super(SimpleItem, self).__init__(**kwargs)
+        super(SimpleItem, self).__init__()
+        for key, val in kwargs.items():
+            setattr(self, key, val)
 
 
 _json_dump_root_expected_json = """{
@@ -175,8 +190,8 @@ _json_dump_cyclic_references_in_conf_items_expected_json = """{
                     "__class__": "NestedRepeatable",
                     "__id__": 0000,
                     "id": "a2",
-                    "referenced_item": "#ref id: 0000",
-                    "someitems": {}
+                    "someitems": {},
+                    "referenced_item": "#ref id: 0000"
                 },
                 "b2": {
                     "__class__": "NestedRepeatable",
@@ -209,14 +224,15 @@ def test_json_dump_cyclic_references_in_conf_items():
             NestedRepeatable(id='a2', referenced_item=ref_obj1)
             with NestedRepeatable(id='b2') as ref_obj2:
                 ref_obj2.setattr('a', prod=1, pp=2)
-        with AnXItem(something=3) as last_item:
+        with AnXItem() as last_item:
+            last_item.something = 3
             last_item.setattr('ref', pp=ref_obj1, prod=ref_obj2)
 
     compare_json(cr, _json_dump_cyclic_references_in_conf_items_expected_json, test_containment=False)
 
 
 __json_dump_cyclic_references_between_conf_items_and_other_objects_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -237,7 +253,7 @@ __json_dump_cyclic_references_between_conf_items_and_other_objects_expected_json
 def test_json_dump_cyclic_references_between_conf_items_and_other_objects():
     cycler = {}
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         with SimpleItem(id='b1', someattr=12, cycl=cycler) as ref_obj2:
             pass
         cycler['cyclic_item_ref'] = ref_obj2
@@ -246,7 +262,7 @@ def test_json_dump_cyclic_references_between_conf_items_and_other_objects():
 
 
 _json_dump_property_method_expected = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -268,14 +284,14 @@ def test_json_dump_property_method():
         def m(self):
             return 1
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_expected)
 
 
 _json_dump_property_attribute_method_override_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -298,7 +314,7 @@ def test_json_dump_property_attribute_method_override():
         def m(self):
             return 1
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         with Nested() as nn:
             nn.setattr("m!", default=7)
 
@@ -338,7 +354,7 @@ def test_json_dump_property_attribute_method_override_other_env():
 
 
 _json_dump_property_method_raises_InvalidUsageException_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -359,14 +375,14 @@ def test_json_dump_property_method_raises_InvalidUsageException():
         def m(self):
             raise InvalidUsageException("No m now")
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_raises_InvalidUsageException_expected_json)
 
 
 _json_dump_property_method_raises_Exception_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -387,7 +403,7 @@ def test_json_dump_property_method_raises_Exception():
         def m(self):
             raise Exception("Something is wrong")
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_raises_Exception_expected_json, expect_num_errors=1)
@@ -402,14 +418,14 @@ def test_json_dump_property_method_raises_ConfigException():
         def m(self):
             raise ConfigException("Something is wrong")
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _e2b_expected_json_output, expect_num_errors=1)
 
 
 _json_dump_property_method_returns_self_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -431,14 +447,14 @@ def test_json_dump_property_method_returns_self():
         def m(self):
             return self
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_returns_self_expected_json)
 
 
 _json_dump_property_method_returns_already_seen_conf_item_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -467,9 +483,11 @@ def test_json_dump_property_method_returns_already_seen_conf_item():
 
     @named_as('referenced')
     class X(ConfigItem):
-        pass
+        def __init__(self, a):
+            super(X, self).__init__()
+            self.a = a
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         X(a=0)
         Nested()
 
@@ -477,7 +495,7 @@ def test_json_dump_property_method_returns_already_seen_conf_item():
 
 
 _json_dump_property_method_calls_json_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -504,7 +522,7 @@ def test_json_dump_property_method_calls_json(capsys):
         def other_conf_item(self):
             self.json()
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         Nested()
 
     compare_json(cr, _json_dump_property_method_calls_json_expected_json, expect_num_errors=1)
@@ -515,7 +533,7 @@ def test_json_dump_property_method_calls_json(capsys):
 
 # TODO: insert information about skipped objects into json output
 _json_dump_non_conf_item_not_json_serializable_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -536,14 +554,14 @@ def test_json_dump_non_conf_item_not_json_serializable():
         def __repr__(self):
             return "<Key object>"
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         SimpleItem(b={Key(): 2})
 
     compare_json(cr, _json_dump_non_conf_item_not_json_serializable_expected_json)
 
 
 _json_dump_non_conf_item_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -568,7 +586,7 @@ def test_json_dump_non_conf_item():
         def __init__(self):
             self.a = 187
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with RootWithA(prod, ef, a=0) as cr:
         SimpleItem(a=SomeClass())
 
     assert replace_ids(cr.json()) == _json_dump_non_conf_item_expected_json
@@ -639,8 +657,8 @@ _uplevel_ref_expected_json_output = """{
             "__id__": 0000,
             "d": 3,
             "id": "n3",
-            "uplevel_ref": "#outside-ref: NestedRepeatable: id: 'n1', name: 'Number 1'",
-            "someitems": {}
+            "someitems": {},
+            "uplevel_ref": "#outside-ref: NestedRepeatable: id: 'n1', name: 'Number 1'"
         }
     }
 }"""
@@ -664,7 +682,7 @@ Exception: Error in dir()
 """
 
 _json_dump_dir_error_expected = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -692,8 +710,9 @@ def test_json_dump_dir_error(capsys):
         def c(self):
             return "will-not-show"
 
-    with ConfigRoot(prod, ef, a=0) as cr:
-        Nested(b=2)
+    with RootWithA(prod, ef, a=0) as cr:
+        with Nested() as nn:
+            nn.b = 2
 
     cr.json()
     _sout, serr = capsys.readouterr()
@@ -1029,12 +1048,18 @@ def test_json_dump_configbuilder():
     @repeat()
     @nested_repeatables('y_children, ys')
     class Y(ConfigItem):
-        pass
+        def __init__(self, name, server_num):
+            super(Y, self).__init__(mc_key=name)
+            self.name = name
+            self.server_num = server_num
 
     @named_as('y_children')
     @repeat()
     class YChild(ConfigItem):
-        pass
+        def __init__(self, name, a):
+            super(YChild, self).__init__(mc_key=name)
+            self.name = name
+            self.a = a
 
     with ItemWithYs(prod, ef) as cr:
         with YBuilder() as yb1:
@@ -1259,7 +1284,8 @@ def test_json_dump_with_builders_containment_check():
     @named_as('inners')
     class InnerItem(ConfigItem):
         def __init__(self, name):
-            super(InnerItem, self).__init__(name=name)
+            super(InnerItem, self).__init__(mc_key=name)
+            self.name = name
 
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
@@ -1272,11 +1298,13 @@ def test_json_dump_with_builders_containment_check():
     @nested_repeatables('inners')
     class MiddleItem(ConfigItem):
         def __init__(self, name):
-            super(MiddleItem, self).__init__(id=name)
+            super(MiddleItem, self).__init__(mc_key=name)
+            self.name = name
 
     class MyMiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MyMiddleBuilder, self).__init__(name=name)
+            super(MyMiddleBuilder, self).__init__()
+            self.name = name
 
         def build(self):
             with MiddleItem(name=self.name):
@@ -1294,7 +1322,8 @@ def test_json_dump_with_builders_containment_check():
     class MyOuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod2, ef2_prod, name='myp') as cr:
+    with ConfigRoot(prod2, ef2_prod) as cr:
+        cr.name = 'myp'
         with MyOuterItem():
             MyOuterBuilder()
 

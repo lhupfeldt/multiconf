@@ -64,7 +64,7 @@ def conf(env_name):
         # Here we are getting the domain base port value set above
         port = dc.base_port + 110
         # And we are using this variable to pass as 'port' parameter
-        with managed_server(name='ms5', host='ms.'+env.name+'.mydomain', port=port+1, suffix=17) as ms:
+        with managed_server(name='ms5', host='ms.'+env.name+'.mydomain', port=port+1) as ms:
             # Same as above - we cannot use default host naming in two environments
             ms.setattr('host', devs='ms.special.otherdomain', devlocal='localhost')
             # This server needs to have custom property, which is set to different values
@@ -75,9 +75,9 @@ def conf(env_name):
         # Add a special managed server, and override default value
         port = dc.base_port + 210
         # Managed server 'ms6' have property 'another_prop', which is set to default value [1, 2]
-        with managed_server(name='ms6', host='ms.'+env.name+'.mydomain', port=port+1, suffix=17, another_prop=[1, 2]) as ms:
+        with managed_server(name='ms6', host='ms.'+env.name+'.mydomain', port=port+1) as ms:
             # But on 'g_dev' group it needs to be set to another value
-            ms.setattr('another_prop', g_dev=[1])
+            ms.setattr('another_prop', default=[1, 2], g_dev=[1])
             # Same as above - we cannot use default host naming in two environments
             ms.setattr('host', devs='ms.special.otherdomain', devlocal='localhost')
 
@@ -85,7 +85,7 @@ def conf(env_name):
         # This means all environment will have the same settings for this
         # server
         # Except 'host' parameter, which is different for two environments
-        with managed_server(name='ms7', host='ms.'+env.name+'.mydomain', port=port+2, suffix=18) as ms:
+        with managed_server(name='ms7', host='ms.'+env.name+'.mydomain', port=port+2) as ms:
             # Same as above - we cannot use default host naming in two environments
             ms.setattr('host', devs='ms.special.otherdomain', devlocal='localhost')
 

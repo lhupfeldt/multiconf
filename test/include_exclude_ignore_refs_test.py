@@ -38,7 +38,9 @@ class item(ConfigItem):
 @required('anattr')
 @repeat()
 class ritem(ConfigItem):
-    pass
+    def __init__(self, name, mc_exclude=None):
+        super(ritem, self).__init__(mc_key=name, mc_exclude=mc_exclude)
+        self.name = name
 
 
 @nested_repeatables('ritems')
@@ -110,7 +112,7 @@ def test_exclude_refs_for_repeatable_nested_configitem():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_exclude=[dev2, prod]) as rit:
+            with ritem(name='a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, pp=2, dev3=117)
 
@@ -131,7 +133,7 @@ def test_exclude_refs_for_repeatable_nested_configitem():
 
             cr.x = rit.item.ritems['a'].anotherattr
 
-            with ritem(id='b', mc_exclude=[dev1, dev3]) as rit:
+            with ritem(name='b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
 
@@ -213,7 +215,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a', mc_exclude=[dev2, prod]) as rit:
+            with ritem(name='a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, pp=2, dev3=117)
 
@@ -234,7 +236,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
 
                 cr.x = rit.item.ritems['a'].anotherattr
 
-            with ritem(id='b', mc_exclude=[dev1, dev3]) as rit:
+            with ritem(name='b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
 
@@ -285,7 +287,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
-            with ritem(id='a') as rit:
+            with ritem(name='a') as rit:
                 rit.mc_select_envs(exclude=[dev2, prod])
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, pp=2, dev3=117)
@@ -309,7 +311,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
 
                 cr.x = rit.item.ritems['a'].anotherattr
 
-            with ritem(id='b') as rit:
+            with ritem(name='b') as rit:
                 rit.mc_select_envs(exclude=[dev1, dev3])
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)

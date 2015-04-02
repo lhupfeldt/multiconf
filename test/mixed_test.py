@@ -16,7 +16,8 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
     @named_as('inners')
     class InnerItem(ConfigItem):
         def __init__(self, name):
-            super(InnerItem, self).__init__(name=name)
+            super(InnerItem, self).__init__(mc_key=name)
+            self.name = name
 
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
@@ -30,12 +31,14 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
     @required('another_attribute')
     class MiddleItem(ConfigItem):
         def __init__(self, name):
-            super(MiddleItem, self).__init__(id=name)
+            super(MiddleItem, self).__init__(mc_key=name)
+            self.id = name
 
     @required('builder_attribute')
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MiddleBuilder, self).__init__(name=name)
+            super(MiddleBuilder, self).__init__()
+            self.name = name
 
         def build(self):
             with MiddleItem(name=self.name) as mi:
@@ -55,7 +58,8 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod, ef, name='myp') as cr:
+    with ConfigRoot(prod, ef) as cr:
+        cr.name = 'myp'
         with OuterItem():
             OuterBuilder()
 
