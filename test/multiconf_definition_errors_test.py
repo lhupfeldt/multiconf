@@ -9,8 +9,8 @@ from pytest import raises
 from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in
 from .utils.utils import py3_local
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
-from ..decorators import nested_repeatables, repeat, required
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
+from ..decorators import nested_repeatables, required
 from ..envs import EnvFactory
 
 # ef1
@@ -184,8 +184,7 @@ class project(ConfigRoot):
     pass
 
 
-@repeat()
-class RepeatableItem(ConfigItem):
+class RepeatableItem(RepeatableConfigItem):
     pass
 
 
@@ -433,7 +432,7 @@ def test_nested_item_overrides_simple_attribute():
 def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod) as cr:
-            RepeatableItem()
+            RepeatableItem(mc_key=None)
 
     assert replace_ids(str(exinfo.value), named_as=False) == _j_expected
 
@@ -443,7 +442,7 @@ def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repe
         with ConfigRoot(prod1, ef1_prod) as cr:
             # cr.RepeatableItems is just an attribute named like an item
             cr.setattr('RepeatableItems', prod="hello")
-            RepeatableItem()
+            RepeatableItem(mc_key=None)
 
     assert replace_ids(str(exinfo.value), named_as=False) == _k1_expected
 

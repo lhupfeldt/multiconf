@@ -3,14 +3,13 @@
 
 import abc
 
-from .. import ConfigItem
-from ..decorators import nested_repeatables, named_as, repeat
+from .. import ConfigItem, RepeatableConfigItem
+from ..decorators import nested_repeatables, named_as
 
 
 @named_as('someitems')
 @nested_repeatables('someitems')
-@repeat()
-class _NamedNestedRepeatable(ConfigItem):
+class _NamedNestedRepeatable(RepeatableConfigItem):
     __metaclass__ = abc.ABCMeta
     
     def __init__(self, name):

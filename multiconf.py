@@ -36,7 +36,6 @@ class _ConfigBase(object):
 
     # Decoration attributes
     _mc_deco_named_as = None
-    _mc_deco_repeatable = False
     _mc_deco_nested_repeatables = []
     _mc_deco_required = []
     _mc_deco_required_if = (None, ())
@@ -76,7 +75,7 @@ class _ConfigBase(object):
         __class__ = object.__getattribute__(self, '__class__')
         if __class__._mc_deco_named_as:
             return __class__._mc_deco_named_as
-        if __class__._mc_deco_repeatable:
+        if isinstance(self, RepeatableConfigItem):
             return __class__.__name__ + 's'
         return __class__.__name__
 
@@ -91,79 +90,6 @@ class _ConfigBase(object):
         # Don't call property methods in repr, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
         json_method = object.__getattribute__(self, 'json')
         return json_method(compact=True, property_methods=False, builders=True)
-
-    def _mc_insert_item(self, repeatable_child_item_key, child_item):
-        # Freeze attributes on previously defined child
-        previous_item = self._mc_previous_child
-        if previous_item and not previous_item.frozen:
-            try:
-                previous_item._mc_freeze()
-            except Exception as ex:
-                print("Exception validating previously defined object -", file=sys.stderr)
-                print("  type:", type(previous_item), file=sys.stderr)
-                print("Stack trace will be misleading!", file=sys.stderr)
-                print("This happens if there is an error (e.g. missing required attributes) in an object that was not", file=sys.stderr)
-                print("directly enclosed in a with statement. Objects that are not arguments to a with statement will", file=sys.stderr)
-                print("not be validated until the next ConfigItem is declared or an outer with statement is exited.", file=sys.stderr)
-
-                if hasattr(ex, '_mc_in_user_code') or _debug_exc:
-                    raise
-                raise ex
-
-        if not child_item._mc_is_excluded:
-            self._mc_previous_child = child_item
-
-        # Insert child_item in attributes
-        child_key = child_item.named_as()
-        attributes, where = self._mc_get_attributes_where()
-
-        if child_item.__class__._mc_deco_repeatable:
-            # Validate that this class specifies item as repeatable
-            if isinstance(self, _ConfigBuilder):
-                ur = UserRepeatable()
-                ur.contained_in = self
-                attributes.setdefault(child_key, UserRepeatable())
-            elif child_key not in self.__class__._mc_deco_nested_repeatables:
-                raise ConfigException(child_item._error_msg_not_repeatable_in_container(child_key, self))
-
-            repeatable = attributes[child_key]
-
-            # Repeatable excluded items are simply excluded, but in order to lookup excluded keys during config setup
-            # we mark the repeatable as _mc_is_excluded
-            if child_item._mc_is_excluded:
-                repeatable._mc_is_excluded = True
-                return
-
-            # Calculate key to use when inserting repeatable item in Repeatable dict
-            obj_key = repeatable_child_item_key if repeatable_child_item_key is not None else id(child_item)
-            item = repeatable.setdefault(obj_key, child_item)
-
-            if item is not child_item and where != Where.IN_MC_INIT:
-                # We are trying to replace an object with the same id/name
-                raise ConfigException("Re-used key " + repr(obj_key) + " in nested objects")
-            child_item._mc_repeatable_item_key = obj_key
-            return
-
-        if child_key in attributes:
-            if where == Where.IN_MC_INIT:
-                # TODO? override value from __init__
-                return
-
-            if isinstance(attributes[child_key], ConfigItem):
-                raise ConfigException("Repeated non repeatable conf item: " + repr(child_key))
-            if isinstance(attributes[child_key], Repeatable):
-                msg = repr(child_key) + ': ' + repr(child_item) + \
-                    ' is defined as non-repeatable, but the containing object has repeatable items with the same name: ' + repr(self)
-                raise ConfigException(msg)
-            raise ConfigException(repr(child_key) + ' is defined both as simple value and a contained item: ' + repr(child_item))
-
-        if not child_item._mc_is_excluded:
-            attributes[child_key] = child_item
-            return
-
-        # In case of a Non-Repeatable excluded item we insert an Excluded object which is always False
-        # This makes it possible to do 'if x.item: ...' instead of hasattr(x, 'item') and allows for a nicer json dump
-        attributes[child_key] = Excluded(child_item)
 
     def json(self, compact=False, property_methods=True, builders=False, skipkeys=True):
         """See json_output.ConfigItemEncoder for parameters"""
@@ -858,21 +784,41 @@ class ConfigRoot(_ConfigBase):
         return self._mc_env_factory
 
 
-class ConfigItem(_ConfigBase):
-    def __init__(self, mc_key=None, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
+class _ConfigItem(_ConfigBase):
+    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
         # Set back reference to containing Item and root item
         __class__ = object.__getattribute__(self, '__class__')
         if not __class__._mc_nested:
             raise ConfigException(__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
 
         contained_in = __class__._mc_nested[-1]
+
+        # Freeze attributes on previously defined child
+        previous_item = contained_in._mc_previous_child
+        if previous_item and not previous_item.frozen:
+            try:
+                previous_item._mc_freeze()
+            except Exception as ex:
+                print("Exception validating previously defined object -", file=sys.stderr)
+                print("  type:", type(previous_item), file=sys.stderr)
+                print("Stack trace will be misleading!", file=sys.stderr)
+                print("This happens if there is an error (e.g. missing required attributes) in an object that was not", file=sys.stderr)
+                print("directly enclosed in a with statement. Objects that are not arguments to a with statement will", file=sys.stderr)
+                print("not be validated until the next ConfigItem is declared or an outer with statement is exited.", file=sys.stderr)
+
+                if hasattr(ex, '_mc_in_user_code') or _debug_exc:
+                    raise
+                raise ex
+
         self._mc_contained_in = contained_in
         root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
-        super(ConfigItem, self).__init__(root_conf=root_conf, env_factory=env_factory,
-                                         mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback)
+        super(_ConfigItem, self).__init__(root_conf=root_conf, env_factory=env_factory,
+                                          mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback)
         self._mc_select_envs(mc_include, mc_exclude)
-        contained_in._mc_insert_item(mc_key, self)
+
+        if not self._mc_is_excluded:
+            contained_in._mc_previous_child = self
 
     def _mc_select_envs(self, include, exclude, file_name=None, line_num=None):
         """Determine if item (and children) is included in specified env"""
@@ -942,7 +888,7 @@ class ConfigItem(_ConfigBase):
         # If we still have unresolved conflicts, it is an error
         if all_ambiguous:
             if not file_name:
-                file_name, line_num = caller_file_line(3)
+                file_name, line_num = find_user_file_line(3)
             # Reorder to generate one error per ambiguous env
             all_ambiguous_by_envs = {}
             root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
@@ -960,7 +906,7 @@ class ConfigItem(_ConfigBase):
         if include is not None and _mc_included_envs_mask & contained_in_included_envs_mask != _mc_included_envs_mask:
             re_included = _mc_included_envs_mask & contained_in_included_envs_mask ^ _mc_included_envs_mask
             if not file_name:
-                file_name, line_num = caller_file_line(3)
+                file_name, line_num = find_user_file_line(3)
             root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
             env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
             for env in env_factory.envs_from_mask(re_included):
@@ -984,7 +930,7 @@ class ConfigItem(_ConfigBase):
             if self._mc_is_excluded:
                 contained_in = object.__getattribute__(self, '_mc_contained_in')
                 contained_in_attributes, _ = contained_in._mc_get_attributes_where()
-                if self.__class__._mc_deco_repeatable:
+                if isinstance(self, RepeatableConfigItem):
                     # Remove repeatable item
                     del contained_in_attributes[self.named_as()][self._mc_repeatable_item_key]
                 else:
@@ -1002,6 +948,72 @@ class ConfigItem(_ConfigBase):
 
     # Python2 compatibility
     __nonzero__ = __bool__
+
+
+class ConfigItem(_ConfigItem):
+    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
+        super(ConfigItem, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, mc_include=mc_include, mc_exclude=mc_exclude)
+        contained_in = self._mc_contained_in
+
+        # Insert self in parent attributes
+        my_key = self.named_as()
+        attributes, where = contained_in._mc_get_attributes_where()
+
+        if my_key in attributes:
+            if where == Where.IN_MC_INIT:
+                # TODO? override value from __init__
+                return
+
+            if isinstance(attributes[my_key], _ConfigItem):
+                raise ConfigException("Repeated non repeatable conf item: " + repr(my_key))
+            if isinstance(attributes[my_key], Repeatable):
+                msg = repr(my_key) + ': ' + repr(self) + \
+                    ' is defined as non-repeatable, but the containing object has repeatable items with the same name: ' + repr(contained_in)
+                raise ConfigException(msg)
+            raise ConfigException(repr(my_key) + ' is defined both as simple value and a contained item: ' + repr(self))
+
+        if not self._mc_is_excluded:
+            attributes[my_key] = self
+            return
+
+        # In case of a Non-Repeatable excluded item we insert an Excluded object which is always False
+        # This makes it possible to do 'if x.item: ...' instead of hasattr(x, 'item') and allows for a nicer json dump
+        attributes[my_key] = Excluded(self)
+
+
+class RepeatableConfigItem(_ConfigItem):
+    def __init__(self, mc_key, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
+        super(RepeatableConfigItem, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, mc_include=mc_include, mc_exclude=mc_exclude)
+        contained_in = self._mc_contained_in
+
+        # Insert self in parent attributes
+        my_key = self.named_as()
+        attributes, where = contained_in._mc_get_attributes_where()
+
+        # Validate that this class specifies item as repeatable
+        if isinstance(contained_in, _ConfigBuilder):
+            ur = UserRepeatable()
+            ur.contained_in = contained_in
+            attributes.setdefault(my_key, UserRepeatable())
+        elif my_key not in contained_in.__class__._mc_deco_nested_repeatables:
+            raise ConfigException(self._error_msg_not_repeatable_in_container(my_key, contained_in))
+
+        repeatable = attributes[my_key]
+
+        # Repeatable excluded items are simply excluded, but in order to lookup excluded keys during config setup
+        # we mark the repeatable as _mc_is_excluded
+        if self._mc_is_excluded:
+            repeatable._mc_is_excluded = True
+            return
+
+        # Calculate key to use when inserting repeatable item in Repeatable dict
+        obj_key = mc_key if mc_key is not None else id(self)
+        item = repeatable.setdefault(obj_key, self)
+
+        if item is not self and where != Where.IN_MC_INIT:
+            # We are trying to replace an object with the same id/name
+            raise ConfigException("Re-used key " + repr(obj_key) + " in nested objects")
+        self._mc_repeatable_item_key = obj_key
 
 
 class _ConfigBuilder(ConfigItem):
@@ -1061,7 +1073,7 @@ class _ConfigBuilder(ConfigItem):
                         item_from_build._mc_attributes[override_key][rep_override_key] = ov
                     continue
 
-                if isinstance(override_value, ConfigItem):
+                if isinstance(override_value, _ConfigItem):
                     ov = copy.copy(override_value) if clone else override_value
                     ov._mc_contained_in = item_from_build
                     item_from_build._mc_attributes[override_key] = ov
@@ -1111,7 +1123,7 @@ class _ConfigBuilder(ConfigItem):
                 parent_attributes[build_key]._mc_is_excluded |= self._mc_is_excluded
                 return
 
-            if isinstance(build_value, ConfigItem):
+            if isinstance(build_value, _ConfigItem):
                 build_value._mc_contained_in = parent
                 set_my_attributes_on_item_from_build(build_value, clone=clone)
 

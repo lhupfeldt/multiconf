@@ -9,8 +9,8 @@ from pytest import raises
 from .utils.utils import config_error, lineno, assert_lines_in
 from .utils.compare_json import compare_json
 
-from .. import ConfigRoot, ConfigItem, ConfigException
-from ..decorators import required, repeat, nested_repeatables
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException
+from ..decorators import required, nested_repeatables
 
 from ..envs import EnvFactory
 
@@ -106,8 +106,7 @@ def test_exclude_for_configitem():
 
 
 @required('anattr, anotherattr')
-@repeat()
-class ritem(ConfigItem):
+class ritem(RepeatableConfigItem):
     def __init__(self, name, mc_exclude=None, mc_include=None):
         super(ritem, self).__init__(mc_key=name, mc_exclude=mc_exclude, mc_include=mc_include)
         self.name = name

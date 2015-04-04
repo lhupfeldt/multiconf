@@ -6,8 +6,8 @@ from pytest import raises
 
 from .utils.utils import config_error, lineno, replace_ids
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigApiException
-from ..decorators import nested_repeatables, named_as, repeat
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigApiException
+from ..decorators import nested_repeatables, named_as
 from ..envs import EnvFactory
 
 
@@ -36,16 +36,14 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
         aaa = 2
 
     @named_as('ys')
-    @repeat()
-    class Ys(ConfigItem):
+    class Ys(RepeatableConfigItem):
         def __init__(self, **kwarg):
             super(Ys, self).__init__(**kwarg)
 
     @named_as('y_children')
-    @repeat()
-    class YChild(ConfigItem):
+    class YChild(RepeatableConfigItem):
         def __init__(self, a):
-            super(YChild, self).__init__()
+            super(YChild, self).__init__(mc_key=None)
             self.a = a
 
     with raises(ConfigApiException) as exinfo:
@@ -79,16 +77,14 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_detache
         aaa = 2
 
     @named_as('ys')
-    @repeat()
-    class Ys(ConfigItem):
+    class Ys(RepeatableConfigItem):
         def __init__(self, **kwarg):
             super(Ys, self).__init__(**kwarg)
 
     @named_as('y_children')
-    @repeat()
-    class YChild(ConfigItem):
+    class YChild(RepeatableConfigItem):
         def __init__(self, a):
-            super(YChild, self).__init__()
+            super(YChild, self).__init__(mc_key=None)
             self.a = a
 
     with raises(ConfigApiException) as exinfo:

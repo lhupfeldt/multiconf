@@ -7,8 +7,8 @@ from collections import OrderedDict
 # pylint: disable=E0611
 from pytest import fail
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder
-from ..decorators import nested_repeatables, named_as, repeat, required
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder
+from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 
 ef1_prod = EnvFactory()
@@ -50,8 +50,7 @@ class root(ConfigRoot):
 
 
 @named_as('children')
-@repeat()
-class rchild(ConfigItem):
+class rchild(RepeatableConfigItem):
     def __init__(self, name, aa=None, bb=None):
         super(rchild, self).__init__(mc_key=name)
         self.name = name
@@ -61,8 +60,7 @@ class rchild(ConfigItem):
 
 @named_as('recursive_items')
 @nested_repeatables('recursive_items')
-@repeat()
-class NestedRepeatable(ConfigItem):
+class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, id, a=None):
         super(NestedRepeatable, self).__init__(mc_key=id)
         self.id = id
@@ -571,8 +569,7 @@ def test_mc_init_simple_items():
 
 
 def test_mc_init_repeatable_items():
-    @repeat()
-    class X(ConfigItem):
+    class X(RepeatableConfigItem):
         def __init__(self, mc_key, a, b=None):
             super(X, self).__init__(mc_key)
             self.a = a

@@ -3,8 +3,8 @@
 
 from __future__ import print_function
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder
-from ..decorators import named_as, repeat, nested_repeatables
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder
+from ..decorators import named_as, nested_repeatables
 
 from ..envs import EnvFactory
 
@@ -27,9 +27,8 @@ class HasRepeatables(ConfigItem):
         self.name = name
 
 
-@repeat()
 @named_as('reps')
-class RepeatableItem(ConfigItem):
+class RepeatableItem(RepeatableConfigItem):
     def __init__(self, name, mc_exclude=None):
         super(RepeatableItem, self).__init__(mc_key=name, mc_exclude=mc_exclude)
         self.name = name

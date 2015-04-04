@@ -11,8 +11,8 @@ from pytest import raises
 from .utils.utils import config_error, replace_ids
 from .utils.utils import py3_local
 
-from .. import ConfigRoot, ConfigItem, ConfigException
-from ..decorators import nested_repeatables, named_as, repeat
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException
+from ..decorators import nested_repeatables, named_as
 from ..envs import EnvFactory
 
 ef1_prod = EnvFactory()
@@ -65,8 +65,7 @@ _find_contained_in_named_as_not_found_expected = """Searching from: <class 'mult
 def test_find_contained_in_named_as_not_found():
     @named_as('someitems')
     @nested_repeatables('someitems')
-    @repeat()
-    class NestedRepeatable(ConfigItem):
+    class NestedRepeatable(RepeatableConfigItem):
         def __init__(self, id):
             super(NestedRepeatable, self).__init__(mc_key=id)
             self.id = id
@@ -110,8 +109,7 @@ _find_attribute_with_attribute_name_not_found = """Searching from: <class 'multi
 def test_find_attribute_with_attribute_name_not_found():
     @named_as('someitems')
     @nested_repeatables('someitems')
-    @repeat()
-    class NestedRepeatable(ConfigItem):
+    class NestedRepeatable(RepeatableConfigItem):
         def __init__(self, id):
             super(NestedRepeatable, self).__init__(mc_key=id)
             self.id = id

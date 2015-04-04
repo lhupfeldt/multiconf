@@ -8,7 +8,7 @@ from .utils.utils import config_error, lineno, assert_lines_in
 from .utils.compare_json import compare_json
 
 from .. import ConfigRoot, ConfigItem, ConfigException
-from ..decorators import required, repeat, nested_repeatables
+from ..decorators import required
 
 from ..envs import EnvFactory
 
@@ -163,6 +163,30 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_reversed(capsys)
         with ConfigRoot(prod, ef):
             errorline = lineno() + 1
             item(mc_include=[g_dev34, g_dev2_34], mc_exclude=[g_dev12_3, pp])
+
+    assert "There were 2 errors when defining item" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
+
+
+def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef):
+            with item() as it:
+                errorline = lineno() + 1
+                it.mc_select_envs(include=[g_dev12_3, pp], exclude=[g_dev34, g_dev2_34])
+
+    assert "There were 2 errors when defining item" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
+
+
+def test_exclude_include_overlapping_groups_excluded_unresolved_reversed_mc_select_envs(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef):
+            with item() as it:
+                errorline = lineno() + 1
+                it.mc_select_envs(include=[g_dev34, g_dev2_34], exclude=[g_dev12_3, pp])
 
     assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()

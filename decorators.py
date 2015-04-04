@@ -60,15 +60,6 @@ def named_as(insert_as_name):
     return deco
 
 
-def repeat():
-    def deco(cls):
-        _not_config_builder(cls, 'repeat')
-        cls._mc_deco_repeatable = True
-        return cls
-
-    return deco
-
-
 def nested_repeatables(attr_names, *more_attr_names):
     def deco(cls):
         _not_config_builder(cls, 'nested_repeatables')

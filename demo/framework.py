@@ -7,8 +7,8 @@ from os.path import join as jp
 here = os.path.dirname(__file__)
 sys.path.append(jp(here, '../..'))
 
-from multiconf import ConfigRoot, ConfigItem, ConfigBuilder
-from multiconf.decorators import nested_repeatables, repeat, required
+from multiconf import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder
+from multiconf.decorators import nested_repeatables, required
 
 
 # Here we define what can be repeated within the configuration item. In this case
@@ -31,8 +31,7 @@ class admin_server(ConfigItem):
 
 
 # Here specify that a managed_server can be repeated within it's parent (domain)
-@repeat()
-class managed_server(ConfigItem):
+class managed_server(RepeatableConfigItem):
     def __init__(self, name, host, port):
         super(managed_server, self).__init__(mc_key=name)
         self.host = host
@@ -61,8 +60,7 @@ class managed_servers(ConfigBuilder):
             managed_server(name=server_name, host=host_name, port=self.base_port+10+server_num)
 
 
-@repeat()
-class datasource(ConfigItem):
+class datasource(RepeatableConfigItem):
     def __init__(self, name, database_type):
         super(datasource, self).__init__(mc_key=name)
         self.name = name

@@ -1,8 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from multiconf import ConfigRoot, ConfigItem
-from multiconf.decorators import nested_repeatables, named_as, repeat
+from multiconf import ConfigRoot, ConfigItem, RepeatableConfigItem
+from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 ef = EnvFactory()
@@ -25,8 +25,7 @@ class root(ConfigRoot):
 
 
 @named_as('children_mc_init')
-@repeat()
-class rchild_mc_init(ConfigItem):
+class rchild_mc_init(RepeatableConfigItem):
     def __init__(self):
         super(rchild_mc_init, self).__init__()
         self.xx = None

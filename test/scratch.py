@@ -12,7 +12,7 @@ here = os.path.dirname(__file__)
 sys.path.append(jp(here, '../..'))
 
 from multiconf import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
-from multiconf.decorators import nested_repeatables, repeat, required_if, named_as, required, unchecked
+from multiconf.decorators import nested_repeatables, required_if, named_as, required, unchecked
 from multiconf.envs import EnvFactory
 from multiconf.test.utils.utils import lineno
 from multiconf.test.utils.check_containment import check_containment
@@ -48,13 +48,8 @@ class X(ConfigItem):
 class AnXItem(ConfigItem):
     pass
 
-with ConfigRoot(prod, ef, a=0) as cr:
-    print("cr id:", id(cr))
-    with X(aa='b2') as ref_x:
-        print("ref_x id:", id(ref_x))
-        ref_x.setattr('a', default=1, pp=2)
-    with AnXItem(something=3) as last_item:
-        print("last_item id:", id(last_item))
-        last_item.setattr('ref', default=ref_x, prod=ref_x)
-
-print(cr)
+with ConfigRoot(prod, ef) as cr:
+    with AnXItem(mc_exclude=[prod]) as it:
+        it.setattr('anattr', pp=1, prod=2)
+        it.setattr('b', pp=1, dev2=0)
+        it.setattr('anotherattr', default=111, dev5=7)

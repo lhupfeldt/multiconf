@@ -8,8 +8,8 @@ from pytest import raises
 
 from .utils.utils import api_error, lineno
 
-from .. import ConfigRoot, ConfigItem, ConfigApiException, ConfigException
-from ..decorators import nested_repeatables, repeat
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigApiException, ConfigException
+from ..decorators import nested_repeatables
 from ..envs import EnvFactory
 
 ef1_prod = EnvFactory()
@@ -33,8 +33,7 @@ class project(ConfigRoot):
     pass
 
 
-@repeat()
-class RepeatableItem(ConfigItem):
+class RepeatableItem(RepeatableConfigItem):
     pass
 
 

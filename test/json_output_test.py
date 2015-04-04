@@ -5,9 +5,9 @@ import sys
 from collections import OrderedDict
 import pytest
 
-from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
 
-from ..decorators import nested_repeatables, named_as, repeat
+from ..decorators import nested_repeatables, named_as
 from ..envs import EnvFactory
 
 from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg, config_error
@@ -43,8 +43,7 @@ class root(ConfigRoot):
 
 @named_as('someitems')
 @nested_repeatables('someitems')
-@repeat()
-class NestedRepeatable(ConfigItem):
+class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, **kwargs):
         mc_key = kwargs.get('id') or kwargs.get('name') or None
         super(NestedRepeatable, self).__init__(mc_key=mc_key)
@@ -1045,17 +1044,15 @@ def test_json_dump_configbuilder():
         aaa = 2
 
     @named_as('ys')
-    @repeat()
     @nested_repeatables('y_children, ys')
-    class Y(ConfigItem):
+    class Y(RepeatableConfigItem):
         def __init__(self, name, server_num):
             super(Y, self).__init__(mc_key=name)
             self.name = name
             self.server_num = server_num
 
     @named_as('y_children')
-    @repeat()
-    class YChild(ConfigItem):
+    class YChild(RepeatableConfigItem):
         def __init__(self, name, a):
             super(YChild, self).__init__(mc_key=name)
             self.name = name
@@ -1280,9 +1277,8 @@ def test_json_dump_property_method_returns_later_confitem_ordereddict_same_level
 
 
 def test_json_dump_with_builders_containment_check():
-    @repeat()
     @named_as('inners')
-    class InnerItem(ConfigItem):
+    class InnerItem(RepeatableConfigItem):
         def __init__(self, name):
             super(InnerItem, self).__init__(mc_key=name)
             self.name = name
@@ -1294,9 +1290,8 @@ def test_json_dump_with_builders_containment_check():
         def build(self):
             InnerItem('innermost')
 
-    @repeat()
     @nested_repeatables('inners')
-    class MiddleItem(ConfigItem):
+    class MiddleItem(RepeatableConfigItem):
         def __init__(self, name):
             super(MiddleItem, self).__init__(mc_key=name)
             self.name = name

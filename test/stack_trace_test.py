@@ -8,8 +8,8 @@ from pytest import raises
 
 from .utils.utils import config_error, lineno, replace_ids
 
-from .. import ConfigRoot, ConfigItem, ConfigException, ConfigBuilder
-from ..decorators import nested_repeatables, repeat
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException, ConfigBuilder
+from ..decorators import nested_repeatables
 from ..envs import EnvFactory
 
 
@@ -33,8 +33,7 @@ class project(ConfigRoot):
     pass
 
 
-@repeat()
-class RepeatableItem(ConfigItem):
+class RepeatableItem(RepeatableConfigItem):
     pass
 
 

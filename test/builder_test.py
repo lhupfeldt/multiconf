@@ -3,8 +3,8 @@
 
 from collections import OrderedDict
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder
-from ..decorators import nested_repeatables, named_as, repeat, required
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder
+from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 
 from .utils.check_containment import check_containment
@@ -19,9 +19,8 @@ prod2 = ef2_prod_pp.Env('prod')
 
 
 @named_as('xses')
-@repeat()
 @nested_repeatables('x_children')
-class Xses(ConfigItem):
+class Xses(RepeatableConfigItem):
     def __init__(self, name, server_num=None):
         super(Xses, self).__init__(mc_key=name)
         self.name = name
@@ -29,10 +28,9 @@ class Xses(ConfigItem):
 
 
 @named_as('x_children')
-@repeat()
-class XChild(ConfigItem):
+class XChild(RepeatableConfigItem):
     def __init__(self, a):
-        super(XChild, self).__init__()
+        super(XChild, self).__init__(mc_key=None)
         self.a = a
 
 
@@ -294,9 +292,8 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
         aaa = 2
 
     @named_as('ys')
-    @repeat()
     @nested_repeatables('y_children, ys')
-    class Y(ConfigItem):
+    class Y(RepeatableConfigItem):
         def __init__(self, mc_key, **kwargs):
             super(Y, self).__init__(mc_key=mc_key)
             for key, val in kwargs.items():
@@ -304,10 +301,9 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
             ys_in_init_contained_in.append(self.contained_in)
 
     @named_as('y_children')
-    @repeat()
-    class YChild(ConfigItem):
+    class YChild(RepeatableConfigItem):
         def __init__(self, a):
-            super(YChild, self).__init__()
+            super(YChild, self).__init__(mc_key=None)
             self.a = a
 
     with ConfigRoot(prod2, ef2_prod_pp) as cr:
@@ -497,9 +493,8 @@ def test_configbuilders_alternating_with_items():
 
 
 def test_configbuilders_alternating_with_items_repeatable_simple():
-    @repeat()
     @named_as('inners')
-    class InnerItem(ConfigItem):
+    class InnerItem(RepeatableConfigItem):
         def __init__(self, name):
             super(InnerItem, self).__init__(mc_key=name)
             self.name = name
@@ -532,9 +527,8 @@ def test_configbuilders_alternating_with_items_repeatable_simple():
 
 
 def test_configbuilders_alternating_with_items_repeatable_many():
-    @repeat()
     @named_as('inners')
-    class InnerItem(ConfigItem):
+    class InnerItem(RepeatableConfigItem):
         def __init__(self, name):
             super(InnerItem, self).__init__(mc_key=name)
             self.name = name
@@ -547,9 +541,8 @@ def test_configbuilders_alternating_with_items_repeatable_many():
             InnerItem('innermost1')
             InnerItem('innermost2')
 
-    @repeat()
     @nested_repeatables('inners')
-    class MiddleItem(ConfigItem):
+    class MiddleItem(RepeatableConfigItem):
         def __init__(self, name):
             super(MiddleItem, self).__init__(mc_key=name)
             self.id = name
@@ -578,9 +571,8 @@ def test_configbuilders_alternating_with_items_repeatable_many():
 
 
 def test_configbuilders_alternating_with_items_repeatable_multilevel():
-    @repeat()
     @named_as('inners')
-    class InnerItem(ConfigItem):
+    class InnerItem(RepeatableConfigItem):
         def __init__(self, name):
             super(InnerItem, self).__init__(mc_key=name)
             self.name = name
@@ -592,9 +584,8 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel():
         def build(self):
             InnerItem('innermost')
 
-    @repeat()
     @nested_repeatables('inners')
-    class MiddleItem(ConfigItem):
+    class MiddleItem(RepeatableConfigItem):
         def __init__(self, name):
             super(MiddleItem, self).__init__(mc_key=name)
             self.id = name

@@ -6,8 +6,8 @@ from pytest import raises
 
 from .utils.utils import config_error, replace_ids, replace_ids_builder
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
-from ..decorators import nested_repeatables, named_as, repeat
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException
+from ..decorators import nested_repeatables, named_as
 from ..envs import EnvFactory
 
 
@@ -24,16 +24,14 @@ prod2 = ef2_prod_pp.Env('prod')
 
 
 @named_as('xses')
-@repeat()
-class Xses(ConfigItem):
+class Xses(RepeatableConfigItem):
     def __init__(self, name=None):
         super(Xses, self).__init__(mc_key=name)
         self.name = name
 
 
 @named_as('x_children')
-@repeat()
-class XChild(ConfigItem):
+class XChild(RepeatableConfigItem):
     def __init__(self, mc_key=None, a=None):
         super(XChild, self).__init__(mc_key=mc_key)
         self.a = a
@@ -105,14 +103,13 @@ _unexpected_repeatable_child_builder_expected_ex = """'r': {
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigRoot'"""
 
 def test_unexpected_repeatable_child_builder():
-    @repeat()
     @named_as('r')
-    class RepeatableChild(ConfigItem):
+    class RepeatableChild(RepeatableConfigItem):
         pass
 
     class UnexpectedRepeatableChildBuilder(ConfigBuilder):
         def build(self):
-            RepeatableChild()
+            RepeatableChild(mc_key=None)
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod):
@@ -127,9 +124,8 @@ _unexpected_repeatable_child_nested_builders_expected_ex = """'arepeatable': {
 } is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ItemWithoutARepeatable'"""
 
 def test_unexpected_repeatable_child_nested_builders():
-    @repeat()
     @named_as('arepeatable')
-    class RepItem(ConfigItem):
+    class RepItem(RepeatableConfigItem):
         def __init__(self):
             super(RepItem, self).__init__(mc_key='a')
             self.name = 'a'

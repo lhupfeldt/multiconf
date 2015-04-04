@@ -1,8 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder
-from ..decorators import nested_repeatables, named_as, repeat, required
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder
+from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 
 
@@ -11,10 +11,9 @@ prod = ef.Env('prod')
 
 
 def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
-    @repeat()
     @required('some_attribute')
     @named_as('inners')
-    class InnerItem(ConfigItem):
+    class InnerItem(RepeatableConfigItem):
         def __init__(self, name):
             super(InnerItem, self).__init__(mc_key=name)
             self.name = name
@@ -26,10 +25,9 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
         def build(self):
             InnerItem('innermost')
 
-    @repeat()
     @nested_repeatables('inners')
     @required('another_attribute')
-    class MiddleItem(ConfigItem):
+    class MiddleItem(RepeatableConfigItem):
         def __init__(self, name):
             super(MiddleItem, self).__init__(mc_key=name)
             self.id = name
