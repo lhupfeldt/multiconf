@@ -9,7 +9,7 @@ import json
 
 from .envs import EnvFactory, Env, EnvException
 from .attribute import new_attribute, Attribute, Where
-from .values import MC_TODO, MC_REQUIRED, _MC_NO_VALUE, _mc_invalid_values
+from .values import McInvalidValue
 from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
@@ -303,7 +303,7 @@ class _ConfigBase(object):
 
         other_env = None
         other_value = attribute._value
-        other_type = type(other_value) if other_value is not None and other_value not in _mc_invalid_values else None
+        other_type = type(other_value) if other_value is not None and not isinstance(other_value, McInvalidValue) else None
 
         orig_attr_where_from = attribute.where_from
         if orig_attr_where_from != Where.NOWHERE:
@@ -319,7 +319,7 @@ class _ConfigBase(object):
             # debug("eg_name:", eg_name)
             try:
                 eg = env_factory.env_or_group_from_name(eg_name)
-                if value not in _mc_invalid_values:
+                if not isinstance(value, McInvalidValue) :
                     attribute.set_env_provided(eg)
 
                     # Validate that attribute has the same type for all envs
@@ -342,7 +342,7 @@ class _ConfigBase(object):
                         # Check against already set value from another scope
                         update_value = True
                         if orig_attr_where_from != Where.NOWHERE:
-                            if attribute._value == MC_REQUIRED or attribute._value is None:
+                            if attribute._value == McInvalidValue.MC_REQUIRED or attribute._value is None:
                                 # debug("Existing value is overridable:", attribute._value)
                                 pass
                             elif eg in orig_attr_eg:
@@ -466,7 +466,7 @@ class _ConfigBase(object):
             attribute._mc_frozen = True
 
         default_group = env_factory._mc_default_group
-        if value in _mc_invalid_values:
+        if isinstance(value, McInvalidValue):
             attribute.set_invalid_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
             if self._mc_check:
                 self.check_attr_fully_defined(attribute, 0)
@@ -516,13 +516,13 @@ class _ConfigBase(object):
             for env in env_factory.envs_from_mask(missing_envs_mask):
                 # Check for required_if, the required_if atributes are optional if required_if_condition value is false or not specified for the env
                 # Required if condition value is only checked for current env
-                # TODO MC_TODO  with required_if tests
+                # TODO McInvalidValue.MC_TODO  with required_if tests
                 if required_if_key and attribute.name in required_if_attribute_names:
                     if selected_env != env or not required_if_condition_attr._value or not required_if_condition_attr.envs_set_mask & env.bit:
                         continue  # pragma: no cover
 
-                # Check for which envs the attribute is MC_TODO
-                value = _MC_NO_VALUE
+                # Check for which envs the attribute is McInvalidValue.MC_TODO
+                value = McInvalidValue.MC_NO_VALUE
                 for inv_value, inv_eg, inv_where_from, inv_file_name, inv_line_num in attribute.invalid_values if hasattr(attribute, 'invalid_values') else ():
                     # debug("Checking MC_TODO, env, inv_value, inv_eg:", env, inv_value, inv_eg)
                     if env.bit & inv_eg.mask:
@@ -532,11 +532,11 @@ class _ConfigBase(object):
                         break
 
                 # debug("attribute._value, value:", attribute._value, value)
-                value_msg = (' ' + repr(value)) if value in _mc_invalid_values and value != _MC_NO_VALUE else ''
+                value_msg = (' ' + repr(value)) if isinstance(value, McInvalidValue) and value != McInvalidValue.MC_NO_VALUE else ''
                 current_env_msg = " current" if env == self.env else ''
                 msg = "Attribute: " + repr(attribute.name) + value_msg + " did not receive a value for" + current_env_msg + " env " + repr(env)
 
-                if value == MC_TODO:
+                if value == McInvalidValue.MC_TODO:
                     if env != self.env and root_conf._mc_allow_todo:
                         self._warning_msg(msg, file_name=file_name, line_num=line_num)
                         continue
@@ -570,7 +570,7 @@ class _ConfigBase(object):
             raise ConfigApiException(ex_msg)
 
         mc_value = attr._mc_value()
-        if mc_value != _MC_NO_VALUE:
+        if mc_value != McInvalidValue.MC_NO_VALUE:
             return mc_value
 
         if self._mc_is_excluded:
@@ -596,7 +596,7 @@ class _ConfigBase(object):
         attributes = object.__getattribute__(self, '_mc_attributes')
         for key, item in attributes.items():
             value = item._mc_value()
-            if value != _MC_NO_VALUE:  # _MC_NO_VALUE should only happen in case of  a conditional attribute
+            if value != McInvalidValue.MC_NO_VALUE:  # MC_NO_VALUE should only happen in case of  a conditional attribute
                 yield key, value
 
     # For backwards compatibility

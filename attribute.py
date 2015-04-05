@@ -3,7 +3,7 @@
 
 from enum import Enum
 
-from .values import _MC_NO_VALUE
+from .values import McInvalidValue
 from .bits import int_to_bin_str
 
 
@@ -23,7 +23,7 @@ class Attribute(object):
     def __init__(self, name, override_method):
         self.name = name
         self.override_method = override_method
-        self._value = _MC_NO_VALUE
+        self._value = McInvalidValue.MC_NO_VALUE
         self.envs_set_mask = 0
         self.value_from_eg_bit = 0
         self.where_from = Where.NOWHERE
@@ -73,7 +73,7 @@ class Attribute(object):
 
     def _mc_value(self):
         """Freeze and return value"""
-        if self._value != _MC_NO_VALUE:
+        if self._value != McInvalidValue.MC_NO_VALUE:
             self._mc_frozen = True
         return self._value
 

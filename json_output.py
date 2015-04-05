@@ -8,7 +8,7 @@ from collections import OrderedDict
 import types
 
 from . import envs
-from .values import _MC_NO_VALUE
+from .values import McInvalidValue
 from .excluded import Excluded
 from .repeatable import Repeatable
 from .config_errors import InvalidUsageException
@@ -165,19 +165,19 @@ class ConfigItemEncoder(object):
                         else:
                             item_dict[key] = False
                             item_dict[key + ' #' + repr(val)] = True
-                    elif val != _MC_NO_VALUE:
+                    elif val != McInvalidValue.MC_NO_VALUE:
                         if isinstance(orig_val, (self.multiconf_base_type, Repeatable)):
                             item_dict[key] = val
                         else:
                             attr_dict[key] = val
 
                     if key in entries:
-                        if val != _MC_NO_VALUE:
+                        if val != McInvalidValue.MC_NO_VALUE:
                             attributes_overriding_property.add(key)
                             attr_dict[key + ' #!overrides @property'] = True
                         else:
                             attr_dict[key + ' #value for current env provided by @property'] = True
-                    elif val == _MC_NO_VALUE:
+                    elif val == McInvalidValue.MC_NO_VALUE:
                         attr_dict[key + ' #no value for current env'] = True
 
                 for key in sorted(attr_dict):

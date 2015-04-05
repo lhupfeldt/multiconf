@@ -31,9 +31,9 @@ default_group = ef.env_or_group_from_name('default')
 
 def test_unset_attribute_repr():
     attr = Attribute(name='some_name1', override_method=False)
-    assert repr(attr) == "Attribute: 'some_name1':not-frozen, value: _MC_NO_VALUE 0b0000000000000000, None:None Where.NOWHERE"
+    assert repr(attr) == "Attribute: 'some_name1':not-frozen, value: MC_NO_VALUE 0b0000000000000000, None:None Where.NOWHERE"
     attr._mc_frozen = True  # pylint: disable=protected-access
-    assert repr(attr) == "Attribute: 'some_name1':frozen, value: _MC_NO_VALUE 0b0000000000000000, None:None Where.NOWHERE"
+    assert repr(attr) == "Attribute: 'some_name1':frozen, value: MC_NO_VALUE 0b0000000000000000, None:None Where.NOWHERE"
 
 
 def test_attribute_default():
@@ -104,7 +104,7 @@ def test_attribute_env_provided():
     attr1.set_env_provided(dev1a)
     assert attr1._mc_value() == _MC_NO_VALUE  # pylint: disable=protected-access
     assert attr1.all_set(dev1a.mask)
-    assert repr(attr1) == "Attribute: 'some_name4a':not-frozen, value: _MC_NO_VALUE 0b0000000000000010, None:None Where.NOWHERE"
+    assert repr(attr1) == "Attribute: 'some_name4a':not-frozen, value: MC_NO_VALUE 0b0000000000000010, None:None Where.NOWHERE"
     assert not attr1.all_set(dev1a.mask | prod.mask)
     assert not attr1.all_set(dev1a.mask | g_prod.mask)
     assert not attr1.all_set(g_dev1.mask)

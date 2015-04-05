@@ -1,10 +1,13 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from enum import Enum
 
-class MCInvalidValue(object):
-    def __init__(self, name):
-        self.name = name
+
+class McInvalidValue(Enum):
+    MC_NO_VALUE = 0
+    MC_REQUIRED = 1
+    MC_TODO = 2
 
     def __bool__(self):
         return False
@@ -18,9 +21,16 @@ class MCInvalidValue(object):
     def json_equivalent(self):
         return self.__repr__()
 
+    def __add__(self, _):
+        return self
 
-MC_REQUIRED = MCInvalidValue("MC_REQUIRED")
-MC_TODO = MCInvalidValue("MC_TODO")
-_MC_NO_VALUE = MCInvalidValue("_MC_NO_VALUE")
+    def __radd__(self, _):
+        return self
 
-_mc_invalid_values = (MC_REQUIRED, MC_TODO, _MC_NO_VALUE)
+    def append(self, _):
+        return self
+
+
+MC_REQUIRED = McInvalidValue.MC_REQUIRED
+MC_TODO = McInvalidValue.MC_TODO
+_MC_NO_VALUE = McInvalidValue.MC_NO_VALUE
