@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 import cProfile
 
@@ -10,8 +10,8 @@ from os.path import join as jp
 here = os.path.dirname(__file__)
 sys.path.append(jp(here, '../..'))
 
-from multiconf import ConfigRoot, ConfigItem
-from multiconf.decorators import nested_repeatables, named_as, repeat, required
+from multiconf import ConfigRoot, ConfigItem, RepeatableConfigItem
+from multiconf.decorators import nested_repeatables, named_as, required
 from multiconf.envs import EnvFactory
 
 ef = EnvFactory()
@@ -34,14 +34,23 @@ class root(ConfigRoot):
 
 
 @named_as('children_init')
-@repeat()
-class rchild_init(ConfigItem):
-    pass
+class rchild_init(RepeatableConfigItem):
+    def __init__(self, name, aa, bb, xx, yy):
+        super(rchild_init, self).__init__(mc_key=name)
+        self.name = name
+        self.aa = aa
+        self.bb = bb
+        self.xx = xx
+        self.yy = yy
 
 
 @named_as('children_mc_init')
-@repeat()
-class rchild_mc_init(ConfigItem):
+class rchild_mc_init(RepeatableConfigItem):
+    def __init__(self, name, xx):
+        super(rchild_mc_init, self).__init__(mc_key=name)
+        self.name = name
+        self.xx = xx
+
     def mc_init(self):
         super(rchild_mc_init, self).mc_init()
         self.override('xx', 17)
@@ -50,16 +59,19 @@ class rchild_mc_init(ConfigItem):
 
 
 @named_as('children_default')
-@repeat()
-class rchild_default(ConfigItem):
-    pass
+class rchild_default(RepeatableConfigItem):
+    def __init__(self, name, aa):
+        super(rchild_default, self).__init__(mc_key=name)
+        self.name = name
+        self.aa = aa
 
 
 @named_as('children_env')
 @nested_repeatables('children_init, children_default, children_env, children_mc_init')
-@repeat()
-class rchild_env(ConfigItem):
-    pass
+class rchild_env(RepeatableConfigItem):
+    def __init__(self, name):
+        super(rchild_env, self).__init__(mc_key=name)
+        self.name = name
 
 
 def perf1():
