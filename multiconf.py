@@ -409,30 +409,35 @@ class _ConfigBase(object):
 
     @staticmethod
     def _mc_check_override_common(item, attribute):
-        def get_bases(cls):
-            yield cls
-            for cls1 in cls.__bases__:
-                for cls2 in get_bases(cls1):
-                    yield cls2
-
-        found = False
-        for cls in get_bases(object.__getattribute__(item, '__class__')):
-            try:
-                real_attr = object.__getattribute__(cls, attribute.name)
-                found = True
-                break
-            except AttributeError:
-                pass
-
-        if found:
+        try:
+            object.__getattribute__(item, attribute.name)
+        except AttributeError:
             if not attribute.override_method:
-                raise ConfigException("The attribute " + repr(attribute.name) + " (not ending in '!') clashes with a property or method")
-            elif not isinstance(real_attr, property):
-                return "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property.", real_attr
-        elif attribute.override_method:
+                return None, None
             return "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists.", None
+        except:
+            # Error in property implemetation
+            pass
 
-        return None, None
+        if attribute.override_method:
+            # This is expensive so do the quick __getattribute__ above first and only do this when necessary, i.e. we found an attribute
+            def get_bases(cls):
+                yield cls
+                for cls1 in cls.__bases__:
+                    for cls2 in get_bases(cls1):
+                        yield cls2
+
+            for cls in get_bases(object.__getattribute__(item, '__class__')):
+                try:
+                    real_attr = object.__getattribute__(cls, attribute.name)
+                    if isinstance(real_attr, property):
+                        return None, None
+
+                    return "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property.", real_attr
+                except AttributeError:
+                    pass
+
+        raise ConfigException("The attribute " + repr(attribute.name) + " (not ending in '!') clashes with a property or method")
 
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
         if not mc_caller_file_name:
