@@ -14,7 +14,7 @@ from .repeatable import Repeatable
 from .config_errors import InvalidUsageException
 
 
-if sys.version_info.major > 2:
+if sys.version_info[0] > 2:
     long = int
 
 
@@ -61,7 +61,7 @@ class ConfigItemEncoder(object):
         self.num_errors = 0
         self.num_invalid_usages = 0
 
-    if sys.version_info.major < 3:
+    if sys.version_info[0] < 3:
         def _class_dict(self, obj):
             if self.compact:
                 return OrderedDict((_class_tuple(obj, ' #id: ' + repr(id(obj))),))
@@ -273,7 +273,7 @@ class ConfigItemEncoder(object):
                 if handled:
                     return obj
 
-            if sys.version_info.major < 3 and isinstance(obj, types.InstanceType):
+            if sys.version_info[0] < 3 and isinstance(obj, types.InstanceType):
                 # print "# Handle instances of old style classes", type(obj)
                 # Note that new style class instances are practically indistinguishable from other types of objects
                 dd = self._class_dict(obj)

@@ -561,7 +561,7 @@ _json_dump_non_conf_item_expected_json = """{
     }
 }"""
 
-@pytest.mark.skipif(sys.version_info.major >= 3, reason="Python3 does not have old style classes.")
+@pytest.mark.skipif(sys.version_info[0] >= 3, reason="Python3 does not have old style classes.")
 def test_json_dump_non_conf_item():
     # This is an old style class
     class SomeClass():
@@ -1052,7 +1052,7 @@ def test_json_dump_configbuilder():
     compare_json(cr.ys['server2'], _json_dump_configbuilder_dont_dump_expected_json_repeatable_item, replace_builders=False, dump_builders=False, test_decode=True)
 
 
-if sys.version_info.major < 3:
+if sys.version_info[0] < 3:
     from .json_output_test_py2 import _NamedNestedRepeatable
 else:
     from .json_output_test_py3 import _NamedNestedRepeatable
