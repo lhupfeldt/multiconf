@@ -344,3 +344,38 @@ def test_attribute_overrides_errors_builder():
     expected_ex = expected_ex_header + \
                   "  y! specifies overriding a property method, but no property named 'y' exists."
     assert str(exinfo.value) == expected_ex
+
+
+def test_static_attribute_overrides_mc_attribute_inherited_builder():
+    """
+    Test static (simple python) attribute overriding an inherited mc attribute
+    """
+
+    class NestedBase1(ConfigItem):
+        def __init__(self):
+            super(NestedBase1, self).__init__()
+            self.m = 1
+
+    class NestedBase(NestedBase1):
+        pass
+
+    xfail("TODO?: Allow static member to override mc attribute")
+    
+    @named_as('n1')
+    class Nested1(NestedBase):
+        m = 2
+
+    with ConfigRoot(prod, ef) as cr:
+        Nested1()        
+    assert cr.n1.m == 2
+
+    with ConfigRoot(prod, ef) as cr:
+        with Nested1() as nn:
+            nn.setattr('m', prod=7)
+    assert cr.n1.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with Nested1() as nn:
+            nn.setattr('m!', pp=7)
+    assert cr.n1.m == 1
+    assert not hasattr(cr.n2, 'm')
