@@ -13,14 +13,14 @@ def py3_local(extra_class_levels=''):
     Arguments:
         extra_class_levels (str): If the function or class is nested inside a class inside the test function
     """
-    if sys.version_info.major < 3:
+    if sys.version_info[0] < 3:
         return ''
 
     frame = sys._getframe(1)
     return frame.f_code.co_name + '.<locals>.' + extra_class_levels
 
 
-py3_tc = 'type' if sys.version_info.major < 3 else 'class'
+py3_tc = 'type' if sys.version_info[0] < 3 else 'class'
 
 
 def lineno():

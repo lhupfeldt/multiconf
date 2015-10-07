@@ -62,7 +62,7 @@ def test_stacktrace_strips_multiconf_code(capsys):
                       "Attribute: 'a' did not receive a value for env Env('pp')",
                       "Attribute: 'a' did not receive a value for current env Env('prod')")
     assert replace_ids(str(exinfo.value)) == _stacktrace_strips_multiconf_code_exp_ex
-    if sys.version_info.major < 3:
+    if sys.version_info[0] < 3:
         # TODO python3: Stripping traceback in 2/3 compatible way seems too hard as it requres
         # incompatible syntax in python 3
         assert len(exinfo.traceback) == 2, "Traceback: " + repr(exinfo.traceback)

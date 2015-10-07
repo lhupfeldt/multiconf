@@ -6,7 +6,7 @@ import sys
 # pylint: disable=unused-import
 from .multiconf import ConfigRoot, ConfigItem, RepeatableConfigItem
 
-if sys.version_info.major < 3:
+if sys.version_info[0] < 3:
     from .multiconf_builder_py2 import ConfigBuilder
 else:
     from .multiconf_builder_py3 import ConfigBuilder

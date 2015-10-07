@@ -37,7 +37,7 @@ class Test(TestCommand):
         sys.exit(errno)
 
 
-if sys.version_info.major < 3:
+if sys.version_info[0] < 3:
     py_version_requires = ['enum34']
 else:
     py_version_requires = []

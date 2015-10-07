@@ -25,7 +25,7 @@ def main(args):
         return pytest.main(['--capture=sys'] + args)
 
     engine = tenjin.Engine()
-    major_version = sys.version_info.major
+    major_version = sys.version_info[0]
     cov_rc_file_name = jp(here, '.coverage_rc_' +  str(major_version))
     with open(cov_rc_file_name, 'w') as cov_rc_file:
         cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(major_version=major_version)))
