@@ -6,4 +6,6 @@ python:
 script: python setup.py test --pytest-args="-v"
 os:
   - linux
-  - osx
+#  - osx
+install:
+  - pip install "pytest>=2.8.2"
