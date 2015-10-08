@@ -55,6 +55,7 @@ if __name__ == "__main__":
         include_package_data=False,
         install_requires=[] + py_version_requires,
         test_suite='test',
+        # pytest version is duplicated in .travis.yml
         tests_require=['pytest>=2.8.2', 'pytest-cov>=2.2.0', 'demjson', 'tenjin'],
         cmdclass={'test': Test},
         url=PROJECT_URL,
