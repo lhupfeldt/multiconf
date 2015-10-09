@@ -20,9 +20,10 @@ class Where(Enum):
 
 
 class Attribute(object):
-    def __init__(self, name, override_method):
+    def __init__(self, name, override_method, set_unknown):
         self.name = name
         self.override_method = override_method
+        self.set_unknown = set_unknown
         self._value = McInvalidValue.MC_NO_VALUE
         self.envs_set_mask = 0
         self.value_from_eg_bit = 0
@@ -88,5 +89,10 @@ class Attribute(object):
 def new_attribute(name):
     if name.endswith('!'):
         name = name[:-1]
-        return Attribute(name, override_method=True), name
-    return Attribute(name, override_method=False), name
+        return Attribute(name, override_method=True, set_unknown=False), name
+
+    if name.endswith('?'):
+        name = name[:-1]
+        return Attribute(name, override_method=False, set_unknown=True), name
+
+    return Attribute(name, override_method=False, set_unknown=False), name

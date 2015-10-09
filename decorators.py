@@ -100,3 +100,15 @@ def unchecked():
         return cls
 
     return deco
+
+
+def strict_setattr():
+    """Marks the class as having strict setattr behaviour, meaning that it is not allowed to set an unknown atributes outside of __init__.
+
+    This is a transitional decorator to allow more seamless upgrading. Strict will become the unly mode in a later version.
+    """
+    def deco(cls):
+        cls._mc_deco_strict_setattr = True
+        return cls
+
+    return deco

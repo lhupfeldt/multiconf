@@ -40,6 +40,7 @@ class _ConfigBase(object):
     _mc_deco_required = []
     _mc_deco_required_if = (None, ())
     _mc_deco_unchecked = None
+    _mc_deco_strict_setattr = False
 
     def __init__(self, root_conf, env_factory, mc_json_filter=None, mc_json_fallback=None):
         self._mc_json_filter = mc_json_filter
@@ -439,6 +440,21 @@ class _ConfigBase(object):
 
         raise ConfigException("The attribute " + repr(attribute.name) + " (not ending in '!') clashes with a property or method")
 
+    def _mc_check_strict_setattr(self, attributes, where, attribute):
+        if where == Where.IN_INIT or not self.__class__._mc_deco_strict_setattr:
+            return
+
+        if attribute.name in attributes:
+            if not attribute.set_unknown:
+                return
+            raise ConfigException("Atempting to use '?' postfix to set attribute " + repr(attribute.name) + "  which exists on item: " + repr(self))
+        else:
+            if attribute.set_unknown:
+                return
+            raise ConfigException(
+                "All attributes must be defined in __init__ or set with the '?' postfix. " +
+                "Atempting to set attribute " + repr(attribute.name) + " which does not exist on item: " + repr(self))
+
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
         if not mc_caller_file_name:
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
@@ -450,6 +466,7 @@ class _ConfigBase(object):
                 raise ConfigException(err_msg % dict(name=name, value=value))
             attributes = object.__getattribute__(self, '_mc_attributes')
             where = object.__getattribute__(self, '_mc_where')
+            self._mc_check_strict_setattr(attributes, where, attribute)
             attribute = attributes.setdefault(name, attribute)
             self._mc_setattr_common(name, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigBaseException as ex:
@@ -1037,13 +1054,14 @@ class _ConfigBuilder(ConfigItem):
         try:
             attribute, name = new_attribute(name)
             attributes, where = self._mc_get_attributes_where()
+            self._mc_check_strict_setattr(attributes, where, attribute)
             attribute = attributes.setdefault(name, attribute)
             self._mc_setattr_common(name, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
             raise ex
-
+        
     def override(self, name, value):
         """Set attributes with environment specific values"""
         mc_caller_file_name, mc_caller_line_num = caller_file_line()
