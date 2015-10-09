@@ -452,7 +452,6 @@ def test_nested_repeatable_item_shadowed_by_default_attribute():
         # RepeatableItems is just an attribute named like an item
         with project(prod1, ef1_prod) as cr:
             cr.RepeatableItems = 1
-            RepeatableItem()
 
     exp_msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
     assert replace_ids(str(exinfo.value), named_as=False) == exp_msg
