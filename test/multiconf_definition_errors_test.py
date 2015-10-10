@@ -447,10 +447,21 @@ def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repe
     assert replace_ids(str(exinfo.value), named_as=False) == _k1_expected
 
 
-def test_nested_repeatable_item_shadowed_by_default_attribute():
+def test_attempt_to_replace_empty_nested_repeatable_by_attribute_assignment():
     with raises(ConfigException) as exinfo:
         # RepeatableItems is just an attribute named like an item
         with project(prod1, ef1_prod) as cr:
+            cr.RepeatableItems = 1
+
+    exp_msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
+    assert replace_ids(str(exinfo.value), named_as=False) == exp_msg
+
+
+def test_attempt_to_replace_non_empty_nested_repeatable_by_attribute_assignment():
+    with raises(ConfigException) as exinfo:
+        # RepeatableItems is just an attribute named like an item
+        with project(prod1, ef1_prod) as cr:
+            RepeatableItem(mc_key='a')
             cr.RepeatableItems = 1
 
     exp_msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
