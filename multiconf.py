@@ -255,14 +255,30 @@ class _ConfigBase(object):
                 raise ConfigException(msg + "Atributes starting with '_mc' are reserved for multiconf internal usage.")
             raise ConfigException(msg + "Atributes starting with '_' can not be set using item." + method_name + ". Use assignment instead.")
 
-    def _mc_setattr_common(self, name, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs):
+    def _mc_setattr_common(self, name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs):
         """Set attributes with environment specific values"""
-        if not isinstance(attribute, Attribute):
-            if name in self._mc_deco_nested_repeatables:
-                raise ConfigException(repr(name) + ' is already defined as a nested-repeatable and may not be replaced with an attribute.')
-            raise ConfigException(repr(name) + ' ' + repr(type(attribute)) + ' is already defined and may not be replaced with an attribute.')
+        existing_attr = attributes.get(name)
 
-        self._mc_check_reserved_name(name, 'setattr')
+        if existing_attr is not None:
+            if attribute.set_unknown and where != Where.IN_INIT and self.__class__._mc_deco_strict_setattr:
+                # we are trying to set an undefined attribute outside of __init__
+                raise ConfigException("Atempting to use '?' postfix to set attribute " + repr(attribute.name) + "  which exists on item: " + repr(self))
+
+            if not isinstance(existing_attr, Attribute):
+                if name in self._mc_deco_nested_repeatables:
+                    raise ConfigException(repr(name) + ' is already defined as a nested-repeatable and may not be replaced with an attribute.')
+                raise ConfigException(repr(name) + ' ' + repr(type(existing_attr)) + ' is already defined and may not be replaced with an attribute.')
+
+            attribute = existing_attr
+        else:
+            if not attribute.set_unknown and where != Where.IN_INIT and self.__class__._mc_deco_strict_setattr:
+                # we are trying to set an already defined attribute using the '?' syntax
+                raise ConfigException(
+                    "All attributes must be defined in __init__ or set with the '?' postfix. " +
+                    "Atempting to set attribute " + repr(attribute.name) + " which does not exist on item: " + repr(self))
+
+            self._mc_check_reserved_name(name, 'setattr')
+            attributes[name] = attribute
 
         # For error messages
         num_errors = 0
@@ -440,21 +456,6 @@ class _ConfigBase(object):
 
         raise ConfigException("The attribute " + repr(attribute.name) + " (not ending in '!') clashes with a property or method")
 
-    def _mc_check_strict_setattr(self, attributes, where, attribute):
-        if where == Where.IN_INIT or not self.__class__._mc_deco_strict_setattr:
-            return
-
-        if attribute.name in attributes:
-            if not attribute.set_unknown:
-                return
-            raise ConfigException("Atempting to use '?' postfix to set attribute " + repr(attribute.name) + "  which exists on item: " + repr(self))
-        else:
-            if attribute.set_unknown:
-                return
-            raise ConfigException(
-                "All attributes must be defined in __init__ or set with the '?' postfix. " +
-                "Atempting to set attribute " + repr(attribute.name) + " which does not exist on item: " + repr(self))
-
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
         if not mc_caller_file_name:
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
@@ -466,9 +467,7 @@ class _ConfigBase(object):
                 raise ConfigException(err_msg % dict(name=name, value=value))
             attributes = object.__getattribute__(self, '_mc_attributes')
             where = object.__getattribute__(self, '_mc_where')
-            self._mc_check_strict_setattr(attributes, where, attribute)
-            attribute = attributes.setdefault(name, attribute)
-            self._mc_setattr_common(name, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
+            self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
@@ -1054,14 +1053,12 @@ class _ConfigBuilder(ConfigItem):
         try:
             attribute, name = new_attribute(name)
             attributes, where = self._mc_get_attributes_where()
-            self._mc_check_strict_setattr(attributes, where, attribute)
-            attribute = attributes.setdefault(name, attribute)
-            self._mc_setattr_common(name, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
+            self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
             raise ex
-        
+
     def override(self, name, value):
         """Set attributes with environment specific values"""
         mc_caller_file_name, mc_caller_line_num = caller_file_line()
