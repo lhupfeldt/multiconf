@@ -15,7 +15,8 @@ exclude_lines =
     long = int
     <?py else: ?>
     _py2 import
-    if sys.version_info[0] < 3
+    if major_version < 3:
+    if major_version < 3 and isinstance\(obj, types.InstanceType\):
     <?py #endif ?>
 
 omit =
