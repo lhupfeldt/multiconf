@@ -7,7 +7,7 @@ import sys, os, copy
 from collections import OrderedDict
 import json
 
-from .envs import EnvFactory, Env, EnvException
+from .envs import EnvFactory, Env, EnvGroup, EnvException
 from .attribute import new_attribute, Attribute, Where
 from .values import McInvalidValue
 from .repeatable import Repeatable, UserRepeatable
@@ -280,13 +280,18 @@ class _ConfigBase(object):
             self._mc_check_reserved_name(name, 'setattr')
             attributes[name] = attribute
 
-        # For error messages
-        num_errors = 0
+        if not kwargs:
+            # Note, we can't supply file/line here as setattr might have been called with bad args for mc_... args
+            # We really need python 3 to handle this properly
+            raise ConfigException("No " + Env.__name__ + " or " + EnvGroup.__name__ + "  names specified.")
 
         if attribute._mc_frozen and where != Where.IN_MC_INIT:
             msg = "The attribute " + repr(name) + " is already fully defined"
-            num_errors = _error_msg(num_errors, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            _ = _error_msg(0, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             raise ConfigException(msg + " on object " + repr(self))
+
+        # For error messages
+        num_errors = 0
 
         root_conf = object.__getattribute__(self, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')

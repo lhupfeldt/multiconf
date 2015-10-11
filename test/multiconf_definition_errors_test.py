@@ -849,3 +849,71 @@ def test_attribute_mc_required_args_partial_set_in_init_unfinished():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod) as cr:
             Requires()
+
+
+def test_setattr_no_envs():
+    expected_ex = """No Env or EnvGroup  names specified."""
+
+    # ConfigRoot
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+            cr.setattr('a')
+
+    assert str(exinfo.value) == expected_ex
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+            cr.setattr('a', 1)
+
+    assert str(exinfo.value) == expected_ex
+
+    # ConfigItem
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            with ConfigItem() as ci:
+                ci.setattr('a')
+
+    assert str(exinfo.value) == expected_ex
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            with ConfigItem() as ci:
+                ci.setattr('a', 1)
+
+    assert str(exinfo.value) == expected_ex
+
+    # RepeatableItem
+    with raises(ConfigException) as exinfo:
+        with project(prod2, ef2_pp_prod):
+            with RepeatableItem(mc_key='a') as ci:
+                ci.setattr('a')
+
+    assert str(exinfo.value) == expected_ex
+
+    with raises(ConfigException) as exinfo:
+        with project(prod2, ef2_pp_prod):
+            with RepeatableItem(mc_key='a') as ci:
+                ci.setattr('a', 1)
+
+    assert str(exinfo.value) == expected_ex
+    
+    # ConfigBuilder
+    class B(ConfigBuilder):
+        def build(self):
+            pass
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            with B() as ci:
+                ci.setattr('a')
+
+    assert str(exinfo.value) == expected_ex
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            with B() as ci:
+                ci.setattr('a', 1)
+
+    assert str(exinfo.value) == expected_ex
+    
+    
