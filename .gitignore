@@ -9,3 +9,5 @@ TAGS
 .coverage_rc_3
 coverage_rc.tenjin.cache
 *.class
+.eggs
+dist
