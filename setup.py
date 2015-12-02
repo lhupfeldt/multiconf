@@ -5,15 +5,13 @@ from setuptools.command.test import test as TestCommand
 
 
 PROJECT_ROOT, _ = os.path.split(__file__)
-SHORT_VERSION = '3.3'
-LONG_VERSION = SHORT_VERSION + '.0'
 PROJECT_NAME = 'multiconf'
 COPYRIGHT = u"Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT"
 PROJECT_AUTHORS = u"Lars Hupfeldt Nielsen"
 PROJECT_EMAILS = 'lhn@hupfeldtit.dk'
 PROJECT_URL = "https://github.com/lhupfeldt/multiconf"
-SHORT_DESCRIPTION = 'Python API providing a set of classes as basis for configuration objects with multiple values per property.'
-LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.md")).read()
+SHORT_DESCRIPTION = 'Python API providing a set of classes as basis for configuration objects with multiple values per attribute.'
+LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.txt")).read()
 
 
 class Test(TestCommand):
@@ -47,7 +45,7 @@ else:
 if __name__ == "__main__":
     setup(
         name=PROJECT_NAME.lower(),
-        version=LONG_VERSION,
+        version_command=('git describe', 'pep440-git'),
         author=PROJECT_AUTHORS,
         author_email=PROJECT_EMAILS,
         packages=['multiconf'],
@@ -55,9 +53,10 @@ if __name__ == "__main__":
         zip_safe=True,
         include_package_data=False,
         install_requires=[] + py_version_requires,
+        setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
         # pytest version is duplicated in .travis.yml
-        tests_require=['pytest>=2.8.2', 'pytest-cov>=2.2.0', 'demjson', 'tenjin'],
+        tests_require=['pytest~=2.8.2', 'pytest-cov~=2.2.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
         cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
@@ -71,6 +70,8 @@ if __name__ == "__main__":
             'Natural Language :: English',
             'Operating System :: OS Independent',
             'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 3.5',
             'Topic :: Software Development :: Testing',
         ],
     )
