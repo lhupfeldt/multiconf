@@ -45,7 +45,7 @@ else:
 if __name__ == "__main__":
     setup(
         name=PROJECT_NAME.lower(),
-        version_command=('git describe --long', 'pep440-git-full'),
+        version_command=('git describe', 'pep440-git'),
         author=PROJECT_AUTHORS,
         author_email=PROJECT_EMAILS,
         packages=['multiconf'],
@@ -53,10 +53,10 @@ if __name__ == "__main__":
         zip_safe=True,
         include_package_data=False,
         install_requires=[] + py_version_requires,
-        setup_requires='setuptools-version-command>=2.2',
+        setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
         # pytest version is duplicated in .travis.yml
-        tests_require=['pytest>=2.8.2', 'pytest-cov>=2.2.0', 'demjson', 'tenjin'],
+        tests_require=['pytest~=2.8.2', 'pytest-cov~=2.2.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
         cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
