@@ -169,6 +169,14 @@ class ConfigItemEncoder(object):
                         if isinstance(orig_val, (self.multiconf_base_type, Repeatable)):
                             item_dict[key] = val
                         else:
+                            try:
+                                iterable = iter(val)
+                            except TypeError:
+                                pass
+                            else:
+                                for index, maybeitem in enumerate(val):
+                                    if isinstance(maybeitem, self.multiconf_base_type):
+                                        val[index] = "#ref, id: " + repr(id(maybeitem))
                             attr_dict[key] = val
 
                     if key in entries:
@@ -287,3 +295,4 @@ class ConfigItemEncoder(object):
 
         finally:
             ConfigItemEncoder.recursion_check.in_default = None
+
