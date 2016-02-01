@@ -1467,7 +1467,8 @@ def test_iterable_attr_forward_item_ref():
             super(Xx, self).__init__()
             self.a = 1
 
-    with ConfigRoot(prod, ef, a=0) as cr:
+    with ConfigRoot(prod, ef) as cr:
+        cr.a = 0
         with ItemWithAnXRef(aa='b2') as x_ref:
             x_ref.setattr('a', default=1, pp=2)
         xx = Xx()
