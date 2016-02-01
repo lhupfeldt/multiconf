@@ -1078,7 +1078,7 @@ if sys.version_info[0] < 3:
     from .json_output_test_py2 import _NamedNestedRepeatable
 else:
     from .json_output_test_py3 import _NamedNestedRepeatable
-    
+
 
 # TODO: Not absolutely correct output (not outside ref)
 _json_dump_property_method_returns_later_confitem_same_level_expected_json = """{
@@ -1430,3 +1430,47 @@ def test_json_dump_multiple_errors():
             SimpleItem(func=ggg)
 
     compare_json(cr, _json_dump_multiple_errors_expected_json, expect_num_errors=2)
+
+
+_iterable_attr_forward_item_ref = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "a": 0,
+    "ItemWithAnXRef": {
+        "__class__": "ItemWithAnXRef",
+        "__id__": 0000,
+        "a": 1,
+        "item_refs": [
+            "#ref, id: 0000"
+        ]
+    },
+    "xx": {
+        "__class__": "Xx",
+        "__id__": 0000,
+        "a": 1
+    }
+}"""
+
+def test_iterable_attr_forward_item_ref():
+    class ItemWithAnXRef(ConfigItem):
+        def __init__(self, aa=1):
+            super(ItemWithAnXRef, self).__init__()
+            self.item_refs = []
+
+    @named_as('xx')
+    class Xx(ConfigItem):
+        def __init__(self):
+            super(Xx, self).__init__()
+            self.a = 1
+
+    with ConfigRoot(prod, ef, a=0) as cr:
+        with ItemWithAnXRef(aa='b2') as x_ref:
+            x_ref.setattr('a', default=1, pp=2)
+        xx = Xx()
+        x_ref.item_refs.append(xx)
+
+    compare_json(cr, _iterable_attr_forward_item_ref)
