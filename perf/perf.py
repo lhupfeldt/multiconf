@@ -2,9 +2,14 @@
 
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
+import sys
 import cProfile
-from guppy import hpy
-hp = hpy()
+
+heap_check = sys.version_info.major < 3 and sys.argv[0] == 'mem'
+if heap_check:
+    from guppy import hpy
+    hp = hpy()
 
 import sys
 import os.path
@@ -112,7 +117,8 @@ def perf1():
                     ci.setattr('qq' + repr(ii), default=7, g_dev=8, tst=9, pp=18, prod=5)
                     ci.setattr('rr' + repr(ii), g_dev=8, tst=9, pp=19, prod=3)
 
-    print(hp.heap())
+    if heap_check:
+        print(hp.heap())
 
     for ii in range(0, 5):
         for jj in range(0, first_range):

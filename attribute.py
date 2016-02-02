@@ -20,6 +20,21 @@ class Where(Enum):
 
 
 class Attribute(object):
+    __slots__ = [
+        'name',
+        'override_method',
+        'set_unknown',
+        '_value',
+        'envs_set_mask',
+        'value_from_eg_bit',
+        'where_from',
+        'file_name',
+        'line_num',
+        '_mc_frozen',
+        '_mc_is_excluded',
+        'invalid_values',
+    ]
+
     def __init__(self, name, override_method):
         self.name = name
         self.override_method = override_method
@@ -30,6 +45,8 @@ class Attribute(object):
         self.file_name = None
         self.line_num = None
         self._mc_frozen = False
+        self._mc_is_excluded = False
+        self.invalid_values = []
 
     def all_set(self, mask):
         return (self.envs_set_mask & mask) == mask
@@ -54,8 +71,6 @@ class Attribute(object):
 
     def set_invalid_value(self, value, eg, where_from, file_name, line_num):
         """An MC_TODO value is provided for env, env may be a group containing current env."""
-        if not hasattr(self, 'invalid_values'):
-            self.invalid_values = []
         self.invalid_values.append((value, eg, where_from, file_name, line_num))
 
     def override(self, other, current_env):
