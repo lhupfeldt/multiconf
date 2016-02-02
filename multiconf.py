@@ -516,7 +516,7 @@ class _ConfigBase(object):
 
     def check_attr_fully_defined(self, attribute, num_errors, file_name=None, line_num=None):
         # In case of override_method, the attribute need not be fully defined, the property method will handle remaining values
-        if not attribute.all_set(self._mc_included_envs_mask) and not hasattr(attribute, 'already_checked') and not attribute.override_method:
+        if not attribute.all_set(self._mc_included_envs_mask) and not attribute.override_method:
             root_conf = object.__getattribute__(self, '_mc_root_conf')
             env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
             selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
@@ -573,7 +573,6 @@ class _ConfigBase(object):
                 num_errors = _error_msg(num_errors, msg, file_name=file_name, line_num=line_num)
 
         if num_errors:
-            attribute.already_checked = True
             raise ConfigException("There were " + repr(num_errors) + " errors when defining attribute " + repr(attribute.name) + " on object: " + repr(self))
 
     def __getattribute__(self, name):
