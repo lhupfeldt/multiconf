@@ -120,9 +120,9 @@ class _ConfigBase(object):
     def _mc_freeze_validation(self):
         # Validate all unfrozen attributes
         _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-        for attr in _mc_attributes.values():
+        for attr_name, attr in _mc_attributes.items():
             if not attr._mc_frozen and isinstance(attr, Attribute):
-                self.check_attr_fully_defined(attr, num_errors=0)
+                self.check_attr_fully_defined(attr_name, attr, num_errors=0)
 
         # Validate @required
         missing = []
@@ -152,7 +152,7 @@ class _ConfigBase(object):
             else:
                 attr = _mc_attributes[req]
                 if isinstance(attr, Attribute):
-                    self.check_attr_fully_defined(attr, 0)
+                    self.check_attr_fully_defined(req, attr, 0)
 
         if missing:
             raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + " == " + repr(required_if_condition) + ", missing attributes: " + repr(missing))
@@ -262,7 +262,7 @@ class _ConfigBase(object):
         if existing_attr is not None:
             if attribute.set_unknown and where != Where.IN_INIT and self.__class__._mc_deco_strict_setattr:
                 # we are trying to set an undefined attribute outside of __init__
-                raise ConfigException("Atempting to use '?' postfix to set attribute " + repr(attribute.name) + "  which exists on item: " + repr(self))
+                raise ConfigException("Atempting to use '?' postfix to set attribute " + repr(name) + "  which exists on item: " + repr(self))
 
             if not isinstance(existing_attr, Attribute):
                 if name in self._mc_deco_nested_repeatables:
@@ -275,7 +275,7 @@ class _ConfigBase(object):
                 # we are trying to set an already defined attribute using the '?' syntax
                 raise ConfigException(
                     "All attributes must be defined in __init__ or set with the '?' postfix. " +
-                    "Atempting to set attribute " + repr(attribute.name) + " which does not exist on item: " + repr(self))
+                    "Atempting to set attribute " + repr(name) + " which does not exist on item: " + repr(self))
 
             self._mc_check_reserved_name(name, 'setattr')
             attributes[name] = attribute
@@ -427,12 +427,12 @@ class _ConfigBase(object):
                 num_errors = repeated_env_error(env, conflicting_egs, num_errors)
 
         if where != Where.IN_INIT and self._mc_check:
-            self.check_attr_fully_defined(attribute, num_errors, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            self.check_attr_fully_defined(name, attribute, num_errors, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     @staticmethod
-    def _mc_check_override_common(item, attribute):
+    def _mc_check_override_common(item, name, attribute):
         try:
-            object.__getattribute__(item, attribute.name)
+            object.__getattribute__(item, name)
         except AttributeError:
             if not attribute.override_method:
                 return None, None
@@ -451,7 +451,7 @@ class _ConfigBase(object):
 
             for cls in get_bases(object.__getattribute__(item, '__class__')):
                 try:
-                    real_attr = object.__getattribute__(cls, attribute.name)
+                    real_attr = object.__getattribute__(cls, name)
                     if isinstance(real_attr, property):
                         return None, None
 
@@ -459,7 +459,7 @@ class _ConfigBase(object):
                 except AttributeError:
                     pass
 
-        raise ConfigException("The attribute " + repr(attribute.name) + " (not ending in '!') clashes with a property or method")
+        raise ConfigException("The attribute " + repr(name) + " (not ending in '!') clashes with a property or method")
 
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
         if not mc_caller_file_name:
@@ -467,7 +467,7 @@ class _ConfigBase(object):
 
         try:
             attribute, name = new_attribute(name)
-            err_msg, value = self._mc_check_override_common(self, attribute)
+            err_msg, value = self._mc_check_override_common(self, name, attribute)
             if err_msg:
                 raise ConfigException(err_msg % dict(name=name, value=value))
             attributes = object.__getattribute__(self, '_mc_attributes')
@@ -495,7 +495,7 @@ class _ConfigBase(object):
         if isinstance(value, McInvalidValue):
             attribute.set_invalid_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
             if self._mc_check:
-                self.check_attr_fully_defined(attribute, 0)
+                self.check_attr_fully_defined(name, attribute, 0)
             return
 
         attribute.set_env_provided(default_group)
@@ -514,7 +514,7 @@ class _ConfigBase(object):
                 raise
             raise ex
 
-    def check_attr_fully_defined(self, attribute, num_errors, file_name=None, line_num=None):
+    def check_attr_fully_defined(self, name, attribute, num_errors, file_name=None, line_num=None):
         # In case of override_method, the attribute need not be fully defined, the property method will handle remaining values
         if not attribute.all_set(self._mc_included_envs_mask) and not attribute.override_method:
             root_conf = object.__getattribute__(self, '_mc_root_conf')
@@ -525,7 +525,7 @@ class _ConfigBase(object):
             required_if_key = self.__class__._mc_deco_required_if[0]
             if required_if_key:
                 # A required_if CONDITION attribute is optional, so it is ok if it is not set or not set for all environments
-                if attribute.name == required_if_key:
+                if name == required_if_key:
                     return
 
                 required_if_attribute_names = self.__class__._mc_deco_required_if[1]
@@ -534,7 +534,7 @@ class _ConfigBase(object):
                     required_if_condition_attr = attributes[required_if_key]
                 except KeyError:
                     # The condition property was not specified, so the conditional attributes are not required
-                    if attribute.name in required_if_attribute_names:
+                    if name in required_if_attribute_names:
                         return
 
             # Check for which envs the attribute is not defined
@@ -543,7 +543,7 @@ class _ConfigBase(object):
                 # Check for required_if, the required_if atributes are optional if required_if_condition value is false or not specified for the env
                 # Required if condition value is only checked for current env
                 # TODO McInvalidValue.MC_TODO  with required_if tests
-                if required_if_key and attribute.name in required_if_attribute_names:
+                if required_if_key and name in required_if_attribute_names:
                     if selected_env != env or not required_if_condition_attr._value or not required_if_condition_attr.envs_set_mask & env.bit:
                         continue  # pragma: no cover
 
@@ -560,7 +560,7 @@ class _ConfigBase(object):
                 # debug("attribute._value, value:", attribute._value, value)
                 value_msg = (' ' + repr(value)) if isinstance(value, McInvalidValue) and value != McInvalidValue.MC_NO_VALUE else ''
                 current_env_msg = " current" if env == self.env else ''
-                msg = "Attribute: " + repr(attribute.name) + value_msg + " did not receive a value for" + current_env_msg + " env " + repr(env)
+                msg = "Attribute: " + repr(name) + value_msg + " did not receive a value for" + current_env_msg + " env " + repr(env)
 
                 if value == McInvalidValue.MC_TODO:
                     if env != self.env and root_conf._mc_allow_todo:
@@ -573,7 +573,7 @@ class _ConfigBase(object):
                 num_errors = _error_msg(num_errors, msg, file_name=file_name, line_num=line_num)
 
         if num_errors:
-            raise ConfigException("There were " + repr(num_errors) + " errors when defining attribute " + repr(attribute.name) + " on object: " + repr(self))
+            raise ConfigException("There were " + repr(num_errors) + " errors when defining attribute " + repr(name) + " on object: " + repr(self))
 
     def __getattribute__(self, name):
         if name[0] == '_':
@@ -1104,8 +1104,8 @@ class _ConfigBuilder(ConfigItem):
                     continue
 
                 # override_value is an Attribute
-                name = override_value.name
-                err_msg, value = self._mc_check_override_common(item_from_build, override_value)
+                name = override_key
+                err_msg, value = self._mc_check_override_common(item_from_build, name, override_value)
                 if err_msg:
                     if name not in override_attribute_errors:
                         override_attribute_errors[name] = (err_msg, value)

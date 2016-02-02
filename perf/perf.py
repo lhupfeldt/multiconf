@@ -6,7 +6,7 @@
 import sys
 import cProfile
 
-heap_check = sys.version_info.major < 3 and sys.argv[0] == 'mem'
+heap_check = sys.version_info.major < 3 and sys.argv[1] == 'mem'
 if heap_check:
     from guppy import hpy
     hp = hpy()

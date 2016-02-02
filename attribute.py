@@ -21,7 +21,6 @@ class Where(Enum):
 
 class Attribute(object):
     __slots__ = [
-        'name',
         'override_method',
         'set_unknown',
         '_value',
@@ -35,8 +34,7 @@ class Attribute(object):
         'invalid_values',
     ]
 
-    def __init__(self, name, override_method, set_unknown):
-        self.name = name
+    def __init__(self, override_method, set_unknown):
         self.override_method = override_method
         self.set_unknown = set_unknown
         self._value = McInvalidValue.MC_NO_VALUE
@@ -97,17 +95,17 @@ class Attribute(object):
         return int_to_bin_str(self.envs_set_mask)
 
     def __repr__(self):
-        return self.__class__.__name__ + ': ' + repr(self.name) + ':' + ('frozen' if self._mc_frozen else 'not-frozen') + \
+        return self.__class__.__name__ + ': ' + ('frozen' if self._mc_frozen else 'not-frozen') + \
             ", value: " + repr(self._value) + " " + self.mask_to_str() + ", " + repr(self.file_name) + ':' + repr(self.line_num) + ' ' + str(self.where_from)
 
 
 def new_attribute(name):
     if name.endswith('!'):
         name = name[:-1]
-        return Attribute(name, override_method=True, set_unknown=False), name
+        return Attribute(override_method=True, set_unknown=False), name
 
     if name.endswith('?'):
         name = name[:-1]
-        return Attribute(name, override_method=False, set_unknown=True), name
+        return Attribute(override_method=False, set_unknown=True), name
 
-    return Attribute(name, override_method=False, set_unknown=False), name
+    return Attribute(override_method=False, set_unknown=False), name
