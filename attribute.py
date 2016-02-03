@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from enum import Enum
+from enum import Enum, IntEnum
 
 from .values import McInvalidValue
 from .bits import int_to_bin_str
@@ -19,14 +19,26 @@ class Where(Enum):
         return self.value < other.value
 
 
+class SetAttrSemantic(IntEnum):
+    # Ordered values!
+    STD = 0
+    OVERRIDE_METHOD = 1 << 0
+    UNKNOWN = 1 << 1
+
+    @staticmethod
+    def bits_to_attr_types(bitmask):
+        for ee in SetAttrSemantic:
+            if ee & bitmask:
+                yield ee
+
+
 class Attribute(object):
     __slots__ = [
-        'override_method',
-        'set_unknown',
         '_value',
         'envs_set_mask',
         'value_from_eg_bit',
         'where_from',
+        'setattr_semantic',
         'file_name',
         'line_num',
         '_mc_frozen',
@@ -34,9 +46,8 @@ class Attribute(object):
         'invalid_values',
     ]
 
-    def __init__(self, override_method, set_unknown):
-        self.override_method = override_method
-        self.set_unknown = set_unknown
+    def __init__(self, setattr_semantic):
+        self.setattr_semantic = setattr_semantic
         self._value = McInvalidValue.MC_NO_VALUE
         self.envs_set_mask = 0
         self.value_from_eg_bit = 0
@@ -46,6 +57,14 @@ class Attribute(object):
         self._mc_frozen = False
         self._mc_is_excluded = False
         self.invalid_values = []
+
+    @property
+    def override_method(self):
+        return SetAttrSemantic.OVERRIDE_METHOD & self.setattr_semantic
+
+    @property
+    def set_unknown(self):
+        return SetAttrSemantic.UNKNOWN & self.setattr_semantic
 
     def all_set(self, mask):
         return (self.envs_set_mask & mask) == mask
@@ -100,12 +119,12 @@ class Attribute(object):
 
 
 def new_attribute(name):
-    if name.endswith('!'):
+    if name[-1] == '!':
         name = name[:-1]
-        return Attribute(override_method=True, set_unknown=False), name
+        return Attribute(SetAttrSemantic.OVERRIDE_METHOD), name
 
-    if name.endswith('?'):
+    if name[-1] == '?':
         name = name[:-1]
-        return Attribute(override_method=False, set_unknown=True), name
+        return Attribute(SetAttrSemantic.UNKNOWN), name
 
-    return Attribute(override_method=False, set_unknown=False), name
+    return Attribute(SetAttrSemantic.STD), name
