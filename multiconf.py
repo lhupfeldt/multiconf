@@ -549,7 +549,7 @@ class _ConfigBase(object):
 
                 # Check for which envs the attribute is McInvalidValue.MC_TODO
                 value = McInvalidValue.MC_NO_VALUE
-                for inv_value, inv_eg, inv_where_from, inv_file_name, inv_line_num in attribute.invalid_values if hasattr(attribute, 'invalid_values') else ():
+                for inv_value, inv_eg, inv_where_from, inv_file_name, inv_line_num in attribute.invalid_values:
                     # debug("Checking MC_TODO, env, inv_value, inv_eg:", env, inv_value, inv_eg)
                     if env.bit & inv_eg.mask:
                         if selected_env == env:
