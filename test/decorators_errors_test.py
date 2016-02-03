@@ -8,7 +8,7 @@ from pytest import raises
 from .utils.utils import config_error, config_warning, lineno
 
 from .. import ConfigRoot, ConfigItem, ConfigException
-from ..decorators import named_as, required, required_if, optional, nested_repeatables, ConfigDefinitionException
+from ..decorators import named_as, required, nested_repeatables, ConfigDefinitionException
 from ..envs import EnvFactory
 
 ef1_prod = EnvFactory()
@@ -54,19 +54,6 @@ def test_required_attributes_missing_for_configitem():
     assert str(exinfo.value) == "No value given for required attributes: ['abcd', 'ijkl']"
 
 
-def test_optional_attribute_accessed_for_env_where_not_specified():
-    @optional('a')
-    class root(ConfigRoot):
-        pass
-
-    with raises(AttributeError) as exinfo:
-        with root(prod2, ef2_prod_dev2ct) as cr:
-            cr.setattr('a', dev2ct=18)
-
-        print(cr.a)
-
-    assert str(exinfo.value) == "Attribute 'a' undefined for env Env('prod')"
-
 def test_decorator_arg_not_a_valid_identifier_in_required_decorator():
     with raises(ConfigDefinitionException) as exinfo:
         @required('a, a-b, b, 99')
@@ -91,24 +78,6 @@ def test_decorator_args_are_keywords_in_required_decorator():
             pass
 
     assert str(exinfo.value) == "['class', '99'] are not valid identifiers"
-
-
-def test_decorator_arg_not_a_valid_identifier_in_required_if_decorator_as_str():
-    with raises(ConfigDefinitionException) as exinfo:
-        @required_if('-a', 'a, a-b, b, 99')
-        class root(ConfigRoot):
-            pass
-
-    assert str(exinfo.value) == "['-a', 'a-b', '99'] are not valid identifiers"
-
-
-def test_decorator_arg_not_a_valid_identifier_in_required_if_decorator_as_args():
-    with raises(ConfigDefinitionException) as exinfo:
-        @required_if('-a', 'a', 'a-b', 'b', '99')
-        class root(ConfigRoot):
-            pass
-
-    assert str(exinfo.value) == "['-a', 'a-b', '99'] are not valid identifiers"
 
 
 def test_required_attributes_inherited_missing():

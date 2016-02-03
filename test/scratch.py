@@ -12,7 +12,7 @@ here = os.path.dirname(__file__)
 sys.path.append(jp(here, '../..'))
 
 from multiconf import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
-from multiconf.decorators import nested_repeatables, required_if, named_as, required, unchecked
+from multiconf.decorators import nested_repeatables, named_as, required, unchecked
 from multiconf.envs import EnvFactory
 from multiconf.test.utils.utils import lineno
 from multiconf.test.utils.check_containment import check_containment

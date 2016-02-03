@@ -38,7 +38,6 @@ class _ConfigBase(object):
     _mc_deco_named_as = None
     _mc_deco_nested_repeatables = []
     _mc_deco_required = []
-    _mc_deco_required_if = (None, ())
     _mc_deco_unchecked = None
     _mc_deco_strict_setattr = False
 
@@ -131,31 +130,6 @@ class _ConfigBase(object):
                 missing.append(req)
         if missing:
             raise ConfigException("No value given for required attributes: " + repr(missing))
-
-        # Validate @required_if
-        required_if_key = self.__class__._mc_deco_required_if[0]
-        if not required_if_key:
-            return
-
-        try:
-            required_if_condition_attr = _mc_attributes[required_if_key]
-            required_if_condition = required_if_condition_attr._mc_value()
-            if not required_if_condition:
-                return
-        except KeyError:
-            return
-
-        missing = []
-        for req in self.__class__._mc_deco_required_if[1]:
-            if req not in _mc_attributes:
-                missing.append(req)
-            else:
-                attr = _mc_attributes[req]
-                if isinstance(attr, Attribute):
-                    self.check_attr_fully_defined(req, attr, 0)
-
-        if missing:
-            raise ConfigException("Missing required_if attributes. Condition attribute: " + repr(required_if_key) + " == " + repr(required_if_condition) + ", missing attributes: " + repr(missing))
 
     def _mc_freeze(self):
         """
@@ -521,32 +495,9 @@ class _ConfigBase(object):
             env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
             selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
 
-            # Check whether we need to check for conditionally required attributes
-            required_if_key = self.__class__._mc_deco_required_if[0]
-            if required_if_key:
-                # A required_if CONDITION attribute is optional, so it is ok if it is not set or not set for all environments
-                if name == required_if_key:
-                    return
-
-                required_if_attribute_names = self.__class__._mc_deco_required_if[1]
-                try:
-                    attributes = object.__getattribute__(self, '_mc_attributes')
-                    required_if_condition_attr = attributes[required_if_key]
-                except KeyError:
-                    # The condition property was not specified, so the conditional attributes are not required
-                    if name in required_if_attribute_names:
-                        return
-
             # Check for which envs the attribute is not defined
             missing_envs_mask = self._mc_included_envs_mask & ~attribute.envs_set_mask
             for env in env_factory.envs_from_mask(missing_envs_mask):
-                # Check for required_if, the required_if atributes are optional if required_if_condition value is false or not specified for the env
-                # Required if condition value is only checked for current env
-                # TODO McInvalidValue.MC_TODO  with required_if tests
-                if required_if_key and name in required_if_attribute_names:
-                    if selected_env != env or not required_if_condition_attr._value or not required_if_condition_attr.envs_set_mask & env.bit:
-                        continue  # pragma: no cover
-
                 # Check for which envs the attribute is McInvalidValue.MC_TODO
                 value = McInvalidValue.MC_NO_VALUE
                 for inv_value, inv_eg, inv_where_from, inv_file_name, inv_line_num in attribute.invalid_values:

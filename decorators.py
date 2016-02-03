@@ -79,21 +79,6 @@ def required(attr_names, *more_attr_names):
     return deco
 
 
-def required_if(attr_name, attr_names, *more_attr_names):
-    def deco(cls):
-        attributes = [attr.strip() for attr in attr_names.split(',')] + list(more_attr_names)
-        _check_valid_identifiers([attr_name] + attributes)
-        cls._mc_deco_required_if = attr_name, attributes
-        return cls
-
-    return deco
-
-
-def optional(attr_name):
-    # TODO: Implement this cleanly so that a reasonable error message will be given
-    return required_if(attr_name, attr_name)
-
-
 def unchecked():
     def deco(cls):
         cls._mc_deco_unchecked = cls

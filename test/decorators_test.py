@@ -4,7 +4,7 @@
 from .utils.utils import config_error, replace_ids
 
 from .. import ConfigRoot, ConfigItem
-from ..decorators import required, required_if, named_as, optional, nested_repeatables
+from ..decorators import required, named_as, nested_repeatables
 
 from ..envs import EnvFactory
 
@@ -107,20 +107,6 @@ def test_required_attributes_accept_override_of_single_property():
     assert cr.item.b == 2
 
 
-def test_optional_attribute():
-    @optional('a')
-    class root(ConfigRoot):
-        pass
-
-    with root(prod2, ef2_prod_dev2ct) as cr:
-        cr.setattr('a', dev2ct=18)
-    assert "no-exception" == "no-exception"
-
-    with root(prod2, ef2_prod_dev2ct) as cr:
-        cr.setattr('a', prod=17)
-    assert cr.a == 17
-
-
 def test_named_as():
     @named_as('project')
     class root(ConfigRoot):
@@ -171,29 +157,3 @@ def test_nested_repeatables_attributes_for_configroot_as_args():
         cr
     assert cr.ritm1 == {}
     assert cr.ritm2 == {}
-
-
-def test_required_if_attributes_for_configroot_as_str():
-    # TODO improve
-    @required_if('condattr', 'anattr, anotherattr')
-    class root(ConfigRoot):
-        pass
-
-    with root(prod1, ef1_prod) as cr:
-        cr.setattr('anattr', prod=1)
-        cr.setattr('anotherattr', prod=2)
-    assert cr.anattr == 1
-    assert cr.anotherattr == 2
-
-
-def test_required_if_attributes_for_configroot_as_args():
-    # TODO improve
-    @required_if('condatt', 'anattr', 'anotherattr')
-    class root(ConfigRoot):
-        pass
-
-    with root(prod1, ef1_prod) as cr:
-        cr.setattr('anattr', prod=1)
-        cr.setattr('anotherattr', prod=2)
-    assert cr.anattr == 1
-    assert cr.anotherattr == 2
