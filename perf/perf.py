@@ -6,7 +6,7 @@
 import sys
 import cProfile
 
-heap_check = sys.version_info.major < 3 and sys.argv[1] == 'mem'
+heap_check = sys.version_info.major < 3 and len(sys.argv) > 1 and sys.argv[1] == 'mem'
 if heap_check:
     from guppy import hpy
     hp = hpy()
@@ -14,7 +14,7 @@ if heap_check:
 import os.path
 from os.path import join as jp
 here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
+sys.path.insert(0, jp(here, '../..'))
 
 from multiconf import ConfigRoot, ConfigItem, RepeatableConfigItem
 from multiconf.decorators import nested_repeatables, named_as, required
