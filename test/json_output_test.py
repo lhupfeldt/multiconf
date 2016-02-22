@@ -5,7 +5,7 @@ import sys
 from collections import OrderedDict
 import pytest
 
-from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder
+from .. import ConfigRoot, ConfigItem, InvalidUsageException, ConfigException, ConfigBuilder, MC_REQUIRED
 
 from ..decorators import nested_repeatables, named_as, repeat
 from ..envs import EnvFactory
@@ -175,7 +175,7 @@ _json_dump_cyclic_references_in_conf_items_expected_json = """{
                     "__class__": "NestedRepeatable",
                     "__id__": 0000,
                     "id": "a2",
-                    "referenced_item": "#ref id: 0000",
+                    "referenced_item": "#ref, id: 0000",
                     "someitems": {}
                 },
                 "b2": {
@@ -192,7 +192,7 @@ _json_dump_cyclic_references_in_conf_items_expected_json = """{
         "__class__": "AnXItem",
         "__id__": 0000,
         "something": 3,
-        "ref": "#ref id: 0000"
+        "ref": "#ref, id: 0000"
     }
 }"""
 
@@ -227,7 +227,7 @@ __json_dump_cyclic_references_between_conf_items_and_other_objects_expected_json
         "__class__": "SimpleItem",
         "__id__": 0000,
         "cycl": {
-            "cyclic_item_ref": "#ref id: 0000"
+            "cyclic_item_ref": "#ref, id: 0000"
         },
         "id": "b1",
         "someattr": 12
@@ -453,7 +453,7 @@ _json_dump_property_method_returns_already_seen_conf_item_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "other_conf_item": "#ref id: 0000",
+        "other_conf_item": "#ref, id: 0000",
         "other_conf_item #calculated": true
     }
 }"""
@@ -757,8 +757,8 @@ _json_dump_configbuilder_expected_json_full = """{
                     "server_num": 4,
                     "start": 3,
                     "y_children": {
-                        "Hanna": "#ref id: 0000",
-                        "Herbert": "#ref id: 0000"
+                        "Hanna": "#ref, id: 0000",
+                        "Herbert": "#ref, id: 0000"
                     },
                     "ys": {}
                 }
@@ -773,11 +773,11 @@ _json_dump_configbuilder_expected_json_full = """{
             "server_num": 2,
             "start": 1,
             "y_children": {
-                "Hugo": "#ref id: 0000"
+                "Hugo": "#ref, id: 0000"
             },
             "ys": {
-                "server3": "#ref id: 0000",
-                "server4": "#ref id: 0000"
+                "server3": "#ref, id: 0000",
+                "server4": "#ref, id: 0000"
             },
             "YBuilder.builder.0000": {
                 "__class__": "YBuilder",
@@ -785,8 +785,8 @@ _json_dump_configbuilder_expected_json_full = """{
                 "c": 28,
                 "start": 3,
                 "y_children": {
-                    "Hanna": "#ref id: 0000",
-                    "Herbert": "#ref id: 0000"
+                    "Hanna": "#ref, id: 0000",
+                    "Herbert": "#ref, id: 0000"
                 }
             }
         }
@@ -797,12 +797,12 @@ _json_dump_configbuilder_expected_json_full = """{
         "b": 27,
         "start": 1,
         "y_children": {
-            "Hugo": "#ref id: 0000"
+            "Hugo": "#ref, id: 0000"
         },
-        "YBuilder.builder.0000": "#ref id: 0000",
+        "YBuilder.builder.0000": "#ref, id: 0000",
         "ys": {
-            "server3": "#ref id: 0000",
-            "server4": "#ref id: 0000"
+            "server3": "#ref, id: 0000",
+            "server4": "#ref, id: 0000"
         }
     },
     "aaa": 2,
@@ -856,8 +856,8 @@ _json_dump_configbuilder_expected_json_repeatable_item = """{
             "server_num": 4,
             "start": 3,
             "y_children": {
-                "Hanna": "#ref id: 0000",
-                "Herbert": "#ref id: 0000"
+                "Hanna": "#ref, id: 0000",
+                "Herbert": "#ref, id: 0000"
             },
             "ys": {}
         }
@@ -868,8 +868,8 @@ _json_dump_configbuilder_expected_json_repeatable_item = """{
         "c": 28,
         "start": 3,
         "y_children": {
-            "Hanna": "#ref id: 0000",
-            "Herbert": "#ref id: 0000"
+            "Hanna": "#ref, id: 0000",
+            "Herbert": "#ref, id: 0000"
         }
     }
 }"""
@@ -929,8 +929,8 @@ _json_dump_configbuilder_dont_dump_expected_json_full = """{
                     "server_num": 4,
                     "start": 3,
                     "y_children": {
-                        "Hanna": "#ref id: 0000",
-                        "Herbert": "#ref id: 0000"
+                        "Hanna": "#ref, id: 0000",
+                        "Herbert": "#ref, id: 0000"
                     },
                     "ys": {}
                 }
@@ -944,11 +944,11 @@ _json_dump_configbuilder_dont_dump_expected_json_full = """{
             "server_num": 2,
             "start": 1,
             "y_children": {
-                "Hugo": "#ref id: 0000"
+                "Hugo": "#ref, id: 0000"
             },
             "ys": {
-                "server3": "#ref id: 0000",
-                "server4": "#ref id: 0000"
+                "server3": "#ref, id: 0000",
+                "server4": "#ref, id: 0000"
             }
         }
     },
@@ -1003,8 +1003,8 @@ _json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
             "server_num": 4,
             "start": 3,
             "y_children": {
-                "Hanna": "#ref id: 0000",
-                "Herbert": "#ref id: 0000"
+                "Hanna": "#ref, id: 0000",
+                "Herbert": "#ref, id: 0000"
             },
             "ys": {}
         }
@@ -1142,7 +1142,7 @@ _json_dump_property_method_returns_later_confitem_list_same_level_expected_json 
             "x": 3,
             "someitems": {},
             "m": [
-                "#ref id: 0000",
+                "#ref, id: 0000",
                 "#ref self, id: 0000"
             ],
             "m #calculated": true
@@ -1218,7 +1218,7 @@ _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json 
             "x": 3,
             "someitems": {},
             "m": {
-                "a": "#ref id: 0000",
+                "a": "#ref, id: 0000",
                 "b": "#ref self, id: 0000"
             },
             "m #calculated": true
@@ -1450,3 +1450,91 @@ def test_iterable_attr_forward_item_ref():
         x_ref.item_refs.append(xx)
 
     compare_json(cr, _iterable_attr_forward_item_ref)
+
+
+_iterable_tuple_attr_forward_item_ref = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "a": 0,
+    "ItemWithAnXRef": {
+        "__class__": "ItemWithAnXRef",
+        "__id__": 0000,
+        "a": 1,
+        "item_refs": [
+            "#ref, id: 0000"
+        ],
+        "xx": {
+            "__class__": "Xx",
+            "__id__": 0000,
+            "a": 1
+        }
+    }
+}"""
+
+def test_iterable_tuple_attr_forward_item_ref():
+    class ItemWithAnXRef(ConfigItem):
+        def __init__(self, aa=1):
+            super(ItemWithAnXRef, self).__init__()
+            self.item_refs = MC_REQUIRED
+
+    @named_as('xx')
+    class Xx(ConfigItem):
+        def __init__(self):
+            super(Xx, self).__init__()
+            self.a = 1
+
+    with ConfigRoot(prod, ef, a=0) as cr:
+        with ItemWithAnXRef(aa='b2') as x_ref:
+            x_ref.setattr('a', default=1, pp=2)
+            xx = Xx()
+            x_ref.item_refs = (xx,)
+
+    compare_json(cr, _iterable_tuple_attr_forward_item_ref)
+
+
+_dict_attr_forward_item_ref = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "a": 0,
+    "ItemWithAnXRef": {
+        "__class__": "ItemWithAnXRef",
+        "__id__": 0000,
+        "a": 1,
+        "item_refs": {
+            "xr": "#ref, id: 0000"
+        },
+        "xx": {
+            "__class__": "Xx",
+            "__id__": 0000,
+            "a": 1
+        }
+    }
+}"""
+
+def test_dict_attr_forward_item_ref():
+    class ItemWithAnXRef(ConfigItem):
+        def __init__(self, aa=1):
+            super(ItemWithAnXRef, self).__init__()
+            self.item_refs = {}
+
+    @named_as('xx')
+    class Xx(ConfigItem):
+        def __init__(self):
+            super(Xx, self).__init__()
+            self.a = 1
+
+    with ConfigRoot(prod, ef, a=0) as cr:
+        with ItemWithAnXRef(aa='b2') as x_ref:
+            x_ref.setattr('a', default=1, pp=2)
+            xx = Xx()
+            x_ref.item_refs['xr'] = xx
+
+    compare_json(cr, _dict_attr_forward_item_ref)
