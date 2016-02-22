@@ -41,9 +41,7 @@ class _ConfigBase(object):
     _mc_deco_unchecked = None
     _mc_deco_strict_setattr = False
 
-    def __init__(self, root_conf, env_factory, mc_json_filter=None, mc_json_fallback=None):
-        self._mc_json_filter = mc_json_filter
-        self._mc_json_fallback = mc_json_fallback
+    def __init__(self, root_conf, env_factory):
         self._mc_root_conf = root_conf
         _mc_attributes = Repeatable()
         self._mc_attributes = _mc_attributes
@@ -93,8 +91,8 @@ class _ConfigBase(object):
 
     def json(self, compact=False, property_methods=True, builders=False, skipkeys=True):
         """See json_output.ConfigItemEncoder for parameters"""
-        filter_callable = self._mc_find_json_filter_callable()
-        fallback_callable = self._mc_find_json_fallback_callable()
+        filter_callable = self._mc_root_conf._mc_json_filter
+        fallback_callable = self._mc_root_conf._mc_json_fallback
         encoder = ConfigItemEncoder(filter_callable=filter_callable, fallback_callable=fallback_callable,
                                     compact=compact, property_methods=property_methods, builders=builders, warn_nesting=_warn_json_nesting,
                                     multiconf_base_type=_ConfigBase, multiconf_root_type=ConfigRoot, multiconf_builder_type=_ConfigBuilder)
@@ -609,22 +607,6 @@ class _ConfigBase(object):
         root_conf = object.__getattribute__(self, '_mc_root_conf')
         return object.__getattribute__(root_conf, 'env_factory')
 
-    def _mc_find_json_filter_callable(self):
-        contained_in = self
-        while contained_in:
-            if contained_in._mc_json_filter:
-                return contained_in._mc_json_filter
-            contained_in = contained_in._mc_contained_in
-        return None
-
-    def _mc_find_json_fallback_callable(self):
-        contained_in = self
-        while contained_in:
-            if contained_in._mc_json_fallback:
-                return contained_in._mc_json_fallback
-            contained_in = contained_in._mc_contained_in
-        return None
-
     def find_contained_in_or_none(self, named_as):
         """Find first parent container named as 'named_as', by searching backwards towards root_conf, starting with parent container"""
         contained_in = self.contained_in
@@ -737,7 +719,9 @@ class ConfigRoot(_ConfigBase):
         self._mc_allow_current_env_todo = mc_allow_current_env_todo
         env_factory = object.__getattribute__(self, '_mc_env_factory')
         env_factory._mc_create_default_group()
-        super(ConfigRoot, self).__init__(root_conf=self, env_factory=env_factory, mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback)
+        super(ConfigRoot, self).__init__(root_conf=self, env_factory=env_factory)
+        self._mc_json_filter = mc_json_filter
+        self._mc_json_fallback = mc_json_fallback
         self._mc_contained_in = None
         self._mc_under_proxy_build = False
         self._mc_num_warnings = 0
@@ -761,7 +745,7 @@ class ConfigRoot(_ConfigBase):
 
 
 class _ConfigItem(_ConfigBase):
-    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
+    def __init__(self, mc_include=None, mc_exclude=None):
         # Set back reference to containing Item and root item
         __class__ = object.__getattribute__(self, '__class__')
         if not __class__._mc_nested:
@@ -789,8 +773,7 @@ class _ConfigItem(_ConfigBase):
         self._mc_contained_in = contained_in
         root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
-        super(_ConfigItem, self).__init__(root_conf=root_conf, env_factory=env_factory,
-                                          mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback)
+        super(_ConfigItem, self).__init__(root_conf=root_conf, env_factory=env_factory)
         self._mc_select_envs(mc_include, mc_exclude)
 
         if not self._mc_is_excluded:
@@ -927,8 +910,8 @@ class _ConfigItem(_ConfigBase):
 
 
 class ConfigItem(_ConfigItem):
-    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
-        super(ConfigItem, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, mc_include=mc_include, mc_exclude=mc_exclude)
+    def __init__(self, mc_include=None, mc_exclude=None):
+        super(ConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         contained_in = self._mc_contained_in
 
         # Insert self in parent attributes
@@ -958,8 +941,8 @@ class ConfigItem(_ConfigItem):
 
 
 class RepeatableConfigItem(_ConfigItem):
-    def __init__(self, mc_key, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
-        super(RepeatableConfigItem, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback, mc_include=mc_include, mc_exclude=mc_exclude)
+    def __init__(self, mc_key, mc_include=None, mc_exclude=None):
+        super(RepeatableConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         contained_in = self._mc_contained_in
 
         # Insert self in parent attributes
@@ -995,9 +978,8 @@ class RepeatableConfigItem(_ConfigItem):
 class _ConfigBuilder(ConfigItem):
     _num = 0
 
-    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_include=None, mc_exclude=None):
-        super(_ConfigBuilder, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
-                                            mc_include=mc_include, mc_exclude=mc_exclude)
+    def __init__(self, mc_include=None, mc_exclude=None):
+        super(_ConfigBuilder, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         self._mc_build_attributes = Repeatable()
         _ConfigBuilder._num += 1
 
