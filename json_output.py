@@ -75,7 +75,7 @@ class ConfigItemEncoder(object):
         return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', id(obj))))
 
     def _already_dumped_str(self, objval):
-        return "#ref id: " + repr(id(objval))
+        return "#ref, id: " + repr(id(objval))
 
     def _check_nesting(self, obj, child_obj):
         # Returns child_obj or reference info string
@@ -168,12 +168,19 @@ class ConfigItemEncoder(object):
                     elif val != McInvalidValue.MC_NO_VALUE:
                         if isinstance(orig_val, (self.multiconf_base_type, Repeatable)):
                             item_dict[key] = val
+                        elif isinstance(val, dict):
+                            for inner_key, maybeitem in val.items():
+                                if isinstance(maybeitem, self.multiconf_base_type):
+                                    val[inner_key] = "#ref, id: " + repr(id(maybeitem))
+                            attr_dict[key] = val
                         else:
                             try:
                                 iterable = iter(val)
                             except TypeError:
                                 pass
                             else:
+                                if isinstance(val, tuple):
+                                    val = list(val)
                                 for index, maybeitem in enumerate(val):
                                     if isinstance(maybeitem, self.multiconf_base_type):
                                         val[index] = "#ref, id: " + repr(id(maybeitem))
