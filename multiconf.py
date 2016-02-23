@@ -68,14 +68,10 @@ class _ConfigBase(object):
         _mc_deco_unchecked = object.__getattribute__(self, '_mc_deco_unchecked')
         self._mc_check = _mc_deco_unchecked != __class__ and _mc_deco_unchecked not in __class__.__bases__
 
-    def named_as(self):
+    @classmethod
+    def named_as(cls):
         """Return the named_as property set by the @named_as decorator"""
-        __class__ = object.__getattribute__(self, '__class__')
-        if __class__._mc_deco_named_as:
-            return __class__._mc_deco_named_as
-        if isinstance(self, RepeatableConfigItem):
-            return __class__.__name__ + 's'
-        return __class__.__name__
+        return cls._mc_deco_named_as or cls.__name__
 
     def _mc_get_attributes_where(self):
         where = object.__getattribute__(self, '_mc_where')
@@ -974,6 +970,11 @@ class RepeatableConfigItem(_ConfigItem):
             raise ConfigException("Re-used key " + repr(obj_key) + " in nested objects")
         self._mc_repeatable_item_key = obj_key
 
+    @classmethod
+    def named_as(cls):
+        """Return the named_as property set by the @named_as decorator"""
+        return cls._mc_deco_named_as or (cls.__name__ + 's')
+
 
 class _ConfigBuilder(ConfigItem):
     _num = 0
@@ -1107,5 +1108,6 @@ class _ConfigBuilder(ConfigItem):
     def what_built(self):
         return OrderedDict([(key, attr._mc_value()) for key, attr in self._mc_build_attributes.items()])
 
-    def named_as(self):
-        return super(_ConfigBuilder, self).named_as() + '.builder.' + repr(_ConfigBuilder._num)
+    @classmethod
+    def named_as(cls):
+        return super(_ConfigBuilder, cls).named_as() + '.builder.' + repr(_ConfigBuilder._num)
