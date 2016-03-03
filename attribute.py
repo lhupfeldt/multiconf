@@ -25,12 +25,6 @@ class SetAttrSemantic(IntEnum):
     OVERRIDE_METHOD = 1 << 0
     UNKNOWN = 1 << 1
 
-    @staticmethod
-    def bits_to_attr_types(bitmask):
-        for ee in SetAttrSemantic:
-            if ee & bitmask:
-                yield ee
-
 
 class Attribute(object):
     __slots__ = [
