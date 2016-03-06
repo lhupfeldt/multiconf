@@ -18,7 +18,6 @@ from .config_errors import _error_msg, _warning_msg, _error_type_msg
 from .json_output import ConfigItemEncoder
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
-_warn_json_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
 
 
 # pylint: disable=protected-access
@@ -85,12 +84,12 @@ class _ConfigBase(object):
         json_method = object.__getattribute__(self, 'json')
         return json_method(compact=True, property_methods=False, builders=True)
 
-    def json(self, compact=False, property_methods=True, builders=False, skipkeys=True):
+    def json(self, compact=False, property_methods=True, builders=False, skipkeys=True, warn_nesting=None):
         """See json_output.ConfigItemEncoder for parameters"""
         filter_callable = self._mc_root_conf._mc_json_filter
         fallback_callable = self._mc_root_conf._mc_json_fallback
         encoder = ConfigItemEncoder(filter_callable=filter_callable, fallback_callable=fallback_callable,
-                                    compact=compact, property_methods=property_methods, builders=builders, warn_nesting=_warn_json_nesting,
+                                    compact=compact, property_methods=property_methods, builders=builders, warn_nesting=warn_nesting,
                                     multiconf_base_type=_ConfigBase, multiconf_root_type=ConfigRoot, multiconf_builder_type=_ConfigBuilder)
         # python3 doesn't need  separators=(',', ': ')
         json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))

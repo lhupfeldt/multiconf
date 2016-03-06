@@ -530,6 +530,22 @@ def test_json_dump_property_method_calls_json(capsys):
     assert _json_dump_property_method_calls_json_expected_stderr % dict(py3_local=py3_local()) in replace_ids(serr)
 
 
+def test_json_dump_property_method_calls_json_no_warn(capsys):
+    """Get branch coverage for warn_nesting == False"""
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def other_conf_item(self):
+            self.json()
+
+    with RootWithA(prod, ef, a=0) as cr:
+        Nested()
+
+    cr.json(warn_nesting=False)
+    _sout, serr = capsys.readouterr()
+    assert "Warning: Nested json calls" not in serr
+
+
 # TODO: insert information about skipped objects into json output
 _json_dump_non_conf_item_not_json_serializable_expected_json = """{
     "__class__": "RootWithA",
@@ -584,6 +600,7 @@ def test_json_dump_non_conf_item():
     class SomeClass():
         def __init__(self):
             self.a = 187
+            self._x = 7
 
     with RootWithA(prod, ef, a=0) as cr:
         SimpleItem(a=SomeClass())

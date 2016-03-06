@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, threading, traceback
+import sys, os, threading, traceback
 from collections import OrderedDict
 import types
 
@@ -17,6 +17,8 @@ major_version = sys.version_info[0]
 if major_version > 2:
     long = int
 
+_warn_json_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
+
 
 class NestedJsonCallError(Exception):
     pass
@@ -29,6 +31,7 @@ def _class_tuple(obj, obj_info=""):
 class ConfigItemEncoder(object):
     recursion_check = threading.local()
     recursion_check.in_default = None
+    recursion_check.warn_nesting = _warn_json_nesting
 
     def __init__(self, filter_callable, fallback_callable, compact, property_methods, builders, warn_nesting,
                  multiconf_base_type, multiconf_root_type, multiconf_builder_type):
@@ -45,12 +48,12 @@ class ConfigItemEncoder(object):
 
         property_methods: call @property methods and insert values in output, including a comment that the value is calculated.
         """
+
         self.user_filter_callable = filter_callable
         self.user_fallback_callable = fallback_callable
         self.compact = compact
         self.property_methods = property_methods
         self.builders = builders
-        self.warn_nesting = warn_nesting
         self.multiconf_base_type = multiconf_base_type
         self.multiconf_root_type = multiconf_root_type
         self.multiconf_builder_type = multiconf_builder_type
@@ -60,6 +63,9 @@ class ConfigItemEncoder(object):
         self.start_obj = None
         self.num_errors = 0
         self.num_invalid_usages = 0
+
+        if warn_nesting != None:
+            self.recursion_check.warn_nesting = warn_nesting
 
     if major_version < 3:
         def _class_dict(self, obj):
@@ -111,7 +117,7 @@ class ConfigItemEncoder(object):
         if ConfigItemEncoder.recursion_check.in_default:
             in_default = ConfigItemEncoder.recursion_check.in_default
             ConfigItemEncoder.recursion_check.in_default = None
-            if self.warn_nesting:
+            if self.recursion_check.warn_nesting:
                 print("Warning: Nested json calls:", file=sys.stderr)
                 print("outer object type:", type(in_default), file=sys.stderr)
                 print("inner object type:", repr(type(obj)) + ", inner obj:", obj, file=sys.stderr)
