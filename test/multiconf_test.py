@@ -189,7 +189,7 @@ def test_automatic_freeze_of_previous_sibling():
         assert rt.children['a'].aa == 18
 
 
-# TODO test_automatic_freeze_of_previous_sibling mc_init 
+# TODO test_automatic_freeze_of_previous_sibling mc_init
 
 
 def test_automatic_freeze_call_of_validate_root():
