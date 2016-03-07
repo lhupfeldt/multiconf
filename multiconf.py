@@ -345,7 +345,7 @@ class _ConfigBase(object):
                                 else:
                                     # debug("orig where_from > where_from")
                                     update_value = False
-                            elif orig_attr_eg in eg:
+                            else:  # orig_attr_eg in eg:
                                 # debug("Orig eg is the more specific, new", eg.name, "orig:", orig_attr_eg.name)
                                 update_value = False
 
