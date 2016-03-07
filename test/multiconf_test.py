@@ -715,6 +715,23 @@ def test_mc_init_ref_env_attr_and_override():
     assert cr.X.aa == 6
 
 
+def test_override_attr_in_init():
+    class X(ConfigItem):
+        def __init__(self, aa=1):
+            super(X, self).__init__()
+            self.aa = aa
+            self.override('aa', 17)
+
+    with ConfigRoot(prod2, ef2_pp_prod) as cr:
+        X()
+    assert cr.X.aa == 17
+
+    with ConfigRoot(pp2, ef2_pp_prod) as cr:
+        with X(aa=2) as x:
+            x.aa = 3
+    assert cr.X.aa == 3
+
+
 def test_mc_init_override_change_type():
     class X(ConfigItem):
         def __init__(self, aa=1):
