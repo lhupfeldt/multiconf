@@ -617,3 +617,36 @@ def test_attribute_mc_todo_override_allowed_other_envs(capsys, allow_todo):
     _sout, serr = capsys.readouterr()
     expected = _attribute_mc_current_env_todo_allowed_override_expected % dict(line=errorline, prod_err=_attribute_mc_current_env_todo_allowed_expected)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == expected
+
+
+_attribute_mc_required_env_in_init_expected_ex = """There were %(num_errors)s errors when defining attribute 'a' on object: {
+    "__class__": "MyRoot #as: 'MyRoot', id: 0000, not-frozen",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "a": "MC_REQUIRED"
+}"""
+
+_attribute_mc_required_override_env_in_init_expected = """
+File "fake_dir/invalid_values_test.py", line %(line)s
+ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')
+File "fake_dir/invalid_values_test.py", line %(line)s
+ConfigError: %(prod_err)s"""
+
+def test_attribute_mc_required_override_env_in_init(capsys):
+    errorline = None
+    class MyRoot(ConfigRoot):
+        def __init__(self):
+            global errorline
+            super(MyRoot, self).__init__(prod1, ef1_prod_pp)
+            errorline = lineno() + 1
+            self.override('a', MC_REQUIRED)
+
+    with raises(ConfigException) as exinfo:
+        MyRoot()
+
+    _sout, serr = capsys.readouterr()
+    expected = _attribute_mc_required_override_env_in_init_expected.strip() % dict(line=errorline, prod_err=_attribute_mc_required_expected)
+    assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == expected
+    assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_in_init_expected_ex % dict(num_errors=2)
