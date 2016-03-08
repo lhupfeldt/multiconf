@@ -360,13 +360,13 @@ def test_static_attribute_overrides_mc_attribute_inherited_builder():
         pass
 
     xfail("TODO?: Allow static member to override mc attribute")
-    
+
     @named_as('n1')
     class Nested1(NestedBase):
         m = 2
 
     with ConfigRoot(prod, ef) as cr:
-        Nested1()        
+        Nested1()
     assert cr.n1.m == 2
 
     with ConfigRoot(prod, ef) as cr:
