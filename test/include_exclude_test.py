@@ -67,6 +67,26 @@ def test_include_for_configitem():
     assert cr.item.anotherattr == 1
 
 
+def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
+    def conf(env):
+        with ConfigRoot(env, ef) as cr:
+            cr.a = 1
+            with item(mc_exclude=[dev2, prod]) as it:
+                it.mc_select_envs(exclude=[prod])  # Excluding again is ignored (to avoid extra checking)
+                it.setattr('anattr', pp=1, g_dev12_3=2)
+                it.setattr('anotherattr', dev1=1, dev3=0, pp=2)
+        return cr
+
+    cr = conf(prod)
+    assert cr.a == 1
+    assert not cr.item
+    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+
+    cr = conf(dev1)
+    assert cr.item.anattr == 2
+    assert cr.item.anotherattr == 1
+
+
 def test_include_missing_for_configitem(capsys):
     def conf(env, errorline):
         with ConfigRoot(env, ef) as cr:
