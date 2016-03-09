@@ -725,8 +725,7 @@ class ConfigRoot(_ConfigBase):
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
-            if not self._mc_is_excluded:
-                self._user_validate_recursively()
+            self._user_validate_recursively()
             self._mc_config_loaded = True
         except Exception as ex:
             if not exc_type:
