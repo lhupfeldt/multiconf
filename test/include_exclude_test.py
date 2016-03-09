@@ -11,8 +11,10 @@ from .utils.compare_json import compare_json
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException
 from ..decorators import required, nested_repeatables
+from ..config_errors import caller_file_line
 
 from ..envs import EnvFactory
+
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -550,3 +552,23 @@ def test_exclude_include_disjunct_for_configitem():
 
     cr = conf(pp)
     assert not cr.item
+
+
+def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_envs(capsys):
+    """Test error is shown correctly if mc_select_envs id overridden"""
+    class Item(ConfigItem):
+        def mc_select_envs(self, include=None, exclude=None):
+            mc_caller_file_name, mc_caller_line_num = caller_file_line()
+            super(Item, self).mc_select_envs(include, exclude, mc_caller_file_name, mc_caller_line_num)
+
+    with raises(ConfigException) as exinfo:
+        # No most specific
+        with ConfigRoot(prod, ef):
+            with Item() as it:
+                errorline = lineno() + 1
+                it.mc_select_envs(exclude=[dev1], include=[dev1, pp])
+
+    print("errorline:", errorline)
+    assert "There were 1 errors when defining item" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
