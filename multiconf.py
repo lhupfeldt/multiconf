@@ -879,16 +879,16 @@ class _ConfigItem(_ConfigBase):
 
     def mc_select_envs(self, include=None, exclude=None, mc_caller_file_name=None, mc_caller_line_num=None):
         """Skip with block if item is excluded"""
-        if not self._mc_is_excluded:
-            self._mc_select_envs(include=include, exclude=exclude, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
-            if self._mc_is_excluded:
-                contained_in = object.__getattribute__(self, '_mc_contained_in')
-                contained_in_attributes, _ = contained_in._mc_get_attributes_where()
-                if isinstance(self, RepeatableConfigItem):
-                    # Remove repeatable item
-                    del contained_in_attributes[self.named_as()][self._mc_repeatable_item_key]
-                else:
-                    contained_in_attributes[self.named_as()] = Excluded(self)
+
+        self._mc_select_envs(include=include, exclude=exclude, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+        if self._mc_is_excluded:
+            contained_in = object.__getattribute__(self, '_mc_contained_in')
+            contained_in_attributes, _ = contained_in._mc_get_attributes_where()
+            if isinstance(self, RepeatableConfigItem):
+                # Remove repeatable item
+                del contained_in_attributes[self.named_as()][self._mc_repeatable_item_key]
+            else:
+                contained_in_attributes[self.named_as()] = Excluded(self)
 
         if self._mc_is_excluded:
             raise _McExcludedException()

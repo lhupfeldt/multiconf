@@ -4,7 +4,7 @@
 from __future__ import print_function
 
 # pylint: disable=E0611
-from pytest import raises
+from pytest import raises, xfail
 
 from .utils.utils import config_error, lineno, assert_lines_in
 from .utils.compare_json import compare_json
@@ -336,7 +336,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
         _ = cr.ritems['b']
 
 
-def test_child_includes_excluded(capsys):
+def test_child_includes_excluded_init(capsys):
     with raises(ConfigException) as exinfo:
         with root(prod, ef):
             with ritem(name='a', mc_exclude=[g_dev12_3, prod]):
@@ -354,6 +354,16 @@ def test_child_includes_excluded(capsys):
         "^%(lnum)s",
         "^ConfigError: Env 'prod' is excluded at an outer level"
     )
+
+
+def test_child_includes_excluded_mc_select_envs():
+    with root(prod, ef):
+        with ritem(name='a', mc_exclude=[g_dev12_3, prod]):
+            with item() as it1:
+                it1.mc_select_envs(include=[dev2, prod])  # TODO This is ignored because it is already determined in __init__ that object if excluded
+                it1.x = 7
+
+    xfail("TODO: Ideally should give same error as 'test_child_includes_excluded_init'")
 
 
 def test_exclude_include_overlapping_for_configitem(capsys):
@@ -414,6 +424,28 @@ def test_exclude_include_overlapping_for_configitem(capsys):
     assert cr.item.anattr == 1
     assert cr.item.b == 1
     assert cr.item.anotherattr == 111
+
+
+def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init(capsys):
+    """Test include/exclude ambiguity and already exclude double error"""
+    with raises(ConfigException) as exinfo:
+        with root(prod, ef):
+            with ritem(name='a', mc_exclude=[g_dev12_3, prod]):
+                errorline = lineno() + 1
+                with item(mc_exclude=[dev2], mc_include=[dev2, prod]) as it1:
+                    it1.x = 7
+
+    assert "There were 2 errors when defining item" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    print(serr)
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:",
+        "^%(lnum)s",
+        "^ConfigError: Env 'prod' is excluded at an outer level"
+    )
+
+    xfail("TODO: Ideally should give 3 errors: Env 'dev2' is excluded ...")
 
 
 def test_exclude_include_overlapping_resolved_with_include_for_configitem():
