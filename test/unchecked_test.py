@@ -4,9 +4,9 @@
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from .utils.utils import config_error, lineno, replace_ids
+from .utils.utils import config_error, lineno, replace_ids, assert_lines_in
 
-from .. import ConfigRoot, ConfigItem, ConfigException
+from .. import ConfigRoot, ConfigItem, ConfigException, MC_TODO
 from ..decorators import required, unchecked
 
 from ..envs import EnvFactory
@@ -166,3 +166,57 @@ def test_unchecked_inheritance():
         pass
 
     xfail("TODO: Test unchecked inheritance")
+
+
+def test_unchecked_override_attribute_for_configitem():
+    @required('anattr, anotherattr')
+    @unchecked()
+    class uitemwo(ConfigItem):
+        def mc_init(self):
+            self.setattr('anattr', prod=2, g_dev=2)
+            self.override('anotherattr', 111)
+
+    with ConfigRoot(prod, ef) as cr:
+        with uitemwo() as it:
+            it.setattr('anattr', pp=1, g_dev=1)
+            it.setattr('anotherattr', prod=2)
+
+    assert cr.uitemwo.anattr == 2
+    assert cr.uitemwo.anotherattr == 111
+
+
+_unchecked_override_attribute_for_configitem_mc_todo_expected_ex = """There were 4 errors when defining attribute 'anotherattr' on object: {
+    "__class__": "citem #as: 'citem', id: 0000",
+    "anattr": 2,
+    "anotherattr": "MC_TODO"
+}"""
+
+def test_unchecked_override_attribute_for_configitem_mc_todo(capsys):
+    @required('anattr, anotherattr')
+    @unchecked()
+    class uitemwo(ConfigItem):
+        def mc_init(self):
+            self.setattr('anattr', prod=2, g_dev=2)
+            self.override('anotherattr', self.anotherattr + "/abc")
+
+    class citem(uitemwo):
+        pass
+
+    with raises(ConfigException) as exinfo:            
+        with ConfigRoot(prod, ef):
+            with citem() as it:
+                it.setattr('anattr', pp=1, g_dev=1)
+                it.setattr('anotherattr', prod=MC_TODO)
+                errorline = lineno()
+
+    _sout, serr = capsys.readouterr()
+    print(serr)
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^ConfigError: Attribute: 'anotherattr' MC_TODO did not receive a value for env Env('dev1')",
+        "^ConfigError: Attribute: 'anotherattr' MC_TODO did not receive a value for env Env('dev2')",
+        "^ConfigError: Attribute: 'anotherattr' MC_TODO did not receive a value for env Env('pp')",
+        "^ConfigError: Attribute: 'anotherattr' MC_TODO did not receive a value for current env Env('prod')",
+    )
+
+    assert replace_ids(str(exinfo.value), False) == _unchecked_override_attribute_for_configitem_mc_todo_expected_ex
