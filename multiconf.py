@@ -545,21 +545,20 @@ class _ConfigBase(object):
         if self._mc_is_excluded:
             return Excluded(self)
 
-        if attr.override_method:
-            try:
-                return object.__getattribute__(self, name)
-            except Exception:
+        try:
+            return object.__getattribute__(self, name)
+        except Exception:
+            root_conf = object.__getattribute__(self, '_mc_root_conf')
+            selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
+
+            if attr.override_method:
                 # We have both an mc_attribute and a property method on the object
-                root_conf = object.__getattribute__(self, '_mc_root_conf')
-                selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
                 raise AttributeError("Attribute " + repr(name) +
                                      " is defined as muticonf attribute and as property method, but value is undefined for env " +
                                      repr(selected_env) + " and method call failed")
 
-        # This can only happen for conditional properties
-        root_conf = object.__getattribute__(self, '_mc_root_conf')
-        selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
-        raise AttributeError("Attribute " + repr(name) + " is undefined for env " + repr(selected_env))
+            # This can only happen for unchecked classes
+            raise AttributeError("Attribute " + repr(name) + " is undefined for env " + repr(selected_env))
 
     def items(self):
         attributes = object.__getattribute__(self, '_mc_attributes')
