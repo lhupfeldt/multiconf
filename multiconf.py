@@ -559,7 +559,7 @@ class _ConfigBase(object):
         # This can only happen for conditional properties
         root_conf = object.__getattribute__(self, '_mc_root_conf')
         selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
-        raise AttributeError("Attribute " + repr(name) + " undefined for env " + repr(selected_env))
+        raise AttributeError("Attribute " + repr(name) + " is undefined for env " + repr(selected_env))
 
     def items(self):
         attributes = object.__getattribute__(self, '_mc_attributes')
