@@ -437,17 +437,17 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init(capsys
                 with item(mc_exclude=[dev2], mc_include=[dev2, prod]) as it1:
                     it1.x = 7
 
-    assert "There were 2 errors when defining item" in str(exinfo.value)
+    assert "There were 3 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     print(serr)
     assert_lines_in(
         __file__, errorline, serr,
         "^ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:",
         "^%(lnum)s",
+        "^ConfigError: Env 'dev2' is excluded at an outer level",
+        "^%(lnum)s",
         "^ConfigError: Env 'prod' is excluded at an outer level"
     )
-
-    xfail("TODO: Ideally should give 3 errors: Env 'dev2' is excluded ...")
 
 
 def test_exclude_include_overlapping_resolved_with_include_for_configitem():

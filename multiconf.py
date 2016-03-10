@@ -814,15 +814,6 @@ class _ConfigItem(_ConfigBase):
         cleared = []
 
         for conflicting_egs, ambiguous in all_ambiguous.items():
-            for eg in exclude or ():
-                if eg.mask & ambiguous == eg.mask:  # mask in or equal to ambiguous
-                    ambiguous ^= eg.mask & ambiguous
-                    if ambiguous:
-                        all_ambiguous[conflicting_egs] = ambiguous
-                    elif eg in conflicting_egs[0]:
-                        cleared.append(conflicting_egs)
-                    _mc_included_envs_mask &= ~eg.mask
-
             for eg in include or ():
                 if eg.mask & ambiguous == eg.mask:  # mask in or equal to ambiguous
                     ambiguous ^= eg.mask & ambiguous
@@ -831,6 +822,15 @@ class _ConfigItem(_ConfigBase):
                     elif eg in conflicting_egs[1]:
                         cleared.append(conflicting_egs)
                     _mc_included_envs_mask |= eg.mask
+
+            for eg in exclude or ():
+                if eg.mask & ambiguous == eg.mask:  # mask in or equal to ambiguous
+                    ambiguous ^= eg.mask & ambiguous
+                    if ambiguous:
+                        all_ambiguous[conflicting_egs] = ambiguous
+                    elif eg in conflicting_egs[0]:
+                        cleared.append(conflicting_egs)
+                    _mc_included_envs_mask &= ~eg.mask
 
         for conflicting_egs in cleared:
             del all_ambiguous[conflicting_egs]
