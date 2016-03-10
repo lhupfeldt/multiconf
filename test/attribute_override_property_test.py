@@ -124,7 +124,6 @@ def test_attribute_overrides_property_method_failing():
     with raises(AttributeError) as exinfo:
         print(nn.m)
 
-    print(str(exinfo.value))
     assert "Attribute 'm' is defined as muticonf attribute and as property method, but value is undefined for env Env('prod') and method call failed" in str(exinfo.value)
 
 
