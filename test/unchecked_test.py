@@ -57,7 +57,9 @@ def test_required_missing_unchecked_for_configroot():
 
     assert cr.anattr == 1
     with raises(Exception) as exinfo:
-        cr.anotherattr
+        print(cr.anotherattr)
+
+    assert "Attribute 'anotherattr' is undefined for env Env('pp')" in str(exinfo.value)
 
 
 def test_required_missing_unchecked_for_configitem():
@@ -75,6 +77,10 @@ def test_required_missing_unchecked_for_configitem():
             it.setattr('anotherattr', prod=2)
 
     assert cr.uitem.anattr == 1
+    with raises(Exception) as exinfo:
+        print(it.anotherattr)
+
+    assert "Attribute 'anotherattr' is undefined for env Env('dev1')" in str(exinfo.value)
 
 
 def test_required_missing_unchecked_base_for_configitem():
