@@ -371,26 +371,6 @@ def test_child_includes_excluded_mc_select_envs():
 def test_exclude_include_overlapping_for_configitem(capsys):
     """Test that most specifig group/env wins"""
 
-    with raises(ConfigException) as exinfo:
-        # No most specific
-        with ConfigRoot(prod, ef):
-            errorline = lineno() + 1
-            item(mc_exclude=[dev1], mc_include=[dev1, pp])
-
-    assert "There were 1 errors when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
-
-    with raises(ConfigException) as exinfo:
-        # No most specific
-        with ConfigRoot(prod, ef):
-            errorline = lineno() + 1
-            item(mc_exclude=[pp, dev1], mc_include=[dev1])
-
-    assert "There were 1 errors when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
-
     def conf(env):
         with ConfigRoot(env, ef) as cr:
             cr.a = 1
@@ -426,6 +406,30 @@ def test_exclude_include_overlapping_for_configitem(capsys):
     assert cr.item.anattr == 1
     assert cr.item.b == 1
     assert cr.item.anotherattr == 111
+
+
+def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
+    """Test include/exclude ambiguity for direct env specification. See include_exclude2_test.py for groups."""
+
+    with raises(ConfigException) as exinfo:
+        # No most specific
+        with ConfigRoot(prod, ef):
+            errorline = lineno() + 1
+            item(mc_exclude=[dev1], mc_include=[dev1, pp])
+
+    assert "There were 1 errors when defining item" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+
+    with raises(ConfigException) as exinfo:
+        # No most specific
+        with ConfigRoot(prod, ef):
+            errorline = lineno() + 1
+            item(mc_exclude=[pp, dev1], mc_include=[dev1])
+
+    assert "There were 1 errors when defining item" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
 
 
 def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init(capsys):
