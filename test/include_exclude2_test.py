@@ -191,3 +191,19 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_reversed_mc_sele
     assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
+
+
+def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolved(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef):
+            item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3])
+
+    assert "There were 1 errors when defining item" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    expected = "ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:"
+    assert expected in serr
+
+
+def test_exclude_include_overlapping_groups_dev3_dev2_finally_resolved():
+    with ConfigRoot(prod, ef):
+        item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3, dev2])
