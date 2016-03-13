@@ -402,8 +402,8 @@ class _ConfigBase(object):
             object.__getattribute__(item, name)
         except AttributeError:
             if not attribute.override_method:
-                return None, None
-            return "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists.", None
+                return None
+            return "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists."
         except:
             # Error in property implemetation
             pass
@@ -420,9 +420,9 @@ class _ConfigBase(object):
                 try:
                     real_attr = object.__getattribute__(cls, name)
                     if isinstance(real_attr, property):
-                        return None, None
+                        return None
 
-                    return "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property.", real_attr
+                    return "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '" + str(real_attr) + "' is not a property."
                 except AttributeError:
                     pass
 
@@ -434,9 +434,9 @@ class _ConfigBase(object):
 
         try:
             attribute, name = new_attribute(name)
-            err_msg, value = self._mc_check_override_common(self, name, attribute)
+            err_msg = self._mc_check_override_common(self, name, attribute)
             if err_msg:
-                raise ConfigException(err_msg % dict(name=name, value=value))
+                raise ConfigException(err_msg % dict(name=name))
             attributes = object.__getattribute__(self, '_mc_attributes')
             where = object.__getattribute__(self, '_mc_where')
             self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
@@ -1036,10 +1036,10 @@ class _ConfigBuilder(ConfigItem):
 
                 # override_value is an Attribute
                 name = override_key
-                err_msg, value = self._mc_check_override_common(item_from_build, name, override_value)
+                err_msg = self._mc_check_override_common(item_from_build, name, override_value)
                 if err_msg:
                     if name not in override_attribute_errors:
-                        override_attribute_errors[name] = (err_msg, value)
+                        override_attribute_errors[name] = err_msg
                 else:
                     override_attribute_errors[name] = False
 
@@ -1098,7 +1098,7 @@ class _ConfigBuilder(ConfigItem):
         move_items_around()
 
         errors = [(name, err_value) for name, err_value in override_attribute_errors.items() if err_value]
-        errors = [err % dict(name=name, value=value) for name, (err, value) in errors]
+        errors = [err % dict(name=name) for name, err in errors]
         if errors:
             raise ConfigException('The following errors were found when setting values on items from build()\n  ' + '\n  '.join(errors))
 
