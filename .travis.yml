@@ -7,4 +7,4 @@ script: python setup.py test --pytest-args="-v"
 os:
   - linux
 install:
-  - pip install "pytest>=2.8.2"
+  - pip install "pytest>=2.8.2,<=2.9.1"
