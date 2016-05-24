@@ -130,11 +130,8 @@ class _ConfigBase(object):
         If self is ready to be validated (exit from with_statement or not declared in a with_statement),
         then self will be frozen and validated
         """
-        if self._mc_frozen:
-            return True
 
-        if self._mc_is_excluded:
-            self._mc_frozen = True
+        if self._mc_frozen:
             return True
 
         root_conf = object.__getattribute__(self, '_mc_root_conf')
@@ -771,6 +768,13 @@ class _ConfigItem(_ConfigBase):
 
         if not self._mc_is_excluded:
             contained_in._mc_previous_child = self
+
+    def _mc_freeze(self):
+        if self._mc_is_excluded:
+            self._mc_frozen = True
+            return True
+
+        return super(_ConfigItem, self)._mc_freeze()
 
     def _mc_select_envs(self, include, exclude, file_name=None, line_num=None):
         """Determine if item (and children) is included in specified env"""
