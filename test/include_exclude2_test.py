@@ -198,7 +198,7 @@ def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolve
         with ConfigRoot(prod, ef):
             item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3])
 
-    assert "There were 1 errors when defining item" in str(exinfo.value)
+    assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     expected = "ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:"
     assert expected in serr

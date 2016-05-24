@@ -105,7 +105,7 @@ def test_include_missing_for_configitem(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline[0], "Attribute: 'anattr' did not receive a value for env Env('pp')")
-    assert "There were 1 errors when defining attribute 'anattr' on object" in str(exinfo.value)
+    assert "There was 1 error when defining attribute 'anattr' on object" in str(exinfo.value)
 
 
 def test_exclude_for_configitem():
@@ -417,7 +417,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
             errorline = lineno() + 1
             item(mc_exclude=[dev1], mc_include=[dev1, pp])
 
-    assert "There were 1 errors when defining item" in str(exinfo.value)
+    assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
 
@@ -427,7 +427,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
             errorline = lineno() + 1
             item(mc_exclude=[pp, dev1], mc_include=[dev1])
 
-    assert "There were 1 errors when defining item" in str(exinfo.value)
+    assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
 
@@ -573,6 +573,6 @@ def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_en
                 it.mc_select_envs(exclude=[dev1], include=[dev1, pp])
 
     print("errorline:", errorline)
-    assert "There were 1 errors when defining item" in str(exinfo.value)
+    assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")

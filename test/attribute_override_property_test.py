@@ -308,13 +308,13 @@ def test_attribute_overrides_errors_builder():
             Nested2()
             Nested3()
 
-    expected_ex_header = "The following errors were found when setting values on items from build()\n"
+    expected_ex_header = "The following {sing_plu} found when setting values on items from build()\n"
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, ef) as cr:
             with NestedBuilder() as nn:
                 nn.setattr('m!', default=7)
-    expected_ex = expected_ex_header + \
+    expected_ex = expected_ex_header.format(sing_plu="error was") + \
                   "  m! specifies overriding a property method, but attribute 'm' with value '222' is not a property."
     assert str(exinfo.value) == expected_ex
 
@@ -323,7 +323,7 @@ def test_attribute_overrides_errors_builder():
             with NestedBuilder() as nn:
                 nn.setattr('m!', prod=7)
                 nn.setattr('n!', default=333)
-    expected_ex = expected_ex_header + \
+    expected_ex = expected_ex_header.format(sing_plu="errors were") + \
                   "  m! specifies overriding a property method, but attribute 'm' with value '222' is not a property.\n" \
                   "  n! specifies overriding a property method, but attribute 'n' with value '1' is not a property."
     assert str(exinfo.value) == expected_ex
@@ -332,7 +332,7 @@ def test_attribute_overrides_errors_builder():
         with ConfigRoot(prod, ef) as cr:
             with NestedBuilder() as nn:
                 nn.setattr('m!', pp=7)
-    expected_ex = expected_ex_header + \
+    expected_ex = expected_ex_header.format(sing_plu="error was") + \
                   "  m! specifies overriding a property method, but attribute 'm' with value '222' is not a property."
     assert str(exinfo.value) == expected_ex
 
@@ -340,7 +340,7 @@ def test_attribute_overrides_errors_builder():
         with ConfigRoot(prod, ef) as cr:
             with NestedBuilder() as nn:
                 nn.setattr('y!', pp=7)
-    expected_ex = expected_ex_header + \
+    expected_ex = expected_ex_header.format(sing_plu="error was") + \
                   "  y! specifies overriding a property method, but no property named 'y' exists."
     assert str(exinfo.value) == expected_ex
 

@@ -514,7 +514,9 @@ class _ConfigBase(object):
                 num_errors = _error_msg(num_errors, msg, file_name=file_name, line_num=line_num)
 
         if num_errors:
-            raise ConfigException("There were " + repr(num_errors) + " errors when defining attribute " + repr(name) + " on object: " + repr(self))
+            ww, err = ('were', 'errors') if num_errors > 1 else ('was', 'error')
+            raise ConfigException("There {ww} {num_errors} {err} when defining attribute {attr_name!r} on object: {self}".format(
+                ww=ww, num_errors=num_errors, err=err, attr_name=name, self=self))
 
     def __getattribute__(self, name):
         if name[0] == '_':
@@ -870,7 +872,8 @@ class _ConfigItem(_ConfigBase):
                 num_errors = _error_msg(num_errors, msg, file_name=file_name, line_num=line_num)
 
         if num_errors:
-            raise ConfigException("There were " + repr(num_errors) + " errors when defining item: " + repr(self))
+            ww, err = ('were', 'errors') if num_errors > 1 else ('was', 'error')
+            raise ConfigException("There {ww} {num_errors} {err} when defining item: {self}".format(ww=ww, num_errors=num_errors, err=err, self=self))
 
         if not (self.env.mask & _mc_included_envs_mask) or contained_in._mc_is_excluded:
             self._mc_is_excluded = True
@@ -1103,7 +1106,9 @@ class _ConfigBuilder(ConfigItem):
 
         errors = [err_value for err_value in override_attribute_errors.values() if err_value]
         if errors:
-            raise ConfigException('The following errors were found when setting values on items from build()\n  ' + '\n  '.join(errors))
+            num_errors = len(errors)
+            sing_plu = "errors were" if num_errors > 1 else "error was"
+            raise ConfigException('The following ' + sing_plu + ' found when setting values on items from build()\n  ' + '\n  '.join(errors))
 
     def what_built(self):
         return OrderedDict([(key, attr._mc_value()) for key, attr in self._mc_build_attributes.items()])

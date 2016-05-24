@@ -18,13 +18,13 @@ def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
 
-_override_setattr1_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_override_setattr1_expected_ex = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "MeSetter #as: 'MeSetter', id: 0000, not-frozen",
     "a": "hi"
 }"""
 
 
-_override_setattr2_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_override_setattr2_expected_ex = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "MeSetter #as: 'MeSetter', id: 0000, not-frozen",
     "a": "hello"
 }"""

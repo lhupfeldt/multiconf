@@ -91,7 +91,7 @@ def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
 
-_e_expected = """There were 1 errors when defining attribute 'a' on object: {
+_e_expected = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
@@ -101,7 +101,7 @@ _e_expected = """There were 1 errors when defining attribute 'a' on object: {
 }"""
 
 
-_f_expected = """There were 1 errors when defining attribute 'a' on object: {
+_f_expected = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
@@ -271,7 +271,7 @@ def test_value_not_assigned_to_all_envs_in_builder(capsys):
     assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
 
 
-_attribute_defined_with_different_types_root_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_defined_with_different_types_root_expected_ex = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
@@ -310,7 +310,7 @@ def test_attribute_defined_with_different_types_root_default(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_root_expected_ex
 
 
-_attribute_defined_with_different_types_item_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_defined_with_different_types_item_expected_ex = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
     "a": 1
 }"""
@@ -351,7 +351,7 @@ def test_attribute_defined_with_different_types_item_default(capsys):
     )
 
 
-_attribute_defined_with_different_types_root_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_defined_with_different_types_root_init_expected_ex = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "root #as: 'root', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
@@ -360,7 +360,7 @@ _attribute_defined_with_different_types_root_init_expected_ex = """There were 1 
     "a": 1
 }"""
 
-_attribute_defined_with_different_types_item_init_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_attribute_defined_with_different_types_item_init_expected_ex = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "item #as: 'item', id: 0000, not-frozen",
     "a": 1
 }"""
@@ -558,7 +558,7 @@ value: 3, from: EnvGroup('g_dev_overlap') {
      Env('dev2ct')
 }"""
 
-_value_defined_through_two_groups_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_value_defined_through_two_groups_expected_ex = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
@@ -592,7 +592,7 @@ value: 7, from: EnvGroup('g_dev_overlap2') {
      Env('dev2ct')
 }"""
 
-_value_defined_through_three_groups_expected_ex = """There were 1 errors when defining attribute 'a' on object: {
+_value_defined_through_three_groups_expected_ex = """There was 1 error when defining attribute 'a' on object: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",

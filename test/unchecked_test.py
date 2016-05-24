@@ -111,13 +111,13 @@ _required_missing_unchecked_super_for_configitem_expected1_ex = """There were 2 
     "anotherattr": 2
 }"""
 
-_required_missing_unchecked_super_for_configitem_expected2_ex = """There were 1 errors when defining attribute 'anattr' on object: {
+_required_missing_unchecked_super_for_configitem_expected2_ex = """There was 1 error when defining attribute 'anattr' on object: {
     "__class__": "item #as: 'item', id: 0000",
     "anattr": 2,
     "anotherattr": 0
 }"""
 
-_required_missing_unchecked_super_for_configitem_expected3_ex = """There were 1 errors when defining attribute 'anattr' on object: {
+_required_missing_unchecked_super_for_configitem_expected3_ex = """There was 1 error when defining attribute 'anattr' on object: {
     "__class__": "item #as: 'item', id: 0000",
     "anattr": 1,
     "anotherattr": 0
