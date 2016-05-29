@@ -8,7 +8,7 @@ from pytest import raises, xfail
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
 
-from ..decorators import named_as
+from ..decorators import named_as, strict_setattr
 from ..envs import EnvFactory
 
 from .utils.utils import py3_local
@@ -24,6 +24,30 @@ prod2 = ef2_prod.Env('prod')
 
 def test_attribute_overrides_property_method():
     @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def m(self):
+            return 1
+
+    with ConfigRoot(prod, ef) as cr:
+        with Nested() as nn:
+            nn.setattr('m!', default=7)
+    assert cr.someitem.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with Nested() as nn:
+            nn.setattr('m!', prod=7)
+    assert cr.someitem.m == 7
+
+    with ConfigRoot(prod, ef) as cr:
+        with Nested() as nn:
+            nn.setattr('m!', pp=7)
+    assert cr.someitem.m == 1
+
+
+def test_attribute_overrides_property_method_strict():
+    @named_as('someitem')
+    @strict_setattr()
     class Nested(ConfigItem):
         @property
         def m(self):

@@ -219,7 +219,7 @@ class _ConfigBase(object):
                 raise ConfigException(msg + "Atributes starting with '_mc' are reserved for multiconf internal usage.")
             raise ConfigException(msg + "Atributes starting with '_' can not be set using item." + method_name + ". Use assignment instead.")
 
-    def _mc_setattr_common(self, name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs):
+    def _mc_setattr_common(self, name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, overriding_property, **kwargs):
         """Set attributes with environment specific values"""
         existing_attr = attributes.get(name)
 
@@ -235,7 +235,7 @@ class _ConfigBase(object):
 
             attribute = existing_attr
         else:
-            if not attribute.set_unknown and where != Where.IN_INIT and self.__class__._mc_deco_strict_setattr:
+            if not attribute.set_unknown and where != Where.IN_INIT and self.__class__._mc_deco_strict_setattr and not overriding_property:
                 # we are trying to set an already defined attribute using the '?' syntax
                 raise ConfigException(
                     "All attributes must be defined in __init__ or set with the '?' postfix. " +
@@ -399,7 +399,7 @@ class _ConfigBase(object):
             object.__getattribute__(item, name)
         except AttributeError:
             if not attribute.override_method:
-                return
+                return False
             err_msg = "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists."
             raise ConfigException(err_msg % dict(name=name))
         except:
@@ -418,7 +418,7 @@ class _ConfigBase(object):
                 try:
                     real_attr = object.__getattribute__(cls, name)
                     if isinstance(real_attr, property):
-                        return
+                        return True
 
                     err_msg = "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property."
                     raise ConfigException(err_msg % dict(name=name, value=real_attr))
@@ -433,10 +433,10 @@ class _ConfigBase(object):
 
         try:
             attribute, name = new_attribute(name)
-            self._mc_check_override_common(self, name, attribute)
+            overriding_property = self._mc_check_override_common(self, name, attribute)
             attributes = object.__getattribute__(self, '_mc_attributes')
             where = object.__getattribute__(self, '_mc_where')
-            self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
+            self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, overriding_property, **kwargs)
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
@@ -995,7 +995,7 @@ class _ConfigBuilder(ConfigItem):
         try:
             attribute, name = new_attribute(name)
             attributes, where = self._mc_get_attributes_where()
-            self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
+            self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, False, **kwargs)
         except ConfigBaseException as ex:
             if _debug_exc:
                 raise
