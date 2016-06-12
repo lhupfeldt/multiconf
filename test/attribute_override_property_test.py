@@ -11,7 +11,11 @@ from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
 from ..decorators import named_as, strict_setattr
 from ..envs import EnvFactory
 
-from .utils.utils import py3_local
+from .utils.utils import py3_local, config_error, lineno
+
+
+def ce(line_num, *lines):
+    return config_error(__file__, line_num, *lines)
 
 
 ef = EnvFactory()
@@ -69,7 +73,7 @@ def test_attribute_overrides_property_method_strict():
     assert cr.someitem.m == 1
 
 
-def test_attribute_overrides_property_method_not_existing():
+def test_attribute_overrides_property_method_not_existing(capsys):
     @named_as('someitem')
     class Nested(ConfigItem):
         pass
@@ -77,12 +81,14 @@ def test_attribute_overrides_property_method_not_existing():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, ef):
             with Nested() as nn:
+                errorline = lineno() + 1
                 nn.setattr('m!', default=7)
 
-    assert "m! specifies overriding a property method, but no property named 'm' exists" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, "m! specifies overriding a property method, but no property named 'm' exists.")
 
 
-def test_attribute_overrides_property_method_is_regular_method():
+def test_attribute_overrides_property_method_is_regular_method(capsys):
     @named_as('someitem')
     class Nested(ConfigItem):
         def m(self):
@@ -96,15 +102,38 @@ def test_attribute_overrides_property_method_is_regular_method():
         with ConfigRoot(prod, ef):
             with Nested() as nn:
                 nn.setattr('n!', default=7)
+                errorline = lineno() + 1
                 nn.setattr('m!', default=7)
 
-    ex_msg = re.sub(r"m at [^>]*>", "m at 1234>", str(exinfo.value))
+    _sout, serr = capsys.readouterr()
+    msg = re.sub(r"m at [^>]*>", "m at 1234>", str(serr))
     expected = "m! specifies overriding a property method, but attribute 'm' with value '<function %(py3_local)sm at 1234>' is not a property." % \
                dict(py3_local=py3_local('Nested.'))
-    assert expected in ex_msg
+    assert msg == ce(errorline, expected)
 
 
-def test_attribute_clash_property_method():
+def test_attribute_clash_property_method_error_in_with_block(capsys):
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        def __init__(self):
+            super(Nested, self).__init__()
+
+        @property
+        def m(self):
+            return 2
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef):
+            with Nested() as nn:
+                errorline = lineno() + 1
+                nn.setattr('m', default=7)
+
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, "The attribute 'm' (not ending in '!') clashes with a property or method")
+
+
+def test_attribute_clash_property_method_error_in_init_def(capsys):
+    init_call_errorline = lineno() + 5
     @named_as('someitem')
     class Nested(ConfigItem):
         def __init__(self, m=None):
@@ -117,16 +146,10 @@ def test_attribute_clash_property_method():
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, ef):
-            with Nested() as nn:
-                nn.setattr('m', default=7)
-
-    assert "The attribute 'm' (not ending in '!') clashes with a property or method" in str(exinfo.value)
-
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, ef):
             Nested(m=7)
 
-    assert "The attribute 'm' (not ending in '!') clashes with a property or method" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(init_call_errorline, "The attribute 'm' (not ending in '!') clashes with a property or method")
 
 
 def test_attribute_overrides_property_method_failing():

@@ -6,7 +6,7 @@ import sys
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno, replace_ids
+from .utils.utils import config_error, lineno, replace_ids, already_printed_msg
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException, ConfigBuilder
 from ..decorators import nested_repeatables
@@ -37,10 +37,10 @@ class RepeatableItem(RepeatableConfigItem):
     pass
 
 
-_stacktrace_strips_multiconf_code_exp_ex = """There were 3 errors when defining attribute 'a' on object: {
-    "__class__": "inner #as: 'xxxx', id: 0000, not-frozen",
+_stacktrace_strips_multiconf_code_exp_ex = """There were 3 errors when defining item: {
+    "__class__": "inner #as: 'xxxx', id: 0000",
     "a #no value for current env": true
-}"""
+}""" + already_printed_msg
 
 def test_stacktrace_strips_multiconf_code(capsys):
     with raises(ConfigException) as exinfo:

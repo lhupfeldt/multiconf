@@ -57,6 +57,11 @@ def api_error(file_name, line_num, *line):
     return _config_msg('MultiConfApiError', file_name, line_num, *line)
 
 
+def total_msg(total_num_errors):
+    ww, err = ('were', 'errors') if total_num_errors > 1 else ('was', 'error')
+    return "There {ww} {num_errors} {err} when defining item: ".format(ww=ww, num_errors=total_num_errors, err=err)
+
+
 def assert_lines_in(file_name, line_num, text, *expected_lines):
     """Assert that `*expected_lines` occur in order in the lines of `text`.
 
@@ -200,3 +205,6 @@ _compact_excluded_regex = re.compile(r""": false,\n *"([a-zA-Z0-9_]*) #Excluded:
 def to_compact_excluded(json_string):
     json_string = to_compact(json_string)
     return _compact_excluded_regex.sub(r""": "false #Excluded: <class '\2'>""" + '"', json_string)
+
+
+already_printed_msg = "\nCheck already printed error messages."

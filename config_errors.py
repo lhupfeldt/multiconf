@@ -70,24 +70,22 @@ def _line_msg(up_level=2, file_name=None, line_num=None, msg=''):
     print(('File "%s", line %d' % (file_name, line_num)) + (', ' + msg if msg else ''), file=sys.stderr)
 
 
-def _error_type_msg(num_errors, message):
+def _error_type_msg(message):
     print('ConfigError:', message, file=sys.stderr)
-    return num_errors + 1
 
 
-def _error_msg(num_errors, message, up_level=2, file_name=None, line_num=None):
+def _error_msg(message, up_level=2, file_name=None, line_num=None):
     _line_msg(up_level, file_name, line_num)
-    return _error_type_msg(num_errors, message)
+    _error_type_msg(message)
 
 
-def _warning_type_msg(num_warnings, message):
+def _warning_type_msg(message):
     print('ConfigWarning:', message, file=sys.stderr)
-    return num_warnings + 1
 
 
-def _warning_msg(num_warnings, message, up_level=2, file_name=None, line_num=None):
+def _warning_msg(message, up_level=2, file_name=None, line_num=None):
     _line_msg(up_level, file_name, line_num)
-    return _warning_type_msg(num_warnings, message)
+    _warning_type_msg(message)
 
 
 def _api_error_type_msg(num_warnings, message):

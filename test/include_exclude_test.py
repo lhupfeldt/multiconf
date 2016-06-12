@@ -16,8 +16,8 @@ from ..config_errors import caller_file_line
 from ..envs import EnvFactory
 
 
-def ce(line_num, *lines):
-    return config_error(__file__, line_num, *lines)
+def ce(line_num, serr, *lines):
+    assert config_error(__file__, line_num, *lines) in serr
 
 
 ef = EnvFactory()
@@ -94,6 +94,7 @@ def test_include_missing_for_configitem(capsys):
         with ConfigRoot(env, ef) as cr:
             cr.a = 1
             with item(mc_include=[dev1, pp]) as it:
+                print("it:", id(it))
                 errorline.append(lineno() + 1)
                 it.setattr('anattr', g_dev12_3=2)
                 it.setattr('anotherattr', dev1=1, pp=2)
@@ -104,8 +105,8 @@ def test_include_missing_for_configitem(capsys):
         conf(prod, errorline)
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline[0], "Attribute: 'anattr' did not receive a value for env Env('pp')")
-    assert "There was 1 error when defining attribute 'anattr' on object" in str(exinfo.value)
+    ce(errorline[0], serr, "Attribute: 'anattr' did not receive a value for env Env('pp')")
+    assert "There was 1 error when defining item" in str(exinfo.value)
 
 
 def test_exclude_for_configitem():
@@ -419,7 +420,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
 
     assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+    ce(errorline, serr, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
 
     with raises(ConfigException) as exinfo:
         # No most specific
@@ -429,7 +430,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
 
     assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+    ce(errorline, serr, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
 
 
 def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init(capsys):
@@ -575,4 +576,4 @@ def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_en
     print("errorline:", errorline)
     assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+    ce(errorline, serr, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")

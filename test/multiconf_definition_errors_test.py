@@ -6,8 +6,8 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in
-from .utils.utils import py3_local
+from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in, already_printed_msg
+from .utils.utils import py3_local, total_msg
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
 from ..decorators import nested_repeatables, required
@@ -91,37 +91,34 @@ def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
 
-_e_expected = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_single_error_on_root_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
-    "a": "hi"
-}"""
+    "a": %s
+}""" + already_printed_msg
 
 
-_f_expected = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_single_error_on_project_expected_ex = """There was 1 error when defining item: {
+    "__class__": "project #as: 'project', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
-    "a": "hello"
-}"""
+    %s
+}""" + already_printed_msg
 
-_h_expected = """The attribute 'a' is already fully defined"""
-_h_expected_ex = _h_expected + """ on object {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "a": 1
-}"""
+_repeatable_item_json = """{
+        "a": {
+            "__class__": "RepeatableItem #as: 'RepeatableItems', id: 0000"
+        }
+    }
+""".strip()
 
 
-_i_expected = """'ConfigItem' is defined both as simple value and a contained item: {
+_i_expected_ex = """'ConfigItem' is defined both as simple value and a contained item: {
     "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen"
 }"""
 
@@ -169,14 +166,14 @@ value: 3, from: EnvGroup('g_dev_overlap') {
      Env('dev3ct')
 }"""
 
-_p_expected_ex = """There were 2 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_p_expected_ex = """There were 2 errors when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": 1
-}"""
+}""" + already_printed_msg
 
 
 @nested_repeatables('RepeatableItems')
@@ -242,7 +239,7 @@ def test_assign_to_undefine_env(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "No such Env or EnvGroup: 'pros'")
-    assert replace_ids(str(exinfo.value), False) == _e_expected
+    assert replace_ids(str(exinfo.value), False) == _single_error_on_root_expected_ex % '"hi"'
 
 
 def test_value_not_assigned_to_all_envs(capsys):
@@ -253,7 +250,7 @@ def test_value_not_assigned_to_all_envs(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
-    assert replace_ids(str(exinfo.value), False) == _f_expected
+    assert replace_ids(str(exinfo.value), False) == _single_error_on_root_expected_ex % '"hello"'
 
 
 def test_value_not_assigned_to_all_envs_in_builder(capsys):
@@ -271,15 +268,6 @@ def test_value_not_assigned_to_all_envs_in_builder(capsys):
     assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
 
 
-_attribute_defined_with_different_types_root_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "a": 1
-}"""
-
 def test_attribute_defined_with_different_types_root(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod) as cr:
@@ -292,7 +280,7 @@ def test_attribute_defined_with_different_types_root(capsys):
         ("^%(lnum)s, prod <%(type_or_class)s 'int'>", "^%(lnum)s, pp <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
-    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_root_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _single_error_on_root_expected_ex % 1
 
 
 def test_attribute_defined_with_different_types_root_default(capsys):
@@ -307,11 +295,11 @@ def test_attribute_defined_with_different_types_root_default(capsys):
         ("^%(lnum)s, prod <%(type_or_class)s 'int'>", "^%(lnum)s, default <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'a' for different envs",
     )
-    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_root_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _single_error_on_root_expected_ex % 1
 
 
-_attribute_defined_with_different_types_item_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
+_attribute_defined_with_different_types_item_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000",
     "a": 1
 }"""
 
@@ -324,7 +312,7 @@ def test_attribute_defined_with_different_types_item(capsys):
                 ci.setattr('a', pp="hello", prod=1)
 
     _sout, serr = capsys.readouterr()
-    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_expected_ex
+    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_expected_ex + already_printed_msg
 
     assert_lines_in(
         __file__, errorline, serr,
@@ -342,7 +330,7 @@ def test_attribute_defined_with_different_types_item_default(capsys):
                 ci.setattr('a', default="hello", prod=1)
 
     _sout, serr = capsys.readouterr()
-    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_expected_ex
+    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_expected_ex + already_printed_msg
 
     assert_lines_in(
         __file__, errorline, serr,
@@ -351,8 +339,8 @@ def test_attribute_defined_with_different_types_item_default(capsys):
     )
 
 
-_attribute_defined_with_different_types_root_init_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "root #as: 'root', id: 0000, not-frozen",
+_attribute_defined_with_different_types_root_init_expected_ex = """There was 1 error when defining item: {
+    "__class__": "root #as: 'root', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -360,8 +348,8 @@ _attribute_defined_with_different_types_root_init_expected_ex = """There was 1 e
     "a": 1
 }"""
 
-_attribute_defined_with_different_types_item_init_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "item #as: 'item', id: 0000, not-frozen",
+_attribute_defined_with_different_types_item_init_expected_ex = """There was 1 error when defining item: {
+    "__class__": "item #as: 'item', id: 0000",
     "a": 1
 }"""
 
@@ -380,7 +368,7 @@ def test_attribute_defined_with_different_types_init(capsys):
             cr.setattr('a', default=1)
 
     _sout, serr1 = capsys.readouterr()
-    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_root_init_expected_ex
+    assert replace_ids(str(exinfo.value), False) == _attribute_defined_with_different_types_root_init_expected_ex + already_printed_msg
 
     class item(ConfigItem):
         init_line = 0
@@ -397,7 +385,7 @@ def test_attribute_defined_with_different_types_init(capsys):
                 ci.a = 1
 
     _sout, serr2 = capsys.readouterr()
-    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_init_expected_ex
+    assert replace_ids(str(exinfo.value), named_as=False) == _attribute_defined_with_different_types_item_init_expected_ex + already_printed_msg
 
     for init_line, errorline, serr in ((root.init_line, errorline1, serr1), (item.init_line, errorline2, serr2)):
         assert_lines_in(
@@ -416,8 +404,8 @@ def test_attribute_redefinition_attempt(capsys):
             cr.setattr('a', prod=2)
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, _h_expected)
-    assert replace_ids(str(exinfo.value), named_as=False) == _h_expected_ex
+    assert serr == ce(errorline, "The attribute 'a' is already fully defined")
+    assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_root_expected_ex % 1
 
 
 def test_nested_item_overrides_simple_attribute():
@@ -426,7 +414,7 @@ def test_nested_item_overrides_simple_attribute():
             cr.setattr('ConfigItem', prod="hello")
             ConfigItem()
 
-    assert replace_ids(str(exinfo.value), named_as=False) == _i_expected
+    assert replace_ids(str(exinfo.value), named_as=False) == _i_expected_ex
 
 
 def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class():
@@ -447,25 +435,31 @@ def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repe
     assert replace_ids(str(exinfo.value), named_as=False) == _k1_expected
 
 
-def test_attempt_to_replace_empty_nested_repeatable_by_attribute_assignment():
+def test_attempt_to_replace_empty_nested_repeatable_by_attribute_assignment(capsys):
     with raises(ConfigException) as exinfo:
         # RepeatableItems is just an attribute named like an item
         with project(prod1, ef1_prod) as cr:
+            errorline = lineno() + 1
             cr.RepeatableItems = 1
 
-    exp_msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
-    assert replace_ids(str(exinfo.value), named_as=False) == exp_msg
+    _sout, serr = capsys.readouterr()
+    msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
+    assert serr == ce(errorline, msg)
+    assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_project_expected_ex % '"RepeatableItems": {}'
 
 
-def test_attempt_to_replace_non_empty_nested_repeatable_by_attribute_assignment():
+def test_attempt_to_replace_non_empty_nested_repeatable_by_attribute_assignment(capsys):
     with raises(ConfigException) as exinfo:
         # RepeatableItems is just an attribute named like an item
         with project(prod1, ef1_prod) as cr:
             RepeatableItem(mc_key='a')
+            errorline = lineno() + 1
             cr.RepeatableItems = 1
 
-    exp_msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
-    assert replace_ids(str(exinfo.value), named_as=False) == exp_msg
+    _sout, serr = capsys.readouterr()
+    msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
+    assert serr == ce(errorline, msg)
+    assert replace_ids(str(exinfo.value), named_as=False) ==  _single_error_on_project_expected_ex % ('"RepeatableItems": ' + _repeatable_item_json)
 
 
 # def nested_repeatable_item_overrides_simple_attribute_contained_in_repeatable(self):
@@ -508,8 +502,8 @@ def test_attempt_to_call_contained_item():
     assert str(exinfo.value) == "'ConfigItem' object is not callable"
 
 
-def test_simple_attribute_attempt_to_override_contained_item():
-    ex_msg = "'ConfigItem' <class 'multiconf.multiconf.ConfigItem'> is already defined and may not be replaced with an attribute."
+def test_simple_attribute_attempt_to_override_contained_item(capsys):
+    msg = "'ConfigItem' <class 'multiconf.multiconf.ConfigItem'> is already defined and may not be replaced with an attribute."
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod) as cr:
@@ -518,7 +512,8 @@ def test_simple_attribute_attempt_to_override_contained_item():
             errorline = lineno() + 1
             cr.setattr('ConfigItem', prod="hello")
 
-    assert str(exinfo.value) == ex_msg
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, msg)
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod) as cr:
@@ -526,7 +521,8 @@ def test_simple_attribute_attempt_to_override_contained_item():
             errorline = lineno() + 1
             cr.setattr('ConfigItem', prod="hello")
 
-    assert str(exinfo.value) == ex_msg
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline, msg)
 
 
 def test_repeated_non_repeatable_item():
@@ -558,14 +554,14 @@ value: 3, from: EnvGroup('g_dev_overlap') {
      Env('dev2ct')
 }"""
 
-_value_defined_through_two_groups_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_value_defined_through_two_groups_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": 1
-}"""
+}""" + already_printed_msg
 
 def test_value_defined_through_two_groups(capsys):
     with raises(ConfigException) as exinfo:
@@ -574,7 +570,6 @@ def test_value_defined_through_two_groups(capsys):
             cr.setattr('a', default=7, prod=1, g_dev2=2, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    print(serr)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _value_defined_through_two_groups_expected % dict(line=errorline)
     assert replace_ids(str(exinfo.value), False) == _value_defined_through_two_groups_expected_ex
 
@@ -592,14 +587,14 @@ value: 7, from: EnvGroup('g_dev_overlap2') {
      Env('dev2ct')
 }"""
 
-_value_defined_through_three_groups_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_value_defined_through_three_groups_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": 1
-}"""
+}""" + already_printed_msg
 
 def test_value_defined_through_three_groups(capsys):
     with raises(ConfigException) as exinfo:
@@ -608,7 +603,6 @@ def test_value_defined_through_three_groups(capsys):
             cr.setattr('a', g_dev_overlap2=7, default=7, prod=1, g_dev2=2, g_dev_overlap1=3)
 
     _sout, serr = capsys.readouterr()
-    print(serr)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _value_defined_through_three_groups_expected % dict(line=errorline)
     assert replace_ids(str(exinfo.value), False) == _value_defined_through_three_groups_expected_ex
 
@@ -620,21 +614,11 @@ def test_two_values_defined_through_two_groups(capsys):
             cr.setattr('a', prod=1, dev3st=14, pp=33, g_dev2=2, g_dev3=12, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    print(_sout, serr)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == _p_expected.strip() % dict(line=errorline)
     assert replace_ids(str(exinfo.value), False) == _p_expected_ex
 
 
-_assigning_owerwrites_attribute_root_expected = """The attribute 'a' is already fully defined"""
-_assigning_owerwrites_attribute_root_expected_ex = _assigning_owerwrites_attribute_root_expected + """ on object {
-    "__class__": "project #as: 'project', id: 0000, not-frozen",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "a": 1,
-    "RepeatableItems": {}
-}"""
+_assigning_owerwrites_attribute_expected = """The attribute 'a' is already fully defined"""
 
 def test_assigning_owerwrites_attribute_root(capsys):
     with raises(ConfigException) as exinfo:
@@ -644,14 +628,14 @@ def test_assigning_owerwrites_attribute_root(capsys):
             cr.a = 2
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, _assigning_owerwrites_attribute_root_expected)
-    assert replace_ids(str(exinfo.value), named_as=False) == _assigning_owerwrites_attribute_root_expected_ex
+    assert serr == ce(errorline, _assigning_owerwrites_attribute_expected)
+    assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_project_expected_ex % '"a": 1,\n    "RepeatableItems": {}'
 
 
-_assigning_owerwrites_attribute_nested_item_expected_ex = _assigning_owerwrites_attribute_root_expected + """ on object {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000, not-frozen",
+_test_assigning_owerwrites_attribute_nested_item_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000",
     "a": 1
-}"""
+}""" + already_printed_msg
 
 def test_assigning_owerwrites_attribute_nested_item(capsys):
     with raises(ConfigException) as exinfo:
@@ -662,8 +646,8 @@ def test_assigning_owerwrites_attribute_nested_item(capsys):
                 ci.a = 1
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, _assigning_owerwrites_attribute_root_expected)
-    assert replace_ids(str(exinfo.value), named_as=False) == _assigning_owerwrites_attribute_nested_item_expected_ex
+    assert serr == ce(errorline, _assigning_owerwrites_attribute_expected)
+    assert replace_ids(str(exinfo.value), named_as=False) == _test_assigning_owerwrites_attribute_nested_item_ex
 
 
 def test_configitem_outside_of_root():
@@ -685,11 +669,6 @@ def test_using_group_for_selected_env():
     assert str(exinfo.value) == _group_for_selected_env_expected
 
 
-_exception_in___exit___and_build = (
-    """Exception in __exit__: Exception('in build',)"""
-    "\nException in with block will be raised\n"
-)
-
 def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_if_any_pending_builder(capsys):
     with raises(Exception) as exinfo:
         class root(ConfigRoot):
@@ -704,14 +683,9 @@ def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_i
                 raise Exception("in with")
 
     _sout, serr = capsys.readouterr()
-    assert serr == _exception_in___exit___and_build
+    assert serr == ""
     assert str(exinfo.value) == 'in with'
 
-
-_double_error_for_configroot_expected_stderr = (
-    """Exception in __exit__: ConfigException("No value given for required attributes: ['someattr1', 'someattr2']",)"""
-    "\nException in with block will be raised\n"
-)
 
 def test_double_error_for_configroot(capsys):
     with raises(Exception) as exinfo:
@@ -720,10 +694,11 @@ def test_double_error_for_configroot(capsys):
             pass
 
         with root(prod1, ef1_prod):
+            errorline = lineno() + 1
             raise Exception("Error in root with block")
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr) == _double_error_for_configroot_expected_stderr
+    assert serr == ""
     assert str(exinfo.value) == "Error in root with block"
 
 
@@ -763,9 +738,8 @@ def test_error_freezing_previous_sibling__build(capsys):
 
     with raises(Exception) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod) as cr:
-            inner()
-            # It would be nice if errorline would be previous line, but that is not really possible
             errorline = lineno() + 1
+            inner()
             inner()
 
     _sout, serr = capsys.readouterr()
@@ -780,17 +754,18 @@ def test_error_freezing_previous_sibling__validation(capsys):
 
     with raises(Exception) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod):
-            inner()
-            # It would be nice if errorline would be previous line, but that is not really possible
             errorline = lineno() + 1
+            inner()
             inner()
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr % dict(py3_local=py3_local())
-    assert str(exinfo.value) == "No value given for required attributes: ['a']"
+    assert serr.startswith(ce(errorline, "No value given for required attributes: ['a']"))
+    assert serr.endswith(_exception_previous_object_expected_stderr % dict(py3_local=py3_local()))
+    assert total_msg(1) in str(exinfo.value)
 
 
 def test_mc_init_override_underscore_error(capsys):
+    errorline = lineno() + 3
     class X(ConfigItem):
         def mc_init(self):
             self.override("_a", "Hello")
@@ -800,12 +775,12 @@ def test_mc_init_override_underscore_error(capsys):
             X()
 
     _sout, serr = capsys.readouterr()
-    # TODO: missing error message
-    assert replace_user_file_line_msg(serr) == ""
-    assert str(exinfo.value) == """Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.override. Use assignment instead."""
+    msg = "Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.override. Use assignment instead."
+    assert ce(errorline, msg) == serr
 
 
 def test_mc_init_override_underscore_mc_error(capsys):
+    errorline = lineno() + 3
     class X(ConfigItem):
         def mc_init(self):
             self.override("_mca", "Hello")
@@ -815,12 +790,12 @@ def test_mc_init_override_underscore_mc_error(capsys):
             X()
 
     _sout, serr = capsys.readouterr()
-    # TODO: missing error message
-    assert replace_user_file_line_msg(serr) == ""
-    assert str(exinfo.value) == """Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
+    msg = "Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."
+    assert serr == ce(errorline, msg)
 
 
 def test_build_override_underscore_mc_error(capsys):
+    errorline = lineno() + 3
     class B(ConfigBuilder):
         def build(self):
             self.override("_mca", "Hello")
@@ -830,9 +805,8 @@ def test_build_override_underscore_mc_error(capsys):
             B()
 
     _sout, serr = capsys.readouterr()
-    # TODO: missing error message
-    assert replace_user_file_line_msg(serr) == ""
-    assert str(exinfo.value) == """Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
+    msg = "Trying to set attribute '_mca' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."
+    assert serr == ce(errorline, msg)
 
 
 def test_attribute_mc_required_args_partial_set_in_init_unfinished():
@@ -851,52 +825,68 @@ def test_attribute_mc_required_args_partial_set_in_init_unfinished():
             Requires()
 
 
-def test_setattr_no_envs():
-    expected_ex = """No Env or EnvGroup  names specified."""
+def test_setattr_no_envs(capsys):
+    def check(errorline):
+        _sout, serr = capsys.readouterr()
+        assert_lines_in(
+            __file__, errorline, serr,
+            "^%(lnum)s",
+            "^ConfigError: No Env or EnvGroup names specified.",
+            "^%(lnum)s",
+            "^ConfigError: Attribute: 'a' did not receive a value for env Env('pp')",
+            "^%(lnum)s",
+            "^ConfigError: Attribute: 'a' did not receive a value for current env Env('prod')",
+        )
 
     # ConfigRoot
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod) as cr:
+            errorline = lineno() + 1
             cr.setattr('a')
 
-    assert str(exinfo.value) == expected_ex
+    check(errorline)
 
-    with raises(ConfigException) as exinfo:
+    with raises(Exception) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod) as cr:
+            errorline = lineno() + 1
             cr.setattr('a', 1)
 
-    assert str(exinfo.value) == expected_ex
+    check(errorline)
 
     # ConfigItem
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod):
             with ConfigItem() as ci:
+                errorline = lineno() + 1
                 ci.setattr('a')
 
-    assert str(exinfo.value) == expected_ex
+    check(errorline)
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod):
             with ConfigItem() as ci:
+                errorline = lineno() + 1
                 ci.setattr('a', 1)
 
-    assert str(exinfo.value) == expected_ex
+    check(errorline)
 
     # RepeatableItem
     with raises(ConfigException) as exinfo:
         with project(prod2, ef2_pp_prod):
             with RepeatableItem(mc_key='a') as ci:
+                errorline = lineno() + 1
                 ci.setattr('a')
 
-    assert str(exinfo.value) == expected_ex
+    check(errorline)
 
     with raises(ConfigException) as exinfo:
         with project(prod2, ef2_pp_prod):
             with RepeatableItem(mc_key='a') as ci:
+                errorline = lineno() + 1
                 ci.setattr('a', 1)
 
-    assert str(exinfo.value) == expected_ex
-    
+    check(errorline)
+
     # ConfigBuilder
     class B(ConfigBuilder):
         def build(self):
@@ -905,15 +895,15 @@ def test_setattr_no_envs():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod):
             with B() as ci:
+                errorline = lineno() + 1
                 ci.setattr('a')
 
-    assert str(exinfo.value) == expected_ex
+    check(errorline)
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod):
             with B() as ci:
+                errorline = lineno() + 1
                 ci.setattr('a', 1)
 
-    assert str(exinfo.value) == expected_ex
-    
-    
+    check(errorline)

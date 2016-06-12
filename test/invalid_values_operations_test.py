@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from pytest import raises, mark  # pylint: disable=no-name-in-module
 
-from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg
+from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, total_msg, already_printed_msg
 
 from .. import ConfigRoot, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
 from ..envs import EnvFactory
@@ -27,14 +27,14 @@ class ItemWithA(ConfigItem):
 
 _attribute_mc_required_expected = """Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')"""
 
-_attribute_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "MC_REQUIRED"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_required_env(capsys):
     with raises(ConfigException) as exinfo:
@@ -43,9 +43,10 @@ def test_attribute_mc_required_env(capsys):
             cr.setattr('a', prod="abc" + MC_REQUIRED, pp="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, _attribute_mc_required_expected)
+    print(serr)
+    assert ce(errorline, _attribute_mc_required_expected) in serr
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_expected_ex % dict(ww='was', num_errors=1, err='error')
-
+    assert total_msg(1) in str(exinfo.value)
 
 _attribute_mc_required_override_env_expected = """
 File "fake_dir/invalid_values_operations_test.py", line %(line)s
@@ -62,7 +63,7 @@ def test_attribute_mc_required_override_env(capsys):
 
     _sout, serr = capsys.readouterr()
     expected = _attribute_mc_required_override_env_expected.strip() % dict(line=errorline, prod_err=_attribute_mc_required_expected)
-    assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == expected
+    assert expected in replace_user_file_line_msg(serr.strip(), line_no=errorline)
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_expected_ex % dict(ww='were', num_errors=2, err='errors')
 
 
@@ -107,14 +108,14 @@ _attribute_mc_todo_other_env_expected = """Attribute: 'a' MC_TODO did not receiv
 
 # MC_TODO - Not Allowed for Current Env
 
-_attribute_mc_todo_env_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_todo_env_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "MC_TODO"
-}"""
+}""" + already_printed_msg
 
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_env(capsys, allow_todo):
@@ -125,18 +126,19 @@ def test_attribute_mc_todo_env(capsys, allow_todo):
 
     _sout, serr = capsys.readouterr()
     print(_sout)
-    assert serr == ce(errorline, _attribute_mc_current_env_todo_expected)
+    assert ce(errorline, _attribute_mc_current_env_todo_expected) in serr
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_todo_env_expected_ex
+    assert total_msg(1) in str(exinfo.value)
 
 
-_attribute_mc_todo_default_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_todo_default_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "MC_TODO"
-}"""
+}""" + already_printed_msg
 
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_default(capsys, allow_todo):
@@ -146,14 +148,15 @@ def test_attribute_mc_todo_default(capsys, allow_todo):
             cr.setattr('a', default=MC_TODO.append("abc"), pp="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, _attribute_mc_current_env_todo_expected)
+    assert ce(errorline, _attribute_mc_current_env_todo_expected) in serr
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_todo_default_expected_ex
+    assert total_msg(1) in str(exinfo.value)
 
 
-_attribute_mc_todo_init_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000, not-frozen",
+_attribute_mc_todo_init_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000",
     "a": "MC_TODO"
-}"""
+}""" + already_printed_msg
 
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_init(capsys, allow_todo):
@@ -164,5 +167,6 @@ def test_attribute_mc_todo_init(capsys, allow_todo):
                 ci.setattr('a', pp="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, _attribute_mc_current_env_todo_expected)
+    assert ce(errorline, _attribute_mc_current_env_todo_expected) in serr
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_todo_init_expected_ex
+    assert total_msg(1) in str(exinfo.value)

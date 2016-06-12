@@ -63,7 +63,7 @@ class Attribute(object):
     def all_set(self, mask):
         return (self.envs_set_mask & mask) == mask
 
-    def _mc_freeze(self):
+    def _mc_freeze(self, previous_child):
         return True
 
     def _user_validate_recursively(self):

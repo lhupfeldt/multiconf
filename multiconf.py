@@ -13,7 +13,7 @@ from .values import McInvalidValue
 from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
-from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, _line_msg as line_msg
+from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, _line_msg
 from .config_errors import _error_msg, _warning_msg, _error_type_msg
 from .json_output import ConfigItemEncoder
 
@@ -53,8 +53,7 @@ class _ConfigBase(object):
         self._mc_included_envs_mask = env_factory._all_envs_mask
         self._mc_json_errors = 0
 
-        # Prepare attributes with default values
-        file_name, line_num = find_user_file_line(up_level_start=3)
+        self._mc_file_name, self._mc_line_num = find_user_file_line(up_level_start=3)
 
         __class__ = object.__getattribute__(self, '__class__')
         _mc_deco_nested_repeatables = __class__._mc_deco_nested_repeatables
@@ -66,6 +65,30 @@ class _ConfigBase(object):
         # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class mc_init
         _mc_deco_unchecked = object.__getattribute__(self, '_mc_deco_unchecked')
         self._mc_check = _mc_deco_unchecked != __class__ and _mc_deco_unchecked not in __class__.__bases__
+
+    def _mc_error(self):
+        if not hasattr(self, '_mc_num_errors'):
+            self._mc_num_errors = 0
+        self._mc_num_errors += 1
+
+    def _mc_error_msg(self, message, up_level=2, file_name=None, line_num=None):
+        _error_msg(message, up_level, file_name, line_num)
+        self._mc_error()
+
+    def _mc_error_type_msg(self, message):
+        _error_type_msg(message)
+        self._mc_error()
+
+    def _mc_warning_msg(self, msg, file_name, line_num):
+        _warning_msg(msg, file_name=file_name, line_num=line_num)
+        self._mc_root_conf._mc_num_warnings += 1
+
+    def _mc_raise_if_errors(self, already="\nCheck already printed error messages"):
+        if hasattr(self, '_mc_num_errors'):
+            num_errors = self._mc_num_errors
+            ww, err = ('were', 'errors') if num_errors > 1 else ('was', 'error')
+            raise ConfigException("There {ww} {num_errors} {err} when defining item: {self}{already}.".format(
+                ww=ww, num_errors=num_errors, err=err, self=self, already=already))
 
     @classmethod
     def named_as(cls):
@@ -109,22 +132,7 @@ class _ConfigBase(object):
         self.__class__._mc_nested.append(self)
         return self
 
-    def _mc_freeze_validation(self):
-        # Validate all unfrozen attributes
-        _mc_attributes = object.__getattribute__(self, '_mc_attributes')
-        for attr_name, attr in _mc_attributes.items():
-            if not attr._mc_frozen and isinstance(attr, Attribute):
-                self.check_attr_fully_defined(attr_name, attr, num_errors=0)
-
-        # Validate @required
-        missing = []
-        for req in self.__class__._mc_deco_required:
-            if req not in _mc_attributes:
-                missing.append(req)
-        if missing:
-            raise ConfigException("No value given for required attributes: " + repr(missing))
-
-    def _mc_freeze(self):
+    def _mc_freeze(self, previous_child):
         """
         Recursively freeze contained items bottom up.
         If self is ready to be validated (exit from with_statement or not declared in a with_statement),
@@ -139,7 +147,7 @@ class _ConfigBase(object):
         self._mc_frozen = self._mc_deco_unchecked != self.__class__ and not root_conf._mc_under_proxy_build
         attributes = object.__getattribute__(self, '_mc_attributes')
         for _child_name, child_value in attributes.items():
-            self._mc_frozen &= child_value._mc_freeze()
+            self._mc_frozen &= child_value._mc_freeze(previous_child)
 
         if not self._mc_built:
             must_pop = False
@@ -153,7 +161,7 @@ class _ConfigBase(object):
                 self.mc_init()
                 self._mc_where = where
                 for _name, value in attributes.items():
-                    self._mc_frozen &= value._mc_freeze()
+                    self._mc_frozen &= value._mc_freeze(previous_child)
 
                 if isinstance(self, _ConfigBuilder):
                     self._mc_where = Where.IN_BUILD
@@ -163,7 +171,7 @@ class _ConfigBase(object):
                     except _McExcludedException:
                         pass
                     for _name, value in self._mc_build_attributes.items():
-                        self._mc_frozen &= value._mc_freeze()
+                        self._mc_frozen &= value._mc_freeze(previous_child)
                     self._mc_post_build_update()
                     self._mc_where = where
             except Exception as ex:
@@ -176,7 +184,32 @@ class _ConfigBase(object):
                 self._mc_built = True
 
         if self._mc_frozen:
-            self._mc_freeze_validation()
+            # Self was just frozen
+
+            # Now validate all unfrozen attributes
+
+            # If we are validating 'previsous_child' then that was not defined in a 'with' statement, so we make sure the
+            # file/line is pointing to the item declaration. If not the file/line will point to the end of the 'with' block
+            if previous_child:
+                file_name = self._mc_file_name
+                line_num = self._mc_line_num
+            else:
+                file_name = None
+                line_num = None
+
+            _mc_attributes = object.__getattribute__(self, '_mc_attributes')
+            for attr_name, attr in _mc_attributes.items():
+                if not attr._mc_frozen and isinstance(attr, Attribute):
+                    self.check_attr_fully_defined(attr_name, attr, file_name=file_name, line_num=line_num)
+
+            # Validate @required
+            missing = []
+            for req in self.__class__._mc_deco_required:
+                if req not in _mc_attributes:
+                    missing.append(req)
+            if missing:
+                self._mc_error_msg("No value given for required attributes: " + repr(missing), file_name=file_name, line_num=line_num)
+            self._mc_raise_if_errors()
 
         return self._mc_frozen
 
@@ -188,18 +221,15 @@ class _ConfigBase(object):
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             if exc_type is _McExcludedException:
+                self._mc_raise_if_errors()
                 return True
-            self._mc_freeze()
+            if not exc_type:
+                self._mc_freeze(False)
         except Exception as ex:
             ex._mc_in_exit = True
-            if not exc_type:
-                if hasattr(ex, '_mc_in_user_code') or _debug_exc:
-                    raise
-                raise ex
-
-            if not hasattr(exc_value, '_mc_in_exit') or hasattr(ex, '_mc_in_user_code'):
-                print("Exception in __exit__:", repr(ex), file=sys.stderr)
-                print("Exception in with block will be raised", file=sys.stderr)
+            if hasattr(ex, '_mc_in_user_code') or _debug_exc:
+                raise
+            raise ex
         finally:
             self.__class__._mc_nested.pop()
 
@@ -244,34 +274,27 @@ class _ConfigBase(object):
             self._mc_check_reserved_name(name, 'setattr')
             attributes[name] = attribute
 
-        if not kwargs:
-            # Note, we can't supply file/line here as setattr might have been called with bad args for mc_... args
-            # We really need python 3 to handle this properly
-            raise ConfigException("No " + Env.__name__ + " or " + EnvGroup.__name__ + "  names specified.")
-
         if attribute._mc_frozen and where != Where.IN_MC_INIT:
-            msg = "The attribute " + repr(name) + " is already fully defined"
-            _ = _error_msg(0, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
-            raise ConfigException(msg + " on object " + repr(self))
+            raise ConfigException("The attribute " + repr(name) + " is already fully defined")
 
-        # For error messages
-        num_errors = 0
+        if not kwargs:
+            self._mc_error_msg("No " + Env.__name__ + " or " + EnvGroup.__name__ + " names specified.")
 
         root_conf = object.__getattribute__(self, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
         selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
 
-        def type_error(value, other_env, other_type, num_errors):
-            line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num, msg=eg.name + ' ' + repr(type(value)))
+        def type_error(value, other_env, other_type):
+            _line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num, msg=eg.name + ' ' + repr(type(value)))
             other_file_name, other_line_num = mc_caller_file_name, mc_caller_line_num
             if not other_env:
                 other_env = other_env or env_factory.env_or_group_from_bit(attribute.value_from_eg_bit)
                 other_file_name, other_line_num = attribute.file_name, attribute.line_num
-            line_msg(file_name=other_file_name, line_num=other_line_num, msg=other_env.name + ' ' + repr(other_type))
+            _line_msg(file_name=other_file_name, line_num=other_line_num, msg=other_env.name + ' ' + repr(other_type))
             msg = "Found different value types for property " + repr(name) + " for different envs"
-            return _error_type_msg(num_errors, msg)
+            self._mc_error_type_msg(msg)
 
-        def repeated_env_error(env, conflicting_egs, num_errors):
+        def repeated_env_error(env, conflicting_egs):
             # TODO __file__ line of attribute set in any scope!
             # new_eg_msg = repr(selected_env) + ("" if isinstance(eg, EnvGroup) else " from group " + repr(eg))
             # new_vfl = (value, (mc_caller_file_name, mc_caller_line_num))
@@ -282,7 +305,7 @@ class _ConfigBase(object):
             for eg in sorted(conflicting_egs):
                 value = kwargs[eg.name]
                 msg += "\nvalue: " + repr(value) + ", from: " + repr(eg)
-            return _error_msg(num_errors, msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            self._mc_error_msg(msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
         if where != Where.IN_INIT and self._mc_check:
             attribute._mc_frozen = True
@@ -311,7 +334,7 @@ class _ConfigBase(object):
                     # Validate that attribute has the same type for all envs
                     if type(value) != other_type and value is not None:
                         if other_type is not None:
-                            num_errors = type_error(value, other_env, other_type, num_errors)
+                            type_error(value, other_env, other_type)
                         else:
                             other_env = eg
                             other_type = type(value)
@@ -363,7 +386,7 @@ class _ConfigBase(object):
 
                 seen_egs[eg_name] = eg
             except EnvException as ex:
-                num_errors = _error_msg(num_errors, str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+                self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
         # Clear resolved conflicts
         for _eg_name, eg in seen_egs.items():
@@ -388,13 +411,12 @@ class _ConfigBase(object):
                     all_ambiguous_by_envs.setdefault(env, set()).update(conflicting_egs)
 
             for env, conflicting_egs in sorted(all_ambiguous_by_envs.items()):
-                num_errors = repeated_env_error(env, conflicting_egs, num_errors)
+                repeated_env_error(env, conflicting_egs)
 
         if where != Where.IN_INIT and self._mc_check:
-            self.check_attr_fully_defined(name, attribute, num_errors, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            self.check_attr_fully_defined(name, attribute, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
-    @staticmethod
-    def _mc_check_override_common(item, name, attribute):
+    def _mc_check_override_common(self, item, name, attribute):
         try:
             object.__getattribute__(item, name)
         except AttributeError:
@@ -428,19 +450,17 @@ class _ConfigBase(object):
         raise ConfigException("The attribute '%(name)s' (not ending in '!') clashes with a property or method" % dict(name=name))
 
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
-        if not mc_caller_file_name:
+        if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
+        attribute, name = new_attribute(name)
         try:
-            attribute, name = new_attribute(name)
             overriding_property = self._mc_check_override_common(self, name, attribute)
             attributes = object.__getattribute__(self, '_mc_attributes')
             where = object.__getattribute__(self, '_mc_where')
             self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, overriding_property, **kwargs)
-        except ConfigBaseException as ex:
-            if _debug_exc:
-                raise
-            raise ex
+        except ConfigException as ex:
+            self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_override_common(self, name, attributes, where, mc_caller_file_name, mc_caller_line_num, value):
         """Set attributes with environment specific values"""
@@ -459,26 +479,25 @@ class _ConfigBase(object):
         if isinstance(value, McInvalidValue):
             attribute.set_invalid_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
             if self._mc_check:
-                self.check_attr_fully_defined(name, attribute, 0)
+                self.check_attr_fully_defined(name, attribute)
             return
 
         attribute.set_env_provided(default_group)
         attribute.set_current_env_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
 
-    def override(self, name, value):
-        """Set attributes with environment specific values"""
-        mc_caller_file_name, mc_caller_line_num = caller_file_line()
+    def override(self, name, value, mc_caller_file_name=None, mc_caller_line_num=None):
+        """Unconditionally set attributes even if frozen"""
+        if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
+            mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
         where = object.__getattribute__(self, '_mc_where')
         attributes = object.__getattribute__(self, '_mc_attributes')
         try:
             self._mc_override_common(name, attributes, where, mc_caller_file_name, mc_caller_line_num, value)
-        except ConfigBaseException as ex:
-            if _debug_exc:
-                raise
-            raise ex
+        except ConfigException as ex:
+            self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
-    def check_attr_fully_defined(self, name, attribute, num_errors, file_name=None, line_num=None):
+    def check_attr_fully_defined(self, name, attribute, file_name=None, line_num=None):
         # In case of override_method, the attribute need not be fully defined, the property method will handle remaining values
         if not attribute.all_set(self._mc_included_envs_mask) and not attribute.override_method:
             root_conf = object.__getattribute__(self, '_mc_root_conf')
@@ -505,18 +524,13 @@ class _ConfigBase(object):
 
                 if value == McInvalidValue.MC_TODO:
                     if env != self.env and root_conf._mc_allow_todo:
-                        self._warning_msg(msg, file_name=file_name, line_num=line_num)
+                        self._mc_warning_msg(msg, file_name=file_name, line_num=line_num)
                         continue
                     if root_conf._mc_allow_current_env_todo:
-                        self._warning_msg(msg + ". Continuing with invalid configuration!", file_name=file_name, line_num=line_num)
+                        self._mc_warning_msg(msg + ". Continuing with invalid configuration!", file_name=file_name, line_num=line_num)
                         continue
 
-                num_errors = _error_msg(num_errors, msg, file_name=file_name, line_num=line_num)
-
-        if num_errors:
-            ww, err = ('were', 'errors') if num_errors > 1 else ('was', 'error')
-            raise ConfigException("There {ww} {num_errors} {err} when defining attribute {attr_name!r} on object: {self}".format(
-                ww=ww, num_errors=num_errors, err=err, attr_name=name, self=self))
+                self._mc_error_msg(msg, file_name=file_name, line_num=line_num)
 
     def __getattribute__(self, name):
         if name[0] == '_':
@@ -686,9 +700,6 @@ class _ConfigBase(object):
     def _mc_value(self):
         return self
 
-    def _warning_msg(self, msg, file_name, line_num):
-        self._mc_root_conf._mc_num_warnings = _warning_msg(self._mc_root_conf._mc_num_warnings, msg, file_name=file_name, line_num=line_num)
-
 
 class ConfigRoot(_ConfigBase):
     def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None, mc_allow_todo=False, mc_allow_current_env_todo=False):
@@ -723,17 +734,35 @@ class ConfigRoot(_ConfigBase):
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             super(ConfigRoot, self).__exit__(exc_type, exc_value, traceback)
-            self._user_validate_recursively()
-            self._mc_config_loaded = True
-        except Exception as ex:
             if not exc_type:
-                if hasattr(ex, '_mc_in_user_code') or _debug_exc:
-                    raise
-                raise ex
+                self._user_validate_recursively()
+                self._mc_config_loaded = True
+        except Exception as ex:
+            if hasattr(ex, '_mc_in_user_code') or _debug_exc:
+                raise
+            raise ex
 
     @property
     def env_factory(self):
         return self._mc_env_factory
+
+    def _mc_raise_if_errors_in_init(self):
+        """Errors in __init__won't be handled, so we must raise at the end of each method"""
+        where = object.__getattribute__(self, '_mc_where')
+        if where == Where.IN_INIT:
+            self._mc_raise_if_errors()
+
+    def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
+        if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
+            mc_caller_file_name, mc_caller_line_num = caller_file_line()
+        super(ConfigRoot, self).setattr(name, mc_caller_file_name, mc_caller_line_num, **kwargs)
+        self._mc_raise_if_errors_in_init()
+
+    def override(self, name, value, mc_caller_file_name=None, mc_caller_line_num=None):
+        if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
+            mc_caller_file_name, mc_caller_line_num = caller_file_line()
+        super(ConfigRoot, self).override(name, value, mc_caller_file_name, mc_caller_line_num)
+        self._mc_raise_if_errors_in_init()
 
 
 class _ConfigItem(_ConfigBase):
@@ -749,7 +778,7 @@ class _ConfigItem(_ConfigBase):
         previous_item = contained_in._mc_previous_child
         if previous_item and not previous_item.frozen:
             try:
-                previous_item._mc_freeze()
+                previous_item._mc_freeze(previous_child=True)
             except Exception as ex:
                 print("Exception validating previously defined object -", file=sys.stderr)
                 print("  type:", type(previous_item), file=sys.stderr)
@@ -771,12 +800,13 @@ class _ConfigItem(_ConfigBase):
         if not self._mc_is_excluded:
             contained_in._mc_previous_child = self
 
-    def _mc_freeze(self):
+    def _mc_freeze(self, previous_child):
         if self._mc_is_excluded:
             self._mc_frozen = True
+            self._mc_raise_if_errors()
             return True
 
-        return super(_ConfigItem, self)._mc_freeze()
+        return super(_ConfigItem, self)._mc_freeze(previous_child)
 
     def _mc_select_envs(self, include, exclude, file_name=None, line_num=None):
         """Determine if item (and children) is included in specified env"""
@@ -841,8 +871,6 @@ class _ConfigItem(_ConfigBase):
         for conflicting_egs in cleared:
             del all_ambiguous[conflicting_egs]
 
-        num_errors = 0
-
         # If we still have unresolved conflicts, it is an error
         if all_ambiguous:
             if not file_name:
@@ -859,7 +887,7 @@ class _ConfigItem(_ConfigBase):
                 msg = "Env " + repr(env.name) + " is specified in both include and exclude, with no single most specific group or direct env:"
                 for eg in sorted(conflicting_egs):
                     msg += "\n    from: " + repr(eg)
-                num_errors = _error_msg(num_errors, msg, file_name=file_name, line_num=line_num)
+                self._mc_error_msg(msg, file_name=file_name, line_num=line_num)
 
         if include is not None and _mc_included_envs_mask & contained_in_included_envs_mask != _mc_included_envs_mask:
             re_included = _mc_included_envs_mask & contained_in_included_envs_mask ^ _mc_included_envs_mask
@@ -869,11 +897,9 @@ class _ConfigItem(_ConfigBase):
             env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
             for env in env_factory.envs_from_mask(re_included):
                 msg = "Env " + repr(env.name) + " is excluded at an outer level"
-                num_errors = _error_msg(num_errors, msg, file_name=file_name, line_num=line_num)
+                self._mc_error_msg(msg, file_name=file_name, line_num=line_num)
 
-        if num_errors:
-            ww, err = ('were', 'errors') if num_errors > 1 else ('was', 'error')
-            raise ConfigException("There {ww} {num_errors} {err} when defining item: {self}".format(ww=ww, num_errors=num_errors, err=err, self=self))
+        self._mc_raise_if_errors(already="")
 
         if not (self.env.mask & _mc_included_envs_mask) or contained_in._mc_is_excluded:
             self._mc_is_excluded = True
@@ -989,29 +1015,26 @@ class _ConfigBuilder(ConfigItem):
         _ConfigBuilder._num += 1
 
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
-        if not mc_caller_file_name:
+        if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
+        attribute, name = new_attribute(name)
+        attributes, where = self._mc_get_attributes_where()
         try:
-            attribute, name = new_attribute(name)
-            attributes, where = self._mc_get_attributes_where()
             self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, False, **kwargs)
-        except ConfigBaseException as ex:
-            if _debug_exc:
-                raise
-            raise ex
+        except ConfigException as ex:
+            self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
-    def override(self, name, value):
-        """Set attributes with environment specific values"""
-        mc_caller_file_name, mc_caller_line_num = caller_file_line()
+    def override(self, name, value, mc_caller_file_name=None, mc_caller_line_num=None):
+        """Unconditionally set attributes even if frozen"""
+        if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
+            mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
         attributes, where = self._mc_get_attributes_where()
         try:
             self._mc_override_common(name, attributes, where, mc_caller_file_name, mc_caller_line_num, value)
-        except ConfigBaseException as ex:
-            if _debug_exc:
-                raise
-            raise ex
+        except ConfigException as ex:
+            self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_post_build_update(self):
         root_conf = object.__getattribute__(self, '_mc_root_conf')

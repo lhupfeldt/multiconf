@@ -9,10 +9,10 @@ from .excluded import Excluded
 class Repeatable(OrderedDict):
     _mc_frozen = False
 
-    def _mc_freeze(self):
+    def _mc_freeze(self, previous_child):
         self._mc_frozen = True
         for item in self.values():
-            self._mc_frozen &= item._mc_freeze()
+            self._mc_frozen &= item._mc_freeze(previous_child)
         return self._mc_frozen
 
     def _user_validate_recursively(self):
@@ -36,7 +36,7 @@ class UserRepeatable(Repeatable):
         res.contained_in = self.contained_in
         res._mc_is_excluded = self._mc_is_excluded
         return res
-        
+
     def __getitem__(self, key):
         try:
             return super(UserRepeatable, self).__getitem__(key)

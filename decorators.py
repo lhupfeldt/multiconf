@@ -17,7 +17,7 @@ def _isidentifier(name):
 def _not_config_builder(cls, decorator_name):
     if issubclass(cls, ConfigBuilder):
         msg = "Decorator '@" + decorator_name + "' is not allowed on instance of " + ConfigBuilder.__name__ + "."
-        error(0, msg)
+        error(msg)
         raise ConfigDefinitionException(msg)
 
 
@@ -44,7 +44,7 @@ def _add_super_list_deco_values(cls, attr_names, deco_attr_name):
     super_names = getattr(super(cls, cls), '_mc_deco_' + deco_attr_name)
     for attr in super_names:
         if attr in attr_names:
-            warn(0, "Attribute name: " + repr(attr) + " re-specified as " + repr(deco_attr_name) + " on class: " + repr(cls.__name__) + " , was already inherited from a super class.",
+            warn("Attribute name: " + repr(attr) + " re-specified as " + repr(deco_attr_name) + " on class: " + repr(cls.__name__) + " , was already inherited from a super class.",
                  up_level=3)
 
     return attr_names + super_names

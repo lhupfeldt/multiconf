@@ -4,7 +4,7 @@
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from .utils.utils import config_error, lineno, replace_ids, assert_lines_in
+from .utils.utils import config_error, lineno, replace_ids, assert_lines_in, already_printed_msg
 
 from .. import ConfigRoot, ConfigItem, ConfigException, MC_TODO
 from ..decorators import required, unchecked
@@ -105,23 +105,23 @@ _required_missing_unchecked_super_for_configitem_expected1a = """Attribute: 'ano
 
 _required_missing_unchecked_super_for_configitem_expected1b = """Attribute: 'anotherattr' did not receive a value for env Env('dev2')"""
 
-_required_missing_unchecked_super_for_configitem_expected1_ex = """There were 2 errors when defining attribute 'anotherattr' on object: {
+_required_missing_unchecked_super_for_configitem_expected1_ex = """There were 2 errors when defining item: {
     "__class__": "item #as: 'item', id: 0000",
     "anattr": 2,
     "anotherattr": 2
-}"""
+}""" + already_printed_msg
 
-_required_missing_unchecked_super_for_configitem_expected2_ex = """There was 1 error when defining attribute 'anattr' on object: {
+_required_missing_unchecked_super_for_configitem_expected2_ex = """There was 1 error when defining item: {
     "__class__": "item #as: 'item', id: 0000",
     "anattr": 2,
     "anotherattr": 0
-}"""
+}""" + already_printed_msg
 
-_required_missing_unchecked_super_for_configitem_expected3_ex = """There was 1 error when defining attribute 'anattr' on object: {
+_required_missing_unchecked_super_for_configitem_expected3_ex = """There was 1 error when defining item: {
     "__class__": "item #as: 'item', id: 0000",
     "anattr": 1,
     "anotherattr": 0
-}"""
+}""" + already_printed_msg
 
 def test_required_missing_unchecked_super_for_configitem(capsys):
     with raises(ConfigException) as exinfo:
@@ -191,11 +191,11 @@ def test_unchecked_override_attribute_for_configitem():
     assert cr.uitemwo.anotherattr == 111
 
 
-_unchecked_override_attribute_for_configitem_mc_todo_expected_ex = """There were 4 errors when defining attribute 'anotherattr' on object: {
+_unchecked_override_attribute_for_configitem_mc_todo_expected_ex = """There were 4 errors when defining item: {
     "__class__": "citem #as: 'citem', id: 0000",
     "anattr": 2,
     "anotherattr": "MC_TODO"
-}"""
+}""" + already_printed_msg
 
 def test_unchecked_override_attribute_for_configitem_mc_todo(capsys):
     @required('anattr, anotherattr')
@@ -208,7 +208,7 @@ def test_unchecked_override_attribute_for_configitem_mc_todo(capsys):
     class citem(uitemwo):
         pass
 
-    with raises(ConfigException) as exinfo:            
+    with raises(ConfigException) as exinfo:
         with ConfigRoot(prod, ef):
             with citem() as it:
                 it.setattr('anattr', pp=1, g_dev=1)

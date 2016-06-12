@@ -153,6 +153,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved(capsys):
             errorline = lineno() + 1
             item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
 
+    print(str(exinfo.value))
     assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
@@ -187,6 +188,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_reversed_mc_sele
             with item() as it:
                 errorline = lineno() + 1
                 it.mc_select_envs(include=[g_dev34, g_dev2_34], exclude=[g_dev12_3, pp])
+                raise Exception()
 
     assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
@@ -207,3 +209,17 @@ def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolve
 def test_exclude_include_overlapping_groups_dev3_dev2_finally_resolved():
     with ConfigRoot(prod, ef):
         item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3, dev2])
+
+
+def test_exclude_include_error_before_exclude(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod, ef):
+            with item() as it:
+                errorline = lineno() + 1
+                it.setattr('_a', 7)
+                it.mc_select_envs(exclude=[prod])
+                raise Exception()
+
+    _sout, serr = capsys.readouterr()
+    msg = "Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.setattr. Use assignment instead."
+    assert ce(errorline, msg) == serr

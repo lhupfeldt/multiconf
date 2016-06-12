@@ -11,7 +11,7 @@ from pytest import raises
 from .. import ConfigRoot, ConfigItem, ConfigException
 from ..envs import EnvFactory
 
-from .utils.utils import lineno, assert_lines_in, replace_ids
+from .utils.utils import lineno, assert_lines_in, replace_ids, already_printed_msg
 
 
 class item(ConfigItem):
@@ -20,10 +20,11 @@ class item(ConfigItem):
         self.bb = 111
 
 
-_env_factories_ef1_expected_ex = """There were 3 errors when defining attribute 'aa' on object: {
-    "__class__": "item #as: 'item', id: 0000, not-frozen",
-    "aa": 1
-}"""
+_env_factories_ef1_expected_ex = """There were 3 errors when defining item: {
+    "__class__": "item #as: 'item', id: 0000",
+    "aa": 1,
+    "bb": 111
+}""" + already_printed_msg
 
 def test_env_factories_ef1(capsys):
     ef = EnvFactory()
@@ -78,10 +79,11 @@ def test_env_factories_ef1(capsys):
     )
 
 
-_env_factories_ef2_expected_ex = """There was 1 error when defining attribute 'aa' on object: {
-    "__class__": "item #as: 'item', id: 0000, not-frozen",
-    "aa": 1
-}"""
+_env_factories_ef2_expected_ex = """There was 1 error when defining item: {
+    "__class__": "item #as: 'item', id: 0000",
+    "aa": 1,
+    "bb": 111
+}""" + already_printed_msg
 
 
 def test_env_factories_ef2(capsys):

@@ -6,7 +6,7 @@ from __future__ import print_function
 import pytest
 from pytest import raises, mark  # pylint: disable=no-name-in-module
 
-from .utils.utils import config_error, config_warning, lineno, replace_ids, assert_lines_in, replace_user_file_line_msg
+from .utils.utils import config_error, config_warning, lineno, replace_ids, assert_lines_in, replace_user_file_line_msg, already_printed_msg
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED, MC_TODO
 from ..envs import EnvFactory
@@ -43,14 +43,14 @@ class ItemWithA(ConfigItem):
 
 _attribute_mc_required_expected = """Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')"""
 
-_attribute_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "MC_REQUIRED"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_required_env(capsys):
     with raises(ConfigException) as exinfo:
@@ -82,14 +82,14 @@ def test_attribute_mc_required_override_env(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_expected_ex % dict(ww='were', num_errors=2, err='errors')
 
 
-_attribute_mc_required_default_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_required_default_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "MC_REQUIRED"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_required_default(capsys):
     with raises(ConfigException) as exinfo:
@@ -103,10 +103,10 @@ def test_attribute_mc_required_default(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_default_expected_ex
 
 
-_attribute_mc_required_init_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000, not-frozen",
+_attribute_mc_required_init_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000",
     "a": "MC_REQUIRED"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_required_init(capsys):
     with raises(ConfigException) as exinfo:
@@ -120,14 +120,14 @@ def test_attribute_mc_required_init(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_init_expected_ex
 
 
-_attribute_mc_required_other_env_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_required_other_env_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "hi"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_required_other_env(capsys):
     with raises(ConfigException) as exinfo:
@@ -141,14 +141,14 @@ def test_attribute_mc_required_other_env(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_other_env_expected_ex
 
 
-_attribute_mc_required_other_env_different_types_expected_ex = """There were 2 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_required_other_env_different_types_expected_ex = """There were 2 errors when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "hi"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_required_other_env_different_types(capsys):
     with raises(ConfigException) as exinfo:
@@ -279,10 +279,10 @@ def test_attribute_mc_required_args_set_in_init_overridden_in_with():
     assert cr.Requires.a == 7
 
 
-_attribute_mc_required_other_env_requires_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "Requires #as: 'Requires', id: 0000, not-frozen",
+_attribute_mc_required_other_env_requires_expected_ex = """There was 1 error when defining item: {
+    "__class__": "Requires #as: 'Requires', id: 0000",
     "a": "hi"
-}"""
+}""" + already_printed_msg
 
 
 def test_attribute_mc_required_init_args_missing_env_value(capsys):
@@ -303,10 +303,10 @@ def test_attribute_mc_required_init_args_missing_env_value(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_other_env_requires_expected_ex
 
 
-_attribute_mc_required_init_args_missing_env_values_builder_expected_ex = """There were 2 errors when defining attribute 'a' on object: {
+_attribute_mc_required_init_args_missing_env_values_builder_expected_ex = """There were 2 errors when defining item: {
     "__class__": "Requires #as: 'Requires', id: 0000",
     "a": "MC_REQUIRED"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
     class Requires(ConfigItem):
@@ -337,10 +337,10 @@ def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_init_args_missing_env_values_builder_expected_ex
 
 
-_attribute_mc_required_other_env_required_init_arg_missing_with_expected_ex = """There was 1 error when defining attribute 'a' on object: {
+_attribute_mc_required_other_env_required_init_arg_missing_with_expected_ex = """There was 1 error when defining item: {
     "__class__": "Requires #as: 'Requires', id: 0000",
     "a": "hi"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_required_init_args_missing_with(capsys):
     class Requires(ConfigItem):
@@ -385,14 +385,14 @@ _attribute_mc_todo_other_env_expected = """Attribute: 'a' MC_TODO did not receiv
 
 # MC_TODO - Not Allowed for Current Env
 
-_attribute_mc_todo_env_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_todo_env_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "MC_TODO"
-}"""
+}""" + already_printed_msg
 
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_env(capsys, allow_todo):
@@ -407,14 +407,14 @@ def test_attribute_mc_todo_env(capsys, allow_todo):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_todo_env_expected_ex
 
 
-_attribute_mc_todo_default_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_todo_default_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "MC_TODO"
-}"""
+}""" + already_printed_msg
 
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_default(capsys, allow_todo):
@@ -428,10 +428,10 @@ def test_attribute_mc_todo_default(capsys, allow_todo):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_todo_default_expected_ex
 
 
-_attribute_mc_todo_init_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000, not-frozen",
+_attribute_mc_todo_init_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000",
     "a": "MC_TODO"
-}"""
+}""" + already_printed_msg
 
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_init(capsys, allow_todo):
@@ -446,14 +446,14 @@ def test_attribute_mc_todo_init(capsys, allow_todo):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_todo_init_expected_ex
 
 
-_attribute_mc_required_mc_todo_different_types_expected_ex = """There were 3 errors when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_required_mc_todo_different_types_expected_ex = """There were 3 errors when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "MC_TODO"
-}"""
+}""" + already_printed_msg
 
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
@@ -478,14 +478,14 @@ def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
 
 # MC_TODO - Not Allowed for Other Envs
 
-_attribute_mc_todo_other_env_env_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_todo_other_env_env_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "pp"
     },
     "a": "hello"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_todo_other_env_env(capsys):
     with raises(ConfigException) as exinfo:
@@ -498,14 +498,14 @@ def test_attribute_mc_todo_other_env_env(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_todo_other_env_env_expected_ex
 
 
-_attribute_mc_todo_other_env_default_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000, not-frozen",
+_attribute_mc_todo_other_env_default_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "pp"
     },
     "a": "hello"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_todo_other_env_default(capsys):
     with raises(ConfigException) as exinfo:
@@ -518,10 +518,10 @@ def test_attribute_mc_todo_other_env_default(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_todo_other_env_default_expected_ex
 
 
-_attribute_mc_todo_other_env_init_expected_ex = """There was 1 error when defining attribute 'a' on object: {
-    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000, not-frozen",
+_attribute_mc_todo_other_env_init_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000",
     "a": "hello"
-}"""
+}""" + already_printed_msg
 
 def test_attribute_mc_todo_other_env_init(capsys):
     with raises(ConfigException) as exinfo:
@@ -619,14 +619,14 @@ def test_attribute_mc_todo_override_allowed_other_envs(capsys, allow_todo):
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == expected
 
 
-_attribute_mc_required_env_in_init_expected_ex = """There were %(num_errors)s errors when defining attribute 'a' on object: {
+_attribute_mc_required_env_in_init_expected_ex = """There were %(num_errors)s errors when defining item: {
     "__class__": "MyRoot #as: 'MyRoot', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "a": "MC_REQUIRED"
-}"""
+}""" + already_printed_msg
 
 _attribute_mc_required_override_env_in_init_expected = """
 File "fake_dir/invalid_values_test.py", line %(line)s
@@ -647,6 +647,41 @@ def test_attribute_mc_required_override_env_in_init(capsys):
         MyRoot()
 
     _sout, serr = capsys.readouterr()
+    print('serr:\n', serr)
     expected = _attribute_mc_required_override_env_in_init_expected.strip() % dict(line=errorline, prod_err=_attribute_mc_required_expected)
     assert replace_user_file_line_msg(serr.strip(), line_no=errorline) == expected
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_in_init_expected_ex % dict(num_errors=2)
+
+
+class ItemWithAABBCC(ConfigItem):
+    def __init__(self):
+        super(ItemWithAABBCC, self).__init__()
+        self.aa = MC_REQUIRED
+        self.bb = MC_REQUIRED
+        self.cc = MC_REQUIRED
+
+
+_multiple_attributes_mc_required_expected1 = """Attribute: 'aa' MC_REQUIRED did not receive a value for current env Env('prod')"""
+_multiple_attributes_mc_required_expected2 = """Attribute: 'bb' MC_REQUIRED did not receive a value for env Env('pp')"""
+
+_multiple_attributes_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining item: {
+    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": "MC_REQUIRED",
+    "bb": 1
+}""" + already_printed_msg
+
+def test_multiple_attributes_mc_required_env(capsys):
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod1, ef1_prod_pp) as cr:
+            errorline = lineno() + 1
+            cr.setattr('aa', prod=MC_REQUIRED, pp="hello")
+            cr.setattr('bb', prod=1, pp=MC_REQUIRED)
+
+    _sout, serr = capsys.readouterr()
+    assert ce(errorline, _multiple_attributes_mc_required_expected1) in serr
+    assert ce(errorline + 1, _multiple_attributes_mc_required_expected2) in serr
+    assert replace_ids(str(exinfo.value), False) == _multiple_attributes_mc_required_env_expected_ex % dict(ww='were', num_errors=2, err='errors')

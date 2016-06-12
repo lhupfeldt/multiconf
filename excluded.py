@@ -20,7 +20,7 @@ class Excluded(object):
     # Python2 compatibility
     __nonzero__ = __bool__
 
-    def _mc_freeze(self):
+    def _mc_freeze(self, previous_child):
         return True
 
     def _user_validate_recursively(self):
