@@ -1,4 +1,4 @@
-[![Build Status](https://api.travis-ci.org/lhupfeldt/multiconf.svg?branch=master)](https://api.travis-ci.org/lhupfeldt/multiconf)
+[![Build Status](https://api.travis-ci.org/lhupfeldt/multiconf.svg?branch=master)](https://travis-ci.org/lhupfeldt/multiconf)
 What
 ====
 
