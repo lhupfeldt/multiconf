@@ -548,7 +548,7 @@ class _ConfigBase(object):
             __class__ = object.__getattribute__(self, '__class__')
             ex_msg = "An error was detected trying to get attribute " + repr(name) + " on class " + repr(__class__.__name__)
             msg = "\n    - You did not initailize the parent class (parent __init__ method has not been called)."
-            _api_error_msg(1, ex_msg + msg)
+            _api_error_msg(ex_msg + msg)
             raise ConfigApiException(ex_msg)
 
         mc_value = attr._mc_value()

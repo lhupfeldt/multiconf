@@ -88,11 +88,10 @@ def _warning_msg(message, up_level=2, file_name=None, line_num=None):
     _warning_type_msg(message)
 
 
-def _api_error_type_msg(num_warnings, message):
+def _api_error_type_msg(message):
     print('MultiConfApiError:', message, file=sys.stderr)
-    return num_warnings + 1
 
 
-def _api_error_msg(num_errors, message, up_level=2, file_name=None, line_num=None):
+def _api_error_msg(message, up_level=2, file_name=None, line_num=None):
     _line_msg(up_level, file_name, line_num)
-    return _api_error_type_msg(num_errors, message)
+    _api_error_type_msg(message)
