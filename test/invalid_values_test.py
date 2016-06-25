@@ -648,16 +648,37 @@ def test_attribute_mc_required_override_env_in_init(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_in_init_expected_ex % dict(num_errors=2)
 
 
-class ItemWithAABBCC(ConfigItem):
-    def __init__(self):
-        super(ItemWithAABBCC, self).__init__()
-        self.aa = MC_REQUIRED
-        self.bb = MC_REQUIRED
-        self.cc = MC_REQUIRED
+_mc_required_current_env_expected = """Attribute: '{attr}' MC_REQUIRED did not receive a value for current env Env('prod')"""
+_mc_required_other_env_expected = """Attribute: '{attr}' MC_REQUIRED did not receive a value for env Env('pp')"""
 
 
-_multiple_attributes_mc_required_expected1 = """Attribute: 'aa' MC_REQUIRED did not receive a value for current env Env('prod')"""
-_multiple_attributes_mc_required_expected2 = """Attribute: 'bb' MC_REQUIRED did not receive a value for env Env('pp')"""
+def test_multiple_attributes_mc_required_init_not_set(capsys):
+    class ItemWithAABBCC(ConfigItem):
+        def __init__(self):
+            super(ItemWithAABBCC, self).__init__()
+            self.aa = MC_REQUIRED
+            self.bb = MC_REQUIRED
+            self.cc = MC_REQUIRED
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod1, ef1_prod_pp) as cr:
+            errorline = lineno() + 1
+            ItemWithAABBCC()
+
+    _sout, serr = capsys.readouterr()
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^%(lnum)s",
+        "^ConfigError: " + _mc_required_other_env_expected.format(attr='aa'),
+        "^ConfigError: " + _mc_required_current_env_expected.format(attr='aa'),
+        "^%(lnum)s",
+        "^ConfigError: " + _mc_required_other_env_expected.format(attr='bb'),
+        "^ConfigError: " + _mc_required_current_env_expected.format(attr='bb'),
+        "^%(lnum)s",
+        "^ConfigError: " + _mc_required_other_env_expected.format(attr='cc'),
+        "^ConfigError: " + _mc_required_current_env_expected.format(attr='cc'),
+    )
+
 
 _multiple_attributes_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining item: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
@@ -677,6 +698,6 @@ def test_multiple_attributes_mc_required_env(capsys):
             cr.setattr('bb', prod=1, pp=MC_REQUIRED)
 
     _sout, serr = capsys.readouterr()
-    assert ce(errorline, _multiple_attributes_mc_required_expected1) in serr
-    assert ce(errorline + 1, _multiple_attributes_mc_required_expected2) in serr
+    assert ce(errorline, _mc_required_current_env_expected.format(attr='aa')) in serr
+    assert ce(errorline + 1, _mc_required_other_env_expected.format(attr='bb')) in serr
     assert replace_ids(str(exinfo.value), False) == _multiple_attributes_mc_required_env_expected_ex % dict(ww='were', num_errors=2, err='errors')
