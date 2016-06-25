@@ -95,3 +95,9 @@ def _api_error_type_msg(message):
 def _api_error_msg(message, up_level=2, file_name=None, line_num=None):
     _line_msg(up_level, file_name, line_num)
     print(_api_error_type_msg(message), file=sys.stderr)
+
+
+def _mc_print_messages(messages, file_name=None, line_num=None):
+    _line_msg(file_name=file_name, line_num=line_num)
+    for msg in messages:
+        print(msg, file=sys.stderr)

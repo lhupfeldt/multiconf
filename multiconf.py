@@ -14,7 +14,9 @@ from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
 from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, _line_msg
-from .config_errors import _error_msg, _error_type_msg, _warning_type_msg
+from .config_errors import _error_msg, _error_type_msg, _warning_type_msg, _mc_print_messages
+
+
 from .json_output import ConfigItemEncoder
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
@@ -198,9 +200,12 @@ class _ConfigBase(object):
                 line_num = None
 
             _mc_attributes = object.__getattribute__(self, '_mc_attributes')
+            messages = []
             for attr_name, attr in _mc_attributes.items():
                 if not attr._mc_frozen and isinstance(attr, Attribute):
-                    self.check_attr_fully_defined(attr_name, attr, file_name=file_name, line_num=line_num)
+                    messages.extend(self._mc_check_attr_fully_defined_messages(attr_name, attr))
+            if messages:
+                _mc_print_messages(messages, file_name=file_name, line_num=line_num)
 
             # Validate @required
             missing = []
@@ -414,7 +419,9 @@ class _ConfigBase(object):
                 repeated_env_error(env, conflicting_egs)
 
         if where != Where.IN_INIT and self._mc_check:
-            self.check_attr_fully_defined(name, attribute, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            messages = self._mc_check_attr_fully_defined_messages(name, attribute)
+            if messages:            
+                _mc_print_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_check_override_common(self, item, name, attribute):
         try:
@@ -479,7 +486,9 @@ class _ConfigBase(object):
         if isinstance(value, McInvalidValue):
             attribute.set_invalid_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
             if self._mc_check:
-                self.check_attr_fully_defined(name, attribute)
+                messages = self._mc_check_attr_fully_defined_messages(name, attribute)
+                if messages:                
+                    _mc_print_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             return
 
         attribute.set_env_provided(default_group)
@@ -497,47 +506,45 @@ class _ConfigBase(object):
         except ConfigException as ex:
             self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
-    def check_attr_fully_defined(self, name, attribute, file_name=None, line_num=None):
+    def _mc_check_attr_fully_defined_messages(self, name, attribute):
         # In case of override_method, the attribute need not be fully defined, the property method will handle remaining values
-        if not attribute.all_set(self._mc_included_envs_mask) and not attribute.override_method:
-            root_conf = object.__getattribute__(self, '_mc_root_conf')
-            env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
-            selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
+        if attribute.all_set(self._mc_included_envs_mask) or attribute.override_method:
+            return []
 
-            # Check for which envs the attribute is not defined
-            messages= []
-            missing_envs_mask = self._mc_included_envs_mask & ~attribute.envs_set_mask
-            for env in env_factory.envs_from_mask(missing_envs_mask):
-                # Check for which envs the attribute is McInvalidValue.MC_TODO
-                value = McInvalidValue.MC_NO_VALUE
-                for inv_value, inv_eg, inv_where_from, inv_file_name, inv_line_num in attribute.invalid_values:
-                    # debug("Checking MC_TODO, env, inv_value, inv_eg:", env, inv_value, inv_eg)
-                    if env.bit & inv_eg.mask:
-                        if selected_env == env:
-                            attribute._value = inv_value
-                        value = inv_value
-                        break
+        root_conf = object.__getattribute__(self, '_mc_root_conf')
+        env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
+        selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
 
-                # debug("attribute._value, value:", attribute._value, value)
-                value_msg = (' ' + repr(value)) if isinstance(value, McInvalidValue) and value != McInvalidValue.MC_NO_VALUE else ''
-                current_env_msg = " current" if env == self.env else ''
-                msg = "Attribute: " + repr(name) + value_msg + " did not receive a value for" + current_env_msg + " env " + repr(env)
+        # Check for which envs the attribute is not defined
+        messages= []
+        missing_envs_mask = self._mc_included_envs_mask & ~attribute.envs_set_mask
+        for env in env_factory.envs_from_mask(missing_envs_mask):
+            # Check for which envs the attribute is McInvalidValue.MC_TODO
+            value = McInvalidValue.MC_NO_VALUE
+            for inv_value, inv_eg, inv_where_from, inv_file_name, inv_line_num in attribute.invalid_values:
+                # debug("Checking MC_TODO, env, inv_value, inv_eg:", env, inv_value, inv_eg)
+                if env.bit & inv_eg.mask:
+                    if selected_env == env:
+                        attribute._value = inv_value
+                    value = inv_value
+                    break
 
-                if value == McInvalidValue.MC_TODO:
-                    if env != self.env and root_conf._mc_allow_todo:
-                        messages.append(self._mc_warning_type_msg(msg))
-                        continue
-                    if root_conf._mc_allow_current_env_todo:
-                        messages.append(self._mc_warning_type_msg(msg + ". Continuing with invalid configuration!"))
-                        continue
+            # debug("attribute._value, value:", attribute._value, value)
+            value_msg = (' ' + repr(value)) if isinstance(value, McInvalidValue) and value != McInvalidValue.MC_NO_VALUE else ''
+            current_env_msg = " current" if env == self.env else ''
+            msg = "Attribute: " + repr(name) + value_msg + " did not receive a value for" + current_env_msg + " env " + repr(env)
 
-                messages.append(self._mc_error_type_msg(msg))
+            if value == McInvalidValue.MC_TODO:
+                if env != self.env and root_conf._mc_allow_todo:
+                    messages.append(self._mc_warning_type_msg(msg))
+                    continue
+                if root_conf._mc_allow_current_env_todo:
+                    messages.append(self._mc_warning_type_msg(msg + ". Continuing with invalid configuration!"))
+                    continue
 
-            if messages:
-                _line_msg(file_name=file_name, line_num=line_num)
-                for msg in messages:
-                    print(msg, file=sys.stderr)
+            messages.append(self._mc_error_type_msg(msg))
 
+        return messages
 
     def __getattribute__(self, name):
         if name[0] == '_':

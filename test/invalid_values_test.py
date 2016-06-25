@@ -671,10 +671,8 @@ def test_multiple_attributes_mc_required_init_not_set(capsys):
         "^%(lnum)s",
         "^ConfigError: " + _mc_required_other_env_expected.format(attr='aa'),
         "^ConfigError: " + _mc_required_current_env_expected.format(attr='aa'),
-        "^%(lnum)s",
         "^ConfigError: " + _mc_required_other_env_expected.format(attr='bb'),
         "^ConfigError: " + _mc_required_current_env_expected.format(attr='bb'),
-        "^%(lnum)s",
         "^ConfigError: " + _mc_required_other_env_expected.format(attr='cc'),
         "^ConfigError: " + _mc_required_current_env_expected.format(attr='cc'),
     )
