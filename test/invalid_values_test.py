@@ -66,7 +66,6 @@ def test_attribute_mc_required_env(capsys):
 _attribute_mc_required_override_env_expected = """
 File "fake_dir/invalid_values_test.py", line %(line)s
 ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')
-File "fake_dir/invalid_values_test.py", line %(line)s
 ConfigError: %(prod_err)s"""
 
 
@@ -331,7 +330,6 @@ def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
         __file__, errorline, serr,
         "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_init_args_missing_env_values_builder_expected_ex
@@ -470,7 +468,6 @@ def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
         "^ConfigError: Found different value types for property 'a' for different envs",
         "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^%(lnum)s",
         "^ConfigError: Attribute: 'a' MC_TODO did not receive a value for current env Env('prod')",
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_mc_todo_different_types_expected_ex
@@ -603,7 +600,6 @@ def test_attribute_mc_todo_init_allowed_other_envs(capsys):
 _attribute_mc_current_env_todo_allowed_override_expected = """
 File "fake_dir/invalid_values_test.py", line %(line)s
 ConfigWarning: Attribute: 'a' MC_TODO did not receive a value for env Env('pp')
-File "fake_dir/invalid_values_test.py", line %(line)s
 ConfigWarning: %(prod_err)s
 """.strip()
 
@@ -631,7 +627,6 @@ _attribute_mc_required_env_in_init_expected_ex = """There were %(num_errors)s er
 _attribute_mc_required_override_env_in_init_expected = """
 File "fake_dir/invalid_values_test.py", line %(line)s
 ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')
-File "fake_dir/invalid_values_test.py", line %(line)s
 ConfigError: %(prod_err)s"""
 
 def test_attribute_mc_required_override_env_in_init(capsys):

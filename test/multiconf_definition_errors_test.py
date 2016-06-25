@@ -834,7 +834,6 @@ def test_setattr_no_envs(capsys):
             "^ConfigError: No Env or EnvGroup names specified.",
             "^%(lnum)s",
             "^ConfigError: Attribute: 'a' did not receive a value for env Env('pp')",
-            "^%(lnum)s",
             "^ConfigError: Attribute: 'a' did not receive a value for current env Env('prod')",
         )
 

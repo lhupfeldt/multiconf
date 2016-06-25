@@ -60,7 +60,6 @@ def test_env_factories_ef1(capsys):
         "^ConfigError: No such Env or EnvGroup: 'g_prod'",
         "^%(lnum)s",
         "^ConfigError: Attribute: 'aa' did not receive a value for env Env('pp')",
-        "^%(lnum)s",
         "^ConfigError: Attribute: 'aa' did not receive a value for env Env('prod')",
     )
     assert replace_ids(str(exinfo.value), False) == _env_factories_ef1_expected_ex

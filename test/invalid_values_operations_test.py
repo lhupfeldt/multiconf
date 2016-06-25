@@ -51,7 +51,6 @@ def test_attribute_mc_required_env(capsys):
 _attribute_mc_required_override_env_expected = """
 File "fake_dir/invalid_values_operations_test.py", line %(line)s
 ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')
-File "fake_dir/invalid_values_operations_test.py", line %(line)s
 ConfigError: %(prod_err)s"""
 
 

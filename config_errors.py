@@ -71,27 +71,27 @@ def _line_msg(up_level=2, file_name=None, line_num=None, msg=''):
 
 
 def _error_type_msg(message):
-    print('ConfigError:', message, file=sys.stderr)
+    return 'ConfigError: ' + message
 
 
 def _error_msg(message, up_level=2, file_name=None, line_num=None):
     _line_msg(up_level, file_name, line_num)
-    _error_type_msg(message)
+    print(_error_type_msg(message), file=sys.stderr) 
 
 
 def _warning_type_msg(message):
-    print('ConfigWarning:', message, file=sys.stderr)
+    return 'ConfigWarning: ' + message
 
 
 def _warning_msg(message, up_level=2, file_name=None, line_num=None):
     _line_msg(up_level, file_name, line_num)
-    _warning_type_msg(message)
+    print(_warning_type_msg(message), file=sys.stderr)
 
 
 def _api_error_type_msg(message):
-    print('MultiConfApiError:', message, file=sys.stderr)
+    return 'MultiConfApiError: ' + message
 
 
 def _api_error_msg(message, up_level=2, file_name=None, line_num=None):
     _line_msg(up_level, file_name, line_num)
-    _api_error_type_msg(message)
+    print(_api_error_type_msg(message), file=sys.stderr)

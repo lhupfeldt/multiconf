@@ -14,7 +14,7 @@ from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
 from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, _line_msg
-from .config_errors import _error_msg, _warning_msg, _error_type_msg
+from .config_errors import _error_msg, _error_type_msg, _warning_type_msg
 from .json_output import ConfigItemEncoder
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
@@ -76,12 +76,12 @@ class _ConfigBase(object):
         self._mc_error()
 
     def _mc_error_type_msg(self, message):
-        _error_type_msg(message)
         self._mc_error()
+        return _error_type_msg(message)
 
-    def _mc_warning_msg(self, msg, file_name, line_num):
-        _warning_msg(msg, file_name=file_name, line_num=line_num)
+    def _mc_warning_type_msg(self, msg):
         self._mc_root_conf._mc_num_warnings += 1
+        return _warning_type_msg(msg)
 
     def _mc_raise_if_errors(self, already="\nCheck already printed error messages"):
         if hasattr(self, '_mc_num_errors'):
@@ -292,7 +292,7 @@ class _ConfigBase(object):
                 other_file_name, other_line_num = attribute.file_name, attribute.line_num
             _line_msg(file_name=other_file_name, line_num=other_line_num, msg=other_env.name + ' ' + repr(other_type))
             msg = "Found different value types for property " + repr(name) + " for different envs"
-            self._mc_error_type_msg(msg)
+            self._mc_error_msg(msg)
 
         def repeated_env_error(env, conflicting_egs):
             # TODO __file__ line of attribute set in any scope!
@@ -505,6 +505,7 @@ class _ConfigBase(object):
             selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
 
             # Check for which envs the attribute is not defined
+            messages= []
             missing_envs_mask = self._mc_included_envs_mask & ~attribute.envs_set_mask
             for env in env_factory.envs_from_mask(missing_envs_mask):
                 # Check for which envs the attribute is McInvalidValue.MC_TODO
@@ -524,13 +525,19 @@ class _ConfigBase(object):
 
                 if value == McInvalidValue.MC_TODO:
                     if env != self.env and root_conf._mc_allow_todo:
-                        self._mc_warning_msg(msg, file_name=file_name, line_num=line_num)
+                        messages.append(self._mc_warning_type_msg(msg))
                         continue
                     if root_conf._mc_allow_current_env_todo:
-                        self._mc_warning_msg(msg + ". Continuing with invalid configuration!", file_name=file_name, line_num=line_num)
+                        messages.append(self._mc_warning_type_msg(msg + ". Continuing with invalid configuration!"))
                         continue
 
-                self._mc_error_msg(msg, file_name=file_name, line_num=line_num)
+                messages.append(self._mc_error_type_msg(msg))
+
+            if messages:
+                _line_msg(file_name=file_name, line_num=line_num)
+                for msg in messages:
+                    print(msg, file=sys.stderr)
+
 
     def __getattribute__(self, name):
         if name[0] == '_':

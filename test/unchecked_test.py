@@ -4,7 +4,7 @@
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from .utils.utils import config_error, lineno, replace_ids, assert_lines_in, already_printed_msg
+from .utils.utils import config_error, lineno, replace_ids, assert_lines_in, already_printed_msg, assert_lines_in
 
 from .. import ConfigRoot, ConfigItem, ConfigException, MC_TODO
 from ..decorators import required, unchecked
@@ -132,10 +132,11 @@ def test_required_missing_unchecked_super_for_configitem(capsys):
                 errorline = lineno()
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline,
-                      _required_missing_unchecked_super_for_configitem_expected1a,
-                      _required_missing_unchecked_super_for_configitem_expected1b,
-                      )
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^%(lnum)s",
+        "^ConfigError: " + _required_missing_unchecked_super_for_configitem_expected1a,
+        "^ConfigError: " + _required_missing_unchecked_super_for_configitem_expected1b)
     assert replace_ids(str(exinfo.value), False) == _required_missing_unchecked_super_for_configitem_expected1_ex
 
     with raises(ConfigException) as exinfo:
