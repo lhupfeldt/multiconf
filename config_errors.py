@@ -52,14 +52,22 @@ class ConfigAttributeError(AttributeError):
 
 def caller_file_line(up_level=2):
     frame = sys._getframe(up_level)
-    return frame.f_globals['__file__'].rstrip('c'), frame.f_lineno
+    return frame.f_globals['__file__'], frame.f_lineno
 
 
 def find_user_file_line(up_level_start=2):
     frame = sys._getframe(up_level_start)
     while 1:
         if frame.f_globals['__package__'] != 'multiconf':
-            return frame.f_globals['__file__'].rstrip('c'), frame.f_lineno
+            return frame.f_globals['__file__'], frame.f_lineno
+        frame = frame.f_back
+
+
+def find_init_call_file_line(up_level_start=2):
+    frame = sys._getframe(up_level_start)
+    while 1:
+        if frame.f_code.co_name != '__init__':
+            return frame.f_globals['__file__'], frame.f_lineno
         frame = frame.f_back
 
 
@@ -67,6 +75,7 @@ def _line_msg(up_level=2, file_name=None, line_num=None, msg=''):
     """ufl is a tuple of filename, linenumber referece to user code"""
     if file_name is None:
         file_name, line_num = find_user_file_line(up_level + 1)
+    file_name = file_name.rstrip('c')  # file_name may point to the *.pyc file
     print(('File "%s", line %d' % (file_name, line_num)) + (', ' + msg if msg else ''), file=sys.stderr)
 
 

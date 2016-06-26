@@ -9,7 +9,7 @@ from pytest import raises
 from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in, already_printed_msg
 from .utils.utils import py3_local, total_msg
 
-from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
 from ..decorators import nested_repeatables, required
 from ..envs import EnvFactory
 
@@ -906,3 +906,62 @@ def test_setattr_no_envs(capsys):
                 ci.setattr('a', 1)
 
     check(errorline)
+
+
+def test_init_lineno(capsys):
+    class init_overidden1(ConfigItem):
+        def __init__(self):
+            super(init_overidden1, self).__init__()
+            self.a = MC_REQUIRED
+
+    with raises(Exception) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            errorline = lineno() + 1
+            init_overidden1()
+            init_overidden1()
+
+    _sout, serr = capsys.readouterr()
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^%(lnum)s",
+        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
+        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
+    )
+
+    class intermediate(init_overidden1):
+        pass
+
+    with raises(Exception) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            errorline = lineno() + 1
+            intermediate()
+            intermediate()
+
+    _sout, serr = capsys.readouterr()
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^%(lnum)s",
+        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
+        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
+    )
+
+    class init_overidden2(intermediate):
+        def __init__(self):
+            super(init_overidden2, self).__init__()
+            self.b = MC_REQUIRED
+
+    with raises(Exception) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            errorline = lineno() + 1
+            init_overidden2()
+            init_overidden2()
+
+    _sout, serr = capsys.readouterr()
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^%(lnum)s",
+        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
+        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
+        "^ConfigError: Attribute: 'b' MC_REQUIRED did not receive a value for env Env('pp')",
+        "^ConfigError: Attribute: 'b' MC_REQUIRED did not receive a value for current env Env('prod')",
+    )

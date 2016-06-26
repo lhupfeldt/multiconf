@@ -13,7 +13,7 @@ from .values import McInvalidValue
 from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
-from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, _line_msg
+from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, find_init_call_file_line, _line_msg
 from .config_errors import _error_msg, _error_type_msg, _warning_type_msg, _mc_print_messages
 
 
@@ -55,7 +55,7 @@ class _ConfigBase(object):
         self._mc_included_envs_mask = env_factory._all_envs_mask
         self._mc_json_errors = 0
 
-        self._mc_file_name, self._mc_line_num = find_user_file_line(up_level_start=3)
+        self._mc_file_name, self._mc_line_num = find_init_call_file_line(up_level_start=3)
 
         __class__ = object.__getattribute__(self, '__class__')
         _mc_deco_nested_repeatables = __class__._mc_deco_nested_repeatables
