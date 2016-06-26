@@ -577,3 +577,24 @@ def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_en
     assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     ce(errorline, serr, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+
+
+def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init_overridden_file_line(capsys):
+    """Test include/exclude ambiguity and already exclude double error giving correct file:line when __init__ is overridden"""
+    class iitem(ConfigItem):
+        def __init__(self, mc_include, mc_exclude):
+            super(iitem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+
+    with raises(ConfigException) as exinfo:
+        with root(prod, ef):
+            errorline = lineno() + 1
+            iitem(mc_exclude=[dev2], mc_include=[dev2, prod])
+
+    assert "There was 1 error when defining item" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    print(serr)
+    assert_lines_in(
+        __file__, errorline, serr,
+        "^%(lnum)s",
+        "^ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:",
+    )

@@ -809,7 +809,7 @@ class _ConfigItem(_ConfigBase):
         root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
         super(_ConfigItem, self).__init__(root_conf=root_conf, env_factory=env_factory)
-        self._mc_select_envs(mc_include, mc_exclude)
+        self._mc_select_envs(mc_include, mc_exclude, self._mc_file_name, self._mc_line_num)
 
         if not self._mc_is_excluded:
             contained_in._mc_previous_child = self
@@ -822,7 +822,7 @@ class _ConfigItem(_ConfigBase):
 
         return super(_ConfigItem, self)._mc_freeze(previous_child)
 
-    def _mc_select_envs(self, include, exclude, file_name=None, line_num=None):
+    def _mc_select_envs(self, include, exclude, file_name, line_num):
         """Determine if item (and children) is included in specified env"""
         # Resolve most specif include/exclude eg
         contained_in = object.__getattribute__(self, '_mc_contained_in')
@@ -887,8 +887,6 @@ class _ConfigItem(_ConfigBase):
 
         # If we still have unresolved conflicts, it is an error
         if all_ambiguous:
-            if not file_name:
-                file_name, line_num = find_user_file_line(3)
             # Reorder to generate one error per ambiguous env
             all_ambiguous_by_envs = {}
             root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
@@ -905,8 +903,6 @@ class _ConfigItem(_ConfigBase):
 
         if include is not None and _mc_included_envs_mask & contained_in_included_envs_mask != _mc_included_envs_mask:
             re_included = _mc_included_envs_mask & contained_in_included_envs_mask ^ _mc_included_envs_mask
-            if not file_name:
-                file_name, line_num = find_user_file_line(3)
             root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
             env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
             for env in env_factory.envs_from_mask(re_included):
