@@ -13,8 +13,8 @@ from .values import McInvalidValue
 from .repeatable import Repeatable, UserRepeatable
 from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
-from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, find_init_call_file_line, _line_msg
-from .config_errors import _error_msg, _error_type_msg, _warning_type_msg, _mc_print_messages
+from .config_errors import caller_file_line, find_user_file_line, find_init_call_file_line, _line_msg
+from .config_errors import _error_msg, _warning_msg, _api_error_msg
 
 
 from .json_output import ConfigItemEncoder
@@ -68,22 +68,15 @@ class _ConfigBase(object):
         _mc_deco_unchecked = object.__getattribute__(self, '_mc_deco_unchecked')
         self._mc_check = _mc_deco_unchecked != __class__ and _mc_deco_unchecked not in __class__.__bases__
 
-    def _mc_error(self):
+    def _mc_error_msg(self, message):
         if not hasattr(self, '_mc_num_errors'):
             self._mc_num_errors = 0
         self._mc_num_errors += 1
+        return _error_msg(message)
 
-    def _mc_error_msg(self, message, up_level=2, file_name=None, line_num=None):
-        _error_msg(message, up_level, file_name, line_num)
-        self._mc_error()
-
-    def _mc_error_type_msg(self, message):
-        self._mc_error()
-        return _error_type_msg(message)
-
-    def _mc_warning_type_msg(self, msg):
+    def _mc_warning_msg(self, msg):
         self._mc_root_conf._mc_num_warnings += 1
-        return _warning_type_msg(msg)
+        return _warning_msg(msg)
 
     def _mc_raise_if_errors(self, already="\nCheck already printed error messages"):
         if hasattr(self, '_mc_num_errors'):
@@ -91,6 +84,21 @@ class _ConfigBase(object):
             ww, err = ('were', 'errors') if num_errors > 1 else ('was', 'error')
             raise ConfigException("There {ww} {num_errors} {err} when defining item: {self}{already}.".format(
                 ww=ww, num_errors=num_errors, err=err, self=self, already=already))
+
+    @staticmethod
+    def _mc_print_file_line_and_messages(messages, file_name=None, line_num=None):
+        """Print multiple messages preceeded by a single file:line message"""
+        print(_line_msg(file_name=file_name, line_num=line_num), file=sys.stderr)
+        for msg in messages:
+            print(msg, file=sys.stderr)
+
+    def _mc_print_error(self, message, file_name, line_num):
+        """Print a single message preceeded by file:line"""
+        print(_line_msg(file_name=file_name, line_num=line_num) + '\n' + self._mc_error_msg(message), file=sys.stderr)
+
+    def _mc_print_error_if_not_excluded(self, message, file_name, line_num):
+        if not self._mc_is_excluded:
+            self._mc_print_error(message, file_name, line_num)
 
     @classmethod
     def named_as(cls):
@@ -205,7 +213,7 @@ class _ConfigBase(object):
                 if not attr._mc_frozen and isinstance(attr, Attribute):
                     messages.extend(self._mc_check_attr_fully_defined_messages(attr_name, attr))
             if messages:
-                _mc_print_messages(messages, file_name=file_name, line_num=line_num)
+                self._mc_print_file_line_and_messages(messages, file_name=file_name, line_num=line_num)
 
             # Validate @required
             missing = []
@@ -213,7 +221,7 @@ class _ConfigBase(object):
                 if req not in _mc_attributes:
                     missing.append(req)
             if missing:
-                self._mc_error_msg("No value given for required attributes: " + repr(missing), file_name=file_name, line_num=line_num)
+                self._mc_print_error("No value given for required attributes: " + repr(missing), file_name=file_name, line_num=line_num)
             self._mc_raise_if_errors()
 
         return self._mc_frozen
@@ -283,21 +291,22 @@ class _ConfigBase(object):
             raise ConfigException("The attribute " + repr(name) + " is already fully defined")
 
         if not kwargs:
-            self._mc_error_msg("No " + Env.__name__ + " or " + EnvGroup.__name__ + " names specified.")
+            self._mc_print_error("No " + Env.__name__ + " or " + EnvGroup.__name__ + " names specified.", mc_caller_file_name, mc_caller_line_num)
+            self._mc_raise_if_errors()
 
         root_conf = object.__getattribute__(self, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
         selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
 
         def type_error(value, other_env, other_type):
-            _line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num, msg=eg.name + ' ' + repr(type(value)))
+            print(_line_msg(msg=eg.name + ' ' + repr(type(value))), file=sys.stderr)
             other_file_name, other_line_num = mc_caller_file_name, mc_caller_line_num
             if not other_env:
                 other_env = other_env or env_factory.env_or_group_from_bit(attribute.value_from_eg_bit)
                 other_file_name, other_line_num = attribute.file_name, attribute.line_num
-            _line_msg(file_name=other_file_name, line_num=other_line_num, msg=other_env.name + ' ' + repr(other_type))
+            print(_line_msg(msg=other_env.name + ' ' + repr(other_type), file_name=other_file_name, line_num=other_line_num), file=sys.stderr)
             msg = "Found different value types for property " + repr(name) + " for different envs"
-            self._mc_error_msg(msg)
+            self._mc_print_error(msg, mc_caller_file_name, mc_caller_line_num)
 
         def repeated_env_error(env, conflicting_egs):
             # TODO __file__ line of attribute set in any scope!
@@ -310,7 +319,7 @@ class _ConfigBase(object):
             for eg in sorted(conflicting_egs):
                 value = kwargs[eg.name]
                 msg += "\nvalue: " + repr(value) + ", from: " + repr(eg)
-            self._mc_error_msg(msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            self._mc_print_error(msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
         if where != Where.IN_INIT and self._mc_check:
             attribute._mc_frozen = True
@@ -391,7 +400,7 @@ class _ConfigBase(object):
 
                 seen_egs[eg_name] = eg
             except EnvException as ex:
-                self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+                self._mc_print_error(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
         # Clear resolved conflicts
         for _eg_name, eg in seen_egs.items():
@@ -421,7 +430,7 @@ class _ConfigBase(object):
         if where != Where.IN_INIT and self._mc_check:
             messages = self._mc_check_attr_fully_defined_messages(name, attribute)
             if messages:            
-                _mc_print_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+                self._mc_print_file_line_and_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_check_override_common(self, item, name, attribute):
         try:
@@ -467,7 +476,7 @@ class _ConfigBase(object):
             where = object.__getattribute__(self, '_mc_where')
             self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, overriding_property, **kwargs)
         except ConfigException as ex:
-            self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            self._mc_print_error(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_override_common(self, name, attributes, where, mc_caller_file_name, mc_caller_line_num, value):
         """Set attributes with environment specific values"""
@@ -488,7 +497,7 @@ class _ConfigBase(object):
             if self._mc_check:
                 messages = self._mc_check_attr_fully_defined_messages(name, attribute)
                 if messages:                
-                    _mc_print_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+                    self._mc_print_file_line_and_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             return
 
         attribute.set_env_provided(default_group)
@@ -504,7 +513,7 @@ class _ConfigBase(object):
         try:
             self._mc_override_common(name, attributes, where, mc_caller_file_name, mc_caller_line_num, value)
         except ConfigException as ex:
-            self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            self._mc_print_error(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_check_attr_fully_defined_messages(self, name, attribute):
         # In case of override_method, the attribute need not be fully defined, the property method will handle remaining values
@@ -536,13 +545,13 @@ class _ConfigBase(object):
 
             if value == McInvalidValue.MC_TODO:
                 if env != self.env and root_conf._mc_allow_todo:
-                    messages.append(self._mc_warning_type_msg(msg))
+                    messages.append(self._mc_warning_msg(msg))
                     continue
                 if root_conf._mc_allow_current_env_todo:
-                    messages.append(self._mc_warning_type_msg(msg + ". Continuing with invalid configuration!"))
+                    messages.append(self._mc_warning_msg(msg + ". Continuing with invalid configuration!"))
                     continue
 
-            messages.append(self._mc_error_type_msg(msg))
+            messages.append(self._mc_error_msg(msg))
 
         return messages
 
@@ -562,7 +571,7 @@ class _ConfigBase(object):
             __class__ = object.__getattribute__(self, '__class__')
             ex_msg = "An error was detected trying to get attribute " + repr(name) + " on class " + repr(__class__.__name__)
             msg = "\n    - You did not initailize the parent class (parent __init__ method has not been called)."
-            _api_error_msg(ex_msg + msg)
+            self._mc_print_file_line_and_messages([_api_error_msg(ex_msg + msg)])
             raise ConfigApiException(ex_msg)
 
         mc_value = attr._mc_value()
@@ -899,7 +908,7 @@ class _ConfigItem(_ConfigBase):
                 msg = "Env " + repr(env.name) + " is specified in both include and exclude, with no single most specific group or direct env:"
                 for eg in sorted(conflicting_egs):
                     msg += "\n    from: " + repr(eg)
-                self._mc_error_msg(msg, file_name=file_name, line_num=line_num)
+                self._mc_print_error(msg, file_name=file_name, line_num=line_num)
 
         if include is not None and _mc_included_envs_mask & contained_in_included_envs_mask != _mc_included_envs_mask:
             re_included = _mc_included_envs_mask & contained_in_included_envs_mask ^ _mc_included_envs_mask
@@ -907,7 +916,7 @@ class _ConfigItem(_ConfigBase):
             env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
             for env in env_factory.envs_from_mask(re_included):
                 msg = "Env " + repr(env.name) + " is excluded at an outer level"
-                self._mc_error_msg(msg, file_name=file_name, line_num=line_num)
+                self._mc_print_error(msg, file_name=file_name, line_num=line_num)
 
         self._mc_raise_if_errors(already="")
 
@@ -1033,7 +1042,7 @@ class _ConfigBuilder(ConfigItem):
         try:
             self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, False, **kwargs)
         except ConfigException as ex:
-            self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            self._mc_print_error(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def override(self, name, value, mc_caller_file_name=None, mc_caller_line_num=None):
         """Unconditionally set attributes even if frozen"""
@@ -1044,7 +1053,7 @@ class _ConfigBuilder(ConfigItem):
         try:
             self._mc_override_common(name, attributes, where, mc_caller_file_name, mc_caller_line_num, value)
         except ConfigException as ex:
-            self._mc_error_msg(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+            self._mc_print_error(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_post_build_update(self):
         root_conf = object.__getattribute__(self, '_mc_root_conf')

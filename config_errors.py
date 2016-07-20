@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, os.path
+import sys
 
 
 class ConfigBaseException(Exception):
@@ -76,37 +76,16 @@ def _line_msg(up_level=2, file_name=None, line_num=None, msg=''):
     if file_name is None:
         file_name, line_num = find_user_file_line(up_level + 1)
     file_name = file_name.rstrip('c')  # file_name may point to the *.pyc file
-    print(('File "%s", line %d' % (file_name, line_num)) + (', ' + msg if msg else ''), file=sys.stderr)
+    return ('File "%s", line %d' % (file_name, line_num)) + (', ' + msg if msg else '')
 
 
-def _error_type_msg(message):
+def _error_msg(message):
     return 'ConfigError: ' + message
 
 
-def _error_msg(message, up_level=2, file_name=None, line_num=None):
-    _line_msg(up_level, file_name, line_num)
-    print(_error_type_msg(message), file=sys.stderr) 
-
-
-def _warning_type_msg(message):
+def _warning_msg(message):
     return 'ConfigWarning: ' + message
 
 
-def _warning_msg(message, up_level=2, file_name=None, line_num=None):
-    _line_msg(up_level, file_name, line_num)
-    print(_warning_type_msg(message), file=sys.stderr)
-
-
-def _api_error_type_msg(message):
+def _api_error_msg(message):
     return 'MultiConfApiError: ' + message
-
-
-def _api_error_msg(message, up_level=2, file_name=None, line_num=None):
-    _line_msg(up_level, file_name, line_num)
-    print(_api_error_type_msg(message), file=sys.stderr)
-
-
-def _mc_print_messages(messages, file_name=None, line_num=None):
-    _line_msg(file_name=file_name, line_num=line_num)
-    for msg in messages:
-        print(msg, file=sys.stderr)

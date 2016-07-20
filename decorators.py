@@ -1,10 +1,13 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
+import sys
 import re
 import keyword
 
-from .config_errors import ConfigDefinitionException, _warning_msg as warn, _error_msg as error
+from .config_errors import ConfigDefinitionException, _line_msg, _error_msg, _warning_msg
 from . import ConfigBuilder
 
 
@@ -16,8 +19,9 @@ def _isidentifier(name):
 
 def _not_config_builder(cls, decorator_name):
     if issubclass(cls, ConfigBuilder):
+        print(_line_msg(up_level=2), file=sys.stderr)
         msg = "Decorator '@" + decorator_name + "' is not allowed on instance of " + ConfigBuilder.__name__ + "."
-        error(msg)
+        print(_error_msg(msg), file=sys.stderr)
         raise ConfigDefinitionException(msg)
 
 
@@ -44,8 +48,10 @@ def _add_super_list_deco_values(cls, attr_names, deco_attr_name):
     super_names = getattr(super(cls, cls), '_mc_deco_' + deco_attr_name)
     for attr in super_names:
         if attr in attr_names:
-            warn("Attribute name: " + repr(attr) + " re-specified as " + repr(deco_attr_name) + " on class: " + repr(cls.__name__) + " , was already inherited from a super class.",
-                 up_level=3)
+            print(_line_msg(3), file=sys.stderr)
+            msg = "Attribute name: " + repr(attr) + " re-specified as " + repr(deco_attr_name) + " on class: " + repr(cls.__name__) + \
+                  " , was already inherited from a super class."
+            print(_warning_msg(msg), file=sys.stderr)
 
     return attr_names + super_names
 
