@@ -262,15 +262,9 @@ class _ConfigBase(object):
                 raise ConfigException(msg + "Atributes starting with '_mc' are reserved for multiconf internal usage.")
             raise ConfigException(msg + "Atributes starting with '_' can not be set using item." + method_name + ". Use assignment instead.")
 
-    def _mc_setattr_common(self, name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, overriding_property, **kwargs):
+    def _mc_setattr_common(self, name, attributes, attribute, existing_attr, where, mc_caller_file_name, mc_caller_line_num, **kwargs):
         """Set attributes with environment specific values"""
-        existing_attr = attributes.get(name)
-
         if existing_attr is not None:
-            if attribute.set_unknown and where != Where.IN_INIT and self.__class__._mc_deco_strict_setattr:
-                # we are trying to set an undefined attribute outside of __init__
-                raise ConfigException("Atempting to use '?' postfix to set attribute " + repr(name) + "  which exists on item: " + repr(self))
-
             if not isinstance(existing_attr, Attribute):
                 if name in self._mc_deco_nested_repeatables:
                     raise ConfigException(repr(name) + ' is already defined as a nested-repeatable and may not be replaced with an attribute.')
@@ -278,12 +272,6 @@ class _ConfigBase(object):
 
             attribute = existing_attr
         else:
-            if not attribute.set_unknown and where != Where.IN_INIT and self.__class__._mc_deco_strict_setattr and not overriding_property:
-                # we are trying to set an already defined attribute using the '?' syntax
-                raise ConfigException(
-                    "All attributes must be defined in __init__ or set with the '?' postfix. " +
-                    "Atempting to set attribute " + repr(name) + " which does not exist on item: " + repr(self))
-
             self._mc_check_reserved_name(name, 'setattr')
             attributes[name] = attribute
 
@@ -432,14 +420,25 @@ class _ConfigBase(object):
             if messages:            
                 self._mc_print_file_line_and_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
-    def _mc_check_override_common(self, item, name, attribute):
+    def _mc_check_override_common(self, item, name, attribute, existing_attr, where):
+        if existing_attr is not None and attribute.set_unknown and where != Where.IN_INIT and self.__class__._mc_deco_strict_setattr:
+            # we are trying to set an already defined attribute using the '?' syntax
+            raise ConfigException("Atempting to use '?' postfix to set attribute " + repr(name) + "  which exists on item: " + repr(self))
+
         try:
             object.__getattribute__(item, name)
         except AttributeError:
-            if not attribute.override_method:
-                return False
-            err_msg = "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists."
-            raise ConfigException(err_msg % dict(name=name))
+            if attribute.override_method:
+                err_msg = "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists."
+                raise ConfigException(err_msg % dict(name=name))
+
+            if existing_attr is None and not attribute.set_unknown and where not in (Where.IN_INIT, None) and self.__class__._mc_deco_strict_setattr:
+                # we are trying to set an undefined attribute outside of __init__
+                raise ConfigException(
+                    "All attributes must be defined in __init__ or set with the '?' postfix. " +
+                    "Atempting to set attribute " + repr(name) + " which does not exist on item: " + repr(self))
+
+            return
         except:
             # Error in property implemetation
             pass
@@ -456,7 +455,7 @@ class _ConfigBase(object):
                 try:
                     real_attr = object.__getattribute__(cls, name)
                     if isinstance(real_attr, property):
-                        return True
+                        return
 
                     err_msg = "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property."
                     raise ConfigException(err_msg % dict(name=name, value=real_attr))
@@ -470,11 +469,11 @@ class _ConfigBase(object):
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
         attribute, name = new_attribute(name)
+        attributes, where = self._mc_get_attributes_where()
+        existing_attr = attributes.get(name)
         try:
-            overriding_property = self._mc_check_override_common(self, name, attribute)
-            attributes = object.__getattribute__(self, '_mc_attributes')
-            where = object.__getattribute__(self, '_mc_where')
-            self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, overriding_property, **kwargs)
+            self._mc_check_override_common(self, name, attribute, existing_attr, where)
+            self._mc_setattr_common(name, attributes, attribute, existing_attr, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigException as ex:
             self._mc_print_error(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
@@ -1036,11 +1035,12 @@ class _ConfigBuilder(ConfigItem):
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
         if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
-
+    
         attribute, name = new_attribute(name)
         attributes, where = self._mc_get_attributes_where()
+        existing_attr = attributes.get(name)
         try:
-            self._mc_setattr_common(name, attributes, attribute, where, mc_caller_file_name, mc_caller_line_num, False, **kwargs)
+            self._mc_setattr_common(name, attributes, attribute, existing_attr, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigException as ex:
             self._mc_print_error(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
@@ -1086,7 +1086,7 @@ class _ConfigBuilder(ConfigItem):
                 # override_value is an Attribute
                 name = override_key
                 try:
-                    self._mc_check_override_common(item_from_build, name, override_value)
+                    self._mc_check_override_common(item_from_build, name, override_value, None, None)
                     override_attribute_errors[name] = False
                 except ConfigException as ex:
                     if name not in override_attribute_errors:
