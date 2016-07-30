@@ -421,7 +421,7 @@ class _ConfigBase(object):
 
         if where != Where.IN_INIT and self._mc_check:
             messages = self._mc_check_attr_fully_defined_messages(name, attribute)
-            if messages:            
+            if messages:
                 _mc_print_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_check_override_common(self, item, name, attribute):
@@ -482,7 +482,7 @@ class _ConfigBase(object):
             attribute.set_invalid_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
             if self._mc_check:
                 messages = self._mc_check_attr_fully_defined_messages(name, attribute)
-                if messages:                
+                if messages:
                     _mc_print_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             return
 
