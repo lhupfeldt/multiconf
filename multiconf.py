@@ -15,6 +15,7 @@ from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
 from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, find_init_call_file_line, _line_msg
 from .config_errors import _error_msg, _error_type_msg, _warning_type_msg, _mc_print_messages
+from .bases import get_bases
 
 
 from .json_output import ConfigItemEncoder
@@ -437,12 +438,6 @@ class _ConfigBase(object):
 
         if attribute.override_method:
             # This is expensive so do the quick __getattribute__ above first and only do this when necessary, i.e. we found an attribute
-            def get_bases(cls):
-                yield cls
-                for cls1 in cls.__bases__:
-                    for cls2 in get_bases(cls1):
-                        yield cls2
-
             for cls in get_bases(object.__getattribute__(item, '__class__')):
                 try:
                     real_attr = object.__getattribute__(cls, name)

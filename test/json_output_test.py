@@ -841,7 +841,7 @@ _json_dump_configbuilder_expected_json_full = """{
         }
     },
     "aaa": 2,
-    "aaa #calculated": true
+    "aaa #static": true
 }"""
 
 _json_dump_configbuilder_expected_json_repeatable_item = """{
@@ -988,7 +988,7 @@ _json_dump_configbuilder_dont_dump_expected_json_full = """{
         }
     },
     "aaa": 2,
-    "aaa #calculated": true
+    "aaa #static": true
 }"""
 
 _json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
@@ -1582,3 +1582,93 @@ def test_dict_attr_forward_item_ref():
             x_ref.item_refs['xr'] = xx
 
     compare_json(cr, _dict_attr_forward_item_ref)
+
+
+_static_member_direct_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "Xx": {
+        "__class__": "Xx",
+        "__id__": 0000,
+        "a": 1,
+        "a #static": true
+    }
+}"""
+
+def test_static_member_direct():
+    class Xx(ConfigItem):
+        a = 1
+
+    with ConfigRoot(prod, ef) as cr:
+        Xx()
+
+    compare_json(cr, _static_member_direct_expected_json)
+
+
+_static_member_inherited_mc_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "Xx": {
+        "__class__": "Xx",
+        "__id__": 0000,
+        "a": 1,
+        "a #static": true
+    },
+    "Yy": {
+        "__class__": "Yy",
+        "__id__": 0000,
+        "a": 1,
+        "a #static": true
+    },
+    "Zz": {
+        "__class__": "Zz",
+        "__id__": 0000,
+        "a": 1,
+        "a #static": true
+    },
+    "Aa": {
+        "__class__": "Aa",
+        "__id__": 0000,
+        "a": 7,
+        "a #static": true
+    },
+    "Bb": {
+        "__class__": "Bb",
+        "__id__": 0000,
+        "a": 7,
+        "a #static": true
+    }
+}"""
+
+def test_static_member_inherited_mc():
+    class Xx(ConfigItem):
+        a = 1
+
+    class Yy(Xx):
+        pass
+
+    class Zz(Yy):
+        pass
+
+    class Aa(Zz):
+        a = 7
+
+    class Bb(Aa):
+        pass
+    
+    with ConfigRoot(prod, ef) as cr:
+        Xx()
+        Yy()
+        Zz()
+        Aa()
+        Bb()
+
+    compare_json(cr, _static_member_inherited_mc_expected_json)
