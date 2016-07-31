@@ -662,6 +662,37 @@ def test_json_dump_iterable():
     compare_json(cr, _json_dump_iterable_expected_json)
 
 
+_json_dump_iterable_static_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "SimpleItem": {
+        "__class__": "SimpleItem",
+        "__id__": 0000,
+        "a": [
+            1
+        ],
+        "a #static": true
+    }
+}"""
+
+def test_json_dump_iterable_static():
+    class MyIterable(object):
+        def __iter__(self):
+            yield 1
+
+    class SimpleItem(ConfigItem):
+        a = MyIterable()
+
+    with ConfigRoot(prod, ef) as cr:
+        SimpleItem()
+
+    compare_json(cr, _json_dump_iterable_static_expected_json, test_compact=False)
+
+
 _uplevel_ref_expected_json_output = """{
     "__class__": "NestedRepeatable",
     "__id__": 0000,

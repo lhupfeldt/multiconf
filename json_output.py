@@ -175,25 +175,40 @@ class ConfigItemEncoder(object):
                             item_dict[key] = False
                             item_dict[key + ' #' + repr(val)] = True
                     elif val != McInvalidValue.MC_NO_VALUE:
+                        # TODO: Include type of dict in json meta info
                         if isinstance(orig_val, (self.multiconf_base_type, Repeatable)):
                             item_dict[key] = val
                         elif isinstance(val, dict):
+                            new_val = {}
                             for inner_key, maybeitem in val.items():
-                                if isinstance(maybeitem, self.multiconf_base_type):
-                                    val[inner_key] = "#ref, id: " + repr(id(maybeitem))
-                            attr_dict[key] = val
+                                if not isinstance(maybeitem, self.multiconf_base_type):
+                                    new_val[inner_key] = maybeitem
+                                    continue
+                                new_val[inner_key] = "#ref, id: " + repr(id(maybeitem))
+                            attr_dict[key] = new_val
                         else:
                             try:
                                 iterable = iter(val)
                             except TypeError:
-                                pass
+                                attr_dict[key] = val
                             else:
-                                if isinstance(val, tuple):
-                                    val = list(val)
-                                for index, maybeitem in enumerate(val):
-                                    if isinstance(maybeitem, self.multiconf_base_type):
-                                        val[index] = "#ref, id: " + repr(id(maybeitem))
-                            attr_dict[key] = val
+                                # TODO: Include type of iterable in json meta info
+                                if isinstance(orig_val, str):
+                                    attr_dict[key] = val
+                                else:
+                                    new_val = []
+                                    found_mc_ref = False
+                                    for maybeitem in val:
+                                        if not isinstance(maybeitem, self.multiconf_base_type):
+                                            new_val.append(maybeitem)
+                                            continue
+                                        found_mc_ref = True
+                                        new_val.append("#ref, id: " + repr(id(maybeitem)))
+                                    if found_mc_ref:
+                                        attr_dict[key] = new_val
+                                    else:
+                                        # We leave this to be handled later
+                                        attr_dict[key] = val
 
                     if key in entries:
                         if val != McInvalidValue.MC_NO_VALUE:
