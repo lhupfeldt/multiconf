@@ -170,7 +170,7 @@ class ConfigItemEncoder(object):
                         if isinstance(orig_val, (self.multiconf_base_type, Repeatable)):
                             item_dict[key] = val
                         elif isinstance(val, dict):
-                            new_val = {}
+                            new_val = OrderedDict()
                             for inner_key, maybeitem in val.items():
                                 if not isinstance(maybeitem, self.multiconf_base_type):
                                     new_val[inner_key] = maybeitem
