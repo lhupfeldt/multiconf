@@ -7,7 +7,7 @@ from __future__ import print_function
 from pytest import raises
 
 from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in, already_printed_msg
-from .utils.utils import py3_local, total_msg
+from .utils.utils import py3_local, total_msg, exception_previous_object_expected_stderr
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
 from ..decorators import nested_repeatables, required
@@ -723,14 +723,6 @@ def test_root_attribute_exception_in_with_block():
     assert str(exinfo.value) == "Error in root with block"
 
 
-_exception_previous_object_expected_stderr = """Exception validating previously defined object -
-  type: <class 'multiconf.test.multiconf_definition_errors_test.%(py3_local)sinner'>
-Stack trace will be misleading!
-This happens if there is an error (e.g. missing required attributes) in an object that was not
-directly enclosed in a with statement. Objects that are not arguments to a with statement will
-not be validated until the next ConfigItem is declared or an outer with statement is exited.
-"""
-
 def test_error_freezing_previous_sibling__build(capsys):
     class inner(ConfigBuilder):
         def build(self):
@@ -743,25 +735,9 @@ def test_error_freezing_previous_sibling__build(capsys):
             inner()
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr % dict(py3_local=py3_local())
+    assert replace_user_file_line_msg(serr) == exception_previous_object_expected_stderr % dict(
+        module='multiconf_definition_errors_test', py3_local=py3_local())
     assert str(exinfo.value) == "Error in build"
-
-
-def test_error_freezing_previous_sibling__validation(capsys):
-    @required('a')
-    class inner(ConfigItem):
-        pass
-
-    with raises(Exception) as exinfo:
-        with ConfigRoot(prod2, ef2_pp_prod):
-            errorline = lineno() + 1
-            inner()
-            inner()
-
-    _sout, serr = capsys.readouterr()
-    assert serr.startswith(ce(errorline, "No value given for required attributes: ['a']"))
-    assert serr.endswith(_exception_previous_object_expected_stderr % dict(py3_local=py3_local()))
-    assert total_msg(1) in str(exinfo.value)
 
 
 def test_mc_init_override_underscore_error(capsys):

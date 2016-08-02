@@ -214,7 +214,7 @@ class _ConfigBase(object):
                 if req not in _mc_attributes:
                     missing.append(req)
             if missing:
-                self._mc_error_msg("No value given for required attributes: " + repr(missing), file_name=file_name, line_num=line_num)
+                self._mc_error_msg("Missing '@required' items: " + repr(missing), file_name=file_name, line_num=line_num)
             self._mc_raise_if_errors()
 
         return self._mc_frozen
