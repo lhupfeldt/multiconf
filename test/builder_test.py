@@ -72,45 +72,6 @@ def test_configbuilder_override():
     check_containment(cr)
 
 
-def test_configbuilder_override_with_required_item():
-    class b(ConfigItem):
-        xx = 1
-
-    @required('b')
-    class XBuilder(ConfigBuilder):
-        def __init__(self, num_servers=4, **kwargs):
-            super(XBuilder, self).__init__()
-            self.num_servers = num_servers
-            for key, val in kwargs.items():
-                setattr(self, key, val)
-
-        def build(self):
-            for server_num in range(1, self.num_servers+1):
-                with Xses(name='server%d' % server_num, server_num=server_num) as c:
-                    c.setattr('something', prod=1, pp=2)
-
-    @nested_repeatables('xses')
-    class Root(ConfigRoot):
-        pass
-
-    with Root(prod2, ef2_prod_pp) as cr:
-        with XBuilder(a=1, something=7) as xb:
-            xb.setattr('num_servers', pp=2)
-            b()
-
-    assert len(cr.xses) == 4
-    assert cr.xses['server1'].a == 1
-    assert cr.xses['server2'].b.xx == 1
-    assert cr.xses['server4'].b.xx == 1
-    assert cr.xses['server1'].something == 7
-    assert cr.xses['server4'].something == 7
-    assert cr.xses['server1'].server_num == 1
-    assert cr.xses['server3'].server_num == 3
-    assert cr.xses['server4'].server_num == 4
-
-    check_containment(cr, verbose=True)
-
-
 def test_configbuilder_build_at_freeze():
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers=4, **kwargs):
