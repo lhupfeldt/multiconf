@@ -1094,7 +1094,7 @@ class _ConfigBuilder(ConfigItem):
             if isinstance(build_value, Repeatable):
                 for rep_key, rep_value in build_value.items():
                     rep_value._mc_contained_in = parent
-                    set_my_attributes_on_item_from_build(rep_value, clone=clone)
+                    set_my_attributes_on_item_from_build(rep_value, clone=True)
 
                     if isinstance(parent, _ConfigBuilder):
                         ur = UserRepeatable()
