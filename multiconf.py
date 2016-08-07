@@ -1054,12 +1054,13 @@ class _ConfigBuilder(ConfigItem):
                     continue
 
                 if isinstance(override_value, Repeatable):
+                    if override_key not in item_from_build.__class__._mc_deco_nested_repeatables:
+                        for _, rep_override_value in override_value.items():  # Get the first item to use for error message
+                            break
+                        raise ConfigException(rep_override_value._error_msg_not_repeatable_in_container(override_key, item_from_build))
                     for rep_override_key, rep_override_value in override_value.items():
-                        if override_key not in item_from_build.__class__._mc_deco_nested_repeatables:
-                            raise ConfigException(rep_override_value._error_msg_not_repeatable_in_container(override_key, item_from_build))
                         ov = copy.copy(rep_override_value) if clone else rep_override_value
                         ov._mc_contained_in = item_from_build
-
                         item_from_build._mc_attributes[override_key][rep_override_key] = ov
                     continue
 
@@ -1098,7 +1099,7 @@ class _ConfigBuilder(ConfigItem):
 
                     if isinstance(parent, _ConfigBuilder):
                         ur = UserRepeatable()
-                        ur.contained_in = self
+                        ur._mc_contained_in = self
                         parent_attributes.setdefault(build_key, ur)
                     elif build_key not in parent.__class__._mc_deco_nested_repeatables:
                         raise ConfigException(rep_value._error_msg_not_repeatable_in_container(build_key, parent))
