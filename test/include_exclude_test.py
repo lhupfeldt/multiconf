@@ -7,6 +7,7 @@ from __future__ import print_function
 from pytest import raises, xfail
 
 from .utils.utils import config_error, lineno, assert_lines_in
+from utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
 from .utils.compare_json import compare_json
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException, MC_REQUIRED
@@ -152,7 +153,7 @@ def test_include_missing_for_configitem(capsys):
         conf(prod, errorline)
 
     _sout, serr = capsys.readouterr()
-    ce(errorline[0], serr, "Attribute: 'anattr' MC_REQUIRED did not receive a value for env Env('pp')")
+    ce(errorline[0], serr, mc_required_other_env_expected.format(attr='anattr', env=pp))
     assert "There was 1 error when defining item" in str(exinfo.value)
 
 

@@ -6,7 +6,7 @@ import re
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException
+from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
 
 from ..decorators import named_as, strict_setattr
 from ..envs import EnvFactory
@@ -222,8 +222,9 @@ def test_attribute_overrides_property_no_property_mix_builder():
 
     @named_as('n2')
     class Nested2(ConfigItem):
-        pass
+        m = MC_REQUIRED
 
+    @strict_setattr()
     @named_as('n3')
     class Nested3(ConfigItem):
         m = 13
@@ -236,6 +237,10 @@ def test_attribute_overrides_property_no_property_mix_builder():
 
     @named_as('n5')
     class Nested5(ConfigItem):
+        def __init__(self):
+            super(Nested5, self).__init__()
+            self.m = MC_REQUIRED
+
         def mc_init(self):
             super(Nested5, self).mc_init()
             self.m = 24
@@ -256,7 +261,7 @@ def test_attribute_overrides_property_no_property_mix_builder():
         Nested4()
         Nested5()
     assert cr.n1.m == 1
-    assert not hasattr(cr.n2, 'm')
+    assert hasattr(cr.n2, 'm')
     assert cr.n3.m == 13
     assert cr.n4.m == 23
     assert cr.n5.m == 24
@@ -283,7 +288,7 @@ def test_attribute_overrides_property_no_property_mix_builder():
         with NestedBuilder() as nn:
             nn.setattr('m!', pp=7)
     assert cr.n1.m == 1
-    assert not hasattr(cr.n2, 'm')
+    assert hasattr(cr.n2, 'm')
     assert cr.n3.m == 13
     assert cr.n4.m == 23
     assert cr.n5.m == 24

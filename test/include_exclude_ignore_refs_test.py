@@ -116,7 +116,7 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
 
     with raises(AttributeError) as exinfo:
         conf(prod)
-    assert "Attribute 'anattr' MC_REQUIRED (on excluded object) is undefined for current env Env('prod')" in exinfo.value
+    assert "Attribute 'anattr' MC_REQUIRED (on excluded object) is undefined for current env Env('prod')" in str(exinfo.value)
 
     cr = conf(dev1)
     assert cr.item.item.anattr == 2

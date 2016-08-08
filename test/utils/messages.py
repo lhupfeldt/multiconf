@@ -18,3 +18,15 @@ mc_required_other_env_expected = """Attribute: '{attr}' MC_REQUIRED did not rece
 
 mc_todo_current_env_expected = """Attribute: '{attr}' MC_TODO did not receive a value for current env {env}"""
 mc_todo_other_env_expected = """Attribute: '{attr}' MC_TODO did not receive a value for env {env}"""
+
+no_value_current_env_expected = """Attribute: '{attr}' did not receive a value for current env {env}"""
+no_value_other_env_expected = """Attribute: '{attr}' did not receive a value for env {env}"""
+
+config_error_mc_required_current_env_expected = "^ConfigError: " + mc_required_current_env_expected
+config_error_mc_required_other_env_expected = "^ConfigError: " + mc_required_other_env_expected
+
+config_error_mc_todo_current_env_expected = "^ConfigError: " + mc_todo_current_env_expected
+config_error_mc_todo_other_env_expected = "^ConfigError: " + mc_todo_other_env_expected
+
+config_error_no_value_current_env_expected = "^ConfigError: " + no_value_current_env_expected
+config_error_no_value_other_env_expected = "^ConfigError: " + no_value_other_env_expected

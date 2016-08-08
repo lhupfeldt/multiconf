@@ -48,14 +48,14 @@ def test_find_contained_in_called_before_parent___init__(capsys):
             pass
 
         class inner(ConfigItem):
-            def __init__(self, **kwargs):
+            def __init__(self):
                 global inner_errorline
                 # Error: find_contained_in must not be called before parent __init__
                 inner_errorline = lineno() + 1
                 self.find_contained_in('a')
 
         with root(prod2, ef2_prod_pp):
-            inner(id='n1', b=1)
+            inner()
 
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % 'find_contained_in'
@@ -69,14 +69,14 @@ def test_property_method_called_before_parent___init__(capsys):
             pass
 
         class inner(ConfigItem):
-            def __init__(self, **kwargs):
+            def __init__(self):
                 global inner_errorline
                 # Error: env must not be called before parent __init__
                 inner_errorline = lineno() + 1
                 print(self.env)
 
         with root(prod2, ef2_prod_pp):
-            inner(id='n1', b=1)
+            inner()
 
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % 'env'
@@ -90,13 +90,13 @@ def test_undefined_method_called_before_parent___init__(capsys):
             pass
 
         class inner(ConfigItem):
-            def __init__(self, **kwargs):
+            def __init__(self):
                 global inner_errorline
                 inner_errorline = lineno() + 1
                 self.ttt('')
 
         with root(prod2, ef2_prod_pp):
-            inner(id='n1', b=1)
+            inner()
 
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % 'ttt'
@@ -110,13 +110,13 @@ def test_undefined_property_method_called_before_parent___init__(capsys):
             pass
 
         class inner(ConfigItem):
-            def __init__(self, **kwargs):
+            def __init__(self):
                 global inner_errorline
                 inner_errorline = lineno() + 1
                 self.ttt
 
         with root(prod2, ef2_prod_pp):
-            inner(id='n1', b=1)
+            inner()
 
     _sout, serr = capsys.readouterr()
     eex = _expected_ex_msg % 'ttt'

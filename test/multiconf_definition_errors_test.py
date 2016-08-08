@@ -8,6 +8,10 @@ from pytest import raises
 
 from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in, py3_local, total_msg
 from .utils.messages import already_printed_msg, exception_previous_object_expected_stderr
+from .utils.messages import config_error_mc_required_current_env_expected, config_error_mc_required_other_env_expected
+from .utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
+from .utils.messages import config_error_no_value_current_env_expected, config_error_no_value_other_env_expected
+from .utils.messages import no_value_current_env_expected, no_value_other_env_expected
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
 from ..decorators import nested_repeatables, required
@@ -249,7 +253,7 @@ def test_value_not_assigned_to_all_envs(capsys):
             cr.setattr('a', prod="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
+    assert serr == ce(errorline, no_value_other_env_expected.format(attr='a', env=pp2))
     assert replace_ids(str(exinfo.value), False) == _single_error_on_root_expected_ex % '"hello"'
 
 
@@ -265,7 +269,7 @@ def test_value_not_assigned_to_all_envs_in_builder(capsys):
                 bb.setattr('a', prod="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
+    assert serr == ce(errorline, no_value_other_env_expected.format(attr='a', env=pp2))
 
 
 def test_attribute_defined_with_different_types_root(capsys):
@@ -828,8 +832,8 @@ def test_setattr_no_envs(capsys):
             "^%(lnum)s",
             "^ConfigError: No Env or EnvGroup names specified.",
             "^%(lnum)s",
-            "^ConfigError: Attribute: 'a' did not receive a value for env Env('pp')",
-            "^ConfigError: Attribute: 'a' did not receive a value for current env Env('prod')",
+            config_error_no_value_other_env_expected.format(attr='a', env=pp2),
+            config_error_no_value_current_env_expected.format(attr='a', env=prod2),
         )
 
     # ConfigRoot
@@ -919,8 +923,8 @@ def test_init_lineno(capsys):
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
+        config_error_mc_required_other_env_expected.format(attr='a', env=pp2),
+        config_error_mc_required_current_env_expected.format(attr='a', env=prod2),
     )
 
     class intermediate(init_overidden1):
@@ -936,8 +940,8 @@ def test_init_lineno(capsys):
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
+        config_error_mc_required_other_env_expected.format(attr='a', env=pp2),
+        config_error_mc_required_current_env_expected.format(attr='a', env=prod2),
     )
 
     class init_overidden2(intermediate):
@@ -955,8 +959,8 @@ def test_init_lineno(capsys):
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
-        "^ConfigError: Attribute: 'b' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^ConfigError: Attribute: 'b' MC_REQUIRED did not receive a value for current env Env('prod')",
+        config_error_mc_required_other_env_expected.format(attr='a', env=pp2),
+        config_error_mc_required_current_env_expected.format(attr='a', env=prod2),
+        config_error_mc_required_other_env_expected.format(attr='b', env=pp2),
+        config_error_mc_required_current_env_expected.format(attr='b', env=prod2),
     )

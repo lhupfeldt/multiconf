@@ -8,14 +8,19 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .. import ConfigRoot, ConfigItem, ConfigException
+from .. import ConfigRoot, ConfigItem, ConfigException, MC_REQUIRED
 from ..envs import EnvFactory
 
-from .utils.messages import already_printed_msg
+from .utils.messages import already_printed_msg, config_error_mc_required_other_env_expected
 from .utils.utils import lineno, assert_lines_in, replace_ids
 
 
 class item(ConfigItem):
+    def __init__(self):
+        super(item, self).__init__()
+        self.aa = MC_REQUIRED
+        self.bb = MC_REQUIRED
+
     def mc_init(self):
         # TODO
         self.bb = 111
@@ -36,6 +41,11 @@ def test_env_factories_ef1(capsys):
 
     pp = ef.Env('pp')
     prod = ef.Env('prod')
+
+    class root(ConfigRoot):
+        def __init__(self, selected_env, env_factory):
+            super(root, self).__init__(selected_env, env_factory)
+            self.aa = MC_REQUIRED
 
     with ConfigRoot(dev1, ef):
         with item() as it:
@@ -60,8 +70,8 @@ def test_env_factories_ef1(capsys):
         "^%(lnum)s",
         "^ConfigError: No such Env or EnvGroup: 'g_prod'",
         "^%(lnum)s",
-        "^ConfigError: Attribute: 'aa' did not receive a value for env Env('pp')",
-        "^ConfigError: Attribute: 'aa' did not receive a value for env Env('prod')",
+        config_error_mc_required_other_env_expected.format(attr='aa', env=pp),
+        config_error_mc_required_other_env_expected.format(attr='aa', env=prod),
     )
     assert replace_ids(str(exinfo.value), False) == _env_factories_ef1_expected_ex
 
@@ -119,7 +129,7 @@ def test_env_factories_ef2(capsys):
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",
-        "^ConfigError: Attribute: 'aa' did not receive a value for env Env('dev3')",
+        config_error_mc_required_other_env_expected.format(attr='aa', env=dev3),
     )
     assert replace_ids(str(exinfo.value), False) == _env_factories_ef2_expected_ex
 

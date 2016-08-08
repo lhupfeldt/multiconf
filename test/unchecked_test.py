@@ -5,7 +5,9 @@
 from pytest import raises, xfail
 
 from .utils.utils import config_error, lineno, replace_ids, assert_lines_in, assert_lines_in
-from .utils.messages import already_printed_msg, mc_required_other_env_expected, mc_todo_other_env_expected, mc_todo_current_env_expected
+from .utils.messages import already_printed_msg, mc_required_other_env_expected
+from .utils.messages import config_error_mc_todo_current_env_expected, config_error_mc_todo_other_env_expected
+from .utils.messages import config_error_mc_required_current_env_expected, config_error_mc_required_other_env_expected
 
 from .. import ConfigRoot, ConfigItem, ConfigException, MC_TODO, MC_REQUIRED
 from ..decorators import required, unchecked
@@ -153,10 +155,6 @@ def test_required_missing_unchecked_base_for_configitem():
     assert cr.item.anotherattr == 0
 
 
-_required_missing_unchecked_super_for_configitem_expected1a = """Attribute: 'anotherattr' MC_REQUIRED did not receive a value for env Env('dev1')"""
-
-_required_missing_unchecked_super_for_configitem_expected1b = """Attribute: 'anotherattr' MC_REQUIRED did not receive a value for env Env('dev2')"""
-
 _required_missing_unchecked_super_for_configitem_expected1_ex = """There were 2 errors when defining item: {
     "__class__": "item #as: 'item', id: 0000",
     "anattr": 2,
@@ -187,8 +185,9 @@ def test_required_missing_unchecked_super_for_configitem(capsys):
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",
-        "^ConfigError: " + _required_missing_unchecked_super_for_configitem_expected1a,
-        "^ConfigError: " + _required_missing_unchecked_super_for_configitem_expected1b)
+        config_error_mc_required_other_env_expected.format(attr='anotherattr', env=dev1),
+        config_error_mc_required_other_env_expected.format(attr='anotherattr', env=dev2),
+    )
     assert replace_ids(str(exinfo.value), False) == _required_missing_unchecked_super_for_configitem_expected1_ex
 
     with raises(ConfigException) as exinfo:
@@ -297,10 +296,10 @@ def test_unchecked_override_attribute_for_configitem_mc_todo(capsys):
     _sout, serr = capsys.readouterr()
     assert_lines_in(
         __file__, errorline, serr,
-        "^ConfigError: " + mc_todo_other_env_expected.format(attr='anotherattr', env=dev1),
-        "^ConfigError: " + mc_todo_other_env_expected.format(attr='anotherattr', env=dev2),
-        "^ConfigError: " + mc_todo_other_env_expected.format(attr='anotherattr', env=pp),
-        "^ConfigError: " + mc_todo_current_env_expected.format(attr='anotherattr', env=prod),
+        config_error_mc_todo_other_env_expected.format(attr='anotherattr', env=dev1),
+        config_error_mc_todo_other_env_expected.format(attr='anotherattr', env=dev2),
+        config_error_mc_todo_other_env_expected.format(attr='anotherattr', env=pp),
+        config_error_mc_todo_current_env_expected.format(attr='anotherattr', env=prod),
     )
 
     assert replace_ids(str(exinfo.value), False) == _unchecked_override_attribute_for_configitem_mc_todo_expected_ex

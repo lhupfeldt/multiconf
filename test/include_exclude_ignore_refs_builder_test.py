@@ -8,16 +8,12 @@ from ..decorators import named_as, nested_repeatables
 
 from ..envs import EnvFactory
 
+from .utils.tstclasses import name_root
+
 
 ef = EnvFactory()
 dev1 = ef.Env('dev1')
 prod = ef.Env('prod')
-
-
-class root(ConfigRoot):
-    def __init__(self, env, env_factory, name=None):
-        super(root, self).__init__(env, env_factory)
-        self.name = name
 
 
 @nested_repeatables('reps')
@@ -45,7 +41,7 @@ class BB(ConfigBuilder):
 
 def test_exclude_with_builder():
     def conf(env):
-        with root(env, ef, name='x') as cr:
+        with name_root(env, ef, name='x') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
                 with BB('bbb'):
                     pass
@@ -64,7 +60,7 @@ def test_exclude_with_builder():
 
 def test_exclude_no_builder():
     def conf(env):
-        with root(env, ef, name='esb') as cr:
+        with name_root(env, ef, name='esb') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
                 with RepeatableItem('bbb'):
                     pass
@@ -83,7 +79,7 @@ def test_exclude_no_builder():
 
 def test_exclude_with_builder_repeated():
     def conf(env):
-        with root(env, ef, name='x') as cr:
+        with name_root(env, ef, name='x') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
                 BB('aaa')
                 BB('bbb')
@@ -124,7 +120,7 @@ class ExclInBuild2(ConfigBuilder):
 
 def test_exclude_in_build():
     def conf(env):
-        with root(env, ef, name='x') as cr:
+        with name_root(env, ef, name='x') as cr:
             with HasRepeatables(name='r1', mc_exclude=None) as it:
                 ExclInBuild1()
                 ExclInBuild2()
@@ -147,7 +143,7 @@ def test_mc_select_envs_with_builder():
             self.name = name
     
     def conf(env):
-        with root(env, ef, name='x') as cr:
+        with name_root(env, ef, name='x') as cr:
             with HasRepeatables2(name='r1') as it:
                 with BB('bbb') as bbb:
                     bbb.mc_select_envs(exclude=[prod])

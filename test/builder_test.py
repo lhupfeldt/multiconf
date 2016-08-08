@@ -9,6 +9,7 @@ from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 
 from .utils.check_containment import check_containment
+from .utils.tstclasses import name_root
 
 
 ef1_prod = EnvFactory()
@@ -74,18 +75,18 @@ def test_configbuilder_with_required_item_decorator():
 
 def test_configbuilder_build_with_mc_required():
     class XBuilder(ConfigBuilder):
-        def __init__(self, num_servers=4, **kwargs):
+        def __init__(self, num_servers=4, a=MC_REQUIRED, something=None):
             super(XBuilder, self).__init__()
             self.num_servers = num_servers
-            for key, val in kwargs.items():
-                setattr(self, key, val)
+            self.a = a
+            self.something = something
             self.b = MC_REQUIRED
 
         def build(self):
             for server_num in range(1, self.num_servers+1):
                 with Xses(name='server%d' % server_num, server_num=server_num) as c:
-                    c.setattr('something', prod=1, pp=2)
-                    c.none_is_not_used = False
+                    c.setattr('something?', prod=1, pp=2)
+                    c.setattr('none_is_not_used?', default=False)
 
     @nested_repeatables('xses')
     class Root(ConfigRoot):
@@ -95,7 +96,7 @@ def test_configbuilder_build_with_mc_required():
         with XBuilder(a=1, something=7) as xb:
             xb.setattr('num_servers', pp=2)
             xb.setattr('b', prod=3, pp=4)
-            xb.none_is_not_used = None
+            xb.setattr('none_is_not_used?', default=None)
 
     assert len(cr.xses) == 4
     assert cr.xses['server1'].a == 1
@@ -147,11 +148,10 @@ def test_configbuilder_override_with_required_item():
 
 def test_configbuilder_build_at_root_freeze():
     class XBuilder(ConfigBuilder):
-        def __init__(self, num_servers=4, **kwargs):
+        def __init__(self, num_servers=4, a=MC_REQUIRED):
             super(XBuilder, self).__init__()
             self.num_servers = num_servers
-            for key, val in kwargs.items():
-                setattr(self, key, val)
+            self.a = a
 
         def build(self):
             for server_num in range(1, self.num_servers+1):
@@ -175,7 +175,9 @@ def test_configbuilder_build_at_root_freeze():
 def test_configbuilder_access_to_contained_in_from_build():
     @named_as('y')
     class Y(ConfigItem):
-        pass
+        def __init__(self):
+            super(Y, self).__init__()
+            self.number = MC_REQUIRED
 
     class YBuilder(ConfigBuilder):
         def build(self):
@@ -196,7 +198,9 @@ def test_configbuilder_access_to_contained_in_from_build():
 def test_configbuilder_access_to_contained_in_from___init__():
     @named_as('x')
     class X(ConfigItem):
-        pass
+        def __init__(self):
+            super(X, self).__init__()
+            self.number = MC_REQUIRED
 
     class XBuilder(ConfigBuilder):
         def __init__(self):
@@ -242,11 +246,12 @@ def test_configbuilder_access_to_contained_in_from_with_block():
 def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_of_builder():
     @named_as('x')
     class X(ConfigItem):
-        def __init__(self, **kwargs):
+        def __init__(self, number):
             super(X, self).__init__()
-            for key, val in kwargs.items():
-                setattr(self, key, val)
+            self.number = number
             self.init_parent = self.contained_in
+            self.mc_init_parent = None
+            self.validate_parent = None
 
         def mc_init(self):
             self.mc_init_parent = self.contained_in
@@ -286,7 +291,7 @@ def test_configbuilder_nested_items():
         def build(self):
             for num in range(1, self.number+1):
                 with Xses(name='server%d' % num, server_num=num) as c:
-                    c.setattr('something', prod=1, pp=2)
+                    c.setattr('something?', prod=1, pp=2)
 
     @nested_repeatables('xses')
     class Root(ConfigRoot):
@@ -319,7 +324,7 @@ def test_configbuilder_nested_items_access_to_contained_in():
         def build(self):
             for num in range(1, self.number+1):
                 with Xses(name='server%d' % num, server_num=num) as c:
-                    c.setattr('something', prod=1, pp=2)
+                    c.setattr('something?', prod=1, pp=2)
 
     @nested_repeatables('xses')
     class Root(ConfigRoot):
@@ -357,7 +362,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
             for num in range(self.start, self.start + self.contained_in.aaa):
                 name = 'server%d' % num
                 with Y(mc_key=name, name=name, server_num=num) as c:
-                    c.setattr('something', prod=1, pp=2)
+                    c.setattr('something?', prod=1, pp=2)
 
     @nested_repeatables('ys')
     class ItemWithYs(ConfigItem):
@@ -366,10 +371,10 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
     @named_as('ys')
     @nested_repeatables('y_children, ys')
     class Y(RepeatableConfigItem):
-        def __init__(self, mc_key, **kwargs):
+        def __init__(self, mc_key, name, server_num):
             super(Y, self).__init__(mc_key=mc_key)
-            for key, val in kwargs.items():
-                setattr(self, key, val)
+            self.name = name
+            self.server_num = server_num
             ys_in_init_contained_in.append(self.contained_in)
 
     @named_as('y_children')
@@ -428,7 +433,7 @@ def test_configbuilder_repeated():
         def build(self):
             for num in range(self.first, self.last+1):
                 with Xses(name='server%d' % num, server_num=num) as c:
-                    c.setattr('something', prod=1, pp=2)
+                    c.setattr('something?', prod=1, pp=2)
             self.q = self.last
 
     @nested_repeatables('xses')
@@ -583,7 +588,7 @@ def test_configbuilders_alternating_with_items():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod1, ef1_prod) as cr:
+    with name_root(prod1, ef1_prod) as cr:
         cr.name = 'myp'
         with OuterItem():
             with MiddleBuilder('base'):
@@ -618,7 +623,7 @@ def test_configbuilders_alternating_with_items_repeatable_simple():
     class OuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod1, ef1_prod) as cr:
+    with name_root(prod1, ef1_prod) as cr:
         cr.name = 'myp'
         with OuterItem():
             OuterBuilder()

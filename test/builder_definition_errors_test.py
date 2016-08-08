@@ -5,8 +5,9 @@
 from pytest import raises
 
 from .utils.utils import config_error, replace_ids, replace_ids_builder
+from .utils.tstclasses import name_root
 
-from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
 from ..decorators import nested_repeatables, named_as
 from ..envs import EnvFactory
 
@@ -28,6 +29,8 @@ class Xses(RepeatableConfigItem):
     def __init__(self, name=None):
         super(Xses, self).__init__(mc_key=name)
         self.name = name
+        self.server_num = None
+        self.something = None
 
 
 @named_as('x_children')
@@ -52,7 +55,9 @@ _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expe
     "xses": {
         "server1": {
             "__class__": "Xses #as: 'xses', id: 0000",
-            "name": "server1"
+            "name": "server1",
+            "server_num": null,
+            "something": null
         }
     },
     "XBuilder.builder.0000": {
@@ -223,7 +228,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
         pass
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod) as root:
+        with name_root(prod1, ef1_prod) as root:
             root.name = 'myp'
             with OuterItem():
                 MiddleBuilder('base1')
@@ -231,7 +236,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
     assert replace_ids(str(exinfo.value), False) == "Repeated non repeatable conf item: 'MiddleItem'"
 
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod) as root:
+        with name_root(prod1, ef1_prod) as root:
             root.name = 'myp'
             MiddleBuilder('base2')
 

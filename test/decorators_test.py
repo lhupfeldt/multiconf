@@ -1,10 +1,11 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .utils.utils import config_error, replace_ids
-
 from .. import ConfigRoot, ConfigItem
 from ..decorators import named_as, nested_repeatables
+
+from .utils.utils import config_error, replace_ids
+from .utils.tstclasses import name_root
 
 from ..envs import EnvFactory
 
@@ -31,7 +32,7 @@ _g_expected = """{
 
 def test_named_as():
     @named_as('project')
-    class root(ConfigRoot):
+    class root(name_root):
         pass
 
     with root(prod2, ef2_prod_dev2ct) as proj:
