@@ -30,3 +30,12 @@ def test_decorator_arg_not_a_valid_identifier_in_named_as_decorator():
             pass
 
     assert str(exinfo.value) == "'a-b' is not a valid identifier"
+
+
+def test_decorator_arg_is_a_keyword_in_named_as_decorator():
+    with raises(ConfigDefinitionException) as exinfo:
+        @named_as('class')
+        class root(ConfigRoot):
+            pass
+
+    assert str(exinfo.value) == "'class' is not a valid identifier"

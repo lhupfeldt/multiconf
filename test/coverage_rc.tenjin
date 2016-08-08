@@ -38,6 +38,8 @@ partial_branches =
     # We always have base classes, so these loops will alvays be entered
     for cls in get_bases
 
+    # Get the first item to use for error message
+
 omit =
     test/*
     setup.py

@@ -5,7 +5,8 @@ from __future__ import print_function
 
 from pytest import raises, mark  # pylint: disable=no-name-in-module
 
-from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, total_msg, already_printed_msg
+from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, total_msg
+from .utils.messages import already_printed_msg
 
 from .. import ConfigRoot, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
 from ..envs import EnvFactory

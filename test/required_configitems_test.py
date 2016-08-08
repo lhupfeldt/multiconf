@@ -3,7 +3,8 @@
 
 from pytest import raises
 
-from .utils.utils import config_error, config_warning, replace_ids, lineno, total_msg, py3_local, exception_previous_object_expected_stderr
+from .utils.utils import config_error, config_warning, replace_ids, lineno, total_msg, py3_local
+from .utils.messages import exception_previous_object_expected_stderr
 
 from .. import ConfigRoot, ConfigItem, ConfigException, ConfigDefinitionException
 from ..decorators import required, named_as, nested_repeatables

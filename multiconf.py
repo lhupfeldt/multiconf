@@ -561,26 +561,29 @@ class _ConfigBase(object):
             raise ConfigApiException(ex_msg)
 
         mc_value = attr._mc_value()
-        if mc_value != McInvalidValue.MC_NO_VALUE:
+        if not isinstance(mc_value, McInvalidValue):
             return mc_value
 
-        if self._mc_is_excluded:
-            return Excluded(self)
+        # This can only happen for unchecked classes or when accessing an attribute on an excluded item
+        if self._mc_where == Where.IN_MC_INIT:
+            # Just propagate the value, errors will be handled later
+            return mc_value
 
         try:
             return object.__getattribute__(self, name)
         except Exception:
-            root_conf = object.__getattribute__(self, '_mc_root_conf')
-            selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
+            excluded_msg = " (on excluded object)" if self._mc_is_excluded else ""
+            value_msg = (' ' + repr(mc_value)) if isinstance(mc_value, McInvalidValue) and mc_value != McInvalidValue.MC_NO_VALUE else ''
 
             if attr.override_method:
                 # We have both an mc_attribute and a property method on the object
-                raise AttributeError("Attribute " + repr(name) +
+                raise AttributeError("Attribute " + repr(name) + excluded_msg +
                                      " is defined as muticonf attribute and as property method, but value is undefined for env " +
-                                     repr(selected_env) + " and method call failed")
+                                     repr(self.env) + " and method call failed")
 
-            # This can only happen for unchecked classes
-            raise AttributeError("Attribute " + repr(name) + " is undefined for env " + repr(selected_env))
+            # This can only happen for unchecked classes or when getting a property on an excluded object
+            msg = "Attribute " + repr(name) + value_msg + excluded_msg + " is undefined for current env " + repr(self.env)
+            raise AttributeError(msg)
 
     def items(self):
         attributes = object.__getattribute__(self, '_mc_attributes')
@@ -792,9 +795,9 @@ class _ConfigItem(_ConfigBase):
                 print("Exception validating previously defined object -", file=sys.stderr)
                 print("  type:", type(previous_item), file=sys.stderr)
                 print("Stack trace will be misleading!", file=sys.stderr)
-                print("This happens if there is an error (e.g. missing required attributes) in an object that was not", file=sys.stderr)
-                print("directly enclosed in a with statement. Objects that are not arguments to a with statement will", file=sys.stderr)
-                print("not be validated until the next ConfigItem is declared or an outer with statement is exited.", file=sys.stderr)
+                print("This happens if there is an error (e.g. attributes with value MC_REQUIRED or missing '@required' ConfigItems ) in", file=sys.stderr)
+                print("an object that was not directly enclosed in a with statement. Objects that are not arguments to a with", file=sys.stderr)
+                print("statement will not be validated until the next ConfigItem is declared or an outer with statement is exited.", file=sys.stderr)
 
                 if hasattr(ex, '_mc_in_user_code') or _debug_exc:
                     raise
@@ -1055,7 +1058,7 @@ class _ConfigBuilder(ConfigItem):
 
                 if isinstance(override_value, Repeatable):
                     if override_key not in item_from_build.__class__._mc_deco_nested_repeatables:
-                        for _, rep_override_value in override_value.items():  # Get the first item to use for error message
+                        for _, rep_override_value in override_value.items():  # Get the first item to use for error message - py2/3 compatible
                             break
                         raise ConfigException(rep_override_value._error_msg_not_repeatable_in_container(override_key, item_from_build))
                     for rep_override_key, rep_override_value in override_value.items():

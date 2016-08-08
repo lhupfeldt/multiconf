@@ -9,8 +9,8 @@ from pytest import raises, xfail
 from .utils.utils import config_error, lineno, assert_lines_in
 from .utils.compare_json import compare_json
 
-from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException
-from ..decorators import required, nested_repeatables
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException, MC_REQUIRED
+from ..decorators import named_as, nested_repeatables, required
 from ..config_errors import caller_file_line
 
 from ..envs import EnvFactory
@@ -33,8 +33,24 @@ prod = ef.Env('prod')
 g_ppr = ef.EnvGroup('g_ppr', pp, prod)
 
 
-@required('anattr, anotherattr')
 class item(ConfigItem):
+    def __init__(self, mc_include=None, mc_exclude=None):
+        super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        self.anattr = MC_REQUIRED
+        self.anotherattr = MC_REQUIRED
+
+
+class anitem(ConfigItem):
+    xx = 1
+
+
+class anotheritem(ConfigItem):
+    xx = 2
+
+
+@named_as('item')
+@required('anitem, anotheritem')
+class decorated_item(ConfigItem):
     pass
 
 
@@ -50,7 +66,19 @@ _include_exclude_for_configitem_expected_json = """{
     "item #Excluded: <class 'multiconf.test.include_exclude_test.item'>": true
 }"""
 
-def test_include_for_configitem():
+_include_exclude_for_decorated_configitem_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "a": 1,
+    "item": false,
+    "item #Excluded: <class 'multiconf.test.include_exclude_test.decorated_item'>": true
+}"""
+
+def test_include_for_configitem_with_mc_required():
     def conf(env):
         with ConfigRoot(env, ef) as cr:
             cr.a = 1
@@ -67,6 +95,25 @@ def test_include_for_configitem():
     cr = conf(dev1)
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
+
+
+def test_include_for_configitem_with_required_decorator():
+    def conf(env):
+        with ConfigRoot(env, ef) as cr:
+            cr.a = 1
+            with decorated_item(mc_include=[dev1, pp]) as it:
+                anitem()
+                anotheritem()
+        return cr
+
+    cr = conf(prod)
+    assert cr.a == 1
+    assert not cr.item
+    compare_json(cr, _include_exclude_for_decorated_configitem_expected_json, test_excluded=True)
+
+    cr = conf(dev1)
+    assert cr.item.anitem.xx == 1
+    assert cr.item.anotheritem.xx == 2
 
 
 def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
@@ -105,7 +152,7 @@ def test_include_missing_for_configitem(capsys):
         conf(prod, errorline)
 
     _sout, serr = capsys.readouterr()
-    ce(errorline[0], serr, "Attribute: 'anattr' did not receive a value for env Env('pp')")
+    ce(errorline[0], serr, "Attribute: 'anattr' MC_REQUIRED did not receive a value for env Env('pp')")
     assert "There was 1 error when defining item" in str(exinfo.value)
 
 
@@ -128,10 +175,19 @@ def test_exclude_for_configitem():
     assert cr.item.anotherattr == 1
 
 
-@required('anattr, anotherattr')
 class ritem(RepeatableConfigItem):
+    def __init__(self, name, mc_include=None, mc_exclude=None):
+        super(ritem, self).__init__(mc_key=name, mc_include=mc_include, mc_exclude=mc_exclude)
+        self.name = name
+        self.anattr = MC_REQUIRED
+        self.anotherattr = MC_REQUIRED
+
+
+@named_as('ritems')
+@required('anitem, anotheritem')
+class decorated_ritem(RepeatableConfigItem):
     def __init__(self, name, mc_exclude=None, mc_include=None):
-        super(ritem, self).__init__(mc_key=name, mc_exclude=mc_exclude, mc_include=mc_include)
+        super(decorated_ritem, self).__init__(mc_key=name, mc_exclude=mc_exclude, mc_include=mc_include)
         self.name = name
 
 
@@ -151,7 +207,7 @@ _include_exclude_for_configitem_repeatable_expected_json = """{
     "ritems": {}
 }"""
 
-def test_include_for_configitem_repeatable():
+def test_include_for_configitem_repeatable_with_mc_required():
     def conf(env):
         with root(env, ef) as cr:
             cr.a = 1
@@ -168,6 +224,25 @@ def test_include_for_configitem_repeatable():
     cr = conf(dev1)
     assert cr.ritems['a'].anattr == 2
     assert cr.ritems['a'].anotherattr == 1
+
+
+def test_include_for_configitem_repeatable_with_required_decorater():
+    def conf(env):
+        with root(env, ef) as cr:
+            cr.a = 1
+            with decorated_ritem(name='a', mc_include=[dev1, pp]) as it:
+                anitem()
+                anotheritem()
+        return cr
+
+    cr = conf(prod)
+    assert cr.a == 1
+    assert cr.ritems == {}
+    compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
+
+    cr = conf(dev1)
+    assert cr.ritems['a'].anitem.xx == 1
+    assert cr.ritems['a'].anotheritem.xx == 2
 
 
 def test_exclude_for_configitem_repeatable():

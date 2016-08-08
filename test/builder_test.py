@@ -4,7 +4,7 @@
 from collections import OrderedDict
 from pytest import xfail
 
-from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder
+from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
 from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 
@@ -35,14 +35,51 @@ class XChild(RepeatableConfigItem):
         self.a = a
 
 
-def test_configbuilder_override():
-    @required('b')
+def test_configbuilder_with_required_item_decorator():
+    xfail('TODO Builder containment bug')
+
+    @named_as('b_item')
+    class BItem(ConfigItem):
+        xx = 6
+
+    @required('b_item')
+    class XBuilder(ConfigBuilder):
+        def __init__(self, num_servers, aa):
+            super(XBuilder, self).__init__()
+            self.num_servers = num_servers
+            self.aa = aa
+
+        def build(self):
+            for server_num in range(1, self.num_servers+1):
+                with Xses(name='server%d' % server_num, server_num=server_num) as cc:
+                    cc.setattr('aa', prod=1, pp=2)
+
+    @nested_repeatables('xses')
+    class Root(ConfigRoot):
+        pass
+
+    with Root(prod2, ef2_prod_pp) as cr:
+        with XBuilder(num_servers=4, aa=7) as xb:
+            xb.setattr('num_servers', pp=1)
+            BItem()
+
+    assert len(cr.xses) == 4
+    assert cr.xses['server1'].aa == 7
+    assert cr.xses['server4'].aa == 7
+    assert cr.xses['server1'].server_num == 1
+    assert cr.xses['server3'].server_num == 3
+    assert cr.xses['server4'].server_num == 4
+    assert cr.xses['server3'].b_item.xx == 6
+
+
+def test_configbuilder_build_with_mc_required():
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers=4, **kwargs):
             super(XBuilder, self).__init__()
             self.num_servers = num_servers
             for key, val in kwargs.items():
                 setattr(self, key, val)
+            self.b = MC_REQUIRED
 
         def build(self):
             for server_num in range(1, self.num_servers+1):
@@ -108,7 +145,7 @@ def test_configbuilder_override_with_required_item():
     check_containment(cr, verbose=True)
 
 
-def test_configbuilder_build_at_freeze():
+def test_configbuilder_build_at_root_freeze():
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers=4, **kwargs):
             super(XBuilder, self).__init__()
@@ -427,7 +464,15 @@ def test_configbuilder_repeated():
     check_containment(cr)
 
 
-def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder():
+def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder_with_required_decorator():
+    @named_as('a')
+    class A(ConfigItem):
+        xx = 1
+
+    @named_as('b')
+    class B(ConfigItem):
+        xx = 2
+    
     @required('a, b')
     class builder(ConfigBuilder):
         def build(self):
@@ -435,12 +480,33 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder()
 
     with ConfigRoot(prod1, ef1_prod) as cr:
         with builder() as ii:
-            ii.a = 1
-            assert ii.a == 1
-            ii.setattr('b', prod=2)
-            assert ii.b == 2
+            A()
+            B()
+
+    assert ii.a.xx == 1
+    assert ii.b.xx == 2
     check_containment(cr)
 
+
+def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder_with_mc_required():
+    class builder(ConfigBuilder):
+        def __init__(self):
+            super(builder, self).__init__()
+            self.a = MC_REQUIRED
+            self.b = MC_REQUIRED
+
+        def build(self):
+            pass
+
+    with ConfigRoot(prod1, ef1_prod) as cr:
+        with builder() as ii:
+            ii.a = 1
+            ii.setattr('b', prod=2)
+
+    assert ii.a == 1
+    assert ii.b == 2
+    check_containment(cr)
+    
 
 def test_configbuilder_child_with_nested_repeatables():
     class XBuilder(ConfigBuilder):

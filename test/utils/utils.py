@@ -62,12 +62,26 @@ def total_msg(total_num_errors):
     return "There {ww} {num_errors} {err} when defining item: ".format(ww=ww, num_errors=total_num_errors, err=err)
 
 
+def file_line(error_line_num):
+    """Helper method for 'assert_lines_in' with multiple errors on different lines.
+
+    'assert_lines_in' will replace the 'file_name'.
+    """
+
+    return '^File "%(file_name)s", line {error_line_num}'.format(error_line_num=error_line_num)
+
+
 def assert_lines_in(file_name, line_num, text, *expected_lines):
     """Assert that `*expected_lines` occur in order in the lines of `text`.
 
     Args:
         file_name (str): Test file name, should be set to '__file__'
-        line_num (int): Line number of failure, find the line number by using 'lineno()'
+        line_num (int): Line number of failure. You can find the line number by using 'lineno()'
+            Use this  together with the pattern %(lnum)s as first element in 'expected_lines', if all errors
+            are from the same line.
+            If errors are from different lines, set this to None, and instead use the 'file_line' function to
+            insert patterns in 'expected_lines'.
+
         text (str): The text to find *expected_lines in
         *expected_lines (str, RegexObject (hasattr `match`) or sequence): For each `expected_line` in expected_lines:
             If an expected_line is a tuple or a list, any item in the sequence is handled as an individual
@@ -108,11 +122,14 @@ def assert_lines_in(file_name, line_num, text, *expected_lines):
     if not file_name.endswith('.py'):
         # file_name  may end in .pyc!
         file_name = file_name[:-1]
+
     file_line_replace = dict(
-        lnum='File "%(file_name)s", line %(line_num)d' % dict(file_name=file_name, line_num=line_num),
         file_name=file_name,
         type_or_class=py3_tc
     )
+        
+    if line_num is not None:
+        file_line_replace['lnum'] = 'File "%(file_name)s", line %(line_num)d' % dict(file_name=file_name, line_num=line_num)
 
     def _fix_one_expected(expected):
         return expected % file_line_replace if not hasattr(expected, 'match') else expected
@@ -205,14 +222,3 @@ _compact_excluded_regex = re.compile(r""": false,\n *"([a-zA-Z0-9_]*) #Excluded:
 def to_compact_excluded(json_string):
     json_string = to_compact(json_string)
     return _compact_excluded_regex.sub(r""": "false #Excluded: <class '\2'>""" + '"', json_string)
-
-
-already_printed_msg = "\nCheck already printed error messages."
-
-exception_previous_object_expected_stderr = """Exception validating previously defined object -
-  type: <class 'multiconf.test.%(module)s.%(py3_local)sinner'>
-Stack trace will be misleading!
-This happens if there is an error (e.g. missing required attributes) in an object that was not
-directly enclosed in a with statement. Objects that are not arguments to a with statement will
-not be validated until the next ConfigItem is declared or an outer with statement is exited.
-"""

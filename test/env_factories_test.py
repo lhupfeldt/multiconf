@@ -11,7 +11,8 @@ from pytest import raises
 from .. import ConfigRoot, ConfigItem, ConfigException
 from ..envs import EnvFactory
 
-from .utils.utils import lineno, assert_lines_in, replace_ids, already_printed_msg
+from .utils.messages import already_printed_msg
+from .utils.utils import lineno, assert_lines_in, replace_ids
 
 
 class item(ConfigItem):

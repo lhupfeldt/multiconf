@@ -6,7 +6,9 @@ from __future__ import print_function
 import pytest
 from pytest import raises, mark  # pylint: disable=no-name-in-module
 
-from .utils.utils import config_error, config_warning, lineno, replace_ids, assert_lines_in, replace_user_file_line_msg, already_printed_msg
+from .utils.utils import config_error, config_warning, lineno, replace_ids, assert_lines_in, replace_user_file_line_msg
+from .utils.messages import mc_required_current_env_expected, mc_required_other_env_expected, already_printed_msg
+
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED, MC_TODO
 from ..envs import EnvFactory
@@ -597,6 +599,22 @@ def test_attribute_mc_todo_init_allowed_other_envs(capsys):
     assert serr == cw(errorline, _attribute_mc_current_env_todo_allowed_expected)
 
 
+@mark.parametrize("allow_todo", [False, True])
+def test_attribute_mc_todo_env_allowed_current_env_access_error(capsys, allow_todo):
+    """Test that accessing an MC_TODO value after loading results in an exception"""
+    with ConfigRoot(prod1, ef1_prod_pp, mc_allow_current_env_todo=True, mc_allow_todo=allow_todo) as cr:
+        errorline = lineno() + 1
+        cr.setattr('a', prod=MC_TODO, pp="hello")
+
+    _sout, serr = capsys.readouterr()
+    assert serr == cw(errorline, _attribute_mc_current_env_todo_allowed_expected)
+
+    with raises(AttributeError) as exinfo:
+        print(cr.a)
+
+    assert "Attribute 'a' MC_TODO is undefined for current env " + repr(prod1) in exinfo.value
+
+
 _attribute_mc_current_env_todo_allowed_override_expected = """
 File "fake_dir/invalid_values_test.py", line %(line)s
 ConfigWarning: Attribute: 'a' MC_TODO did not receive a value for env Env('pp')
@@ -648,10 +666,6 @@ def test_attribute_mc_required_override_env_in_init(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_in_init_expected_ex % dict(num_errors=2)
 
 
-_mc_required_current_env_expected = """Attribute: '{attr}' MC_REQUIRED did not receive a value for current env Env('prod')"""
-_mc_required_other_env_expected = """Attribute: '{attr}' MC_REQUIRED did not receive a value for env Env('pp')"""
-
-
 def test_multiple_attributes_mc_required_init_not_set(capsys):
     class ItemWithAABBCC(ConfigItem):
         def __init__(self):
@@ -669,12 +683,12 @@ def test_multiple_attributes_mc_required_init_not_set(capsys):
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",
-        "^ConfigError: " + _mc_required_other_env_expected.format(attr='aa'),
-        "^ConfigError: " + _mc_required_current_env_expected.format(attr='aa'),
-        "^ConfigError: " + _mc_required_other_env_expected.format(attr='bb'),
-        "^ConfigError: " + _mc_required_current_env_expected.format(attr='bb'),
-        "^ConfigError: " + _mc_required_other_env_expected.format(attr='cc'),
-        "^ConfigError: " + _mc_required_current_env_expected.format(attr='cc'),
+        "^ConfigError: " + mc_required_other_env_expected.format(attr='aa', env=pp1),
+        "^ConfigError: " + mc_required_current_env_expected.format(attr='aa', env=prod1),
+        "^ConfigError: " + mc_required_other_env_expected.format(attr='bb', env=pp1),
+        "^ConfigError: " + mc_required_current_env_expected.format(attr='bb', env=prod1),
+        "^ConfigError: " + mc_required_other_env_expected.format(attr='cc', env=pp1),
+        "^ConfigError: " + mc_required_current_env_expected.format(attr='cc', env=prod1),
     )
 
 
@@ -696,6 +710,6 @@ def test_multiple_attributes_mc_required_env(capsys):
             cr.setattr('bb', prod=1, pp=MC_REQUIRED)
 
     _sout, serr = capsys.readouterr()
-    assert ce(errorline, _mc_required_current_env_expected.format(attr='aa')) in serr
-    assert ce(errorline + 1, _mc_required_other_env_expected.format(attr='bb')) in serr
+    assert ce(errorline, mc_required_current_env_expected.format(attr='aa', env=prod1)) in serr
+    assert ce(errorline + 1, mc_required_other_env_expected.format(attr='bb', env=pp1)) in serr
     assert replace_ids(str(exinfo.value), False) == _multiple_attributes_mc_required_env_expected_ex % dict(ww='were', num_errors=2, err='errors')
