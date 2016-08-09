@@ -81,6 +81,14 @@ class KwargsItem(ConfigItem):
         for key, val in kwargs.items():
             setattr(self, key, val)
 
+            
+class anitem(ConfigItem):
+    xx = 1
+
+
+class anotheritem(ConfigItem):
+    xx = 2    
+            
 
 def test_contained_in_root_conf():
     with ConfigRoot(prod2, ef2_pp_prod) as conf:
@@ -158,22 +166,26 @@ def test_iteritems_root_attributes():
 
 
 def test_iteritems_item_attributes():
+    @required('anitem')
     class myitem(ConfigItem):
         def __init__(self):
             super(myitem, self).__init__()
             self.aa = MC_REQUIRED
-            self.bb = MC_REQUIRED
 
     with ConfigRoot(prod2, ef2_pp_prod):
         with myitem() as ci:
             ci.aa = 1
-            ci.bb = 2
+            anitem()
 
-    for exp, actual in zip([('aa', 1), ('bb', 2)], list(ci.items())):
-        exp_key, exp_value = exp
-        key, value = actual
-        assert exp_key == key
-        assert exp_value == value
+    for key, value in ci.items():
+        if key == 'aa':
+            assert value == 1
+            continue
+        if key == 'anitem':
+            assert value.xx == 1
+            continue
+
+        fail("unexpected key {} returned from 'items()'".format(key))
 
 
 def test_property_defined_with_same_type_and_none():
@@ -491,25 +503,59 @@ def test_get_factory():
     assert cr.ConfigItem.env_factory == ve
 
 
-def test_required_attributes_not_required_on_imtermediate_freeze_configroot():
-    @required('anattr, anotherattr')
+def test_required_items_not_required_on_imtermediate_freeze_configroot():
+    @required('anitem, anotheritem')
     class root(ConfigRoot):
         pass
 
     with root(prod1, ef1_prod) as cr:
+        anitem()
+        # Accessing anitem here will not freeze cr
+        assert cr.anitem.xx == 1
+        anotheritem()
+        assert cr.anotheritem.xx == 2
+
+
+def test_mc_required_attributes_not_required_on_imtermediate_freeze_configroot():
+    class root(ConfigRoot):
+        def __init__(self, selected_env, env_factory):
+            super(root, self).__init__(selected_env, env_factory)
+            self.anattr = MC_REQUIRED
+            self.anotherattr = MC_REQUIRED
+
+    with root(prod1, ef1_prod) as cr:
         cr.setattr('anattr', prod=1)
+        # Accessing anattr here will not freeze cr
         assert cr.anattr == 1
         cr.setattr('anotherattr', prod=2)
         assert cr.anotherattr == 2
 
 
-def test_required_attributes_not_required_on_imtermediate_freeze_configitem():
+def test_required_items_not_required_on_imtermediate_freeze_configitem():
     class root(ConfigRoot):
         pass
 
-    @required('aa, bb')
+    @required('anitem, anotheritem')
     class item(ConfigItem):
         pass
+
+    with root(prod1, ef1_prod) as cr:
+        with item() as ii:
+            anitem()
+            assert cr.item.anitem.xx == 1
+            anotheritem()
+            assert cr.item.anotheritem.xx == 2
+
+
+def test_mc_required_attributes_not_required_on_imtermediate_freeze_configitem():
+    class root(ConfigRoot):
+        pass
+
+    class item(ConfigItem):
+        def __init__(self):
+            super(item, self).__init__()
+            self.aa = MC_REQUIRED
+            self.bb = MC_REQUIRED
 
     with root(prod1, ef1_prod) as cr:
         with item() as ii:

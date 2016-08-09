@@ -5,7 +5,10 @@ from __future__ import print_function
 
 from pytest import raises, mark  # pylint: disable=no-name-in-module
 
-from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, total_msg, already_printed_msg
+from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, total_msg, assert_lines_in, file_line
+from .utils.messages import already_printed_msg
+from .utils.messages import config_error_mc_required_current_env_expected, config_error_mc_required_other_env_expected
+from .utils.messages import mc_todo_current_env_expected, mc_todo_other_env_expected
 
 from .. import ConfigRoot, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
 from ..envs import EnvFactory
@@ -25,8 +28,6 @@ class ItemWithA(ConfigItem):
         self.a = a
 
 
-_attribute_mc_required_expected = """Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')"""
-
 _attribute_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining item: {
     "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
     "env": {
@@ -36,6 +37,7 @@ _attribute_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s 
     "a": "MC_REQUIRED"
 }""" + already_printed_msg
 
+
 def test_attribute_mc_required_env(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod_pp) as cr:
@@ -43,15 +45,13 @@ def test_attribute_mc_required_env(capsys):
             cr.setattr('a', prod="abc" + MC_REQUIRED, pp="hello")
 
     _sout, serr = capsys.readouterr()
-    print(serr)
-    assert ce(errorline, _attribute_mc_required_expected) in serr
+    assert_lines_in(
+        __file__, None, serr,
+        file_line(errorline),
+        config_error_mc_required_current_env_expected.format(attr='a', env=prod1),
+    )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_expected_ex % dict(ww='was', num_errors=1, err='error')
     assert total_msg(1) in str(exinfo.value)
-
-_attribute_mc_required_override_env_expected = """
-File "fake_dir/invalid_values_operations_test.py", line %(line)s
-ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')
-ConfigError: %(prod_err)s"""
 
 
 def test_attribute_mc_required_override_env(capsys):
@@ -61,8 +61,12 @@ def test_attribute_mc_required_override_env(capsys):
             cr.override('a', MC_REQUIRED + "abc")
 
     _sout, serr = capsys.readouterr()
-    expected = _attribute_mc_required_override_env_expected.strip() % dict(line=errorline, prod_err=_attribute_mc_required_expected)
-    assert expected in replace_user_file_line_msg(serr.strip(), line_no=errorline)
+    assert_lines_in(
+        __file__, None, serr,
+        file_line(errorline),
+        config_error_mc_required_other_env_expected.format(attr='a', env=pp1),
+        config_error_mc_required_current_env_expected.format(attr='a', env=prod1),
+    )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_expected_ex % dict(ww='were', num_errors=2, err='errors')
 
 
@@ -101,8 +105,8 @@ def test_attribute_mc_required_args_partial_set_in_init_overridden_in_mc_init():
 
 # MC_TODO
 
-_attribute_mc_current_env_todo_expected = """Attribute: 'a' MC_TODO did not receive a value for current env Env('prod')"""
-_attribute_mc_todo_other_env_expected = """Attribute: 'a' MC_TODO did not receive a value for env Env('prod')"""
+_attribute_mc_current_env_todo_expected = mc_todo_current_env_expected.format(attr='a', env=prod1)
+_attribute_mc_todo_other_env_expected = mc_todo_other_env_expected.format(attr='a', env=prod1)
 
 
 # MC_TODO - Not Allowed for Current Env

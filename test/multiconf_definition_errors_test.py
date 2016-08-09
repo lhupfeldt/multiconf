@@ -6,12 +6,17 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in, already_printed_msg
-from .utils.utils import py3_local, total_msg
+from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_msg, assert_lines_in, py3_local, total_msg
+from .utils.messages import already_printed_msg, exception_previous_object_expected_stderr
+from .utils.messages import config_error_mc_required_current_env_expected, config_error_mc_required_other_env_expected
+from .utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
+from .utils.messages import config_error_no_value_current_env_expected, config_error_no_value_other_env_expected
+from .utils.messages import no_value_current_env_expected, no_value_other_env_expected
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
 from ..decorators import nested_repeatables, required
 from ..envs import EnvFactory
+
 
 # ef1
 ef1_prod = EnvFactory()
@@ -185,7 +190,6 @@ class RepeatableItem(RepeatableConfigItem):
     pass
 
 
-
 def test_non_env_for_instantiatiation_env():
     with raises(ConfigException) as exinfo:
         project('Why?', ef1_prod)
@@ -249,7 +253,7 @@ def test_value_not_assigned_to_all_envs(capsys):
             cr.setattr('a', prod="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
+    assert serr == ce(errorline, no_value_other_env_expected.format(attr='a', env=pp2))
     assert replace_ids(str(exinfo.value), False) == _single_error_on_root_expected_ex % '"hello"'
 
 
@@ -265,7 +269,7 @@ def test_value_not_assigned_to_all_envs_in_builder(capsys):
                 bb.setattr('a', prod="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
+    assert serr == ce(errorline, no_value_other_env_expected.format(attr='a', env=pp2))
 
 
 def test_attribute_defined_with_different_types_root(capsys):
@@ -459,7 +463,7 @@ def test_attempt_to_replace_non_empty_nested_repeatable_by_attribute_assignment(
     _sout, serr = capsys.readouterr()
     msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
     assert serr == ce(errorline, msg)
-    assert replace_ids(str(exinfo.value), named_as=False) ==  _single_error_on_project_expected_ex % ('"RepeatableItems": ' + _repeatable_item_json)
+    assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_project_expected_ex % ('"RepeatableItems": ' + _repeatable_item_json)
 
 
 # def nested_repeatable_item_overrides_simple_attribute_contained_in_repeatable(self):
@@ -687,11 +691,12 @@ def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_i
     assert str(exinfo.value) == 'in with'
 
 
-def test_double_error_for_configroot(capsys):
+def test_double_error_for_configroot_mc_required_missing(capsys):
     with raises(Exception) as exinfo:
-        @required('someattr1, someattr2')
         class root(ConfigRoot):
-            pass
+            def __init__(self, selected_env, env_factory):
+                super(root, self).__init__(selected_env=selected_env, env_factory=env_factory)
+                self.someattr1 = MC_REQUIRED
 
         with root(prod1, ef1_prod):
             errorline = lineno() + 1
@@ -699,8 +704,26 @@ def test_double_error_for_configroot(capsys):
 
     _sout, serr = capsys.readouterr()
     assert serr == ""
+    print(exinfo.value)
     assert str(exinfo.value) == "Error in root with block"
 
+
+def test_double_error_for_configroot_required_item_missing(capsys):
+    with raises(Exception) as exinfo:
+        @required('someitem')
+        class root(ConfigRoot):
+            def __init__(self, selected_env, env_factory):
+                super(root, self).__init__(selected_env=selected_env, env_factory=env_factory)
+
+        with root(prod1, ef1_prod):
+            errorline = lineno() + 1
+            raise Exception("Error in root with block")
+
+    _sout, serr = capsys.readouterr()
+    assert serr == ""
+    print(exinfo.value)
+    assert str(exinfo.value) == "Error in root with block"
+    
 
 def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
     with raises(ConfigDefinitionException) as exinfo:
@@ -723,14 +746,6 @@ def test_root_attribute_exception_in_with_block():
     assert str(exinfo.value) == "Error in root with block"
 
 
-_exception_previous_object_expected_stderr = """Exception validating previously defined object -
-  type: <class 'multiconf.test.multiconf_definition_errors_test.%(py3_local)sinner'>
-Stack trace will be misleading!
-This happens if there is an error (e.g. missing required attributes) in an object that was not
-directly enclosed in a with statement. Objects that are not arguments to a with statement will
-not be validated until the next ConfigItem is declared or an outer with statement is exited.
-"""
-
 def test_error_freezing_previous_sibling__build(capsys):
     class inner(ConfigBuilder):
         def build(self):
@@ -743,25 +758,9 @@ def test_error_freezing_previous_sibling__build(capsys):
             inner()
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr) == _exception_previous_object_expected_stderr % dict(py3_local=py3_local())
+    assert replace_user_file_line_msg(serr) == exception_previous_object_expected_stderr % dict(
+        module='multiconf_definition_errors_test', py3_local=py3_local())
     assert str(exinfo.value) == "Error in build"
-
-
-def test_error_freezing_previous_sibling__validation(capsys):
-    @required('a')
-    class inner(ConfigItem):
-        pass
-
-    with raises(Exception) as exinfo:
-        with ConfigRoot(prod2, ef2_pp_prod):
-            errorline = lineno() + 1
-            inner()
-            inner()
-
-    _sout, serr = capsys.readouterr()
-    assert serr.startswith(ce(errorline, "No value given for required attributes: ['a']"))
-    assert serr.endswith(_exception_previous_object_expected_stderr % dict(py3_local=py3_local()))
-    assert total_msg(1) in str(exinfo.value)
 
 
 def test_mc_init_override_underscore_error(capsys):
@@ -833,8 +832,8 @@ def test_setattr_no_envs(capsys):
             "^%(lnum)s",
             "^ConfigError: No Env or EnvGroup names specified.",
             "^%(lnum)s",
-            "^ConfigError: Attribute: 'a' did not receive a value for env Env('pp')",
-            "^ConfigError: Attribute: 'a' did not receive a value for current env Env('prod')",
+            config_error_no_value_other_env_expected.format(attr='a', env=pp2),
+            config_error_no_value_current_env_expected.format(attr='a', env=prod2),
         )
 
     # ConfigRoot
@@ -924,8 +923,8 @@ def test_init_lineno(capsys):
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
+        config_error_mc_required_other_env_expected.format(attr='a', env=pp2),
+        config_error_mc_required_current_env_expected.format(attr='a', env=prod2),
     )
 
     class intermediate(init_overidden1):
@@ -941,8 +940,8 @@ def test_init_lineno(capsys):
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
+        config_error_mc_required_other_env_expected.format(attr='a', env=pp2),
+        config_error_mc_required_current_env_expected.format(attr='a', env=prod2),
     )
 
     class init_overidden2(intermediate):
@@ -960,8 +959,8 @@ def test_init_lineno(capsys):
     assert_lines_in(
         __file__, errorline, serr,
         "^%(lnum)s",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^ConfigError: Attribute: 'a' MC_REQUIRED did not receive a value for current env Env('prod')",
-        "^ConfigError: Attribute: 'b' MC_REQUIRED did not receive a value for env Env('pp')",
-        "^ConfigError: Attribute: 'b' MC_REQUIRED did not receive a value for current env Env('prod')",
+        config_error_mc_required_other_env_expected.format(attr='a', env=pp2),
+        config_error_mc_required_current_env_expected.format(attr='a', env=prod2),
+        config_error_mc_required_other_env_expected.format(attr='b', env=pp2),
+        config_error_mc_required_current_env_expected.format(attr='b', env=prod2),
     )

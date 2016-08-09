@@ -35,6 +35,10 @@ partial_branches =
     if major_version < 3 and isinstance\(obj, types.InstanceType\):
     <?py #endif ?>
 
+    # We always have base classes, so these loops will alvays be entered
+    for cls in get_bases
+
+    # Get the first item to use for error message
 
 omit =
     test/*

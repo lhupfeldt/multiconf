@@ -6,7 +6,9 @@ import sys
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno, replace_ids, already_printed_msg, assert_lines_in
+from .utils.utils import config_error, lineno, replace_ids, assert_lines_in
+from .utils.messages import already_printed_msg
+from .utils.messages import config_error_no_value_current_env_expected, config_error_no_value_other_env_expected
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException, ConfigBuilder
 from ..decorators import nested_repeatables
@@ -61,8 +63,9 @@ def test_stacktrace_strips_multiconf_code(capsys):
         __file__, errorline, serr,
         "ConfigError: No such Env or EnvGroup: 'qq'",
         "^%(lnum)s",        
-        "ConfigError: Attribute: 'a' did not receive a value for env Env('pp')",
-        "ConfigError: Attribute: 'a' did not receive a value for current env Env('prod')")
+        config_error_no_value_other_env_expected.format(attr='a', env=pp),
+        config_error_no_value_current_env_expected.format(attr='a', env=prod),
+    )
     assert replace_ids(str(exinfo.value)) == _stacktrace_strips_multiconf_code_exp_ex
     if sys.version_info[0] < 3:
         # TODO python3: Stripping traceback in 2/3 compatible way seems too hard as it requres

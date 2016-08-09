@@ -13,6 +13,7 @@ from ..envs import EnvFactory
 from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg, config_error
 from .utils.utils import py3_local
 from .utils.compare_json import compare_json
+from .utils.tstclasses import name_root
 
 
 ef = EnvFactory()
@@ -44,9 +45,11 @@ class root(ConfigRoot):
 @named_as('someitems')
 @nested_repeatables('someitems')
 class NestedRepeatable(RepeatableConfigItem):
-    def __init__(self, **kwargs):
-        mc_key = kwargs.get('id') or kwargs.get('name') or None
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+    def __init__(self, id, **kwargs):
+        super(NestedRepeatable, self).__init__(mc_key=id)
+        self.id = id
+
+        # Not an example of goot coding!
         for key, val in kwargs.items():
             setattr(self, key, val)
 
@@ -662,6 +665,37 @@ def test_json_dump_iterable():
     compare_json(cr, _json_dump_iterable_expected_json)
 
 
+_json_dump_iterable_static_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "SimpleItem": {
+        "__class__": "SimpleItem",
+        "__id__": 0000,
+        "a": [
+            1
+        ],
+        "a #static": true
+    }
+}"""
+
+def test_json_dump_iterable_static():
+    class MyIterable(object):
+        def __iter__(self):
+            yield 1
+
+    class SimpleItem(ConfigItem):
+        a = MyIterable()
+
+    with ConfigRoot(prod, ef) as cr:
+        SimpleItem()
+
+    compare_json(cr, _json_dump_iterable_static_expected_json, test_compact=False)
+
+
 _uplevel_ref_expected_json_output = """{
     "__class__": "NestedRepeatable",
     "__id__": 0000,
@@ -841,7 +875,7 @@ _json_dump_configbuilder_expected_json_full = """{
         }
     },
     "aaa": 2,
-    "aaa #calculated": true
+    "aaa #static": true
 }"""
 
 _json_dump_configbuilder_expected_json_repeatable_item = """{
@@ -988,7 +1022,7 @@ _json_dump_configbuilder_dont_dump_expected_json_full = """{
         }
     },
     "aaa": 2,
-    "aaa #calculated": true
+    "aaa #static": true
 }"""
 
 _json_dump_configbuilder_dont_dump_expected_json_repeatable_item = """{
@@ -1334,7 +1368,7 @@ def test_json_dump_with_builders_containment_check():
     class MyOuterItem(ConfigItem):
         pass
 
-    with ConfigRoot(prod2, ef2_prod) as cr:
+    with name_root(prod2, ef2_prod) as cr:
         cr.name = 'myp'
         with MyOuterItem():
             MyOuterBuilder()
@@ -1582,3 +1616,93 @@ def test_dict_attr_forward_item_ref():
             x_ref.item_refs['xr'] = xx
 
     compare_json(cr, _dict_attr_forward_item_ref)
+
+
+_static_member_direct_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "Xx": {
+        "__class__": "Xx",
+        "__id__": 0000,
+        "a": 1,
+        "a #static": true
+    }
+}"""
+
+def test_static_member_direct():
+    class Xx(ConfigItem):
+        a = 1
+
+    with ConfigRoot(prod, ef) as cr:
+        Xx()
+
+    compare_json(cr, _static_member_direct_expected_json)
+
+
+_static_member_inherited_mc_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "Xx": {
+        "__class__": "Xx",
+        "__id__": 0000,
+        "a": 1,
+        "a #static": true
+    },
+    "Yy": {
+        "__class__": "Yy",
+        "__id__": 0000,
+        "a": 1,
+        "a #static": true
+    },
+    "Zz": {
+        "__class__": "Zz",
+        "__id__": 0000,
+        "a": 1,
+        "a #static": true
+    },
+    "Aa": {
+        "__class__": "Aa",
+        "__id__": 0000,
+        "a": 7,
+        "a #static": true
+    },
+    "Bb": {
+        "__class__": "Bb",
+        "__id__": 0000,
+        "a": 7,
+        "a #static": true
+    }
+}"""
+
+def test_static_member_inherited_mc():
+    class Xx(ConfigItem):
+        a = 1
+
+    class Yy(Xx):
+        pass
+
+    class Zz(Yy):
+        pass
+
+    class Aa(Zz):
+        a = 7
+
+    class Bb(Aa):
+        pass
+    
+    with ConfigRoot(prod, ef) as cr:
+        Xx()
+        Yy()
+        Zz()
+        Aa()
+        Bb()
+
+    compare_json(cr, _static_member_inherited_mc_expected_json)

@@ -12,12 +12,15 @@ from .values import McInvalidValue
 from .excluded import Excluded
 from .repeatable import Repeatable
 from .config_errors import InvalidUsageException
+from .bases import get_bases
 
 major_version = sys.version_info[0]
 if major_version > 2:
     long = int
 
 _warn_json_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
+_calculated_value = ' #calculated'
+_static_value = ' #static'
 
 
 class NestedJsonCallError(Exception):
@@ -172,25 +175,40 @@ class ConfigItemEncoder(object):
                             item_dict[key] = False
                             item_dict[key + ' #' + repr(val)] = True
                     elif val != McInvalidValue.MC_NO_VALUE:
+                        # TODO: Include type of dict in json meta info
                         if isinstance(orig_val, (self.multiconf_base_type, Repeatable)):
                             item_dict[key] = val
                         elif isinstance(val, dict):
+                            new_val = OrderedDict()
                             for inner_key, maybeitem in val.items():
-                                if isinstance(maybeitem, self.multiconf_base_type):
-                                    val[inner_key] = "#ref, id: " + repr(id(maybeitem))
-                            attr_dict[key] = val
+                                if not isinstance(maybeitem, self.multiconf_base_type):
+                                    new_val[inner_key] = maybeitem
+                                    continue
+                                new_val[inner_key] = "#ref, id: " + repr(id(maybeitem))
+                            attr_dict[key] = new_val
                         else:
                             try:
                                 iterable = iter(val)
                             except TypeError:
-                                pass
+                                attr_dict[key] = val
                             else:
-                                if isinstance(val, tuple):
-                                    val = list(val)
-                                for index, maybeitem in enumerate(val):
-                                    if isinstance(maybeitem, self.multiconf_base_type):
-                                        val[index] = "#ref, id: " + repr(id(maybeitem))
-                            attr_dict[key] = val
+                                # TODO: Include type of iterable in json meta info
+                                if isinstance(orig_val, str):
+                                    attr_dict[key] = val
+                                else:
+                                    new_val = []
+                                    found_mc_ref = False
+                                    for maybeitem in val:
+                                        if not isinstance(maybeitem, self.multiconf_base_type):
+                                            new_val.append(maybeitem)
+                                            continue
+                                        found_mc_ref = True
+                                        new_val.append("#ref, id: " + repr(id(maybeitem)))
+                                    if found_mc_ref:
+                                        attr_dict[key] = new_val
+                                    else:
+                                        # We leave this to be handled later
+                                        attr_dict[key] = val
 
                     if key in entries:
                         if val != McInvalidValue.MC_NO_VALUE:
@@ -208,14 +226,13 @@ class ConfigItemEncoder(object):
                     return dd
 
                 # Handle @property methods (defined in subclasses)
-                overridden_property_postfix = ' #!overridden @property'
                 for key in entries:
                     if key.startswith('_') or key in self.filter_out_keys:
                         continue
 
                     real_key = key
                     if key in attributes_overriding_property:
-                        key += overridden_property_postfix
+                        key += ' #!overridden @property'
 
                     try:
                         val = object.__getattribute__(obj, real_key)
@@ -243,8 +260,21 @@ class ConfigItemEncoder(object):
                         continue
 
                     val = self._check_nesting(obj, val)
+
+                    # Figure out if the attribute is a @property or a static value
+                    for cls in get_bases(object.__getattribute__(obj, '__class__')):
+                        try:
+                            real_attr = object.__getattribute__(cls, real_key)
+                            if isinstance(real_attr, property):
+                                calc_or_static = _calculated_value
+                            else:
+                                calc_or_static = _static_value
+                            break
+                        except AttributeError:
+                            pass
+
                     if (self.compact or real_key in attributes_overriding_property) and isinstance(val, (str, int, long, float)):
-                        dd[key] = str(val) + ' #calculated'
+                        dd[key] = str(val) + calc_or_static
                         continue
 
                     if isinstance(val, (list, tuple)):
@@ -252,7 +282,7 @@ class ConfigItemEncoder(object):
                         for item in val:
                             new_list.append(self._check_nesting(obj, item))
                         dd[key] = new_list
-                        dd[key + ' #calculated'] = True
+                        dd[key + calc_or_static] = True
                         continue
 
                     if isinstance(val, dict):
@@ -260,11 +290,11 @@ class ConfigItemEncoder(object):
                         for item_key, item in val.items():
                             new_dict[item_key] = self._check_nesting(obj, item)
                         dd[key] = new_dict
-                        dd[key + ' #calculated'] = True
+                        dd[key + calc_or_static] = True
                         continue
 
                     dd[key] = val
-                    dd[key + ' #calculated'] = True
+                    dd[key + calc_or_static] = True
                 return dd
 
             if isinstance(obj, envs.BaseEnv):

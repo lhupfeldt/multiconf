@@ -17,7 +17,8 @@ from .check_containment import check_containment
 
 
 def compare_json(item, expected_json, replace_builders=False, dump_builders=True,
-                 test_decode=False, test_containment=True, test_excluded=False, expect_num_errors=0):
+                 test_decode=False, test_containment=True, test_excluded=False, test_compact=True,
+                 expect_num_errors=0):
     try:
         compact_json = item.json(compact=True, builders=dump_builders)
         full_json = item.json(builders=dump_builders)
@@ -30,12 +31,13 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
 
         expected_json %= {'type_or_class': py3_tc}
 
-        if test_excluded:
-            compact_expected_json = to_compact_excluded(expected_json)
-            assert compact_json_replaced == compact_expected_json
-        else:
-            compact_expected_json = to_compact(expected_json)
-            assert compact_json_replaced == compact_expected_json
+        if test_compact:
+            if test_excluded:
+                compact_expected_json = to_compact_excluded(expected_json)
+                assert compact_json_replaced == compact_expected_json
+            else:
+                compact_expected_json = to_compact(expected_json)
+                assert compact_json_replaced == compact_expected_json
         assert full_json_replaced == expected_json
 
         assert item.num_json_errors() == expect_num_errors, \

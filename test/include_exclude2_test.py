@@ -7,8 +7,8 @@ from pytest import raises
 from .utils.utils import config_error, lineno, assert_lines_in
 from .utils.compare_json import compare_json
 
-from .. import ConfigRoot, ConfigItem, ConfigException
-from ..decorators import required
+from .. import ConfigRoot, ConfigItem, ConfigException, MC_REQUIRED
+from ..decorators import required, named_as
 
 from ..envs import EnvFactory
 
@@ -31,11 +31,18 @@ prod = ef.Env('prod')
 g_ppr = ef.EnvGroup('g_ppr', pp, prod)
 
 
-@required('anattr')
 class item(ConfigItem):
-    pass
+    def __init__(self, mc_include=None, mc_exclude=None):
+        super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        self.anattr = MC_REQUIRED
 
 
+@named_as('item')
+@required('anitem')
+class decorated_item(ConfigItem):
+    xx = 3
+
+        
 _include_exclude_for_configitem_expected_json = """{
     "__class__": "ConfigRoot",
     "__id__": 0000,
@@ -48,7 +55,7 @@ _include_exclude_for_configitem_expected_json = """{
 }"""
 
 
-def test_exclude_include_overlapping_groups_excluded_resolved():
+def test_exclude_include_overlapping_groups_excluded_resolved_with_mc_required():
     def conf(env):
         """Covers exclude resolve branch"""
         with ConfigRoot(env, ef) as cr:
@@ -78,6 +85,49 @@ def test_exclude_include_overlapping_groups_excluded_resolved():
     assert cr.item.b == 1
     assert cr.item.anotherattr == 111
 
+
+_include_exclude_for_configitem_required_decorator_expected_json = """{
+    "__class__": "ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "item": false,
+    "item #Excluded: <class 'multiconf.test.include_exclude2_test.decorated_item'>": true
+}"""
+
+
+def test_exclude_include_overlapping_groups_excluded_resolved_with_required_decorator():
+    class anitem(ConfigItem):
+        xx = 222
+
+    def conf(env):
+        """Covers exclude resolve branch"""
+        with ConfigRoot(env, ef) as cr:
+            with decorated_item(mc_include=[g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34, dev3]) as it:
+                anitem()
+                it.setattr('anotherattr', default=111, dev5=7)
+        return cr
+
+    cr = conf(prod)
+    assert not cr.item
+    compare_json(cr, _include_exclude_for_configitem_required_decorator_expected_json, test_excluded=True)
+
+    cr = conf(dev1)
+    assert not cr.item
+
+    cr = conf(dev2)
+    assert cr.item
+
+    cr = conf(dev3)
+    assert not cr.item
+
+    cr = conf(pp)
+    assert cr.item.xx == 3
+    assert cr.item.anitem.xx == 222
+    assert cr.item.anotherattr == 111
+    
 
 def test_exclude_include_overlapping_groups_included_resolved():
     def conf(env):
@@ -156,7 +206,11 @@ def test_exclude_include_overlapping_groups_excluded_unresolved(capsys):
     print(str(exinfo.value))
     assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
-    assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
+    print(serr)
+    expected = exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline)
+    print('---------------------')
+    print(expected)
+    assert expected in serr
 
 
 def test_exclude_include_overlapping_groups_excluded_unresolved_reversed(capsys):

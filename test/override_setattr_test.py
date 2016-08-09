@@ -4,7 +4,8 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg, assert_lines_in, already_printed_msg
+from .utils.utils import config_error, lineno, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg, assert_lines_in
+from .utils.messages import already_printed_msg, no_value_other_env_expected
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, caller_file_line
 from ..envs import EnvFactory
@@ -96,7 +97,7 @@ def test_override_setattr_error2(capsys):
                 ci.setme('a', prod="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Attribute: 'a' did not receive a value for env Env('pp')")
+    assert serr == ce(errorline, no_value_other_env_expected.format(attr='a', env=pp))
     assert replace_ids(str(exinfo.value), False) == _override_setattr2_expected_ex
 
 
