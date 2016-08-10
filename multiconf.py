@@ -520,15 +520,17 @@ class _ConfigBase(object):
         messages= []
         missing_envs_mask = self._mc_included_envs_mask & ~attribute.envs_set_mask
         for env in env_factory.envs_from_mask(missing_envs_mask):
-            # Check for which envs the attribute is McInvalidValue.MC_TODO
+            # Check for which envs the attribute is McInvalidValue
             value = McInvalidValue.MC_NO_VALUE
+            found_in_eg = env_factory._mc_default_group
             for inv_value, inv_eg, inv_where_from, inv_file_name, inv_line_num in attribute.invalid_values:
                 # debug("Checking MC_TODO, env, inv_value, inv_eg:", env, inv_value, inv_eg)
                 if env.bit & inv_eg.mask:
-                    if selected_env == env:
-                        attribute._value = inv_value
-                    value = inv_value
-                    break
+                    if inv_eg in found_in_eg or inv_eg == found_in_eg:
+                        found_in_eg = inv_eg
+                        if selected_env == env:
+                            attribute._value = inv_value
+                        value = inv_value
 
             # debug("attribute._value, value:", attribute._value, value)
             value_msg = (' ' + repr(value)) if isinstance(value, McInvalidValue) and value != McInvalidValue.MC_NO_VALUE else ''
