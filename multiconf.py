@@ -95,10 +95,6 @@ class _ConfigBase(object):
         """Print a single message preceeded by file:line"""
         print(_line_msg(file_name=file_name, line_num=line_num) + '\n' + self._mc_error_msg(message), file=sys.stderr)
 
-    def _mc_print_error_if_not_excluded(self, message, file_name, line_num):
-        if not self._mc_is_excluded:
-            self._mc_print_error(message, file_name, line_num)
-
     @classmethod
     def named_as(cls):
         """Return the named_as property set by the @named_as decorator"""
