@@ -84,7 +84,8 @@ def test_attribute_overrides_property_method_not_existing(capsys):
                 errorline = lineno() + 1
                 nn.setattr('m!', default=7)
 
-    _sout, serr = capsys.readouterr()
+    sout, serr = capsys.readouterr()
+    assert sout == ''
     assert serr == ce(errorline, "m! specifies overriding a property method, but no property named 'm' exists.")
 
 

@@ -42,7 +42,7 @@ def test_attribute_mc_required_env(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod_pp) as cr:
             errorline = lineno() + 1
-            cr.setattr('a', prod="abc" + MC_REQUIRED, pp="hello")
+            cr.setattr('a?', prod="abc" + MC_REQUIRED, pp="hello")
 
     _sout, serr = capsys.readouterr()
     assert_lines_in(
@@ -58,7 +58,7 @@ def test_attribute_mc_required_override_env(capsys):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod_pp) as cr:
             errorline = lineno() + 1
-            cr.override('a', MC_REQUIRED + "abc")
+            cr.override('a?', MC_REQUIRED + "abc")
 
     _sout, serr = capsys.readouterr()
     assert_lines_in(
@@ -73,7 +73,7 @@ def test_attribute_mc_required_override_env(capsys):
 def test_attribute_mc_required_default_all_overridden():
     with ConfigRoot(prod1, ef1_prod_pp) as cr:
         # TODO: This should actually not be allowed, it does not make sense!
-        cr.setattr('a', default=1 + MC_REQUIRED, pp="hello", prod="hi")
+        cr.setattr('a?', default=1 + MC_REQUIRED, pp="hello", prod="hi")
 
     assert cr.a == "hi"
 
@@ -125,7 +125,7 @@ def test_attribute_mc_todo_env(capsys, allow_todo):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod_pp, mc_allow_todo=allow_todo) as cr:
             errorline = lineno() + 1
-            cr.setattr('a', prod="abc" + MC_TODO, pp="hello")
+            cr.setattr('a?', prod="abc" + MC_TODO, pp="hello")
 
     _sout, serr = capsys.readouterr()
     print(_sout)
@@ -148,7 +148,7 @@ def test_attribute_mc_todo_default(capsys, allow_todo):
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod_pp, mc_allow_todo=allow_todo) as cr:
             errorline = lineno() + 1
-            cr.setattr('a', default=MC_TODO.append("abc"), pp="hello")
+            cr.setattr('a?', default=MC_TODO.append("abc"), pp="hello")
 
     _sout, serr = capsys.readouterr()
     assert ce(errorline, _attribute_mc_current_env_todo_expected) in serr

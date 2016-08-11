@@ -20,6 +20,7 @@ def test_repeated_direct_env_member(capsys):
         ff2 = ef.EnvGroup('ff2', ff1, ff1)
 
     sout, serr = capsys.readouterr()
+    assert sout == ''
     #assert serr == ce(errorline, "TODO")
     assert str(exinfo.value) == "Repeated group member: Env('ff1') in EnvGroup('ff2') {\n\n}"
 

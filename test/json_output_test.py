@@ -13,7 +13,7 @@ from ..envs import EnvFactory
 from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg, config_error
 from .utils.utils import py3_local
 from .utils.compare_json import compare_json
-from .utils.tstclasses import name_root
+from .utils.tstclasses import name_root, RootWithA
 
 
 ef = EnvFactory()
@@ -26,12 +26,6 @@ prod2 = ef2_prod.Env('prod')
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
-
-@named_as('ConfigRoot')
-class RootWithA(ConfigRoot):
-    def __init__(self, selected_env, env_factory, a):
-        super(RootWithA, self).__init__(selected_env=selected_env, env_factory=env_factory)
-        self.a = a
 
 
 @nested_repeatables('someitems')
