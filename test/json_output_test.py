@@ -13,7 +13,7 @@ from ..envs import EnvFactory
 from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg, config_error
 from .utils.utils import py3_local
 from .utils.compare_json import compare_json
-from .utils.tstclasses import name_root, RootWithA
+from .utils.tstclasses import name_root, RootWithA, ItemWithA
 
 
 ef = EnvFactory()
@@ -151,7 +151,7 @@ def test_json_dump_simple():
             NestedRepeatable(id='a-level2')
             with NestedRepeatable(id='b-level2') as ci:
                 NestedRepeatable(id='a-level3')
-                with NestedRepeatable(id='b-level3') as ci:
+                with NestedRepeatable(id='b-level3', a=7) as ci:
                     ci.setattr('a', prod=1, pp=2)
                 NestedRepeatable(id='c-level3', something=1)
             NestedRepeatable(id='c-level2', something=2)
@@ -210,15 +210,18 @@ _json_dump_cyclic_references_in_conf_items_expected_json = """{
 def test_json_dump_cyclic_references_in_conf_items():
     @named_as('anitem')
     class AnXItem(ConfigItem):
-        pass
+        def __init__(self):
+            super(AnXItem, self).__init__()
+            self.something = MC_REQUIRED
+            self.ref = MC_REQUIRED
 
     with root(prod, ef, a=0) as cr:
-        with NestedRepeatable(id='a1') as ref_obj1:
+        with NestedRepeatable(id='a1', some_value=27) as ref_obj1:
             ref_obj1.setattr('some_value', pp=1, prod=2)
 
         with NestedRepeatable(id='b1', someattr=12):
             NestedRepeatable(id='a2', referenced_item=ref_obj1)
-            with NestedRepeatable(id='b2') as ref_obj2:
+            with NestedRepeatable(id='b2', a=MC_REQUIRED) as ref_obj2:
                 ref_obj2.setattr('a', prod=1, pp=2)
         with AnXItem() as last_item:
             last_item.something = 3
@@ -1478,7 +1481,7 @@ def test_json_dump_multiple_errors():
 
 
 _iterable_attr_forward_item_ref = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -1501,7 +1504,7 @@ _iterable_attr_forward_item_ref = """{
 }"""
 
 def test_iterable_attr_forward_item_ref():
-    class ItemWithAnXRef(ConfigItem):
+    class ItemWithAnXRef(ItemWithA):
         def __init__(self, aa=1):
             super(ItemWithAnXRef, self).__init__()
             self.item_refs = []
@@ -1512,7 +1515,7 @@ def test_iterable_attr_forward_item_ref():
             super(Xx, self).__init__()
             self.a = 1
 
-    with ConfigRoot(prod, ef) as cr:
+    with RootWithA(prod, ef) as cr:
         cr.a = 0
         with ItemWithAnXRef(aa='b2') as x_ref:
             x_ref.setattr('a', default=1, pp=2)
@@ -1523,7 +1526,7 @@ def test_iterable_attr_forward_item_ref():
 
 
 _iterable_tuple_attr_forward_item_ref = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -1557,7 +1560,7 @@ def test_iterable_tuple_attr_forward_item_ref():
             super(Xx, self).__init__()
             self.a = 1
 
-    with ConfigRoot(prod, ef) as cr:
+    with RootWithA(prod, ef) as cr:
         cr.a = 0
         with ItemWithAnXRef(aa='b2') as x_ref:
             x_ref.setattr('a', default=1, pp=2)
@@ -1568,7 +1571,7 @@ def test_iterable_tuple_attr_forward_item_ref():
 
 
 _dict_attr_forward_item_ref = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -1602,7 +1605,7 @@ def test_dict_attr_forward_item_ref():
             super(Xx, self).__init__()
             self.a = 1
 
-    with ConfigRoot(prod, ef) as cr:
+    with RootWithA(prod, ef) as cr:
         cr.a = 0
         with ItemWithAnXRef(aa='b2') as x_ref:
             x_ref.setattr('a', default=1, pp=2)
@@ -1691,7 +1694,7 @@ def test_static_member_inherited_mc():
 
     class Bb(Aa):
         pass
-    
+
     with ConfigRoot(prod, ef) as cr:
         Xx()
         Yy()

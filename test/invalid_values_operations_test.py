@@ -9,6 +9,8 @@ from .utils.utils import config_error, lineno, replace_ids, replace_user_file_li
 from .utils.messages import already_printed_msg
 from .utils.messages import config_error_mc_required_current_env_expected, config_error_mc_required_other_env_expected
 from .utils.messages import mc_todo_current_env_expected, mc_todo_other_env_expected
+from .utils.tstclasses import ItemWithA
+
 
 from .. import ConfigRoot, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
 from ..envs import EnvFactory
@@ -20,12 +22,6 @@ prod1 = ef1_prod_pp.Env('prod')
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
-
-
-class ItemWithA(ConfigItem):
-    def __init__(self, a=MC_REQUIRED):
-        super(ItemWithA, self).__init__()
-        self.a = a
 
 
 _attribute_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining item: {

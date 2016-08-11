@@ -6,7 +6,7 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import xfail
 
-from .. import ConfigRoot, ConfigItem
+from .. import ConfigRoot, ConfigItem, MC_REQUIRED
 
 from ..envs import EnvFactory
 
@@ -25,12 +25,20 @@ ef.EnvGroup('g_prod', pp, prod)
 
 
 class item1(ConfigItem):
+    def __init__(self):
+        super(item1, self).__init__()
+        self.aa = MC_REQUIRED
+
     def mc_init(self):
         print("MC_INIT")
         self.setattr('aa', g_dev=2, dev1=7)
 
 
 class item2(ConfigItem):
+    def __init__(self):
+        super(item2, self).__init__()
+        self.aa = MC_REQUIRED
+
     def mc_init(self):
         self.setattr('aa', g_dev_tst=2)
 

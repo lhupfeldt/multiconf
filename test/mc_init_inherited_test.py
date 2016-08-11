@@ -4,7 +4,7 @@
 from __future__ import print_function
 
 from multiconf.envs import EnvFactory
-from multiconf import ConfigRoot, ConfigItem
+from multiconf import ConfigRoot, ConfigItem, MC_REQUIRED
 
 efac = EnvFactory()
 pp = efac.Env('pp')
@@ -13,6 +13,10 @@ prod = efac.Env('prod')
 
 def test_mc_init_inherited():
     class XBase(ConfigItem):
+        def __init__(self):
+            super(XBase, self).__init__()
+            self.version = MC_REQUIRED
+
         def mc_init(self):
             super(XBase, self).mc_init()
             self.version = 1
