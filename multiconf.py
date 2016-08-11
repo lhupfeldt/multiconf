@@ -488,8 +488,7 @@ class _ConfigBase(object):
             attribute.set_invalid_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
             if self._mc_check:
                 messages = self._mc_check_attr_fully_defined_messages(name, attribute)
-                if messages:                
-                    self._mc_print_file_line_and_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+                self._mc_print_file_line_and_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
             return
 
         attribute.set_env_provided(default_group)
