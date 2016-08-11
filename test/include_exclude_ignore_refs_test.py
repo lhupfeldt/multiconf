@@ -35,6 +35,9 @@ class item(ConfigItem):
     def __init__(self, mc_include=None, mc_exclude=None):
         super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         self.anattr = MC_REQUIRED
+        self.anotherattr = None
+        self.x = None
+        self.y = None
 
 
 class anitem(ConfigItem):
@@ -49,34 +52,48 @@ class ritem(RepeatableConfigItem):
         self.anotherattr = MC_REQUIRED
 
 
+class root(ConfigRoot):
+    def __init__(self, selected_env, env_factory):
+        super(root, self).__init__(selected_env=selected_env, env_factory=env_factory)
+        self.x = None
+        self.y = None
+        self.z = None
+
+
 @named_as('ritems')
 @required('anitem')
 class decorated_ritem(ritem):
     pass
         
 
+@named_as('root')
 @nested_repeatables('ritems', 'decorated_ritems')
-class root(ConfigRoot):
-    pass
+class decorated_root(ConfigRoot):
+    def __init__(self, selected_env, env_factory):
+        super(decorated_root, self).__init__(selected_env=selected_env, env_factory=env_factory)
+        self.a = None
+        self.x = None
 
 
 _include_exclude_for_configitem_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "root",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
-    "item": false,
-    "item #Excluded: <class 'multiconf.test.include_exclude_ignore_refs_test.item'>": true,
+    "x": null,
+    "z": null,
     "y": false,
-    "y #Excluded: <class 'multiconf.test.include_exclude_ignore_refs_test.item'>": true
+    "y #Excluded: <class 'multiconf.test.include_exclude_ignore_refs_test.item'>": true,
+    "item": false,
+    "item #Excluded: <class 'multiconf.test.include_exclude_ignore_refs_test.item'>": true
 }"""
 
 
 def test_exclude_refs_for_nested_configitem():
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with root(env, ef) as cr:
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
                 it1.setattr('anattr', pp=1, g_dev12_3=2)
                 it1.setattr('anotherattr', dev1=1, pp=2)
@@ -100,7 +117,7 @@ def test_exclude_refs_for_nested_configitem():
 
 def test_exclude_refs_for_nested_configitem_with_mc_required():
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with root(env, ef) as cr:
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
                 it1.setattr('anattr', pp=1, g_dev12_3=2)
                 it1.setattr('anotherattr', dev1=1, pp=2)
@@ -128,7 +145,7 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
 
 def test_exclude_refs_for_repeatable_nested_configitem():
     def conf(env):
-        with root(env, ef) as cr:
+        with decorated_root(env, ef) as cr:
             cr.a = 1
             with ritem(name='a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
@@ -200,7 +217,7 @@ def test_exclude_refs_for_repeatable_nested_configitem():
 
 def test_exclude_refs_for_repeatable_nested_configitem_required_items():
     def conf(env):
-        with root(env, ef) as cr:
+        with decorated_root(env, ef) as cr:
             cr.a = 1
             with decorated_ritem(name='a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
@@ -279,7 +296,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_required_items():
 def test_exclude_refs_for_nested_configitem_before_exit():
     """Test that en excluded item ignores atribute references before it's with block scope is exited"""
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with root(env, ef) as cr:
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
                 it1.setattr('anattr', pp=1, g_dev12_3=2)
                 it1.setattr('anotherattr', dev1=1, pp=2)
@@ -304,7 +321,7 @@ def test_exclude_refs_for_nested_configitem_before_exit():
 
 def test_exclude_refs_for_nested_configitem_before_exit_with_mc_required_refs():
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with root(env, ef) as cr:
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
                 it1.setattr('anattr', pp=1, g_dev12_3=2)
                 it1.setattr('anotherattr', dev1=1, pp=2)
@@ -331,7 +348,7 @@ def test_exclude_refs_for_nested_configitem_before_exit_with_mc_required_refs():
 
 def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
     def conf(env):
-        with root(env, ef) as cr:
+        with decorated_root(env, ef) as cr:
             cr.a = 1
             with ritem(name='a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
@@ -403,7 +420,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
 
 def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
     def conf(env):
-        with root(env, ef) as cr:
+        with decorated_root(env, ef) as cr:
             cr.a = 1
             with ritem(name='a') as rit:
                 rit.mc_select_envs(exclude=[dev2, prod])
@@ -462,11 +479,10 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
     cr = conf(dev2)
     assert cr.a == 1
     assert 'a' not in cr.ritems
-    assert not hasattr(cr, 'x')
     with raises(AttributeError):
         _ = cr.x.a
         # TODO text
-    with raises(AttributeError):
+    with raises(TypeError):
         _ = cr.x['q']
         # TODO text
 

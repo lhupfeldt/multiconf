@@ -12,6 +12,7 @@ from .utils.messages import config_error_mc_required_current_env_expected, confi
 from .utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
 from .utils.messages import mc_todo_current_env_expected, mc_todo_other_env_expected
 from .utils.messages import config_error_mc_todo_current_env_expected
+from .utils.tstclasses import RootWithA
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED, MC_TODO
 from ..envs import EnvFactory
@@ -49,7 +50,7 @@ class ItemWithA(ConfigItem):
 _attribute_mc_required_expected = mc_required_current_env_expected.format(attr='a', env=prod1)
 
 _attribute_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -59,7 +60,7 @@ _attribute_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s 
 
 def test_attribute_mc_required_env(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        with RootWithA(prod1, ef1_prod_pp) as cr:
             errorline = lineno() + 1
             cr.setattr('a', prod=MC_REQUIRED, pp="hello")
 
@@ -70,7 +71,7 @@ def test_attribute_mc_required_env(capsys):
 
 def test_attribute_mc_required_override_env(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        with RootWithA(prod1, ef1_prod_pp) as cr:
             errorline = lineno() + 1
             cr.override('a', MC_REQUIRED)
 
@@ -85,7 +86,7 @@ def test_attribute_mc_required_override_env(capsys):
 
 
 _attribute_mc_required_default_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -95,7 +96,7 @@ _attribute_mc_required_default_expected_ex = """There was 1 error when defining 
 
 def test_attribute_mc_required_default(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        with RootWithA(prod1, ef1_prod_pp) as cr:
             errorline = lineno() + 1
             cr.setattr('a', default=MC_REQUIRED, pp="hello")
 
@@ -123,7 +124,7 @@ def test_attribute_mc_required_init(capsys):
 
 
 _attribute_mc_required_other_env_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -133,7 +134,7 @@ _attribute_mc_required_other_env_expected_ex = """There was 1 error when definin
 
 def test_attribute_mc_required_other_env(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        with RootWithA(prod1, ef1_prod_pp) as cr:
             errorline = lineno() + 1
             cr.setattr('a', prod="hi", pp=MC_REQUIRED)
 
@@ -144,7 +145,7 @@ def test_attribute_mc_required_other_env(capsys):
 
 
 _attribute_mc_required_other_env_different_types_expected_ex = """There were 2 errors when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -154,7 +155,7 @@ _attribute_mc_required_other_env_different_types_expected_ex = """There were 2 e
 
 def test_attribute_mc_required_other_env_different_types(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod2, ef2_prod_pp_dev) as cr:
+        with RootWithA(prod2, ef2_prod_pp_dev) as cr:
             errorline = lineno() + 1
             cr.setattr('a', dev=1, prod="hi", pp=MC_REQUIRED)
 
@@ -171,7 +172,7 @@ def test_attribute_mc_required_other_env_different_types(capsys):
 
 
 def test_attribute_mc_required_default_all_overridden():
-    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+    with RootWithA(prod1, ef1_prod_pp) as cr:
         # TODO: This should actually not be allowed, it does not make sense!
         cr.setattr('a', default=MC_REQUIRED, pp="hello", prod="hi")
 
@@ -387,7 +388,7 @@ _attribute_mc_todo_other_env_expected = mc_todo_other_env_expected.format(attr='
 # MC_TODO - Not Allowed for Current Env
 
 _attribute_mc_todo_env_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -398,18 +399,17 @@ _attribute_mc_todo_env_expected_ex = """There was 1 error when defining item: {
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_env(capsys, allow_todo):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod_pp, mc_allow_todo=allow_todo) as cr:
+        with RootWithA(prod1, ef1_prod_pp, mc_allow_todo=allow_todo) as cr:
             errorline = lineno() + 1
             cr.setattr('a', prod=MC_TODO, pp="hello")
 
     _sout, serr = capsys.readouterr()
-    print(_sout)
     assert serr == ce(errorline, _attribute_mc_current_env_todo_expected)
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_todo_env_expected_ex
 
 
 _attribute_mc_todo_default_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -420,7 +420,7 @@ _attribute_mc_todo_default_expected_ex = """There was 1 error when defining item
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_default(capsys, allow_todo):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod_pp, mc_allow_todo=allow_todo) as cr:
+        with RootWithA(prod1, ef1_prod_pp, mc_allow_todo=allow_todo) as cr:
             errorline = lineno() + 1
             cr.setattr('a', default=MC_TODO, pp="hello")
 
@@ -448,7 +448,7 @@ def test_attribute_mc_todo_init(capsys, allow_todo):
 
 
 _attribute_mc_required_mc_todo_different_types_expected_ex = """There were 3 errors when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -459,7 +459,7 @@ _attribute_mc_required_mc_todo_different_types_expected_ex = """There were 3 err
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod3, ef3_prod_pp_tst_dev, mc_allow_todo=allow_todo) as cr:
+        with RootWithA(prod3, ef3_prod_pp_tst_dev, mc_allow_todo=allow_todo) as cr:
             errorline = lineno() + 1
             cr.setattr('a', dev=1, tst="hello", pp=MC_REQUIRED, prod=MC_TODO)
 
@@ -479,7 +479,7 @@ def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
 # MC_TODO - Not Allowed for Other Envs
 
 _attribute_mc_todo_other_env_env_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "pp"
@@ -489,7 +489,7 @@ _attribute_mc_todo_other_env_env_expected_ex = """There was 1 error when definin
 
 def test_attribute_mc_todo_other_env_env(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(pp1, ef1_prod_pp, mc_allow_todo=False) as cr:
+        with RootWithA(pp1, ef1_prod_pp, mc_allow_todo=False) as cr:
             errorline = lineno() + 1
             cr.setattr('a', prod=MC_TODO, pp="hello")
 
@@ -499,7 +499,7 @@ def test_attribute_mc_todo_other_env_env(capsys):
 
 
 _attribute_mc_todo_other_env_default_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "pp"
@@ -509,7 +509,7 @@ _attribute_mc_todo_other_env_default_expected_ex = """There was 1 error when def
 
 def test_attribute_mc_todo_other_env_default(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(pp1, ef1_prod_pp, mc_allow_todo=False) as cr:
+        with RootWithA(pp1, ef1_prod_pp, mc_allow_todo=False) as cr:
             errorline = lineno() + 1
             cr.setattr('a', default=MC_TODO, pp="hello")
 
@@ -539,7 +539,7 @@ def test_attribute_mc_todo_other_env_init(capsys):
 
 @mark.parametrize("allow_current_env_todo", [False, True])
 def test_attribute_mc_todo_env_allowed_other_env(capsys, allow_current_env_todo):
-    with ConfigRoot(pp1, ef1_prod_pp, mc_allow_todo=True, mc_allow_current_env_todo=allow_current_env_todo) as cr:
+    with RootWithA(pp1, ef1_prod_pp, mc_allow_todo=True, mc_allow_current_env_todo=allow_current_env_todo) as cr:
         errorline = lineno() + 1
         cr.setattr('a', prod=MC_TODO, pp="hello")
 
@@ -548,7 +548,7 @@ def test_attribute_mc_todo_env_allowed_other_env(capsys, allow_current_env_todo)
 
 
 def test_attribute_mc_todo_default_allowed_other_env(capsys):
-    with ConfigRoot(pp1, ef1_prod_pp, mc_allow_todo=True, mc_allow_current_env_todo=False) as cr:
+    with RootWithA(pp1, ef1_prod_pp, mc_allow_todo=True, mc_allow_current_env_todo=False) as cr:
         errorline = lineno() + 1
         cr.setattr('a', default=MC_TODO, pp="hello")
 
@@ -573,7 +573,7 @@ _attribute_mc_current_env_todo_allowed_expected = _attribute_mc_current_env_todo
 
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_env_allowed_other_envs(capsys, allow_todo):
-    with ConfigRoot(prod1, ef1_prod_pp, mc_allow_current_env_todo=True, mc_allow_todo=allow_todo) as cr:
+    with RootWithA(prod1, ef1_prod_pp, mc_allow_current_env_todo=True, mc_allow_todo=allow_todo) as cr:
         errorline = lineno() + 1
         cr.setattr('a', prod=MC_TODO, pp="hello")
 
@@ -582,7 +582,7 @@ def test_attribute_mc_todo_env_allowed_other_envs(capsys, allow_todo):
 
 
 def test_attribute_mc_todo_default_allowed_other_envs(capsys):
-    with ConfigRoot(prod1, ef1_prod_pp, mc_allow_current_env_todo=True) as cr:
+    with RootWithA(prod1, ef1_prod_pp, mc_allow_current_env_todo=True) as cr:
         errorline = lineno() + 1
         cr.setattr('a', default=MC_TODO, pp="hello")
 
@@ -603,7 +603,7 @@ def test_attribute_mc_todo_init_allowed_other_envs(capsys):
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_env_allowed_current_env_access_error(capsys, allow_todo):
     """Test that accessing an MC_TODO value after loading results in an exception"""
-    with ConfigRoot(prod1, ef1_prod_pp, mc_allow_current_env_todo=True, mc_allow_todo=allow_todo) as cr:
+    with RootWithA(prod1, ef1_prod_pp, mc_allow_current_env_todo=True, mc_allow_todo=allow_todo) as cr:
         errorline = lineno() + 1
         cr.setattr('a', prod=MC_TODO, pp="hello")
 
@@ -618,7 +618,7 @@ def test_attribute_mc_todo_env_allowed_current_env_access_error(capsys, allow_to
 
 @mark.parametrize("allow_todo", [False, True])
 def test_attribute_mc_todo_override_allowed_other_envs(capsys, allow_todo):
-    with ConfigRoot(prod1, ef1_prod_pp, mc_allow_current_env_todo=True, mc_allow_todo=allow_todo) as cr:
+    with RootWithA(prod1, ef1_prod_pp, mc_allow_current_env_todo=True, mc_allow_todo=allow_todo) as cr:
         cr.a = 2
         errorline = lineno() + 1
         cr.override('a', MC_TODO)
@@ -691,7 +691,7 @@ def test_multiple_attributes_mc_required_init_not_set(capsys):
 
 
 _multiple_attributes_mc_required_env_expected_ex = """There %(ww)s %(num_errors)s %(err)s when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "MyRoot #as: 'MyRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -701,8 +701,14 @@ _multiple_attributes_mc_required_env_expected_ex = """There %(ww)s %(num_errors)
 }""" + already_printed_msg
 
 def test_multiple_attributes_mc_required_env(capsys):
+    class MyRoot(ConfigRoot):
+        def __init__(self, selected_env, env_factory):
+            super(MyRoot, self).__init__(selected_env=selected_env, env_factory=env_factory)
+            self.aa = MC_REQUIRED
+            self.bb = MC_REQUIRED
+
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        with MyRoot(prod1, ef1_prod_pp) as cr:
             errorline = lineno() + 1
             cr.setattr('aa', prod=MC_REQUIRED, pp="hello")
             cr.setattr('bb', prod=1, pp=MC_REQUIRED)

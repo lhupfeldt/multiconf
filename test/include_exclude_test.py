@@ -9,6 +9,7 @@ from pytest import raises, xfail
 from .utils.utils import config_error, lineno, assert_lines_in
 from utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
 from .utils.compare_json import compare_json
+from .utils.tstclasses import RootWithA
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException, MC_REQUIRED
 from ..decorators import named_as, nested_repeatables, required
@@ -39,6 +40,7 @@ class item(ConfigItem):
         super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         self.anattr = MC_REQUIRED
         self.anotherattr = MC_REQUIRED
+        self.b = None
 
 
 class anitem(ConfigItem):
@@ -56,7 +58,7 @@ class decorated_item(ConfigItem):
 
 
 _include_exclude_for_configitem_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -68,7 +70,7 @@ _include_exclude_for_configitem_expected_json = """{
 }"""
 
 _include_exclude_for_decorated_configitem_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -81,7 +83,7 @@ _include_exclude_for_decorated_configitem_expected_json = """{
 
 def test_include_for_configitem_with_mc_required():
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             with item(mc_include=[dev1, pp]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
@@ -100,7 +102,7 @@ def test_include_for_configitem_with_mc_required():
 
 def test_include_for_configitem_with_required_decorator():
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             with decorated_item(mc_include=[dev1, pp]) as it:
                 anitem()
@@ -119,7 +121,7 @@ def test_include_for_configitem_with_required_decorator():
 
 def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             with item(mc_exclude=[dev2, prod]) as it:
                 it.mc_select_envs(exclude=[prod])  # Excluding again is ignored (to avoid extra checking)
@@ -139,7 +141,7 @@ def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
 
 def test_include_missing_for_configitem(capsys):
     def conf(env, errorline):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             with item(mc_include=[dev1, pp]) as it:
                 print("it:", id(it))
@@ -159,7 +161,7 @@ def test_include_missing_for_configitem(capsys):
 
 def test_exclude_for_configitem():
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             with item(mc_exclude=[dev2, prod]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
@@ -193,7 +195,7 @@ class decorated_ritem(RepeatableConfigItem):
 
 
 @nested_repeatables('ritems')
-class root(ConfigRoot):
+class root(RootWithA):
     pass
 
 
@@ -267,7 +269,7 @@ def test_exclude_for_configitem_repeatable():
 
 def test_exclude_for_nested_configitem():
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
                 it1.setattr('anattr', pp=1, g_dev12_3=2)
@@ -436,7 +438,7 @@ def test_child_includes_excluded_init(capsys):
 
 
 def test_child_includes_excluded_mc_select_envs():
-    with root(prod, ef):
+    with root(prod, ef, a=1) as cr:
         with ritem(name='a', mc_exclude=[g_dev12_3, prod]):
             with item() as it1:
                 it1.mc_select_envs(include=[dev2, prod])  # TODO This is ignored because it is already determined in __init__ that object if excluded
@@ -449,7 +451,7 @@ def test_exclude_include_overlapping_for_configitem(capsys):
     """Test that most specifig group/env wins"""
 
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             with item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev12]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
@@ -490,7 +492,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        with ConfigRoot(prod, ef):
+        with RootWithA(prod, ef):
             errorline = lineno() + 1
             item(mc_exclude=[dev1], mc_include=[dev1, pp])
 
@@ -500,7 +502,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        with ConfigRoot(prod, ef):
+        with RootWithA(prod, ef):
             errorline = lineno() + 1
             item(mc_exclude=[pp, dev1], mc_include=[dev1])
 
@@ -535,7 +537,7 @@ def test_exclude_include_overlapping_resolved_with_include_for_configitem():
     """Test that most specifig group/env wins"""
 
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             with item(mc_include=[g_dev12, pp, dev2], mc_exclude=[g_dev23]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
@@ -568,7 +570,7 @@ def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
     """Test that most specifig group/env wins"""
 
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             with item(mc_include=[g_dev12, pp], mc_exclude=[dev2, g_dev23]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
@@ -598,7 +600,7 @@ def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
 
 def test_exclude_include_disjunct_for_configitem():
     def conf(env):
-        with ConfigRoot(env, ef) as cr:
+        with RootWithA(env, ef) as cr:
             cr.a = 1
             # Allowed but unnecessary 'mc_exclude'
             with item(mc_include=[g_dev12_3], mc_exclude=[prod]) as it:
@@ -644,7 +646,7 @@ def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_en
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        with ConfigRoot(prod, ef):
+        with RootWithA(prod, ef):
             with Item() as it:
                 errorline = lineno() + 1
                 it.mc_select_envs(exclude=[dev1], include=[dev1, pp])

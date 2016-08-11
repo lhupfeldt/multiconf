@@ -35,6 +35,8 @@ class item(ConfigItem):
     def __init__(self, mc_include=None, mc_exclude=None):
         super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         self.anattr = MC_REQUIRED
+        self.anotherattr = None
+        self.b = None
 
 
 @named_as('item')
@@ -42,7 +44,11 @@ class item(ConfigItem):
 class decorated_item(ConfigItem):
     xx = 3
 
-        
+    def __init__(self, mc_include=None, mc_exclude=None):
+        super(decorated_item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        self.anotherattr = MC_REQUIRED
+
+
 _include_exclude_for_configitem_expected_json = """{
     "__class__": "ConfigRoot",
     "__id__": 0000,
@@ -127,7 +133,7 @@ def test_exclude_include_overlapping_groups_excluded_resolved_with_required_deco
     assert cr.item.xx == 3
     assert cr.item.anitem.xx == 222
     assert cr.item.anotherattr == 111
-    
+
 
 def test_exclude_include_overlapping_groups_included_resolved():
     def conf(env):

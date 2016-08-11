@@ -208,7 +208,8 @@ def test_env_factory_in_use(capsys):
         myef._mc_create_default_group()  # pylint: disable=protected-access
         myef.EnvGroup('g_dev12', mydev1)
 
-    _sout, serr = capsys.readouterr()
+    sout, serr = capsys.readouterr()
+    assert sout == ''
     assert str(exinfo.value) == "EnvFactory is already in use. No more groups may be added."
     assert replace_user_file_line_msg(serr) == ''  # TODO empty error message
 

@@ -6,16 +6,11 @@ from .. import ConfigRoot, ConfigItem
 from ..envs import EnvFactory
 
 from .utils.compare_json import compare_json
+from .utils.tstclasses import RootWithA
 
 
 ef = EnvFactory()
 prod = ef.Env('prod')
-
-
-class RootWithA(ConfigRoot):
-    def __init__(self, selected_env, env_factory, a=None):
-        super(RootWithA, self).__init__(selected_env=selected_env, env_factory=env_factory)
-        self.a = a
 
 
 _json_dump_attr_dict_ref_item_expected_json = """{
