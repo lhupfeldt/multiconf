@@ -12,7 +12,7 @@ from .utils.messages import config_error_mc_required_current_env_expected, confi
 from .utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
 from .utils.messages import mc_todo_current_env_expected, mc_todo_other_env_expected
 from .utils.messages import config_error_mc_todo_current_env_expected
-from .utils.tstclasses import RootWithA
+from .utils.tstclasses import RootWithA, ItemWithA
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED, MC_TODO
 from ..envs import EnvFactory
@@ -39,12 +39,6 @@ def ce(line_num, *lines):
 
 def cw(line_num, *lines):
     return config_warning(__file__, line_num, *lines)
-
-
-class ItemWithA(ConfigItem):
-    def __init__(self, a=MC_REQUIRED):
-        super(ItemWithA, self).__init__()
-        self.a = a
 
 
 _attribute_mc_required_expected = mc_required_current_env_expected.format(attr='a', env=prod1)

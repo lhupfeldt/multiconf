@@ -3,13 +3,14 @@
 
 from collections import OrderedDict
 
-from .. import ConfigRoot, ConfigItem
+from .. import ConfigRoot, ConfigItem, MC_REQUIRED
 
 from ..decorators import named_as
 from ..envs import EnvFactory
 
 from .utils.utils import py3_local
 from .utils.compare_json import compare_json
+from .utils.tstclasses import RootWithA
 
 
 ef = EnvFactory()
@@ -19,7 +20,7 @@ prod = ef.Env('prod')
 
 
 _filter_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithHideMe1",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -39,6 +40,13 @@ def test_json_dump_user_defined_attribute_filter():
     def json_filter(_obj, key, value):
         return (False, None) if (key == 'hide_me1' or key == 'hide_me2') else (key, value)
 
+    class RootWithHideMe1(RootWithA):
+        def __init__(self, selected_env, env_factory, mc_allow_todo=False, mc_allow_current_env_todo=False, mc_json_filter=None, a=MC_REQUIRED):
+            super(RootWithHideMe1, self).__init__(selected_env=selected_env, env_factory=env_factory, mc_json_filter=mc_json_filter,
+                                                  mc_allow_todo=mc_allow_todo, mc_allow_current_env_todo=mc_allow_current_env_todo,
+                                                  a=a)
+            self.hide_me1 = MC_REQUIRED
+
     @named_as('someitem')
     class Nested(ConfigItem):
         def __init__(self, b, hide_me1):
@@ -54,7 +62,7 @@ def test_json_dump_user_defined_attribute_filter():
         def a(self):
             return 1
 
-    with ConfigRoot(prod, ef, mc_json_filter=json_filter) as cr:
+    with RootWithHideMe1(prod, ef, mc_json_filter=json_filter) as cr:
         cr.a = 0
         cr.hide_me1 = 'FAILED'
         Nested(b=2, hide_me1=7)
@@ -63,7 +71,7 @@ def test_json_dump_user_defined_attribute_filter():
 
 
 _json_fallback_handler_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -107,17 +115,17 @@ def test_json_fallback_handler():
             return [obj.a, obj.b], True
         return obj, False
 
-    with ConfigRoot(prod, ef, mc_json_fallback=json_fallback_handler) as cr:
+    with RootWithA(prod, ef, mc_json_fallback=json_fallback_handler) as cr:
         cr.a = 0
-        cr.handled_non_item = HandledNonItem()
-        cr.unhandled_non_item = UnHandledNonItem()
+        cr.setattr('handled_non_item?', default=HandledNonItem())
+        cr.setattr('unhandled_non_item?', default=UnHandledNonItem())
         Nested(b=2)
 
     compare_json(cr, _json_fallback_handler_expected_json % dict(py3_local=py3_local()), expect_num_errors=1)
 
 
 _json_fallback_handler_iterable_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -147,15 +155,15 @@ def test_json_fallback_handler_iterable():
             return [obj.a, obj.b], True
         return obj, False
 
-    with ConfigRoot(prod, ef, mc_json_fallback=json_fallback_handler) as cr:
+    with RootWithA(prod, ef, mc_json_fallback=json_fallback_handler) as cr:
         cr.a = 0
-        cr.handled_non_items = [HandledNonItem(1), HandledNonItem(2)]
+        cr.setattr('handled_non_items?', default=[HandledNonItem(1), HandledNonItem(2)])
 
     compare_json(cr, _json_fallback_handler_iterable_expected_json)
 
 
 _json_equivalent_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "RootWithA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -184,9 +192,9 @@ def test_json_equivalent():
             super(Item, self).__init__()
             self.a = 7
 
-    with ConfigRoot(prod, ef) as cr:
+    with RootWithA(prod, ef) as cr:
         cr.a = 0
-        cr.handled_non_item = NonItemWithEquiv()
+        cr.setattr('handled_non_item?', default=NonItemWithEquiv())
         Item()
 
     compare_json(cr, _json_equivalent_expected_json)

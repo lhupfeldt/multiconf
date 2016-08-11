@@ -8,12 +8,13 @@ import sys
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, replace_ids
-from .utils.utils import py3_local
-
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException
 from ..decorators import nested_repeatables, named_as
 from ..envs import EnvFactory
+
+from .utils.utils import config_error, replace_ids, py3_local
+from .utils.tstclasses import RootWithA, ItemWithA
+
 
 ef1_prod = EnvFactory()
 
@@ -52,7 +53,7 @@ _t2_expected_repr = """{
 
 def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s():
     with ConfigRoot(prod, ef1_prod) as cr:
-        cr.setattr('bs', prod=4)
+        cr.setattr('bs?', prod=4)
 
     with raises(AttributeError) as exinfo:
         print(cr.b)
@@ -69,18 +70,19 @@ def test_find_contained_in_named_as_not_found():
         def __init__(self, id):
             super(NestedRepeatable, self).__init__(mc_key=id)
             self.id = id
+            self.a = None
 
     @named_as('x')
     @nested_repeatables('someitems')
-    class X(ConfigItem):
+    class X(ItemWithA):
         pass
 
     @named_as('y')
-    class Y(ConfigItem):
+    class Y(ItemWithA):
         pass
 
     @nested_repeatables('someitems')
-    class root(ConfigRoot):
+    class root(RootWithA):
         pass
 
     with root(prod, ef1_prod) as cr:
@@ -113,15 +115,22 @@ def test_find_attribute_with_attribute_name_not_found():
         def __init__(self, id):
             super(NestedRepeatable, self).__init__(mc_key=id)
             self.id = id
+            self.a = None
 
     @named_as('x')
     @nested_repeatables('someitems')
-    class X(ConfigItem):
+    class X(ItemWithA):
         pass
 
     @nested_repeatables('someitems')
     class root(ConfigRoot):
-        pass
+        def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None,
+                     mc_allow_todo=False, mc_allow_current_env_todo=False):
+            super(root, self).__init__(
+                selected_env=selected_env, env_factory=env_factory, mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
+                mc_allow_todo=mc_allow_todo, mc_allow_current_env_todo=mc_allow_current_env_todo)
+            self.a = None
+            self.q = None
 
     with root(prod, ef1_prod) as cr:
         cr.a = 0
@@ -135,7 +144,8 @@ def test_find_attribute_with_attribute_name_not_found():
                 with NestedRepeatable(id='c') as nr:
                     nr.a = 7
                 with X() as ci:
-                    ci.setattr('b', prod=1)
+                    ci.a = 1
+                    ci.setattr('b?', prod=1)
                     with NestedRepeatable(id='d') as ci:
                         ci.setattr('a', prod=2)
                         with X() as ci:
