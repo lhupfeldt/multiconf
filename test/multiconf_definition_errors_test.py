@@ -12,6 +12,7 @@ from .utils.messages import config_error_mc_required_current_env_expected, confi
 from .utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
 from .utils.messages import config_error_no_value_current_env_expected, config_error_no_value_other_env_expected
 from .utils.messages import no_value_current_env_expected, no_value_other_env_expected
+from .utils.tstclasses import RootWithA, ItemWithA
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
 from ..decorators import nested_repeatables, required
@@ -97,7 +98,7 @@ def ce(line_num, *lines):
 
 
 _single_error_on_root_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -172,7 +173,7 @@ value: 3, from: EnvGroup('g_dev_overlap') {
 }"""
 
 _p_expected_ex = """There were 2 errors when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -237,7 +238,7 @@ def test_selected_conf_not_from_env_factory():
 
 def test_assign_to_undefine_env(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod) as cr:
+        with RootWithA(prod1, ef1_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', pros="hello", prod="hi")
 
@@ -248,12 +249,12 @@ def test_assign_to_undefine_env(capsys):
 
 def test_value_not_assigned_to_all_envs(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+        with RootWithA(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', prod="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, no_value_other_env_expected.format(attr='a', env=pp2))
+    assert serr == ce(errorline, mc_required_other_env_expected.format(attr='a', env=pp2))
     assert replace_ids(str(exinfo.value), False) == _single_error_on_root_expected_ex % '"hello"'
 
 
@@ -274,7 +275,7 @@ def test_value_not_assigned_to_all_envs_in_builder(capsys):
 
 def test_attribute_defined_with_different_types_root(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+        with RootWithA(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', prod=1, pp="hello")
 
@@ -289,7 +290,7 @@ def test_attribute_defined_with_different_types_root(capsys):
 
 def test_attribute_defined_with_different_types_root_default(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+        with RootWithA(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', default="hello", prod=1)
 
@@ -303,7 +304,7 @@ def test_attribute_defined_with_different_types_root_default(capsys):
 
 
 _attribute_defined_with_different_types_item_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000",
+    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000",
     "a": 1
 }"""
 
@@ -311,7 +312,7 @@ def test_attribute_defined_with_different_types_item(capsys):
     with raises(ConfigException) as exinfo:
         with project(prod2, ef2_pp_prod):
             init_line = lineno() + 1
-            with ConfigItem() as ci:
+            with ItemWithA() as ci:
                 errorline = lineno() + 1
                 ci.setattr('a', pp="hello", prod=1)
 
@@ -329,7 +330,7 @@ def test_attribute_defined_with_different_types_item_default(capsys):
     with raises(ConfigException) as exinfo:
         with project(prod1, ef1_prod):
             init_line = lineno() + 1
-            with ConfigItem() as ci:
+            with ItemWithA() as ci:
                 errorline = lineno() + 1
                 ci.setattr('a', default="hello", prod=1)
 
@@ -402,7 +403,7 @@ def test_attribute_defined_with_different_types_init(capsys):
 
 def test_attribute_redefinition_attempt(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod1, ef1_prod) as cr:
+        with RootWithA(prod1, ef1_prod) as cr:
             cr.setattr('a', prod=1)
             errorline = lineno() + 1
             cr.setattr('a', prod=2)
@@ -415,7 +416,7 @@ def test_attribute_redefinition_attempt(capsys):
 def test_nested_item_overrides_simple_attribute():
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod1, ef1_prod) as cr:
-            cr.setattr('ConfigItem', prod="hello")
+            cr.setattr('ConfigItem?', prod="hello")
             ConfigItem()
 
     assert replace_ids(str(exinfo.value), named_as=False) == _i_expected_ex
@@ -559,7 +560,7 @@ value: 3, from: EnvGroup('g_dev_overlap') {
 }"""
 
 _value_defined_through_two_groups_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -569,7 +570,7 @@ _value_defined_through_two_groups_expected_ex = """There was 1 error when defini
 
 def test_value_defined_through_two_groups(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod3, ef3_dev_prod) as cr:
+        with RootWithA(prod3, ef3_dev_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', default=7, prod=1, g_dev2=2, g_dev_overlap=3)
 
@@ -592,7 +593,7 @@ value: 7, from: EnvGroup('g_dev_overlap2') {
 }"""
 
 _value_defined_through_three_groups_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigRoot #as: 'ConfigRoot', id: 0000",
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"
@@ -602,7 +603,7 @@ _value_defined_through_three_groups_expected_ex = """There was 1 error when defi
 
 def test_value_defined_through_three_groups(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod5, ef5_dev_prod) as cr:
+        with RootWithA(prod5, ef5_dev_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', g_dev_overlap2=7, default=7, prod=1, g_dev2=2, g_dev_overlap1=3)
 
@@ -613,7 +614,7 @@ def test_value_defined_through_three_groups(capsys):
 
 def test_two_values_defined_through_two_groups(capsys):
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod4, ef4_dev_prod) as cr:
+        with RootWithA(prod4, ef4_dev_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('a', prod=1, dev3st=14, pp=33, g_dev2=2, g_dev3=12, g_dev_overlap=3)
 
@@ -623,28 +624,37 @@ def test_two_values_defined_through_two_groups(capsys):
 
 
 _assigning_owerwrites_attribute_expected = """The attribute 'a' is already fully defined"""
+_assigning_owerwrites_attribute_root_expected_ex = """There was 1 error when defining item: {
+    "__class__": "RootWithA #as: 'RootWithA', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "a": 1
+}""" + already_printed_msg
+
 
 def test_assigning_owerwrites_attribute_root(capsys):
     with raises(ConfigException) as exinfo:
-        with project(prod1, ef1_prod) as cr:
+        with RootWithA(prod1, ef1_prod) as cr:
             cr.setattr('a', prod=1)
             errorline = lineno() + 1
             cr.a = 2
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline, _assigning_owerwrites_attribute_expected)
-    assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_project_expected_ex % '"a": 1,\n    "RepeatableItems": {}'
+    assert replace_ids(str(exinfo.value), named_as=False) == _assigning_owerwrites_attribute_root_expected_ex
 
 
 _test_assigning_owerwrites_attribute_nested_item_ex = """There was 1 error when defining item: {
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000",
+    "__class__": "ItemWithA #as: 'ItemWithA', id: 0000",
     "a": 1
 }""" + already_printed_msg
 
 def test_assigning_owerwrites_attribute_nested_item(capsys):
     with raises(ConfigException) as exinfo:
         with project(prod1, ef1_prod):
-            with ConfigItem() as ci:
+            with ItemWithA() as ci:
                 ci.setattr('a', prod=1)
                 errorline = lineno() + 1
                 ci.a = 1
