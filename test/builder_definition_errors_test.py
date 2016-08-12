@@ -5,7 +5,7 @@
 from pytest import raises
 
 from .utils.utils import config_error, replace_ids, replace_ids_builder
-from .utils.tstclasses import name_root
+from .utils.tstclasses import RootWithName
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
 from ..decorators import nested_repeatables, named_as
@@ -228,7 +228,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
         pass
 
     with raises(ConfigException) as exinfo:
-        with name_root(prod1, ef1_prod) as root:
+        with RootWithName(prod1, ef1_prod) as root:
             root.name = 'myp'
             with OuterItem():
                 MiddleBuilder('base1')
@@ -236,7 +236,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
     assert replace_ids(str(exinfo.value), False) == "Repeated non repeatable conf item: 'MiddleItem'"
 
     with raises(ConfigException) as exinfo:
-        with name_root(prod1, ef1_prod) as root:
+        with RootWithName(prod1, ef1_prod) as root:
             root.name = 'myp'
             MiddleBuilder('base2')
 

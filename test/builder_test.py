@@ -9,7 +9,7 @@ from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 
 from .utils.check_containment import check_containment
-from .utils.tstclasses import name_root
+from .utils.tstclasses import RootWithName
 
 
 ef1_prod = EnvFactory()
@@ -588,7 +588,7 @@ def test_configbuilders_alternating_with_items():
     class OuterItem(ConfigItem):
         pass
 
-    with name_root(prod1, ef1_prod) as cr:
+    with RootWithName(prod1, ef1_prod) as cr:
         cr.name = 'myp'
         with OuterItem():
             with MiddleBuilder('base'):
@@ -623,7 +623,7 @@ def test_configbuilders_alternating_with_items_repeatable_simple():
     class OuterItem(ConfigItem):
         pass
 
-    with name_root(prod1, ef1_prod) as cr:
+    with RootWithName(prod1, ef1_prod) as cr:
         cr.name = 'myp'
         with OuterItem():
             OuterBuilder()
