@@ -13,7 +13,7 @@ from ..envs import EnvFactory
 from .utils.utils import replace_ids, lineno, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg, config_error
 from .utils.utils import py3_local
 from .utils.compare_json import compare_json
-from .utils.tstclasses import name_root, RootWithAA, ItemWithAA
+from .utils.tstclasses import RootWithName, RootWithAA, ItemWithAA
 
 
 ef = EnvFactory()
@@ -1365,7 +1365,7 @@ def test_json_dump_with_builders_containment_check():
     class MyOuterItem(ConfigItem):
         pass
 
-    with name_root(prod2, ef2_prod) as cr:
+    with RootWithName(prod2, ef2_prod) as cr:
         cr.name = 'myp'
         with MyOuterItem():
             MyOuterBuilder()

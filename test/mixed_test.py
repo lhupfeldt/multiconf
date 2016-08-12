@@ -5,7 +5,7 @@ from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_R
 from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 
-from .utils.tstclasses import name_root
+from .utils.tstclasses import RootWithName
 
 
 ef = EnvFactory()
@@ -72,7 +72,7 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
     class OuterItem(ConfigItem):
         pass
 
-    with name_root(prod, ef) as cr:
+    with RootWithName(prod, ef) as cr:
         cr.name = 'myp'
         with OuterItem():
             OuterBuilder()

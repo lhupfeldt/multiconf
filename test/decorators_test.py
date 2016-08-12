@@ -5,7 +5,7 @@ from .. import ConfigRoot, ConfigItem
 from ..decorators import named_as, nested_repeatables
 
 from .utils.utils import config_error, replace_ids
-from .utils.tstclasses import name_root
+from .utils.tstclasses import RootWithName
 
 from ..envs import EnvFactory
 
@@ -32,7 +32,7 @@ _g_expected = """{
 
 def test_named_as():
     @named_as('project')
-    class root(name_root):
+    class root(RootWithName):
         pass
 
     with root(prod2, ef2_prod_dev2ct) as proj:
