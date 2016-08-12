@@ -6,7 +6,7 @@ from .. import ConfigRoot, ConfigItem
 from ..envs import EnvFactory
 
 from .utils.compare_json import compare_json
-from .utils.tstclasses import RootWithA
+from .utils.tstclasses import RootWithAA
 
 
 ef = EnvFactory()
@@ -14,13 +14,13 @@ prod = ef.Env('prod')
 
 
 _json_dump_attr_dict_ref_item_expected_json = """{
-    "__class__": "RootWithA",
+    "__class__": "RootWithAA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
-    "a": 0,
+    "aa": 0,
     "Ref1": {
         "__class__": "Ref1",
         "__id__": 0000,
@@ -63,7 +63,7 @@ def test_json_dump_attr_dict_ref_item():
         def r1mmnn(self):
             return self.contained_in.Ref1.mm.a + self.contained_in.Ref1.nn.a
 
-    with RootWithA(prod, ef, a=0) as cr:
+    with RootWithAA(prod, ef, aa=0) as cr:
         with Ref1() as ref1:
             ref1.setattr('aa?', default={'a': ref1})
             ref1.setattr('bb?', default={'a': ref1})
@@ -76,13 +76,13 @@ def test_json_dump_attr_dict_ref_item():
 
 
 _json_dump_attr_list_ref_item_expected_json = """{
-    "__class__": "RootWithA",
+    "__class__": "RootWithAA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
-    "a": 0,
+    "aa": 0,
     "Ref1": {
         "__class__": "Ref1",
         "__id__": 0000,
@@ -125,7 +125,7 @@ def test_json_dump_attr_list_ref_item():
         def r1mmnn(self):
             return self.contained_in.Ref1.mm.a + self.contained_in.Ref1.nn.a
 
-    with RootWithA(prod, ef, a=0) as cr:
+    with RootWithAA(prod, ef, aa=0) as cr:
         with Ref1() as ref1:
             ref1.setattr('aa?', default=[ref1])
             ref1.setattr('bb?', default=[ref1])
@@ -138,13 +138,13 @@ def test_json_dump_attr_list_ref_item():
 
 
 _json_dump_attr_tuple_ref_item_expected_json = """{
-    "__class__": "RootWithA",
+    "__class__": "RootWithAA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
-    "a": 1,
+    "aa": 1,
     "Ref1": {
         "__class__": "Ref1",
         "__id__": 0000,
@@ -156,12 +156,12 @@ _json_dump_attr_tuple_ref_item_expected_json = """{
             "#ref, id: 0000",
             "#ref, id: 0000"
         ],
-        "a": 3,
-        "a #static": true,
         "mm": "#ref self, id: 0000",
         "mm #calculated": true,
         "nn": "#ref, id: 0000",
-        "nn #calculated": true
+        "nn #calculated": true,
+        "xx": 3,
+        "xx #static": true
     },
     "Ref2": {
         "__class__": "Ref2",
@@ -173,7 +173,7 @@ _json_dump_attr_tuple_ref_item_expected_json = """{
 
 def test_json_dump_attr_tuple_ref_item():
     class Ref1(ConfigItem):
-        a = 3
+        xx = 3
 
         @property
         def mm(self):
@@ -187,9 +187,9 @@ def test_json_dump_attr_tuple_ref_item():
         """Reference attributes on tuples of ref1 objects"""
         @property
         def r1mmnn(self):
-            return self.contained_in.Ref1.mm.a + self.contained_in.Ref1.nn.a
+            return self.contained_in.Ref1.mm.xx + self.contained_in.Ref1.nn.aa
 
-    with RootWithA(prod, ef, a=1) as cr:
+    with RootWithAA(prod, ef, aa=1) as cr:
         with Ref1() as ref1:
             ref1.setattr('aa?', default=(ref1, cr))
             ref1.setattr('bb?', default=(ref1, cr))
