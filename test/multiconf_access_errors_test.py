@@ -13,7 +13,7 @@ from ..decorators import nested_repeatables, named_as
 from ..envs import EnvFactory
 
 from .utils.utils import config_error, replace_ids, py3_local
-from .utils.tstclasses import RootWithA, ItemWithA
+from .utils.tstclasses import RootWithAA, ItemWithAA
 
 
 ef1_prod = EnvFactory()
@@ -74,31 +74,31 @@ def test_find_contained_in_named_as_not_found():
 
     @named_as('x')
     @nested_repeatables('someitems')
-    class X(ItemWithA):
+    class X(ItemWithAA):
         pass
 
     @named_as('y')
-    class Y(ItemWithA):
+    class Y(ItemWithAA):
         pass
 
     @nested_repeatables('someitems')
-    class root(RootWithA):
+    class root(RootWithAA):
         pass
 
     with root(prod, ef1_prod) as cr:
-        cr.a = 0
+        cr.aa = 0
         NestedRepeatable(id=0)
         with X() as ci:
-            ci.setattr('a', prod=0)
+            ci.setattr('aa', prod=0)
             NestedRepeatable(id='a')
             with NestedRepeatable(id='b') as ci:
                 NestedRepeatable(id='c')
                 with X() as ci:
-                    ci.setattr('a', prod=1)
+                    ci.setattr('aa', prod=1)
                     with NestedRepeatable(id='d') as ci:
                         ci.setattr('a', prod=2)
                         with Y() as ci:
-                            ci.setattr('a', prod=3)
+                            ci.setattr('aa', prod=3)
 
     with raises(ConfigException) as exinfo:
         cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
@@ -119,7 +119,7 @@ def test_find_attribute_with_attribute_name_not_found():
 
     @named_as('x')
     @nested_repeatables('someitems')
-    class X(ItemWithA):
+    class X(ItemWithAA):
         pass
 
     @nested_repeatables('someitems')
@@ -137,19 +137,19 @@ def test_find_attribute_with_attribute_name_not_found():
         cr.q = 17
         NestedRepeatable(id=1)
         with X() as ci:
-            ci.setattr('a', prod=0)
+            ci.setattr('aa', prod=0)
             with NestedRepeatable(id='a') as nr:
                 nr.a = 9
             with NestedRepeatable(id='b') as ci:
                 with NestedRepeatable(id='c') as nr:
                     nr.a = 7
                 with X() as ci:
-                    ci.a = 1
+                    ci.aa = 1
                     ci.setattr('b?', prod=1)
                     with NestedRepeatable(id='d') as ci:
                         ci.setattr('a', prod=2)
                         with X() as ci:
-                            ci.setattr('a', prod=3)
+                            ci.setattr('aa', prod=3)
 
     with raises(ConfigException) as exinfo:
         assert cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e') == 3
