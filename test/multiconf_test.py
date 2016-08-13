@@ -11,6 +11,9 @@ from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_R
 from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 
+from .utils.tstclasses import RootWithAA, ItemWithAA, ItemWithAABB
+
+
 ef1_prod = EnvFactory()
 prod1 = ef1_prod.Env('prod')
 
@@ -71,8 +74,7 @@ class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, id, aa=None):
         super(NestedRepeatable, self).__init__(mc_key=id)
         self.id = id
-        if aa is not None:
-            self.aa = aa
+        self.aa = aa
 
 
 class KwargsItem(ConfigItem):
@@ -81,14 +83,14 @@ class KwargsItem(ConfigItem):
         for key, val in kwargs.items():
             setattr(self, key, val)
 
-            
+
 class anitem(ConfigItem):
     xx = 1
 
 
 class anotheritem(ConfigItem):
-    xx = 2    
-            
+    xx = 2
+
 
 def test_contained_in_root_conf():
     with ConfigRoot(prod2, ef2_pp_prod) as conf:
@@ -189,19 +191,19 @@ def test_iteritems_item_attributes():
 
 
 def test_property_defined_with_same_type_and_none():
-    with ConfigRoot(prod2, ef2_pp_prod) as cr:
+    with RootWithAA(prod2, ef2_pp_prod) as cr:
         cr.setattr('aa', default=None, prod=1, pp=2)
     assert cr.aa == 1
 
 
 def test_property_defined_with_none_and_same_type():
-    with ConfigRoot(prod2, ef2_pp_prod) as cr:
+    with RootWithAA(prod2, ef2_pp_prod) as cr:
         cr.setattr('aa', default=1, prod=None, pp=2)
     assert cr.aa is None
 
 
 def test_automatic_freeze_of_child_on_exit():
-    with ConfigRoot(prod2, ef2_pp_prod) as cr:
+    with RootWithAA(prod2, ef2_pp_prod) as cr:
         cr.aa = 0
         with ConfigItem() as ci:
             ci.something = 1
@@ -321,15 +323,15 @@ def test_freeze_of_property_at_access():
 def test_find_contained_in_named_as():
     @named_as('x')
     @nested_repeatables('recursive_items')
-    class X(ConfigItem):
+    class X(ItemWithAA):
         pass
 
     @named_as('y')
-    class Y(ConfigItem):
+    class Y(ItemWithAA):
         pass
 
     @nested_repeatables('recursive_items')
-    class root3(ConfigRoot):
+    class root3(RootWithAA):
         pass
 
     with root3(prod2, ef2_pp_prod) as cr:
@@ -356,25 +358,25 @@ def test_find_contained_in_named_as():
 def test_find_attribute_attribute_name():
     @named_as('x')
     @nested_repeatables('recursive_items')
-    class X(ConfigItem):
+    class X(ItemWithAA):
         pass
 
     @nested_repeatables('recursive_items')
-    class root4(ConfigRoot):
-        def __init__(self, selected_env, env_factory, aa):
-            super(root4, self).__init__(selected_env=selected_env, env_factory=env_factory)
-            self.aa = aa
+    class root4(RootWithAA):
+        pass
 
     with root4(prod2, ef2_pp_prod, aa=-1) as cr:
         cr.q = 'q0'
         NestedRepeatable(id=0)
         with X() as ci:
+            ci.setattr('yy?', default=999)
             ci.setattr('aa', prod=0, pp=20)
             NestedRepeatable(id='aa', aa=9)
             with NestedRepeatable(id='bb') as ci:
                 NestedRepeatable(id='cc', aa=7)
                 with X() as ci:
-                    ci.setattr('bb', prod='b1', pp='b21')
+                    ci.aa = 117
+                    ci.setattr('bb?', prod='b1', pp='b21')
                     with NestedRepeatable(id='dd') as ci:
                         ci.setattr('aa', prod=2, pp=22)
                         with X() as ci:
@@ -384,19 +386,21 @@ def test_find_attribute_attribute_name():
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].x.find_attribute('bb') == 'b1'
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].x.find_attribute('recursive_items')['dd'].aa == 2
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].x.find_attribute('q') == 'q0'
-    assert cr.x.recursive_items['bb'].x.find_attribute(attribute_name='aa') == 0
+    assert cr.x.recursive_items['bb'].x.find_attribute(attribute_name='aa') == 117
+    assert cr.x.recursive_items['bb'].x.contained_in.find_attribute(attribute_name='aa') == None
+    assert cr.x.recursive_items['bb'].x.find_attribute(attribute_name='yy') == 999
 
 
 def test_env_value_overrides_group_value():
     with ConfigRoot(prod4, ef4_a_dev1_pp_prod) as cr1:
-        with ConfigItem() as ci:
+        with ItemWithAABB() as ci:
             ci.setattr('aa', prod=1, g_prod_like=2, dev1=3)
             # Note: Parameters are passed as a dictionary with undefined order
-            #  - Having a group named 'aa' gives us 100% coverage in C Python
+            #  - Having a group named 'a' gives us 100% coverage in C Python
             ci.setattr('bb', dev1=1, a=2, prod=3, pp=4)
 
-    assert cr1.ConfigItem.aa == 1
-    assert cr1.ConfigItem.bb == 3
+    assert cr1.ItemWithAABB.aa == 1
+    assert cr1.ItemWithAABB.bb == 3
 
 
 def test_group_value_overrides_default_value_from_init():
@@ -411,10 +415,10 @@ def test_group_value_overrides_default_value_from_init():
 
 def test_group_value_overrides_default_value_from_setattr():
     with ConfigRoot(prod2, ef2_pp_prod) as cr1:
-        with ConfigItem() as ci:
+        with ItemWithAA() as ci:
             ci.setattr('aa', default=1, g_prod_like=2)
 
-    assert cr1.ConfigItem.aa == 2
+    assert cr1.ItemWithAA.aa == 2
 
 
 def test_assigned_default_value_overrides_default_value_from_init():
@@ -602,7 +606,7 @@ def test_assigning_to_attribute_underscore_attribute():
 
 
 def test_mc_init_simple_items():
-    class X(ConfigItem):
+    class X(ItemWithAABB):
         def mc_init(self):
             self.aa = 1
             self.bb = 1
@@ -636,7 +640,7 @@ def test_mc_init_repeatable_items():
                 self.bb = bb
 
     @nested_repeatables('Xs')
-    class Y(ConfigItem):
+    class Y(ItemWithAABB):
         def mc_init(self):
             self.aa = 1
             self.bb = 1
@@ -658,7 +662,7 @@ def test_mc_init_repeatable_items():
 
 
 def test_mc_init_root():
-    class RootX(ConfigRoot):
+    class RootX(RootWithAA):
         def mc_init(self):
             self.aa = 1
             self.bb = 1
@@ -683,19 +687,19 @@ def test_mc_init_root():
 
 
 def test_nested_mc_init_simple_items():
-    class X1(ConfigItem):
+    class X1(ItemWithAABB):
         def mc_init(self):
             self.aa = 11
             self.bb = 11
             KwargsItem(aa=11, bb=11)
 
-    class X2(ConfigItem):
+    class X2(ItemWithAABB):
         def mc_init(self):
             self.aa = 12
             self.bb = 12
             KwargsItem(aa=12, bb=12)
 
-    class X3(ConfigItem):
+    class X3(ItemWithAABB):
         def mc_init(self):
             self.aa = 13
             self.bb = 13
@@ -809,8 +813,16 @@ def test_mc_init_override_change_type():
 
 def test_override_repeated_attr():
     with ConfigRoot(prod2, ef2_pp_prod):
-        with ConfigItem() as ci:
+        with ItemWithAA() as ci:
             ci.aa = 1
+            ci.override('aa', 7)
+    assert ci.aa == 7
+
+
+def test_override_repeated_unknown_attr():
+    with ConfigRoot(prod2, ef2_pp_prod):
+        with ConfigItem() as ci:
+            ci.setattr('aa?', default=1)
             ci.override('aa', 7)
     assert ci.aa == 7
 

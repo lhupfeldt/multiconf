@@ -1400,10 +1400,10 @@ _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 = """{
     },
     "aa": 0,
     "someitems": {},
-    "ConfigItem": {
-        "__class__": "ConfigItem",
+    "ItemWithAA": {
+        "__class__": "ItemWithAA",
         "__id__": 0000,
-        "a": "<class 'multiconf.test.json_output_test.%(py3_local)sNonMcWithNestedClass'>"
+        "aa": "<class 'multiconf.test.json_output_test.%(py3_local)sNonMcWithNestedClass'>"
     }
 }"""
 
@@ -1421,8 +1421,8 @@ def test_json_dump_nested_class_non_mc():
             pass
 
     with root(prod, ef, aa=0) as cr:
-        with ConfigItem() as ci:
-            ci.a = NonMcWithNestedClass
+        with ItemWithAA() as ci:
+            ci.aa = NonMcWithNestedClass
     compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_local=py3_local()))
 
 
@@ -1442,8 +1442,8 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
                 return ""
 
     with root(prod, ef, aa=0) as cr:
-        with ConfigItem() as ci:
-            ci.a = NonMcWithNestedClass
+        with ItemWithAA() as ci:
+            ci.aa = NonMcWithNestedClass
     compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_local=py3_local()))
 
 
@@ -1549,7 +1549,7 @@ _iterable_tuple_attr_forward_item_ref = """{
 }"""
 
 def test_iterable_tuple_attr_forward_item_ref():
-    class ItemWithAnXRef(ConfigItem):
+    class ItemWithAnXRef(ItemWithAA):
         def __init__(self):
             super(ItemWithAnXRef, self).__init__()
             self.item_refs = MC_REQUIRED
@@ -1594,7 +1594,7 @@ _dict_attr_forward_item_ref = """{
 }"""
 
 def test_dict_attr_forward_item_ref():
-    class ItemWithAnXRef(ConfigItem):
+    class ItemWithAnXRef(ItemWithAA):
         def __init__(self):
             super(ItemWithAnXRef, self).__init__()
             self.item_refs = {}

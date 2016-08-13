@@ -29,3 +29,10 @@ class ItemWithAA(ConfigItem):
     def __init__(self, aa=MC_REQUIRED):
         super(ItemWithAA, self).__init__()
         self.aa = aa
+
+
+class ItemWithAABB(ConfigItem):
+    def __init__(self, aa=MC_REQUIRED):
+        super(ItemWithAABB, self).__init__()
+        self.aa = aa
+        self.bb = None
