@@ -11,7 +11,7 @@ from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_R
 from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 
-from .utils.tstclasses import RootWithAA, ItemWithAA, ItemWithAABB
+from .utils.tstclasses import RootWithAA, RootWithAABB, ItemWithAA, ItemWithAABB
 
 
 ef1_prod = EnvFactory()
@@ -205,9 +205,9 @@ def test_property_defined_with_none_and_same_type():
 def test_automatic_freeze_of_child_on_exit():
     with RootWithAA(prod2, ef2_pp_prod) as cr:
         cr.aa = 0
-        with ConfigItem() as ci:
-            ci.something = 1
-    assert cr.ConfigItem.something == 1
+        with ItemWithAA() as ci:
+            ci.aa = 1
+    assert cr.ItemWithAA.aa == 1
 
 
 def test_automatic_freeze_of_previous_sibling():
@@ -222,8 +222,27 @@ def test_automatic_freeze_of_previous_sibling():
 def test_automatic_freeze_call_of_validate_root():
     @nested_repeatables('children')
     class root(ConfigRoot):
+        def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None,
+                     mc_allow_todo=False, mc_allow_current_env_todo=False,
+                     aa=None):
+            super(root, self).__init__(
+                selected_env=selected_env, env_factory=env_factory, mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
+                mc_allow_todo=mc_allow_todo, mc_allow_current_env_todo=mc_allow_current_env_todo)
+            self.aa = aa
+
         def validate(self):
-            self.y = 7
+            self.aa = 7
+
+    with root(prod2, ef2_pp_prod) as rt:
+        pass
+    assert rt.aa == 7
+
+
+def test_automatic_freeze_call_of_validate_set_unknown_root():
+    @nested_repeatables('children')
+    class root(ConfigRoot):
+        def validate(self):
+            self.setattr('y?', default=7)
 
     with root(prod2, ef2_pp_prod) as rt:
         pass
@@ -232,8 +251,34 @@ def test_automatic_freeze_call_of_validate_root():
 
 def test_automatic_freeze_call_of_validate_item():
     class item(ConfigItem):
+        def __init__(self):
+            super(item, self).__init__()
+            self.aa = None
+
         def validate(self):
-            self.y = 7
+            self.aa = 7
+
+    with ConfigRoot(prod2, ef2_pp_prod):
+        ii = item()
+
+    assert ii.aa == 7
+
+
+def test_automatic_freeze_call_of_validate_item_not_previously_set():
+    class item(ConfigItem):
+        def validate(self):
+            self.aa = 7
+
+    with ConfigRoot(prod2, ef2_pp_prod):
+        ii = item()
+
+    assert ii.aa == 7
+
+
+def test_automatic_freeze_call_of_validate_set_unknown_item():
+    class item(ConfigItem):
+        def validate(self):
+            self.setattr('y?', default=7)
 
     with nc_aa_root(prod2, ef2_pp_prod, aa=0):
         ii = item()
@@ -287,10 +332,10 @@ def test_automatic_contained_item_freeze_on_exit():
     assert cr.recursive_items['bb'].recursive_items['bb'].recursive_items['bb'].aa == 1
 
 
-def test_automatic_freeze_of_property_defined_in_with_statement():
+def test_automatic_freeze_of_property_defined_in_with_statement_unknown():
     with nc_aa_root(prod2, ef2_pp_prod, aa=0):
         with rchild(name='aa') as rc:
-            rc.setattr('y', prod=1, pp=2)
+            rc.setattr('y?', prod=1, pp=2)
             assert rc.y == 1
 
 
@@ -366,7 +411,7 @@ def test_find_attribute_attribute_name():
         pass
 
     with root4(prod2, ef2_pp_prod, aa=-1) as cr:
-        cr.q = 'q0'
+        cr.setattr('q?', default='q0')
         NestedRepeatable(id=0)
         with X() as ci:
             ci.setattr('yy?', default=999)
@@ -449,7 +494,7 @@ def test_env_value_overrides_default_value():
 
 def test_env_value_overrides_group_value_and_default_value():
     with ConfigRoot(prod2, ef2_pp_prod) as cr1:
-        with KwargsItem(aa=0) as ci:
+        with KwargsItem(aa=0, bb=0) as ci:
             ci.setattr('aa', prod=1, g_prod_like=2)
             ci.setattr('bb', g_prod_like=2, prod=3)
 
@@ -459,7 +504,7 @@ def test_env_value_overrides_group_value_and_default_value():
 
 def test_more_specific_group_overrides_less_specific_group_value_and_default_value():
     with ConfigRoot(prod15, ef5_a_dev1_pp_prod) as cr1:
-        with KwargsItem(aa=0) as ci:
+        with KwargsItem(aa=0, bb=0, cc=0, dd=0, ee=0, ff=0) as ci:
             ci.setattr('aa', g_prod=1, g_prod_like=2, a=17, dev1=18)
             ci.setattr('bb', a=17, dev1=18, g_prod_like=2, g_prod=3)
             ci.setattr('cc', prod1=1, g_prod=3, g_prod_like=2, a=17, dev1=18)
@@ -478,11 +523,8 @@ def test_more_specific_group_overrides_less_specific_group_value_and_default_val
 
 
 def test_attribute_is_an_ordereddict():
-    class y(ConfigItem):
-        pass
-
     with ConfigRoot(prod2, ef2_pp_prod) as cr1:
-        with y() as x:
+        with ItemWithAA() as x:
             x.aa = 0
         od = OrderedDict(((None, 1), ('foo', x)))
         KwargsItem(aa=od)
@@ -574,15 +616,20 @@ def test_hasattr():
         pass
 
     with root(prod1, ef1_prod) as cr:
-        with KwargsItem(aa=1) as ii:
+        with KwargsItem(aa=1, bb=0) as ii:
             ii.bb = 2
-            ii.setattr('cc', prod=3)
+            ii.setattr('cc?', prod=3)
             assert not hasattr(ii, 'dd')
 
         assert hasattr(ii, 'aa')
         assert hasattr(ii, 'bb')
         assert hasattr(ii, 'cc')
         assert not hasattr(ii, 'dd')
+
+    assert hasattr(ii, 'aa')
+    assert hasattr(ii, 'bb')
+    assert hasattr(ii, 'cc')
+    assert not hasattr(ii, 'dd')
 
 
 def test_assigning_to_attribute_root():
@@ -593,7 +640,7 @@ def test_assigning_to_attribute_root():
 
 def test_assigning_to_attribute_nested_item():
     with nc_aa_root(prod1, ef1_prod) as cr:
-        with ConfigItem() as ci:
+        with ItemWithAA() as ci:
             ci.aa = 1
     assert ci.aa == 1
 
@@ -662,7 +709,7 @@ def test_mc_init_repeatable_items():
 
 
 def test_mc_init_root():
-    class RootX(RootWithAA):
+    class RootX(RootWithAABB):
         def mc_init(self):
             self.aa = 1
             self.bb = 1
@@ -892,7 +939,7 @@ def test_find_contained_in_or_none():
 
 def test_find_attribute_or_none():
     with ConfigRoot(prod2, ef2_pp_prod) as cr:
-        with KwargsItem(aa=1) as i1:
+        with KwargsItem(aa=1, my_attr=0) as i1:
             i1.my_attr = 7
             KwargsItem(aa=2)
 
