@@ -740,13 +740,13 @@ _json_dump_dir_error_expected = """{
         "__class__": "Nested",
         "__id__": 0000,
         "__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included": "Exception('Error in dir()',)",
-        "b": 2
+        "aa": 2
     }
 }"""
 
 def test_json_dump_dir_error(capsys):
     @named_as('someitem')
-    class Nested(ConfigItem):
+    class Nested(ItemWithAA):
         _errorline = 0
 
         def __dir__(self):
@@ -759,7 +759,7 @@ def test_json_dump_dir_error(capsys):
 
     with RootWithAA(prod, ef, aa=0) as cr:
         with Nested() as nn:
-            nn.b = 2
+            nn.aa = 2
 
     cr.json()
     _sout, serr = capsys.readouterr()

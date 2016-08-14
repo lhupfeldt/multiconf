@@ -25,6 +25,17 @@ class RootWithAA(ConfigRoot):
         self.aa = aa
 
 
+class RootWithAABB(ConfigRoot):
+    def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None,
+                 mc_allow_todo=False, mc_allow_current_env_todo=False,
+                 aa=MC_REQUIRED, bb=None):
+        super(RootWithAABB, self).__init__(
+            selected_env=selected_env, env_factory=env_factory, mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
+            mc_allow_todo=mc_allow_todo, mc_allow_current_env_todo=mc_allow_current_env_todo)
+        self.aa = aa
+        self.bb = bb
+
+
 class ItemWithAA(ConfigItem):
     def __init__(self, aa=MC_REQUIRED):
         super(ItemWithAA, self).__init__()
@@ -32,7 +43,7 @@ class ItemWithAA(ConfigItem):
 
 
 class ItemWithAABB(ConfigItem):
-    def __init__(self, aa=MC_REQUIRED):
+    def __init__(self, aa=MC_REQUIRED, bb=None):
         super(ItemWithAABB, self).__init__()
         self.aa = aa
-        self.bb = None
+        self.bb = bb

@@ -842,22 +842,22 @@ def test_setattr_no_envs(capsys):
             "^%(lnum)s",
             "^ConfigError: No Env or EnvGroup names specified.",
             "^%(lnum)s",
-            config_error_no_value_other_env_expected.format(attr='a', env=pp2),
-            config_error_no_value_current_env_expected.format(attr='a', env=prod2),
+            config_error_no_value_other_env_expected.format(attr='aa', env=pp2),
+            config_error_no_value_current_env_expected.format(attr='aa', env=prod2),
         )
 
     # ConfigRoot
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
-            cr.setattr('a')
+            cr.setattr('aa')
 
     check(errorline)
 
     with raises(Exception) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
-            cr.setattr('a', 1)
+            cr.setattr('aa', 1)
 
     check(errorline)
 
@@ -866,7 +866,7 @@ def test_setattr_no_envs(capsys):
         with ConfigRoot(prod2, ef2_pp_prod):
             with ConfigItem() as ci:
                 errorline = lineno() + 1
-                ci.setattr('a')
+                ci.setattr('aa')
 
     check(errorline)
 
@@ -874,7 +874,7 @@ def test_setattr_no_envs(capsys):
         with ConfigRoot(prod2, ef2_pp_prod):
             with ConfigItem() as ci:
                 errorline = lineno() + 1
-                ci.setattr('a', 1)
+                ci.setattr('aa', 1)
 
     check(errorline)
 
@@ -883,7 +883,7 @@ def test_setattr_no_envs(capsys):
         with project(prod2, ef2_pp_prod):
             with RepeatableItem(mc_key='a') as ci:
                 errorline = lineno() + 1
-                ci.setattr('a')
+                ci.setattr('aa')
 
     check(errorline)
 
@@ -891,7 +891,7 @@ def test_setattr_no_envs(capsys):
         with project(prod2, ef2_pp_prod):
             with RepeatableItem(mc_key='a') as ci:
                 errorline = lineno() + 1
-                ci.setattr('a', 1)
+                ci.setattr('aa', 1)
 
     check(errorline)
 
@@ -904,7 +904,7 @@ def test_setattr_no_envs(capsys):
         with ConfigRoot(prod2, ef2_pp_prod):
             with B() as ci:
                 errorline = lineno() + 1
-                ci.setattr('a')
+                ci.setattr('aa')
 
     check(errorline)
 
@@ -912,7 +912,7 @@ def test_setattr_no_envs(capsys):
         with ConfigRoot(prod2, ef2_pp_prod):
             with B() as ci:
                 errorline = lineno() + 1
-                ci.setattr('a', 1)
+                ci.setattr('aa', 1)
 
     check(errorline)
 
