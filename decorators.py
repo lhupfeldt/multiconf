@@ -95,10 +95,23 @@ def unchecked():
 def strict_setattr():
     """Marks the class as having strict setattr behaviour, meaning that it is not allowed to set an unknown atributes outside of __init__.
 
-    This is a transitional decorator to allow more seamless upgrading. Strict will become the unly mode in a later version.
+    This is a transitional decorator to allow more seamless upgrading. Strict will become the only mode in a later version.
     """
     def deco(cls):
         cls._mc_deco_strict_setattr = True
+        return cls
+
+    return deco
+
+
+def relaxed_setattr():
+    """Marks the class as having relaxed setattr behaviour, meaning that it is allowed to set an unknown atributes outside of __init__.
+
+    This is a transitional decorator to allow more seamless upgrading, by converting a class to the old behaviour.
+    Strict will become the unly mode in a later version.
+    """
+    def deco(cls):
+        cls._mc_deco_strict_setattr = False
         return cls
 
     return deco

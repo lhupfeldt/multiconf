@@ -6,11 +6,13 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import api_error, config_error, lineno
-
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, RepeatableConfigItem, ConfigApiException, ConfigException
 from ..decorators import nested_repeatables
 from ..envs import EnvFactory
+
+from .utils.utils import api_error, config_error, lineno
+from .utils.tstclasses import ItemWithAA
+
 
 ef1_prod = EnvFactory()
 prod1 = ef1_prod.Env('prod')
@@ -128,9 +130,6 @@ def test_setattr_multiconf_private_attribute(capsys):
     class root(ConfigRoot):
         pass
 
-    class inner(ConfigItem):
-        pass
-
     msg = """Trying to set attribute '_mc_whatever' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
 
     with raises(ConfigException) as exinfo:
@@ -143,8 +142,8 @@ def test_setattr_multiconf_private_attribute(capsys):
 
     with raises(ConfigException) as exinfo:
         with root(prod2, ef2_prod_pp) as cr:
-            with inner() as ci:
-                ci.b = 1
+            with ItemWithAA() as ci:
+                ci.aa = 1
                 errorline = lineno() + 1
                 ci.setattr('_mc_whatever', default=1)
 

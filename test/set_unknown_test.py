@@ -7,7 +7,7 @@ from __future__ import print_function
 from pytest import raises
 
 from .. import ConfigRoot, ConfigItem, ConfigBuilder, RepeatableConfigItem, ConfigException, MC_REQUIRED
-from ..decorators import nested_repeatables, strict_setattr
+from ..decorators import nested_repeatables, relaxed_setattr
 from ..envs import EnvFactory
 from .utils.utils import replace_ids, config_error, lineno
 
@@ -24,7 +24,6 @@ def ce(line_num, *lines):
 
 
 @nested_repeatables('RepeatableRelaxedItems', 'RepeatableStrictItems')
-@strict_setattr()
 class strict_project(ConfigRoot):
     def __init__(self, selected_env, env_factory):
         super(strict_project, self).__init__(selected_env=selected_env, env_factory=env_factory)
@@ -33,19 +32,21 @@ class strict_project(ConfigRoot):
 
 
 @nested_repeatables('RepeatableRelaxedItems', 'RepeatableStrictItems')
+@relaxed_setattr()
 class relaxed_project(ConfigRoot):
     pass
 
 
+@relaxed_setattr()
 class RelaxedItem(ConfigItem):
     pass
 
 
+@relaxed_setattr()
 class RepeatableRelaxedItem(RepeatableConfigItem):
     pass
 
 
-@strict_setattr()
 class StrictItem(ConfigItem):
     def __init__(self):
         super(StrictItem, self).__init__()
@@ -53,7 +54,6 @@ class StrictItem(ConfigItem):
         self.y = None
 
 
-@strict_setattr()
 class RepeatableStrictItem(RepeatableConfigItem):
     def __init__(self, mc_key):
         super(RepeatableStrictItem, self).__init__(mc_key=mc_key)
@@ -61,7 +61,6 @@ class RepeatableStrictItem(RepeatableConfigItem):
         self.y = MC_REQUIRED
 
 
-@strict_setattr()
 class BuilderStrictItem(ConfigBuilder):
     def __init__(self):
         super(BuilderStrictItem, self).__init__()

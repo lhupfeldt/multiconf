@@ -7,17 +7,24 @@ from os.path import join as jp
 here = os.path.dirname(__file__)
 sys.path.append(jp(here, '../..'))
 
-from multiconf import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder
+from multiconf import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
 from multiconf.decorators import nested_repeatables, required
 
 
 # Here we define what can be repeated within the configuration item. In this case
-# we will have many managed servers and datasources
+# we will have many managed servers and datasources.
+# All simple properties must be defined in __init__, if not sane dafault exists, then the value MC_REQUIRED should be assigned
+# Multiconf will verify that all such values are replaced with proper values before the full configuration is loaded
 @nested_repeatables('managed_servers, datasources')
 class weblogic_config(ConfigRoot):
     ''' This is just a simple holder of managed_servers and datasources '''
-    def __init__(self, selected_env, valid_envs, **attr):
-        super(weblogic_config, self).__init__(selected_env, valid_envs, **attr)
+    def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None,
+                 mc_allow_todo=False, mc_allow_current_env_todo=False,
+                 base_port=MC_REQUIRED):
+        super(weblogic_config, self).__init__(
+            selected_env=selected_env, env_factory=env_factory, mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
+            mc_allow_todo=mc_allow_todo, mc_allow_current_env_todo=mc_allow_current_env_todo)
+        self.base_port = base_port
 
 
 # Weblogic's standalone administration server. Used to control domain.
@@ -34,10 +41,11 @@ class admin_server(ConfigItem):
 class managed_server(RepeatableConfigItem):
     def __init__(self, name, host, port):
         super(managed_server, self).__init__(mc_key=name)
+        self.name = name
         self.host = host
         self.port = port
-        self.name = name
         self.server_type = 'managed'
+        self.another_prop = None
 
 
 # Here we specify that a parameter num_servers is required when defining a

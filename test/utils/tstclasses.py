@@ -2,7 +2,8 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 
-from ... import ConfigRoot, ConfigItem, MC_REQUIRED
+from ... import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
+from ...decorators import named_as
 
 
 class RootWithName(ConfigRoot):
@@ -47,3 +48,16 @@ class ItemWithAABB(ConfigItem):
         super(ItemWithAABB, self).__init__()
         self.aa = aa
         self.bb = bb
+
+
+@named_as('RepeatableItems')
+class RepeatableItemWithAA(RepeatableConfigItem):
+    def __init__(self, mc_key, aa=MC_REQUIRED):
+        super(RepeatableItemWithAA, self).__init__(mc_key=mc_key)
+        self.aa = aa
+
+
+class BuilderWithAA(ConfigBuilder):
+    def __init__(self, aa=MC_REQUIRED):
+        super(BuilderWithAA, self).__init__()
+        self.aa = aa

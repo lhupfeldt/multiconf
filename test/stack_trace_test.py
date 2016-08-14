@@ -8,7 +8,8 @@ from pytest import raises
 
 from .utils.utils import config_error, lineno, replace_ids, assert_lines_in
 from .utils.messages import already_printed_msg
-from .utils.messages import config_error_no_value_current_env_expected, config_error_no_value_other_env_expected
+from .utils.messages import config_error_mc_required_current_env_expected, config_error_mc_required_other_env_expected
+from .utils.tstclasses import ItemWithAA
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException, ConfigBuilder
 from ..decorators import nested_repeatables
@@ -40,8 +41,8 @@ class RepeatableItem(RepeatableConfigItem):
 
 
 _stacktrace_strips_multiconf_code_exp_ex = """There were 3 errors when defining item: {
-    "__class__": "inner #as: 'xxxx', id: 0000",
-    "a #no value for current env": true
+    "__class__": "ItemWithAA #as: 'xxxx', id: 0000",
+    "aa": "MC_REQUIRED"
 }""" + already_printed_msg
 
 def test_stacktrace_strips_multiconf_code(capsys):
@@ -49,22 +50,19 @@ def test_stacktrace_strips_multiconf_code(capsys):
         class root(ConfigRoot):
             pass
 
-        class inner(ConfigItem):
-            pass
-
         with root(prod, ef):
-            with inner():
-                with inner() as ii2:
+            with ConfigItem():
+                with ItemWithAA() as ii2:
                     errorline = lineno() + 1
-                    ii2.setattr('a', qq=3)
+                    ii2.setattr('aa', qq=3)
 
     _sout, serr = capsys.readouterr()
     assert_lines_in(
         __file__, errorline, serr,
         "ConfigError: No such Env or EnvGroup: 'qq'",
         "^%(lnum)s",        
-        config_error_no_value_other_env_expected.format(attr='a', env=pp),
-        config_error_no_value_current_env_expected.format(attr='a', env=prod),
+        config_error_mc_required_other_env_expected.format(attr='aa', env=pp),
+        config_error_mc_required_current_env_expected.format(attr='aa', env=prod),
     )
     assert replace_ids(str(exinfo.value)) == _stacktrace_strips_multiconf_code_exp_ex
     if sys.version_info[0] < 3:

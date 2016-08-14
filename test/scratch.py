@@ -50,21 +50,30 @@ class root(ConfigRoot):
         self.q = None
 
 
-with root(prod, ef) as cr:
-    cr.a = 0
-    cr.q = 17
-    NestedRepeatable(id=1)
-    with X() as ci:
-        ci.setattr('a', prod=0)
-        with NestedRepeatable(id='a') as nr:
-            nr.a = 9
-        with NestedRepeatable(id='b') as ci:
-            with NestedRepeatable(id='c') as nr:
-                nr.a = 7
-            with X() as ci:
-                ci.setattr('b?', prod=1)
-                with NestedRepeatable(id='d') as ci:
-                    ci.setattr('a', prod=2)
-                    with X() as ci:
-                        ci.setattr('a', prod=3)
-        
+# with root(prod, ef) as cr:
+#     cr.a = 0
+#     cr.q = 17
+#     NestedRepeatable(id=1)
+#     with X() as ci:
+#         ci.setattr('a', prod=0)
+#         with NestedRepeatable(id='a') as nr:
+#             nr.a = 9
+#         with NestedRepeatable(id='b') as ci:
+#             with NestedRepeatable(id='c') as nr:
+#                 nr.a = 7
+#             with X() as ci:
+#                 ci.setattr('b?', prod=1)
+#                 with NestedRepeatable(id='d') as ci:
+#                     ci.setattr('a', prod=2)
+#                     with X() as ci:
+#                         ci.setattr('a', prod=3)
+
+
+
+@nested_repeatables('RepeatableConfigItems')
+class root(ConfigRoot):
+    pass
+
+with root(prod, ef):
+    with RepeatableConfigItem(mc_key='a') as ci:
+        ci.setattr('aa?', 1)

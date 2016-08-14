@@ -39,7 +39,7 @@ class _ConfigBase(object):
     _mc_deco_nested_repeatables = []
     _mc_deco_required = []
     _mc_deco_unchecked = None
-    _mc_deco_strict_setattr = False
+    _mc_deco_strict_setattr = True
 
     def __init__(self, root_conf, env_factory):
         self._mc_root_conf = root_conf
@@ -267,7 +267,6 @@ class _ConfigBase(object):
 
             attribute = existing_attr
         else:
-            self._mc_check_reserved_name(name, 'setattr')
             attributes[name] = attribute
 
         if attribute._mc_frozen and where != Where.IN_MC_INIT:
@@ -275,7 +274,7 @@ class _ConfigBase(object):
 
         if not kwargs:
             self._mc_print_error("No " + Env.__name__ + " or " + EnvGroup.__name__ + " names specified.", mc_caller_file_name, mc_caller_line_num)
-            self._mc_raise_if_errors()
+            return
 
         root_conf = object.__getattribute__(self, '_mc_root_conf')
         env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
@@ -412,7 +411,7 @@ class _ConfigBase(object):
 
         if where != Where.IN_INIT and self._mc_check:
             messages = self._mc_check_attr_fully_defined_messages(name, attribute)
-            if messages:            
+            if messages:
                 self._mc_print_file_line_and_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_check_override_common(self, item, name, attribute, existing_attr, where):
@@ -461,6 +460,7 @@ class _ConfigBase(object):
         attributes, where = self._mc_get_attributes_where()
         existing_attr = attributes.get(name)
         try:
+            self._mc_check_reserved_name(name, 'setattr')
             self._mc_check_override_common(self, name, attribute, existing_attr, where)
             self._mc_setattr_common(name, attributes, attribute, existing_attr, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigException as ex:
@@ -1028,11 +1028,12 @@ class _ConfigBuilder(ConfigItem):
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
         if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
-    
+
         attribute, name = new_attribute(name)
         attributes, where = self._mc_get_attributes_where()
         existing_attr = attributes.get(name)
         try:
+            self._mc_check_reserved_name(name, 'setattr')
             self._mc_setattr_common(name, attributes, attribute, existing_attr, where, mc_caller_file_name, mc_caller_line_num, **kwargs)
         except ConfigException as ex:
             self._mc_print_error(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)

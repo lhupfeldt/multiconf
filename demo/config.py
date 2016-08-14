@@ -67,10 +67,11 @@ def conf(env_name):
         with managed_server(name='ms5', host='ms.'+env.name+'.mydomain', port=port+1) as ms:
             # Same as above - we cannot use default host naming in two environments
             ms.setattr('host', devs='ms.special.otherdomain', devlocal='localhost')
-            # This server needs to have custom property, which is set to different values
-            # in different environment groups
+            # This server needs to have custom property, which is not defined in the framework
+            # This can be done by using a '?' postfix. This should be seen as an exceptional use case.
+            # This is set to different values in different environment groups
             # We will have that property set to one in prod and preprod and two in all dev environments
-            ms.setattr('custom_property', g_prod=1, g_dev=2)
+            ms.setattr('custom_property?', g_prod=1, g_dev=2)
 
         # Add a special managed server, and override default value
         port = dc.base_port + 210

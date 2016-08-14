@@ -12,7 +12,7 @@ from .utils.messages import config_error_mc_required_current_env_expected, confi
 from .utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
 from .utils.messages import config_error_no_value_current_env_expected, config_error_no_value_other_env_expected
 from .utils.messages import no_value_current_env_expected, no_value_other_env_expected
-from .utils.tstclasses import RootWithAA, ItemWithAA
+from .utils.tstclasses import RootWithAA, ItemWithAA, RepeatableItemWithAA, BuilderWithAA
 
 from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
 from ..decorators import nested_repeatables, required
@@ -842,20 +842,20 @@ def test_setattr_no_envs(capsys):
             "^%(lnum)s",
             "^ConfigError: No Env or EnvGroup names specified.",
             "^%(lnum)s",
-            config_error_no_value_other_env_expected.format(attr='aa', env=pp2),
-            config_error_no_value_current_env_expected.format(attr='aa', env=prod2),
+            config_error_mc_required_other_env_expected.format(attr='aa', env=pp2),
+            config_error_mc_required_current_env_expected.format(attr='aa', env=prod2),
         )
 
     # ConfigRoot
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+        with RootWithAA(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('aa')
 
     check(errorline)
 
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+        with RootWithAA(prod2, ef2_pp_prod) as cr:
             errorline = lineno() + 1
             cr.setattr('aa', 1)
 
@@ -864,7 +864,7 @@ def test_setattr_no_envs(capsys):
     # ConfigItem
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod):
-            with ConfigItem() as ci:
+            with ItemWithAA() as ci:
                 errorline = lineno() + 1
                 ci.setattr('aa')
 
@@ -872,7 +872,7 @@ def test_setattr_no_envs(capsys):
 
     with raises(ConfigException) as exinfo:
         with ConfigRoot(prod2, ef2_pp_prod):
-            with ConfigItem() as ci:
+            with ItemWithAA() as ci:
                 errorline = lineno() + 1
                 ci.setattr('aa', 1)
 
@@ -881,7 +881,7 @@ def test_setattr_no_envs(capsys):
     # RepeatableItem
     with raises(ConfigException) as exinfo:
         with project(prod2, ef2_pp_prod):
-            with RepeatableItem(mc_key='a') as ci:
+            with RepeatableItemWithAA(mc_key='a') as ci:
                 errorline = lineno() + 1
                 ci.setattr('aa')
 
@@ -889,14 +889,14 @@ def test_setattr_no_envs(capsys):
 
     with raises(ConfigException) as exinfo:
         with project(prod2, ef2_pp_prod):
-            with RepeatableItem(mc_key='a') as ci:
+            with RepeatableItemWithAA(mc_key='a') as ci:
                 errorline = lineno() + 1
                 ci.setattr('aa', 1)
 
     check(errorline)
 
     # ConfigBuilder
-    class B(ConfigBuilder):
+    class B(BuilderWithAA):
         def build(self):
             pass
 
@@ -913,6 +913,90 @@ def test_setattr_no_envs(capsys):
             with B() as ci:
                 errorline = lineno() + 1
                 ci.setattr('aa', 1)
+
+    check(errorline)
+
+
+def test_setattr_no_envs_set_unknown(capsys):
+    def check(errorline):
+        _sout, serr = capsys.readouterr()
+        print("serr:", serr)
+        assert_lines_in(
+            __file__, errorline, serr,
+            "^%(lnum)s",
+            "^ConfigError: No Env or EnvGroup names specified.",
+            "^%(lnum)s",
+            config_error_no_value_other_env_expected.format(attr='aa', env=pp2),
+            config_error_no_value_current_env_expected.format(attr='aa', env=prod2),
+        )
+
+    # ConfigRoot
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+            errorline = lineno() + 1
+            cr.setattr('aa?')
+
+    check(errorline)
+
+    with raises(Exception) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod) as cr:
+            errorline = lineno() + 1
+            cr.setattr('aa?', 1)
+
+    check(errorline)
+
+    # ConfigItem
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            with ConfigItem() as ci:
+                errorline = lineno() + 1
+                ci.setattr('aa?')
+
+    check(errorline)
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            with ConfigItem() as ci:
+                errorline = lineno() + 1
+                ci.setattr('aa?', 1)
+
+    check(errorline)
+
+    # RepeatableItem
+    with raises(ConfigException) as exinfo:
+        with project(prod2, ef2_pp_prod):
+            with RepeatableItem(mc_key='a') as ci:
+                errorline = lineno() + 1
+                ci.setattr('aa?')
+
+    check(errorline)
+
+    with raises(ConfigException) as exinfo:
+        with project(prod2, ef2_pp_prod):
+            with RepeatableItem(mc_key='a') as ci:
+                errorline = lineno() + 1
+                ci.setattr('aa?', 1)
+
+    check(errorline)
+
+    # ConfigBuilder
+    class B(ConfigBuilder):
+        def build(self):
+            pass
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            with B() as ci:
+                errorline = lineno() + 1
+                ci.setattr('aa?')
+
+    check(errorline)
+
+    with raises(ConfigException) as exinfo:
+        with ConfigRoot(prod2, ef2_pp_prod):
+            with B() as ci:
+                errorline = lineno() + 1
+                ci.setattr('aa?', 1)
 
     check(errorline)
 
