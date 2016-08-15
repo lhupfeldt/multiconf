@@ -262,7 +262,7 @@ class ConfigItemEncoder(object):
                     val = self._check_nesting(obj, val)
 
                     # Figure out if the attribute is a @property or a static value
-                    for cls in get_bases(object.__getattribute__(obj, '__class__')):
+                    for cls in get_bases(obj.__class__):
                         try:
                             real_attr = object.__getattribute__(cls, real_key)
                             if isinstance(real_attr, property):

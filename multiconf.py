@@ -56,16 +56,16 @@ class _ConfigBase(object):
 
         self._mc_file_name, self._mc_line_num = find_init_call_file_line(up_level_start=3)
 
-        __class__ = object.__getattribute__(self, '__class__')
-        _mc_deco_nested_repeatables = __class__._mc_deco_nested_repeatables
+        cls = self.__class__
+        _mc_deco_nested_repeatables = cls._mc_deco_nested_repeatables
         for key in _mc_deco_nested_repeatables:
             ur = UserRepeatable()
             ur.contained_in = self
             _mc_attributes[key] = ur
 
         # If a base class is unchecked, the attribute need not be fully defined, here. The remaining envs may receive values in the base class mc_init
-        _mc_deco_unchecked = object.__getattribute__(self, '_mc_deco_unchecked')
-        self._mc_check = _mc_deco_unchecked != __class__ and _mc_deco_unchecked not in __class__.__bases__
+        _mc_deco_unchecked = self._mc_deco_unchecked
+        self._mc_check = _mc_deco_unchecked != cls and _mc_deco_unchecked not in cls.__bases__
 
     def _mc_error_msg(self, message):
         if not hasattr(self, '_mc_num_errors'):
@@ -101,16 +101,15 @@ class _ConfigBase(object):
         return cls._mc_deco_named_as or cls.__name__
 
     def _mc_get_attributes_where(self):
-        where = object.__getattribute__(self, '_mc_where')
+        where = self._mc_where
         if where == Where.IN_BUILD:
-            return object.__getattribute__(self, '_mc_build_attributes'), where
+            return self._mc_build_attributes, where
         else:
-            return object.__getattribute__(self, '_mc_attributes'), where
+            return self._mc_attributes, where
 
     def __repr__(self):
         # Don't call property methods in repr, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
-        json_method = object.__getattribute__(self, 'json')
-        return json_method(compact=True, property_methods=False, builders=True)
+        return self.json(compact=True, property_methods=False, builders=True)
 
     def json(self, compact=False, property_methods=True, builders=False, skipkeys=True, warn_nesting=None):
         """See json_output.ConfigItemEncoder for parameters"""
@@ -147,10 +146,10 @@ class _ConfigBase(object):
         if self._mc_frozen:
             return True
 
-        root_conf = object.__getattribute__(self, '_mc_root_conf')
-
-        self._mc_frozen = self._mc_deco_unchecked != self.__class__ and not root_conf._mc_under_proxy_build
-        attributes = object.__getattribute__(self, '_mc_attributes')
+        cls = self.__class__
+        root_conf = self._mc_root_conf
+        self._mc_frozen = self._mc_deco_unchecked != cls and not root_conf._mc_under_proxy_build
+        attributes = self._mc_attributes
         for _child_name, child_value in attributes.items():
             self._mc_frozen &= child_value._mc_freeze(previous_child)
 
@@ -202,9 +201,8 @@ class _ConfigBase(object):
                 file_name = None
                 line_num = None
 
-            _mc_attributes = object.__getattribute__(self, '_mc_attributes')
             messages = []
-            for attr_name, attr in _mc_attributes.items():
+            for attr_name, attr in attributes.items():
                 if not attr._mc_frozen and isinstance(attr, Attribute):
                     messages.extend(self._mc_check_attr_fully_defined_messages(attr_name, attr))
             if messages:
@@ -212,8 +210,8 @@ class _ConfigBase(object):
 
             # Validate @required
             missing = []
-            for req in self.__class__._mc_deco_required:
-                if req not in _mc_attributes:
+            for req in cls._mc_deco_required:
+                if req not in attributes:
                     missing.append(req)
             if missing:
                 self._mc_print_error("Missing '@required' items: " + repr(missing), file_name=file_name, line_num=line_num)
@@ -276,9 +274,9 @@ class _ConfigBase(object):
             self._mc_print_error("No " + Env.__name__ + " or " + EnvGroup.__name__ + " names specified.", mc_caller_file_name, mc_caller_line_num)
             return
 
-        root_conf = object.__getattribute__(self, '_mc_root_conf')
-        env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
-        selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
+        root_conf = self._mc_root_conf
+        env_factory = root_conf._mc_env_factory
+        selected_env = root_conf._mc_selected_env
 
         def type_error(value, other_env, other_type):
             print(_line_msg(msg=eg.name + ' ' + repr(type(value))), file=sys.stderr)
@@ -439,7 +437,7 @@ class _ConfigBase(object):
 
         if attribute.override_method:
             # This is expensive so do the quick __getattribute__ above first and only do this when necessary, i.e. we found an attribute
-            for cls in get_bases(object.__getattribute__(item, '__class__')):
+            for cls in get_bases(item.__class__):
                 try:
                     real_attr = object.__getattribute__(cls, name)
                     if isinstance(real_attr, property):
@@ -473,13 +471,10 @@ class _ConfigBase(object):
         attribute, name = new_attribute(name)
         attributes[name] = attribute
 
-        root_conf = object.__getattribute__(self, '_mc_root_conf')
-        env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
-
         if where != Where.IN_INIT and self._mc_check:
             attribute._mc_frozen = True
 
-        default_group = env_factory._mc_default_group
+        default_group = self._mc_root_conf._mc_env_factory._mc_default_group
         if isinstance(value, McInvalidValue):
             attribute.set_invalid_value(value, default_group, where, mc_caller_file_name, mc_caller_line_num)
             if self._mc_check:
@@ -495,8 +490,8 @@ class _ConfigBase(object):
         if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
             mc_caller_file_name, mc_caller_line_num = caller_file_line()
 
-        where = object.__getattribute__(self, '_mc_where')
-        attributes = object.__getattribute__(self, '_mc_attributes')
+        where = self._mc_where
+        attributes = self._mc_attributes
         try:
             self._mc_override_common(name, attributes, where, mc_caller_file_name, mc_caller_line_num, value)
         except ConfigException as ex:
@@ -507,9 +502,9 @@ class _ConfigBase(object):
         if attribute.all_set(self._mc_included_envs_mask) or attribute.override_method:
             return []
 
-        root_conf = object.__getattribute__(self, '_mc_root_conf')
-        env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
-        selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
+        root_conf = self._mc_root_conf
+        env_factory = root_conf._mc_env_factory
+        selected_env = root_conf._mc_selected_env
 
         # Check for which envs the attribute is not defined
         messages= []
@@ -549,7 +544,7 @@ class _ConfigBase(object):
             return object.__getattribute__(self, name)
 
         try:
-            attributes = object.__getattribute__(self, '_mc_attributes')
+            attributes = self._mc_attributes
             attr = attributes[name]
         except KeyError:
             try:
@@ -557,7 +552,7 @@ class _ConfigBase(object):
             except AttributeError:
                 raise ConfigAttributeError(mc_object=self, attr_name=name)
         except AttributeError:
-            __class__ = object.__getattribute__(self, '__class__')
+            __class__ = self.__class__
             ex_msg = "An error was detected trying to get attribute " + repr(name) + " on class " + repr(__class__.__name__)
             msg = "\n    - You did not initailize the parent class (parent __init__ method has not been called)."
             self._mc_print_file_line_and_messages([_api_error_msg(ex_msg + msg)])
@@ -589,8 +584,7 @@ class _ConfigBase(object):
             raise AttributeError(msg)
 
     def items(self):
-        attributes = object.__getattribute__(self, '_mc_attributes')
-        for key, item in attributes.items():
+        for key, item in self._mc_attributes.items():
             value = item._mc_value()
             if value != McInvalidValue.MC_NO_VALUE:  # MC_NO_VALUE should only happen in case of  a conditional attribute
                 yield key, value
@@ -599,35 +593,31 @@ class _ConfigBase(object):
     iteritems = items
 
     def _iterattributes(self):
-        attributes = object.__getattribute__(self, '_mc_attributes')
-        for key, item in attributes.items():
+        for key, item in self._mc_attributes.items():
             yield key, item
 
     @property
     def contained_in(self):
-        contained_in = object.__getattribute__(self, '_mc_contained_in')
+        contained_in = self._mc_contained_in
         if not isinstance(contained_in, _ConfigBuilder):
             return contained_in
 
-        root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
-        if root_conf._mc_under_proxy_build:
+        if contained_in._mc_root_conf._mc_under_proxy_build:
             return contained_in.contained_in
 
         raise ConfigApiException("Use of 'contained_in' in not allowed in object while under a ConfigBuilder")
 
     @property
     def root_conf(self):
-        return object.__getattribute__(self, '_mc_root_conf')
+        return self._mc_root_conf
 
     @property
     def env(self):
-        root_conf = object.__getattribute__(self, '_mc_root_conf')
-        return object.__getattribute__(root_conf, '_mc_selected_env')
+        return self._mc_root_conf._mc_selected_env
 
     @property
     def env_factory(self):
-        root_conf = object.__getattribute__(self, '_mc_root_conf')
-        return object.__getattribute__(root_conf, 'env_factory')
+        return self._mc_root_conf.env_factory
 
     def find_contained_in_or_none(self, named_as):
         """Find first parent container named as 'named_as', by searching backwards towards root_conf, starting with parent container"""
@@ -658,10 +648,10 @@ class _ConfigBase(object):
 
     def find_attribute_or_none(self, attribute_name):
         """Find first occurence of attribute 'attribute_name', by searching backwards towards root_conf, starting with self."""
+        # TODO: Should return @property as well!
         contained_in = self
         while contained_in:
-            attributes = object.__getattribute__(contained_in, '_mc_attributes')
-            attr = attributes.get(attribute_name)
+            attr = contained_in._mc_attributes.get(attribute_name)
             if attr:
                 return getattr(contained_in, attribute_name)
             contained_in = contained_in.contained_in
@@ -669,10 +659,10 @@ class _ConfigBase(object):
 
     def find_attribute(self, attribute_name):
         """Find first occurence of attribute 'attribute_name', by searching backwards towards root_conf, starting with self."""
+        # TODO: Should return @property as well!
         contained_in = self
         while contained_in:
-            attributes = object.__getattribute__(contained_in, '_mc_attributes')
-            attr = attributes.get(attribute_name)
+            attr = contained_in._mc_attributes.get(attribute_name)
             if attr:
                 return getattr(contained_in, attribute_name)
             contained_in = contained_in.contained_in
@@ -700,8 +690,7 @@ class _ConfigBase(object):
         finally:
             self._mc_user_validated = True
 
-        attributes = object.__getattribute__(self, '_mc_attributes')
-        for child_value in attributes.values():
+        for child_value in self._mc_attributes.values():
             child_value._user_validate_recursively()
 
     def validate(self):
@@ -718,25 +707,24 @@ class _ConfigBase(object):
 
 class ConfigRoot(_ConfigBase):
     def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None, mc_allow_todo=False, mc_allow_current_env_todo=False):
-        __class__ = object.__getattribute__(self, '__class__')
+        cls = self.__class__
         if not isinstance(env_factory, EnvFactory):
-            raise ConfigException(__class__.__name__ + ': env_factory arg must be instance of ' + repr(EnvFactory.__name__) + '; found type '
+            raise ConfigException(cls.__name__ + ': env_factory arg must be instance of ' + repr(EnvFactory.__name__) + '; found type '
                                   + repr(env_factory.__class__.__name__) + ': ' + repr(env_factory))
 
         if not isinstance(selected_env, Env):
-            raise ConfigException(__class__.__name__ + ': env must be instance of ' + repr(Env.__name__) + '; found type '
+            raise ConfigException(cls.__name__ + ': env must be instance of ' + repr(Env.__name__) + '; found type '
                                   + repr(selected_env.__class__.__name__) + ': ' + repr(selected_env))
 
         if selected_env.factory != env_factory:
             raise ConfigException("The selected env " + repr(selected_env) + " must be from the specified 'env_factory'")
 
-        del __class__._mc_nested[:]
+        del cls._mc_nested[:]
 
         self._mc_selected_env = selected_env
         self._mc_env_factory = env_factory
         self._mc_allow_todo = mc_allow_todo or mc_allow_current_env_todo
         self._mc_allow_current_env_todo = mc_allow_current_env_todo
-        env_factory = object.__getattribute__(self, '_mc_env_factory')
         env_factory._mc_create_default_group()
         super(ConfigRoot, self).__init__(root_conf=self, env_factory=env_factory)
         self._mc_json_filter = mc_json_filter
@@ -763,8 +751,7 @@ class ConfigRoot(_ConfigBase):
 
     def _mc_raise_if_errors_in_init(self):
         """Errors in __init__won't be handled, so we must raise at the end of each method"""
-        where = object.__getattribute__(self, '_mc_where')
-        if where == Where.IN_INIT:
+        if self._mc_where == Where.IN_INIT:
             self._mc_raise_if_errors()
 
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
@@ -783,11 +770,11 @@ class ConfigRoot(_ConfigBase):
 class _ConfigItem(_ConfigBase):
     def __init__(self, mc_include=None, mc_exclude=None):
         # Set back reference to containing Item and root item
-        __class__ = object.__getattribute__(self, '__class__')
-        if not __class__._mc_nested:
-            raise ConfigException(__class__.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
+        cls = self.__class__
+        if not cls._mc_nested:
+            raise ConfigException(cls.__name__ + " object must be nested (indirectly) in a " + repr(ConfigRoot.__name__))
 
-        contained_in = __class__._mc_nested[-1]
+        contained_in = cls._mc_nested[-1]
 
         # Freeze attributes on previously defined child
         previous_item = contained_in._mc_previous_child
@@ -807,9 +794,8 @@ class _ConfigItem(_ConfigBase):
                 raise ex
 
         self._mc_contained_in = contained_in
-        root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
-        env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
-        super(_ConfigItem, self).__init__(root_conf=root_conf, env_factory=env_factory)
+        root_conf = contained_in._mc_root_conf
+        super(_ConfigItem, self).__init__(root_conf=root_conf, env_factory=root_conf._mc_env_factory)
         self._mc_select_envs(mc_include, mc_exclude, self._mc_file_name, self._mc_line_num)
 
         if not self._mc_is_excluded:
@@ -826,9 +812,9 @@ class _ConfigItem(_ConfigBase):
     def _mc_select_envs(self, include, exclude, file_name, line_num):
         """Determine if item (and children) is included in specified env"""
         # Resolve most specif include/exclude eg
-        contained_in = object.__getattribute__(self, '_mc_contained_in')
-        contained_in_included_envs_mask = object.__getattribute__(contained_in, '_mc_included_envs_mask')
-        _mc_included_envs_mask = object.__getattribute__(self, '_mc_included_envs_mask')
+        contained_in = self._mc_contained_in
+        contained_in_included_envs_mask = contained_in._mc_included_envs_mask
+        _mc_included_envs_mask = self._mc_included_envs_mask
 
         all_ambiguous = {}
         if exclude:
@@ -890,8 +876,7 @@ class _ConfigItem(_ConfigBase):
         if all_ambiguous:
             # Reorder to generate one error per ambiguous env
             all_ambiguous_by_envs = {}
-            root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
-            env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
+            env_factory = contained_in._mc_root_conf._mc_env_factory
             for conflicting_egs, ambiguous in all_ambiguous.items():
                 for env in env_factory.envs_from_mask(ambiguous):
                     all_ambiguous_by_envs.setdefault(env, set()).update(conflicting_egs)
@@ -904,8 +889,7 @@ class _ConfigItem(_ConfigBase):
 
         if include is not None and _mc_included_envs_mask & contained_in_included_envs_mask != _mc_included_envs_mask:
             re_included = _mc_included_envs_mask & contained_in_included_envs_mask ^ _mc_included_envs_mask
-            root_conf = object.__getattribute__(contained_in, '_mc_root_conf')
-            env_factory = object.__getattribute__(root_conf, '_mc_env_factory')
+            env_factory = contained_in._mc_root_conf._mc_env_factory
             for env in env_factory.envs_from_mask(re_included):
                 msg = "Env " + repr(env.name) + " is excluded at an outer level"
                 self._mc_print_error(msg, file_name=file_name, line_num=line_num)
@@ -914,8 +898,7 @@ class _ConfigItem(_ConfigBase):
 
         if not (self.env.mask & _mc_included_envs_mask) or contained_in._mc_is_excluded:
             self._mc_is_excluded = True
-            attributes = object.__getattribute__(self, '_mc_attributes')
-            for _key, item in attributes.items():
+            for _key, item in self._mc_attributes.items():
                 item._mc_is_excluded = True
         self._mc_included_envs_mask = _mc_included_envs_mask & contained_in_included_envs_mask
 
@@ -924,8 +907,7 @@ class _ConfigItem(_ConfigBase):
 
         self._mc_select_envs(include=include, exclude=exclude, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
         if self._mc_is_excluded:
-            contained_in = object.__getattribute__(self, '_mc_contained_in')
-            contained_in_attributes, _ = contained_in._mc_get_attributes_where()
+            contained_in_attributes, _ = self._mc_contained_in._mc_get_attributes_where()
             if isinstance(self, RepeatableConfigItem):
                 # Remove repeatable item
                 del contained_in_attributes[self.named_as()][self._mc_repeatable_item_key]
@@ -940,7 +922,7 @@ class _ConfigItem(_ConfigBase):
             repr(containing_class.named_as())
 
     def __bool__(self):
-        return not object.__getattribute__(self, '_mc_is_excluded')
+        return not self._mc_is_excluded
 
     # Python2 compatibility
     __nonzero__ = __bool__
@@ -1050,9 +1032,8 @@ class _ConfigBuilder(ConfigItem):
             self._mc_print_error(str(ex), file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_post_build_update(self):
-        root_conf = object.__getattribute__(self, '_mc_root_conf')
-        selected_env = object.__getattribute__(root_conf, '_mc_selected_env')
-        attributes = object.__getattribute__(self, '_mc_attributes')
+        selected_env = self._mc_root_conf._mc_selected_env
+        attributes = self._mc_attributes
 
         override_attribute_errors = OrderedDict()
 
