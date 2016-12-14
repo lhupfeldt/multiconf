@@ -1,0 +1,3 @@
+include *.md *.txt
+recursive-include demo *.txt *.py
+recursive-include test *.tenjin *.txt *.py
