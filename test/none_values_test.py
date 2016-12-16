@@ -4,8 +4,12 @@
 import pytest
 from pytest import raises  # pylint: disable=no-name-in-module
 
-from .. import ConfigRoot, ConfigItem, ConfigException
-from ..envs import EnvFactory
+from multiconf import mc_config, ConfigItem, ConfigException
+from multiconf.envs import EnvFactory
+
+from utils.messages import config_error_no_value_expected, config_error_never_received_value_expected
+from utils.utils import next_line_num, start_file_line, assert_lines_in
+
 
 ef1_prod_pp = EnvFactory()
 pp1 = ef1_prod_pp.Env('pp')
@@ -24,24 +28,28 @@ def test_attribute_none_args_partial_set_in_init_overridden_in_mc_init():
             self.a = 7
             self.b = 7
 
-    with ConfigRoot(prod1, ef1_prod_pp) as cr:
+    @mc_config(ef1_prod_pp)
+    def _(_):
         Requires()
 
-    assert cr.Requires.a == 7
+    cr = ef1_prod_pp.config(prod1)
+    assert cr.Requires.a == None  # Note: I pre v6 this would be 7
     assert cr.Requires.b == 2
 
-    with ConfigRoot(pp1, ef1_prod_pp) as cr:
-        Requires()
-
-    assert cr.Requires.a == 7
-    assert cr.Requires.b == 7
+    cr = ef1_prod_pp.config(pp1)
+    assert cr.Requires.a == 7 # Value for pp was not set in __init__ so it will get the value from mc_init 
+    assert cr.Requires.b == None  # Note: I pre v6 this would be 7
 
 
-def test_attribute_none_args_partial_set_in_init_not_completed():
+def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
+    errorline_setattr = [None]
+    errorline_exit = [None]
+
     class Requires(ConfigItem):
         def __init__(self, a=None):
             super(Requires, self).__init__()
             # Partial assignment is allowed in init
+            errorline_setattr[0] = next_line_num()
             self.setattr('a', prod=a)
             self.setattr('b', default=None, prod=2)
 
@@ -49,5 +57,17 @@ def test_attribute_none_args_partial_set_in_init_not_completed():
             self.b = 7
 
     with raises(ConfigException):
-        with ConfigRoot(prod1, ef1_prod_pp) as cr:
+        errorline_exit[0] = next_line_num()
+        @mc_config(ef1_prod_pp)
+        def _(_):
             Requires()
+        # Unresolved partial assignments from __init__
+
+    _sout, serr = capsys.readouterr()
+    assert_lines_in(
+        serr,
+        start_file_line(__file__, errorline_exit[0]),
+        config_error_never_received_value_expected.format(env=pp1),
+        start_file_line(__file__, errorline_setattr[0]),
+        config_error_no_value_expected.format(attr='a', env=pp1),
+    )

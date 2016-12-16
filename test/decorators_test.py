@@ -1,13 +1,13 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .. import ConfigRoot, ConfigItem
-from ..decorators import named_as, nested_repeatables
+from multiconf import mc_config, ConfigItem
+from multiconf.decorators import named_as, nested_repeatables
 
 from .utils.utils import config_error, replace_ids
-from .utils.tstclasses import RootWithName
+from .utils.tstclasses import ItemWithName
 
-from ..envs import EnvFactory
+from multiconf.envs import EnvFactory
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -32,31 +32,28 @@ _g_expected = """{
 
 def test_named_as():
     @named_as('project')
-    class root(RootWithName):
+    class root(ItemWithName):
         pass
 
-    with root(prod2, ef2_prod_dev2ct) as proj:
-        proj.name = 'abc'
-    assert replace_ids(repr(proj), named_as=False) == _g_expected
+    @mc_config(ef2_prod_dev2ct)
+    def config(croot):
+        with root() as proj:
+            proj.name = 'abc'
+        return proj
+
+    cfg = ef2_prod_dev2ct.config(prod2)
+    assert replace_ids(repr(cfg.mc_config_result), named_as=False) == _g_expected
 
 
-def test_nested_repeatables_attributes_for_configroot_as_str():
-    @nested_repeatables('ritm1, ritm2')
-    class root(ConfigRoot):
-        pass
-
-    with root(prod1, ef1_prod) as cr:
-        cr
-    assert cr.ritm1 == {}
-    assert cr.ritm2 == {}
-
-
-def test_nested_repeatables_attributes_for_configroot_as_args():
+def test_nested_repeatables():
     @nested_repeatables('ritm1', 'ritm2')
-    class root(ConfigRoot):
+    class root(ConfigItem):
         pass
 
-    with root(prod1, ef1_prod) as cr:
-        cr
+    @mc_config(ef1_prod)
+    def config(croot):
+        root()
+
+    cr = ef1_prod.config(prod1).root
     assert cr.ritm1 == {}
     assert cr.ritm2 == {}

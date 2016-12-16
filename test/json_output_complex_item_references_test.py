@@ -1,12 +1,11 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from .. import ConfigRoot, ConfigItem
-
-from ..envs import EnvFactory
+from multiconf import mc_config, ConfigItem
+from multiconf.envs import EnvFactory
 
 from .utils.compare_json import compare_json
-from .utils.tstclasses import RootWithAA
+from .utils.tstclasses import ItemWithAA
 
 
 ef = EnvFactory()
@@ -14,7 +13,7 @@ prod = ef.Env('prod')
 
 
 _json_dump_attr_dict_ref_item_expected_json = """{
-    "__class__": "RootWithAA",
+    "__class__": "ItemWithAA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -63,20 +62,25 @@ def test_json_dump_attr_dict_ref_item():
         def r1mmnn(self):
             return self.contained_in.Ref1.mm.a + self.contained_in.Ref1.nn.a
 
-    with RootWithAA(prod, ef, aa=0) as cr:
-        with Ref1() as ref1:
-            ref1.setattr('aa?', default={'a': ref1})
-            ref1.setattr('bb?', default={'a': ref1})
-        ref2 = Ref2()
+    @mc_config(ef)
+    def config(root):
+        with ItemWithAA(aa=0) as cr:
+            with Ref1() as ref1:
+                ref1.setattr('aa', mc_set_unknown=True, default={'a': ref1})
+                ref1.setattr('bb', mc_set_unknown=True, default={'a': ref1})
+            ref2 = Ref2()
+        return ref1, ref2
 
-    compare_json(cr, _json_dump_attr_dict_ref_item_expected_json)
+    cfg = ef.config(prod)
+    ref1, ref2 = cfg.mc_config_result
+    assert compare_json(cfg.ItemWithAA, _json_dump_attr_dict_ref_item_expected_json)
     assert ref1.mm == ref1
     assert ref1.nn == ref1
     assert ref2.r1mmnn == 6
 
 
 _json_dump_attr_list_ref_item_expected_json = """{
-    "__class__": "RootWithAA",
+    "__class__": "ItemWithAA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -125,20 +129,25 @@ def test_json_dump_attr_list_ref_item():
         def r1mmnn(self):
             return self.contained_in.Ref1.mm.a + self.contained_in.Ref1.nn.a
 
-    with RootWithAA(prod, ef, aa=0) as cr:
-        with Ref1() as ref1:
-            ref1.setattr('aa?', default=[ref1])
-            ref1.setattr('bb?', default=[ref1])
-        ref2 = Ref2()
+    @mc_config(ef)
+    def config(root):
+        with ItemWithAA(aa=0) as cr:
+            with Ref1() as ref1:
+                ref1.setattr('aa', mc_set_unknown=True, default=[ref1])
+                ref1.setattr('bb', mc_set_unknown=True, default=[ref1])
+            ref2 = Ref2()
+        return ref1, ref2
 
-    compare_json(cr, _json_dump_attr_list_ref_item_expected_json)
+    cr = ef.config(prod).ItemWithAA
+    ref1, ref2 = cr.root_conf.mc_config_result
+    assert compare_json(cr, _json_dump_attr_list_ref_item_expected_json)
     assert ref1.mm == ref1
     assert ref1.nn == ref1
     assert ref2.r1mmnn == 6
 
 
 _json_dump_attr_tuple_ref_item_expected_json = """{
-    "__class__": "RootWithAA",
+    "__class__": "ItemWithAA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -189,13 +198,18 @@ def test_json_dump_attr_tuple_ref_item():
         def r1mmnn(self):
             return self.contained_in.Ref1.mm.xx + self.contained_in.Ref1.nn.aa
 
-    with RootWithAA(prod, ef, aa=1) as cr:
-        with Ref1() as ref1:
-            ref1.setattr('aa?', default=(ref1, cr))
-            ref1.setattr('bb?', default=(ref1, cr))
-        ref2 = Ref2()
+    @mc_config(ef)
+    def config(root):
+        with ItemWithAA(aa=1) as cr:
+            with Ref1() as ref1:
+                ref1.setattr('aa', mc_set_unknown=True, default=(ref1, cr))
+                ref1.setattr('bb', mc_set_unknown=True, default=(ref1, cr))
+            ref2 = Ref2()
+        return ref1, ref2
 
-    compare_json(cr, _json_dump_attr_tuple_ref_item_expected_json)
+    cr = ef.config(prod).ItemWithAA
+    ref1, ref2 = cr.root_conf.mc_config_result
+    assert compare_json(cr, _json_dump_attr_tuple_ref_item_expected_json)
     assert ref1.mm == ref1
     assert ref1.nn == cr
     assert ref2.r1mmnn == 4

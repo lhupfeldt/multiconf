@@ -1,5 +1,5 @@
 from multiconf.envs import EnvFactory
-from multiconf import ConfigRoot, ConfigItem
+from multiconf import mc_config, ConfigItem
 
 efac = EnvFactory()
 pp = efac.Env('pp')
@@ -24,16 +24,22 @@ def test_init_inherited():
             super(X2, self).__init__()
             self.setattr('version', prod=version)
 
-    with ConfigRoot(prod, efac) as project:
-        X1(version=1)
-        X2(version=1)
+    @mc_config(efac)
+    def _(_):
+        with ConfigItem():
+            X1(version=1)
+            X2(version=1)
 
+    project = efac.config(prod).ConfigItem
     assert project.X1.version == 1
     assert project.X2.version == 1
 
-    with ConfigRoot(pp, efac) as project:
-        X1(version=1)
-        X2(version=1)
+    @mc_config(efac)
+    def _(_):
+        with ConfigItem():
+            X1(version=1)
+            X2(version=1)
 
+    project = efac.config(pp).ConfigItem
     assert project.X1.version == 1
     assert project.X2.version is None

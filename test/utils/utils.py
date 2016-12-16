@@ -23,9 +23,14 @@ def py3_local(extra_class_levels=''):
 py3_tc = 'type' if sys.version_info[0] < 3 else 'class'
 
 
-def lineno():
+def line_num():
     frame = sys._getframe(1)
     return frame.f_lineno
+
+
+def next_line_num():
+    frame = sys._getframe(1)
+    return frame.f_lineno + 1
 
 
 def lazy(*args):
@@ -62,26 +67,24 @@ def total_msg(total_num_errors):
     return "There {ww} {num_errors} {err} when defining item: ".format(ww=ww, num_errors=total_num_errors, err=err)
 
 
-def file_line(error_line_num):
-    """Helper method for 'assert_lines_in' with multiple errors on different lines.
+def file_line(error_file_name, error_line_num):
+    """Return string with file/line info formatted like in error messages."""
+    return 'File "{file_name}", line {line_num}'.format(file_name=error_file_name, line_num=error_line_num)
 
-    'assert_lines_in' will replace the 'file_name'.
+
+def start_file_line(error_file_name, error_line_num):
+    """Helper for 'assert_lines_in'.
+
+    Return string with file/line info formatted like in error messages and prefixed with '^' for start-of-line.
     """
 
-    return '^File "%(file_name)s", line {error_line_num}'.format(error_line_num=error_line_num)
+    return '^' + file_line(error_file_name, error_line_num)
 
 
-def assert_lines_in(file_name, line_num, text, *expected_lines):
+def assert_lines_in(text, *expected_lines):
     """Assert that `*expected_lines` occur in order in the lines of `text`.
 
     Args:
-        file_name (str): Test file name, should be set to '__file__'
-        line_num (int): Line number of failure. You can find the line number by using 'lineno()'
-            Use this  together with the pattern %(lnum)s as first element in 'expected_lines', if all errors
-            are from the same line.
-            If errors are from different lines, set this to None, and instead use the 'file_line' function to
-            insert patterns in 'expected_lines'.
-
         text (str): The text to find *expected_lines in
         *expected_lines (str, RegexObject (hasattr `match`) or sequence): For each `expected_line` in expected_lines:
             If an expected_line is a tuple or a list, any item in the sequence is handled as an individual
@@ -91,11 +94,6 @@ def assert_lines_in(file_name, line_num, text, *expected_lines):
             If `expected_line` has a match method it is called and must return True for a line in `text`.
             Otherwise, if the `expected_line` starts with '^', a line in `text` must start with `expected_line[1:]`
             Otherwise `expected line` must simply occur in a line in `text`
-
-    The following pattern will be replaced in all expected_lines which are not regex:
-    '%(file_name)s' replaced with: file_name
-    '%(lnum)s' replaced with: 'File "%(file_name)s", line %(line_num)d'
-    '%(type_or_class)s replaced with 'type' if python version < '3' else 'class'
     """
 
     def _check_match(expected, line):
@@ -110,68 +108,49 @@ def assert_lines_in(file_name, line_num, text, *expected_lines):
 
         return False
 
+    matched_lines = []
     def _report_failure(expected):
+        num_matched = len(matched_lines)
+        if num_matched:
+            matched = '\n\nMatched {num} lines:\n\n{lines}'.format(num=num_matched, lines='\n'.join(matched_lines))
+        else:
+            matched = '\n\nNo lines matched.' + " (Empty text)" if not text else ''
+
         if hasattr(expected, 'match'):
-            fail("\n\nThe regex:\n\n" + repr(expected.pattern) + "\n\n    --- NOT MATCHED or OUT OF ORDER in ---\n\n" + text)
+            fail(matched + "\n\nThe regex:\n\n" + repr(expected.pattern) + "\n\n    --- NOT MATCHED or OUT OF ORDER in ---\n\n" + text)
 
         if expected.startswith('^'):
-            fail("\n\nThe text:\n\n" + repr(expected[1:]) + "\n\n    --- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in ---\n\n" + text)
+            fail(matched + "\n\nThe text:\n\n" + repr(expected[1:]) + "\n\n    --- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in ---\n\n" + text)
 
-        fail("\n\nThe text:\n\n" + repr(expected) + "\n\n    --- NOT FOUND OR OUT OF ORDER IN ---\n\n" + text)
+        fail(matched + "\n\nThe text:\n\n" + repr(expected) + "\n\n    --- NOT FOUND OR OUT OF ORDER IN ---\n\n" + text)
 
-    if not file_name.endswith('.py'):
-        # file_name  may end in .pyc!
-        file_name = file_name[:-1]
-
-    file_line_replace = dict(
-        file_name=file_name,
-        type_or_class=py3_tc
-    )
-        
-    if line_num is not None:
-        file_line_replace['lnum'] = 'File "%(file_name)s", line %(line_num)d' % dict(file_name=file_name, line_num=line_num)
-
-    def _fix_one_expected(expected):
-        return expected % file_line_replace if not hasattr(expected, 'match') else expected
-
-    fixed_expected = []
-    for expected in expected_lines:
-        if isinstance(expected, (tuple, list)):
-            if len(expected) == 1:
-                # Single element, insert instead of sequence
-                fixed_expected.append(_fix_one_expected(expected[0]))
-                continue
-            unordered = []
-            for unordered_expected in expected:
-                unordered.append(_fix_one_expected(unordered_expected))
-            fixed_expected.append(unordered)
-            continue
-        fixed_expected.append(_fix_one_expected(expected))
-
-    max_index = len(fixed_expected)
+    max_index = len(expected_lines)
     index = 0
 
     for line in text.split('\n'):
-        expected = fixed_expected[index]
+        expected = expected_lines[index]
 
         if isinstance(expected, (tuple, list)):
             new_expected = []
             for unordered_expected in expected:
                 if _check_match(unordered_expected, line):
+                    matched_lines.append(line)
                     continue
                 new_expected.append(unordered_expected)
-            fixed_expected[index] = new_expected if len(new_expected) > 1 else new_expected[0]
+            expected_lines[index] = new_expected if len(new_expected) > 1 else new_expected[0]
             continue
 
         if _check_match(expected, line):
             index += 1
             if index == max_index:
                 return
+            matched_lines.append(line)
 
     if isinstance(expected, (tuple, list)):
         for expected in new_expected:
             # TODO: only reports first element
             _report_failure(expected)
+
     _report_failure(expected)
 
 
@@ -208,11 +187,11 @@ def replace_ids_builder(json_string, named_as=True):
 
 
 _compact_ids_regex = re.compile(r'("),\n *"__id__": ([0-9]+),')
-_compact_calculated_regex = re.compile(r': "?([^"]+)"?,\n *"([a-zA-Z0-9_]*) #(calculated|static)": true')
+_compact_calculated_regex = re.compile(r': "?([^"$]+)"?(,\n *"[a-zA-Z0-9_]+ #value for current env provided by @property": true|),\n *"([a-zA-Z0-9_]+) #(calculated|static)": true')
 def to_compact(json_string):
     # There is no named_as in the non-compact format, just insert
     json_string = _compact_ids_regex.sub(r" #as: 'xxxx', id: \2\1,", json_string)
-    return _compact_calculated_regex.sub(r': "\1 #\3"', json_string)
+    return _compact_calculated_regex.sub(r': "\1 #\4"\2', json_string)
 
 
 #    "item": false,

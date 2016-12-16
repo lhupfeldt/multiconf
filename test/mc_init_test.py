@@ -6,9 +6,9 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import xfail
 
-from .. import ConfigRoot, ConfigItem, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, MC_REQUIRED
 
-from ..envs import EnvFactory
+from multiconf.envs import EnvFactory
 
 ef = EnvFactory()
 
@@ -30,7 +30,7 @@ class item1(ConfigItem):
         self.aa = MC_REQUIRED
 
     def mc_init(self):
-        print("MC_INIT")
+        print("MC_INIT 1")
         self.setattr('aa', g_dev=2, dev1=7)
 
 
@@ -40,40 +40,53 @@ class item2(ConfigItem):
         self.aa = MC_REQUIRED
 
     def mc_init(self):
+        print("MC_INIT 2")
         self.setattr('aa', g_dev_tst=2)
 
 
 def test_direct_env_in_mc_init_overrides_default_and_group_in_with():
-    with ConfigRoot(dev1, ef):
+    @mc_config(ef)
+    def _(_):
         with item1() as it:
             it.aa = 13
+    it = ef.config(dev1).item1
     assert it.aa == 7
 
-    with ConfigRoot(dev1, ef):
+    @mc_config(ef)
+    def _(_):
         with item1() as it:
             it.setattr('aa', default=13)
+    it = ef.config(dev1).item1
     assert it.aa == 7
 
-    with ConfigRoot(dev1, ef):
+    @mc_config(ef)
+    def _(_):
         with item1() as it:
             it.setattr('aa', default=1, g_dev=13)
+    it = ef.config(dev1).item1
     assert it.aa == 7
 
-    with ConfigRoot(dev1, ef):
+    @mc_config(ef)
+    def _(_):
         with item1() as it:
             it.setattr('aa', default=1, g_dev_tst=13)
+    it = ef.config(dev1).item1
     assert it.aa == 7
 
 
 def test_direct_env_in_with_overrides_mc_init():
-    with ConfigRoot(dev1, ef):
+    @mc_config(ef)
+    def _(_):
         with item1() as it:
             it.setattr('aa', dev1=1, tst=111, g_dev=7, g_prod=17)
+    it = ef.config(dev1).item1
     assert it.aa == 1
 
 
 def test_more_specific_group_in_with_overrides_mc_init():
-    with ConfigRoot(dev1, ef):
+    @mc_config(ef)
+    def _(_):
         with item2() as it:
             it.setattr('aa', g_dev=1, tst=111, g_prod=17)
+    it = ef.config(dev1).item2
     assert it.aa == 1

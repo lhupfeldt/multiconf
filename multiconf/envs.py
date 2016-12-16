@@ -1,26 +1,38 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
+import sys
 from collections import Container, OrderedDict
+import itertools
 import json
 
 from .bits import int_to_bin_str
+from .config_errors import ConfigException
 
 
 class EnvException(Exception):
     pass
 
 
+class AmbiguousEnvException(EnvException):
+    pass
+
+
+class MissingValueEnvException(EnvException):
+    pass
+
+
 class BaseEnv(object):
     def __init__(self, name, factory, mask):
         """ Private, use EnvFactory.Env() """
-        self._name = name
+        self.name = name
         self.members = []
         self.factory = factory
-        self.index = self.factory._index
-        self.bit = 1 << self.index
+
+        self.bit = 1 << self.factory._index
         self.mask = mask | self.bit
-        self.factory._all_egs_mask |= mask
         self.factory._index += 1
 
     @classmethod
@@ -33,10 +45,6 @@ class BaseEnv(object):
             raise EnvException(cls.__name__ + ": 'name' must not start with '_', got: " + repr(name))
         if name == 'default':
             raise EnvException(cls.__name__ + ": name '" + name + "' is reserved")
-
-    @property
-    def name(self):
-        return self._name
 
     def json(self, skipkeys=True):
         class Encoder(json.JSONEncoder):
@@ -62,9 +70,6 @@ class BaseEnv(object):
     def __repr__(self):
         return self.irepr(0)
 
-    def __lt__(self, other):
-        return self.bit < other.bit
-
     def __hash__(self):
         return self.bit
 
@@ -74,21 +79,14 @@ class BaseEnv(object):
 
 class Env(BaseEnv):
     def __init__(self, name, factory):
-        self.env_bits = [factory._index]
-        self.eg_bits = self.env_bits
         super(Env, self).__init__(name=name, factory=factory, mask=0)
-        self.factory._all_envs_mask |= self.bit
         self.envs = [self]
-        self.all = [self]
+        self.lookup_order = None
 
 
 class EnvGroup(BaseEnv, Container):
     def __init__(self, name, factory, members):
         """ Private, use EnvFactory.Group() method """
-        # Check for empty group
-        if not members:
-            raise EnvException(self.__class__.__name__ + ': No group members specified')
-
         # Collect mask of all children. Check arg types
         mask = 0b0
         for eg in members:
@@ -111,8 +109,6 @@ class EnvGroup(BaseEnv, Container):
 
         # All good
         self.members = members
-        self.env_bits = list(self._env_bits())
-        self.eg_bits = list(self._eg_bits())
 
         self.groups = [self]
         for member_group in self._groups_recursive():
@@ -127,31 +123,17 @@ class EnvGroup(BaseEnv, Container):
                 envs[member.name] = member
         self.envs = list(envs.values())
 
-        self.all = self.groups + self.envs
+        self.ambiguous = {env.name: [] for env in self.envs}
 
     def irepr(self, indent_level):
-        indent1 = '  ' * indent_level
-        indent2 = indent1 + '     '
+        indent1 = '   ' * indent_level
+        indent2 = indent1 + '   '
         return self.__class__.__name__ + '(' + repr(self.name) + ') {\n' + \
             ',\n'.join([indent2 + member.irepr(indent_level + 1) for member in self.members]) + '\n' + \
             indent1 + '}'
 
     def __repr__(self):
         return self.irepr(0)
-
-    def _eg_bits(self):
-        bit = 0
-        while bit < self.factory._index:
-            if 1 << bit & self.mask:
-                yield bit
-            bit += 1
-
-    def _env_bits(self):
-        bit = 0
-        while bit < self.factory._index:
-            if 1 << bit & self.mask & self.factory._all_envs_mask:
-                yield bit
-            bit += 1
 
     def _groups_recursive(self):
         for member in self.members:
@@ -162,12 +144,10 @@ class EnvGroup(BaseEnv, Container):
 
 class EnvFactory(object):
     def __init__(self):
+        self.root_proxies = {}
         self.envs = OrderedDict()
         self.groups = OrderedDict()
         self._index = 1  # bit zero reserved to be set for all groups, so that a Group mask will never be equal to an env mask
-        self._all_egs_mask = 0
-        self._all_envs_mask = 0
-        self._mc_default_group = None
         self._mc_frozen = False
 
     def Env(self, name):
@@ -197,17 +177,10 @@ class EnvFactory(object):
         if name in self.envs:
             raise EnvException("Name " + repr(name) + " is already used by env: " + repr(self.envs[name]))
         EnvGroup.validate(name)
+        # Check for empty group
+        if not members:
+            raise EnvException(EnvGroup.__name__ + ': No group members specified')
         return self._EnvGroup(name=name, members=members)
-
-    def _mc_create_default_group(self):
-        """
-        Must be called after all user defined envs and groups are defined.
-        creates 'default' group which is the superset of all user defined groups and envs
-        after this is called, no more envs or groups may be created by this factory.
-        """
-        if not self._mc_frozen:
-            self._mc_default_group = self._EnvGroup('default', members=list(self.groups.values()) + list(self.envs.values()))
-            self._mc_frozen = True
 
     def env(self, name):
         """Get an already declared env from it's name"""
@@ -229,22 +202,132 @@ class EnvFactory(object):
 
         raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(name))
 
-    def env_or_group_from_bit(self, bit):
-        """Get an already declared env or group from it's bit mask"""
+    def calc_env_group_order(self):
+        """
+        Must be called after all user defined envs and groups are defined.
 
-        for env in self.envs.values():
-            if env.bit & bit:
-                return env
+        Creates 'default' group which is the superset of all user defined groups and envs.
+        Calculates the group lookup order and ambiguity lists for all envs.
+        After this is called, no more envs or groups may be created by this factory.
+        """
 
-        for group in self.groups.values():
-            if group.bit & bit:
-                return group
+        if self._mc_frozen:
+            return
+        self._mc_frozen = True
 
-        raise EnvException("No " + Env.__name__ + " or " + EnvGroup.__name__ + " with bit " + int_to_bin_str(bit, self._index + 1))
+        self.default = self._EnvGroup('default', members=list(self.groups.values()) + list(self.envs.values()))
+        self.eg_none = self._EnvGroup('_mc_eg_none', members=[])
 
-    def envs_from_mask(self, mask):
-        """Yield envs matching mask"""
+        for env_name, env in self.envs.items():
+            # print("env, name, typ:", env_name, env)
+            env_groups = []
+            for group_name, group in self.groups.items():
+                # print("group name:", group_name)
+                if env in group:
+                    env_groups.append(group)
 
-        for env in self.envs.values():
-            if env.bit & mask:
-                yield env
+            max_index = len(env_groups) - 1
+            for index, gg in enumerate(env_groups):
+                if index == max_index:
+                    break
+
+                for amb_group in env_groups[index + 1:]:
+                    if gg in amb_group:
+                        continue
+                    assert amb_group not in gg
+                    gg.ambiguous[env.name].append(amb_group)
+
+            env.lookup_order = env_groups
+
+            # Debug
+            # print()
+            # print("env lookup_order:", )
+            # print("    ", env.name)
+            # for group in env.lookup_order:
+            #     print("    ", group.name, '- amb ->', [gg.name for gg in group.ambiguous[env.name]])
+
+    def resolve_env_group_value(self, env, env_values):
+        try:
+            return env_values[env.name], env
+        except KeyError:
+            for gg in env.lookup_order:
+                if gg.name in env_values:
+                    found_ambiguous = []
+                    for amb_group in gg.ambiguous[env.name]:
+                        if amb_group.name in env_values:
+                            found_ambiguous.append(amb_group)
+                    if found_ambiguous:
+                        ex = AmbiguousEnvException("Ambiguous values for: " + str(env))
+                        ex.ambiguous = [gg] + found_ambiguous
+                        raise ex
+                    return env_values[gg.name], gg
+        raise MissingValueEnvException("No value for: " + str(env))
+
+    def select_env_list(self, env, eg_list1, eg_list2):
+        """Resolve in which lists env is most speficic, if in any.
+
+        Returns 1, 2 or None:
+            1 if list1 has the most specific group or direct env.
+            2 if list2
+            None if env or group is in neither of the lists.
+        Raises AmbiguousEnvException if neither list is more specific.
+        """
+
+        eg1 = None
+        for eg in itertools.chain([env], env.lookup_order):
+            if eg in eg_list1:
+                eg1 = eg
+                break
+
+        eg2 = None
+        for eg in itertools.chain([env], env.lookup_order):
+            if eg in eg_list2:
+                eg2 = eg
+                break
+
+        if eg1 or eg2:
+            if eg1:
+                if not eg2 or eg1 in eg2:
+                    return 1
+            if eg2:
+                if not eg1 or eg2 in eg1:
+                    return 2
+
+            ambiguous = [eg1, eg2]
+            ex = AmbiguousEnvException("Ambiguous env select for '{}'.".format(env))
+            ex.ambiguous = ambiguous
+            raise ex
+
+        return None
+
+    def config(self, env, allow_todo=False):
+        """Configuration for specific env.
+
+        NOTE, There can only be one current config!
+        It is possible to call 'config' multiple times, but storing references
+        to items in the configuration, and accessing attributes at a later time,
+        will return the value from the last env.
+
+        Arguments:
+            result (list): The return value from the decorated 'user-config' method will be appended to 'result'.
+
+        Return: Reference to the config with the current env set to env.
+        """
+
+        try:
+            cr = self.root_proxies[env]
+        except KeyError:
+            if not isinstance(env, Env):
+                msg = "{ef_cls}: env must be instance of {env_cls!r}; found type '{got_typ}': {val!r}"
+                raise ConfigException(msg.format(ef_cls=self.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
+            if env.factory != self:
+                raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
+            raise  # Should not happen
+
+        if not allow_todo and cr._mc_todo_msgs:
+            for msg in cr._mc_todo_msgs:
+                # print(msg, file=sys.stderr) TODO
+                pass
+            raise ConfigException("Trying to get invalid configuration containing MC_TODO")
+
+        return cr

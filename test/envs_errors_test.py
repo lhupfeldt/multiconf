@@ -4,8 +4,8 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno
-from ..envs import EnvFactory, EnvException
+from .utils.utils import config_error, next_line_num
+from multiconf.envs import EnvFactory, EnvException
 
 
 def ce(line_num, *lines):
@@ -16,7 +16,7 @@ def test_repeated_direct_env_member(capsys):
     with raises(EnvException) as exinfo:
         ef = EnvFactory()
         ff1 = ef.Env('ff1')
-        errorline = lineno() + 1
+        errorline = next_line_num()
         ff2 = ef.EnvGroup('ff2', ff1, ff1)
 
     sout, serr = capsys.readouterr()
@@ -30,12 +30,12 @@ def test_repeated_direct_group_member(capsys):
         ef = EnvFactory()
         gg1 = ef.Env('gg1')
         gg2 = ef.EnvGroup('gg2', gg1)
-        errorline = lineno() + 1
+        errorline = next_line_num()
         gg3 = ef.EnvGroup('gg3', gg2, gg2)
 
     sout, serr = capsys.readouterr()
     #assert serr == ce(errorline, "TODO")
-    assert str(exinfo.value) == "Repeated group member: EnvGroup('gg2') {\n     Env('gg1')\n} in EnvGroup('gg3') {\n\n}"
+    assert str(exinfo.value) == "Repeated group member: EnvGroup('gg2') {\n   Env('gg1')\n} in EnvGroup('gg3') {\n\n}"
 
 
 def test_env_or_group_from_string_undefined():

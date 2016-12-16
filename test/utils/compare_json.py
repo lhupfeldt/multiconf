@@ -16,12 +16,12 @@ from .utils import py3_tc
 from .check_containment import check_containment
 
 
-def compare_json(item, expected_json, replace_builders=False, dump_builders=True,
+def compare_json(item, expected_json, replace_builders=False, dump_builders=True, sort_attributes=True,
                  test_decode=False, test_containment=True, test_excluded=False, test_compact=True,
                  expect_num_errors=0):
     try:
-        compact_json = item.json(compact=True, builders=dump_builders)
-        full_json = item.json(builders=dump_builders)
+        compact_json = item.json(compact=True, builders=dump_builders, sort_attributes=sort_attributes)
+        full_json = item.json(builders=dump_builders, sort_attributes=sort_attributes)
         if replace_builders:
             compact_json_replaced = replace_ids_builder(compact_json)
             full_json_replaced = replace_ids_builder(full_json)
@@ -34,10 +34,9 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
         if test_compact:
             if test_excluded:
                 compact_expected_json = to_compact_excluded(expected_json)
-                assert compact_json_replaced == compact_expected_json
             else:
                 compact_expected_json = to_compact(expected_json)
-                assert compact_json_replaced == compact_expected_json
+            assert compact_json_replaced == compact_expected_json
         assert full_json_replaced == expected_json
 
         assert item.num_json_errors() == expect_num_errors, \
@@ -61,7 +60,7 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
         print('--- compact original ---')
         print(compact_json)
 
-        raise
+        return False
 
     if test_decode:
         try:
@@ -75,5 +74,9 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
             print('--- full original ---')
             print(full_json)
 
+            return False
+
     if test_containment:
         check_containment(item)
+
+    return True

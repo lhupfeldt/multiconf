@@ -3,24 +3,32 @@
 
 from __future__ import print_function
 
-from multiconf.repeatable import Repeatable
-from multiconf import ConfigItem, ConfigBuilder
+from collections import OrderedDict
+
+from multiconf import ConfigItem  #, ConfigBuilder
+from multiconf.multiconf import _RootEnvProxy
+
+
+def _id_name_type(item):
+    return repr(id(item)) + (', name=' + item.name if hasattr(item, 'name') else '') + ", " + repr(type(item))
 
 
 def check_containment(start_item, level=0, prefix="  ", verbose=False):
+    if isinstance(start_item, _RootEnvProxy):
+        start_item = start_item.root_conf
     if verbose:
         print(prefix, 'level:', level, start_item.json(compact=True, builders=True))
     for key, item in start_item.items():
-        if isinstance(item, Repeatable):
+        if isinstance(item, OrderedDict):
             for _rkey, ritem in item.items():
                 check_containment(ritem, level+1, "R ", verbose=verbose)
             continue
 
-        if isinstance(item, ConfigItem) and not isinstance(item, ConfigBuilder):
+        if isinstance(item, ConfigItem):  #  and not isinstance(item, ConfigBuilder):
             ci = item.contained_in
             assert id(ci) == id(start_item), \
-                "item.contained_in: " + repr(id(ci)) + (', contained in name=' + ci.name if hasattr(ci, 'name') else '') + \
-                ", " + repr(type(ci)) + \
-                ", start_item: " + repr(id(start_item)) + (', name=' + start_item.name if hasattr(start_item, 'name') else '') + \
-                ", " + repr(type(start_item))
+                "Wrong containment:\n" + \
+                "  item: " + _id_name_type(item) + '\n' + \
+                "  item.contained_in: " + _id_name_type(ci) + '\n' + \
+                "  start_item: " + _id_name_type(start_item) + '\n'
             check_containment(item, level+1, verbose=verbose)

@@ -31,6 +31,6 @@ class McInvalidValue(Enum):
         return self
 
 
+MC_NO_VALUE = McInvalidValue.MC_NO_VALUE
 MC_REQUIRED = McInvalidValue.MC_REQUIRED
 MC_TODO = McInvalidValue.MC_TODO
-_MC_NO_VALUE = McInvalidValue.MC_NO_VALUE

@@ -3,10 +3,9 @@
 
 from __future__ import print_function
 
-from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder
-from ..decorators import named_as, nested_repeatables
-
-from ..envs import EnvFactory
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder
+from multiconf.decorators import named_as, nested_repeatables
+from multiconf.envs import EnvFactory
 
 from .utils.tstclasses import RootWithName
 

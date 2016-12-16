@@ -7,7 +7,7 @@ import sys
 
 
 class ConfigBaseException(Exception):
-    pass
+    is_summary = False
 
 
 class ConfigDefinitionException(ConfigBaseException):
@@ -16,7 +16,9 @@ class ConfigDefinitionException(ConfigBaseException):
 
 
 class ConfigException(ConfigBaseException):
-    pass
+    def __init__(self, msg, is_summary=False):
+        super(ConfigException, self).__init__(msg)
+        self.is_summary = is_summary
 
 
 class InvalidUsageException(ConfigBaseException):
@@ -59,14 +61,6 @@ def find_user_file_line(up_level_start=2):
     frame = sys._getframe(up_level_start)
     while 1:
         if frame.f_globals['__package__'] != 'multiconf':
-            return frame.f_globals['__file__'], frame.f_lineno
-        frame = frame.f_back
-
-
-def find_init_call_file_line(up_level_start=2):
-    frame = sys._getframe(up_level_start)
-    while 1:
-        if frame.f_code.co_name != '__init__':
             return frame.f_globals['__file__'], frame.f_lineno
         frame = frame.f_back
 

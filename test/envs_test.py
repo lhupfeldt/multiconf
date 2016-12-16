@@ -7,7 +7,7 @@ from __future__ import print_function
 from pytest import raises
 from .utils.utils import replace_user_file_line_msg
 
-from ..envs import EnvFactory, EnvException
+from multiconf.envs import EnvFactory, EnvException
 
 
 ef = EnvFactory()
@@ -34,29 +34,29 @@ g_prod = ef.EnvGroup('g_prod', pp, prod)
 valid_envs = ef.EnvGroup('g_all', g_dev_tst, g_prod)
 
 groups_only = [valid_envs, g_dev_tst, g_dev12, g_tst, g_prod]
-all_envs = groups_only + envs_only
 
 valid_envs_repr = """
 EnvGroup('g_all') {
-     EnvGroup('g_dev_tst') {
-       EnvGroup('g_dev12') {
+   EnvGroup('g_dev_tst') {
+      EnvGroup('g_dev12') {
          Env('dev1'),
          Env('dev2')
-    },
-       EnvGroup('g_tst') {
+      },
+      EnvGroup('g_tst') {
          Env('tst1'),
          Env('tst2')
-    }
-  },
-     EnvGroup('g_prod') {
-       Env('pp'),
-       Env('prod')
-  }
+      }
+   },
+   EnvGroup('g_prod') {
+      Env('pp'),
+      Env('prod')
+   }
 }
 """
 
 
 def test_repr_of_valid_envs():
+    print(repr(valid_envs))
     assert repr(valid_envs) == valid_envs_repr.strip()
 
 
@@ -123,18 +123,11 @@ def test_iterating_groups_only():
     assert groups == groups_only
 
 
-def test_iterating_groups_and_envs():
-    envs = []
-    for env in valid_envs.all:
-        envs.append(env)
-    assert envs == all_envs
-
-
 def test_as_key():
     envs = {}
-    for env in valid_envs.all:
+    for env in valid_envs.envs + valid_envs.groups:
         envs[env] = True
-    for env in valid_envs.all:
+    for env in valid_envs.envs + valid_envs.groups:
         assert envs[env] == True
 
 
@@ -159,39 +152,6 @@ def test_env_or_group_from_name():
     assert str(exinfo.value) == "No such Env or EnvGroup: 'no-way'"
 
 
-def test_env_or_group_from_bit():
-    ef._mc_create_default_group()  # pylint: disable=protected-access
-
-    assert ef.env_or_group_from_bit(0b0000000000000010).name == "dev1"
-    assert ef.env_or_group_from_bit(prod.mask) == prod
-    assert ef.env_or_group_from_bit(0b0000001000000000) == prod
-    assert ef.env_or_group_from_bit(0b0000010000000000) == g_prod
-    assert ef.env_or_group_from_bit(0b0001000000000000).name == "default"
-
-    with raises(EnvException) as exinfo:
-        ef.env_or_group_from_bit(0b1000000000000000)
-    assert str(exinfo.value) == "No Env or EnvGroup with bit 0b1000000000000000"
-
-
-def test_envs_from_mask():
-    ef._mc_create_default_group()  # pylint: disable=protected-access
-
-    found_envs = []
-    for env in ef.envs_from_mask(0b100010100):
-        found_envs.append(env)
-    assert found_envs == [dev2, tst1, pp]
-
-
-def test_eg_bits():
-    assert g_dev_tst.eg_bits == [1, 2, 3, 4, 5, 6, 7]
-    assert g_prod.eg_bits == [8, 9, 10]
-
-
-def test_env_bits():
-    assert g_dev_tst.env_bits == [1, 2, 4, 5]
-    assert g_prod.env_bits == [8, 9]
-
-
 def test_repeated_nested_env_member():
     efl = EnvFactory()
     hh1 = efl.Env('hh1')
@@ -205,7 +165,7 @@ def test_env_factory_in_use(capsys):
     with raises(EnvException) as exinfo:
         myef = EnvFactory()
         mydev1 = myef.Env('dev1')
-        myef._mc_create_default_group()  # pylint: disable=protected-access
+        myef.calc_env_group_order()
         myef.EnvGroup('g_dev12', mydev1)
 
     sout, serr = capsys.readouterr()
@@ -216,7 +176,7 @@ def test_env_factory_in_use(capsys):
     with raises(EnvException) as exinfo:
         myef = EnvFactory()
         mydev1 = myef.Env('dev1')
-        myef._mc_create_default_group()  # pylint: disable=protected-access
+        myef.calc_env_group_order()
         myef.Env('dev2')
 
     _sout, serr = capsys.readouterr()
@@ -238,7 +198,7 @@ def test_group_members_not_same_factory(capsys):
 
 
 _eg_name_used_expected_ex = """Name 'g_dev' is already used by group: EnvGroup('g_dev') {
-     Env('dev1')
+   Env('dev1')
 }"""
 
 def test_env_name_used():

@@ -6,9 +6,9 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
-from .. import ConfigRoot
-from ..decorators import named_as, nested_repeatables, ConfigDefinitionException
-from ..envs import EnvFactory
+from multiconf import ConfigItem
+from multiconf.decorators import named_as, nested_repeatables, ConfigDefinitionException
+from multiconf.envs import EnvFactory
 
 ef1_prod = EnvFactory()
 prod1 = ef1_prod.Env('prod')
@@ -16,26 +16,26 @@ prod1 = ef1_prod.Env('prod')
 
 def test_decorator_arg_is_keyword_in_nested_repeatables_decorator():
     with raises(ConfigDefinitionException) as exinfo:
-        @nested_repeatables('a, b, def, c')
-        class root(ConfigRoot):
+        @nested_repeatables('a', 'b', 'def', 'c')
+        class root(ConfigItem):
             pass
 
-    assert str(exinfo.value) == "'def' is not a valid identifier"
+    assert str(exinfo.value) == "'def' is not a valid identifier."
 
 
 def test_decorator_arg_not_a_valid_identifier_in_named_as_decorator():
     with raises(ConfigDefinitionException) as exinfo:
         @named_as('a-b')
-        class root(ConfigRoot):
+        class root(ConfigItem):
             pass
 
-    assert str(exinfo.value) == "'a-b' is not a valid identifier"
+    assert str(exinfo.value) == "'a-b' is not a valid identifier."
 
 
 def test_decorator_arg_is_a_keyword_in_named_as_decorator():
     with raises(ConfigDefinitionException) as exinfo:
         @named_as('class')
-        class root(ConfigRoot):
+        class root(ConfigItem):
             pass
 
-    assert str(exinfo.value) == "'class' is not a valid identifier"
+    assert str(exinfo.value) == "'class' is not a valid identifier."

@@ -7,7 +7,7 @@ from collections import OrderedDict
 # pylint: disable=E0611
 from pytest import fail
 
-from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
 from ..decorators import nested_repeatables, named_as, required
 from ..envs import EnvFactory
 

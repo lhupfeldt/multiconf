@@ -2,146 +2,320 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 
-# Test that different ConfigRoots can use different EnvFactories without interference, i.e,
-# there is no unintended static information in the envs module
+from __future__ import print_function
 
 # pylint: disable=E0611
 from pytest import raises
 
-from .. import ConfigRoot, ConfigItem, ConfigException, MC_REQUIRED
-from ..envs import EnvFactory
+from multiconf.envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException
 
-from .utils.messages import already_printed_msg, config_error_mc_required_other_env_expected
-from .utils.utils import lineno, assert_lines_in, replace_ids
+from .utils.utils import next_line_num, assert_lines_in, replace_ids
 
 
-class item(ConfigItem):
-    def __init__(self):
-        super(item, self).__init__()
-        self.aa = MC_REQUIRED
-        self.bb = MC_REQUIRED
-
-    def mc_init(self):
-        # TODO
-        self.bb = 111
+def _names(groups):
+    return [gg.name for gg in groups]
 
 
-_env_factories_ef1_expected_ex = """There were 3 errors when defining item: {
-    "__class__": "item #as: 'item', id: 0000",
-    "aa": 1,
-    "bb": 111
-}""" + already_printed_msg
+def _lookup_order(env):
+    act = []
+    for gg in env.lookup_order:
+        act.append((gg.name, _names(gg.ambiguous[env.name])))
+    return act
 
-def test_env_factories_ef1(capsys):
+
+def test_calc_env_group_order():
     ef = EnvFactory()
 
-    dev1 = ef.Env('dev1')
-    dev2 = ef.Env('dev2')
-    g_dev = ef.EnvGroup('g_dev', dev1, dev2)
+    d0 = ef.Env('d0')
 
-    pp = ef.Env('pp')
-    prod = ef.Env('prod')
+    d1a = ef.Env('d1a')
+    d1b = ef.Env('d1b')
+    d1c = ef.Env('d1c')
 
-    class root(ConfigRoot):
-        def __init__(self, selected_env, env_factory):
-            super(root, self).__init__(selected_env, env_factory)
-            self.aa = MC_REQUIRED
+    d2a = ef.Env('d2a')
+    d2b = ef.Env('d2b')
+    d2c = ef.Env('d2c')
 
-    with ConfigRoot(dev1, ef):
-        with item() as it:
-            it.setattr('aa', default=13)
-    assert it.aa == 13
+    g_d1ab_d2a = ef.EnvGroup('g_d1ab_d2a', d1a, d1b, d2a)  # No d2b
+    g_d1b_d2ab = ef.EnvGroup('g_d1b_d2ab', d1b, d2a, d2b)  # No d1a
+    g_d1ab_d2a_d1cd2c = ef.EnvGroup('g_d1ab_d2a_d1cd2c', g_d1ab_d2a, d1c, d2c)
 
-    with ConfigRoot(dev1, ef):
-        with item() as it:
-            it.setattr('aa', dev1=1, dev2=2, pp=3, prod=4)
-    assert it.aa == 1
-    assert it.bb == 111
+    d3a = ef.Env('d3a')
+    d3b = ef.Env('d3b')
+    d3c = ef.Env('d3c')
 
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(dev1, ef):
-            with item() as it:
-                errorline = lineno() + 1
-                it.setattr('aa', dev1=1, dev2=2, g_prod=4)
+    g_d3ab = ef.EnvGroup('g_d3ab', d3a, d3b)
+    g_d3ab_d3c = ef.EnvGroup('g_d3', g_d3ab, d3c)
 
-    _sout, serr = capsys.readouterr()
-    assert_lines_in(
-        __file__, errorline, serr,
-        "^%(lnum)s",
-        "^ConfigError: No such Env or EnvGroup: 'g_prod'",
-        "^%(lnum)s",
-        config_error_mc_required_other_env_expected.format(attr='aa', env=pp),
-        config_error_mc_required_other_env_expected.format(attr='aa', env=prod),
-    )
-    assert replace_ids(str(exinfo.value), False) == _env_factories_ef1_expected_ex
+    g_d1_overlap1 = ef.EnvGroup('g_d1_overlap1', d1a)
+    g_d1_overlap2 = ef.EnvGroup('g_d1_overlap2', d1a)
 
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(dev1, ef):
-            with item() as it:
-                errorline = lineno() + 1
-                it.setattr('aa', dev1=1, dev2=2, dev3=3, pp=4, prod=5)
-
-    _sout, serr = capsys.readouterr()
-    assert_lines_in(
-        __file__, errorline, serr,
-        "^%(lnum)s",
-        "^ConfigError: No such Env or EnvGroup: 'dev3'",
-    )
-
-
-_env_factories_ef2_expected_ex = """There was 1 error when defining item: {
-    "__class__": "item #as: 'item', id: 0000",
-    "aa": 1,
-    "bb": 111
-}""" + already_printed_msg
-
-
-def test_env_factories_ef2(capsys):
-    ef = EnvFactory()
-
-    dev1 = ef.Env('dev1')
-    dev2 = ef.Env('dev2')
-    dev3 = ef.Env('dev3')
-    g_dev = ef.EnvGroup('g_dev', dev1, dev2, dev3)
+    g_d13_overlap1 = ef.EnvGroup('g_d13_overlap1', d1a, d3a)
+    g_d13_overlap2 = ef.EnvGroup('g_d13_overlap2', d1b, d3b)
+    g_d13_overlap3 = ef.EnvGroup('g_d13_overlap3', d1a, d3b)
 
     pp = ef.Env('pp')
     prod = ef.Env('prod')
     g_prod = ef.EnvGroup('g_prod', pp, prod)
 
-    with ConfigRoot(dev1, ef):
-        with item() as it:
-            it.setattr('aa', default=13)
-    assert it.aa == 13
+    ef.calc_env_group_order()
 
-    with ConfigRoot(dev3, ef):
-        with item() as it:
-            it.setattr('aa', dev1=1, g_dev=7, g_prod=17)
-    assert it.aa == 7
-    assert it.bb == 111
+    for env_name, env in ef.envs.items():
+        print()
+        print(env_name + ':', env.lookup_order)
 
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(dev1, ef):
-            with item() as it:
-                errorline = lineno() + 1
-                it.setattr('aa', dev1=1, dev2=2, g_prod=4)
+    # Test d0 lookup order (env in no groups)
+    assert _lookup_order(d0) == [('default', [])]
 
-    _sout, serr = capsys.readouterr()
-    assert_lines_in(
-        __file__, errorline, serr,
-        "^%(lnum)s",
-        config_error_mc_required_other_env_expected.format(attr='aa', env=dev3),
-    )
-    assert replace_ids(str(exinfo.value), False) == _env_factories_ef2_expected_ex
+    # Test d1a
+    assert _lookup_order(d1a) == [
+        (g_d1ab_d2a.name, _names([g_d1_overlap1, g_d1_overlap2, g_d13_overlap1, g_d13_overlap3])),
+        (g_d1ab_d2a_d1cd2c.name, _names([g_d1_overlap1, g_d1_overlap2, g_d13_overlap1, g_d13_overlap3])),
+        (g_d1_overlap1.name, _names([g_d1_overlap2, g_d13_overlap1, g_d13_overlap3])),
+        (g_d1_overlap2.name, _names([g_d13_overlap1, g_d13_overlap3])),
+        (g_d13_overlap1.name, _names([g_d13_overlap3])),
+        (g_d13_overlap3.name, []),
+        ('default', []),
+        ]
 
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(dev1, ef):
-            with item() as it:
-                errorline = lineno() + 1
-                it.setattr('aa', dev1=1, dev2=2, dev3=3, pp=4, pp2=4, prod=5)
+    # Test d1b
+    assert _lookup_order(d1b) == [
+        (g_d1ab_d2a.name, _names([g_d1b_d2ab, g_d13_overlap2])),
+        (g_d1b_d2ab.name, _names([g_d1ab_d2a_d1cd2c, g_d13_overlap2])),
+        (g_d1ab_d2a_d1cd2c.name, _names([g_d13_overlap2])),
+        (g_d13_overlap2.name, []),
+        ('default', []),
+    ]
 
-    _sout, serr = capsys.readouterr()
-    assert_lines_in(
-        __file__, errorline, serr,
-        "^%(lnum)s",
-        "^ConfigError: No such Env or EnvGroup: 'pp2'",
-    )
+    # Test d1c
+    assert _lookup_order(d1c) == [
+        (g_d1ab_d2a_d1cd2c.name, []),
+        ('default', []),
+    ]
+
+    # Test d2a
+    assert _lookup_order(d2a) == [
+        (g_d1ab_d2a.name, _names([g_d1b_d2ab])),
+        (g_d1b_d2ab.name, _names([g_d1ab_d2a_d1cd2c])),
+        (g_d1ab_d2a_d1cd2c.name, []),
+        ('default', []),
+    ]
+
+    # Test d2b
+    assert _lookup_order(d2b) == [
+        (g_d1b_d2ab.name, []),
+        ('default', []),
+    ]
+
+    # Test d2c
+    assert _lookup_order(d2c) == [
+        (g_d1ab_d2a_d1cd2c.name, []),
+        ('default', []),
+    ]
+
+    # Test d3a
+    assert _lookup_order(d3a) == [
+        (g_d3ab.name, _names([g_d13_overlap1])),
+        (g_d3ab_d3c.name, _names([g_d13_overlap1])),
+        (g_d13_overlap1.name, []),
+        ('default', []),
+    ]
+
+    # Test d3b
+    assert _lookup_order(d3b) == [
+        (g_d3ab.name, _names([g_d13_overlap2, g_d13_overlap3])),
+        (g_d3ab_d3c.name, _names([g_d13_overlap2, g_d13_overlap3])),
+        (g_d13_overlap2.name, _names([g_d13_overlap3])),
+        (g_d13_overlap3.name, []),
+        ('default', []),
+    ]
+
+    # Some skipped ...
+
+    # Test pp
+    assert _lookup_order(pp) == [
+        (g_prod.name, []),
+        ('default', []),
+    ]
+
+    # Test prod
+    assert _lookup_order(prod) == [
+        (g_prod.name, []),
+        ('default', []),
+    ]
+
+
+def test_resolve_env_group_value():
+    ef = EnvFactory()
+
+    d0 = ef.Env('d0')
+
+    d1a = ef.Env('d1a')
+    d1b = ef.Env('d1b')
+    d1c = ef.Env('d1c')
+
+    d2a = ef.Env('d2a')
+    d2b = ef.Env('d2b')
+    d2c = ef.Env('d2c')
+
+    g_d1ab_d2a = ef.EnvGroup('g_d1ab_d2a', d1a, d1b, d2a)  # No d2b
+    g_d1b_d2ab = ef.EnvGroup('g_d1b_d2ab', d1b, d2a, d2b)  # No d1a
+    g_d1ab_d2a_d1cd2c = ef.EnvGroup('g_d1ab_d2a_d1cd2c', g_d1ab_d2a, d1c, d2c)
+
+    d3a = ef.Env('d3a')
+    d3b = ef.Env('d3b')
+    d3c = ef.Env('d3c')
+
+    g_d3ab = ef.EnvGroup('g_d3ab', d3a, d3b)
+    g_d3ab_d3c = ef.EnvGroup('g_d3', g_d3ab, d3c)
+
+    g_d1_overlap1 = ef.EnvGroup('g_d1_overlap1', d1a)
+    g_d1_overlap2 = ef.EnvGroup('g_d1_overlap2', d1a)
+
+    g_d13_overlap1 = ef.EnvGroup('g_d13_overlap1', d1a, d3a)
+    g_d13_overlap2 = ef.EnvGroup('g_d13_overlap2', d1b, d3b)
+    g_d13_overlap3 = ef.EnvGroup('g_d13_overlap3', d1a, d3b)
+
+    pp = ef.Env('pp')
+    prod = ef.Env('prod')
+    g_prod = ef.EnvGroup('g_prod', pp, prod)
+
+    ef.calc_env_group_order()
+
+    assert ef.resolve_env_group_value(d0, dict(d0=1)) == (1, d0)
+    assert ef.resolve_env_group_value(d0, dict(d0=1, d1a=17)) == (1, d0)
+
+    assert ef.resolve_env_group_value(d1a, dict(d0=1, d1a=17)) == (17, d1a)
+    # TODO: check from_eg
+    assert ef.resolve_env_group_value(d1a, dict(d0=1, d1a=17, g_d1ab_d2a=3))[0] == 17
+    assert ef.resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=17))[0] == 17
+    assert ef.resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3))[0] == 17
+    assert ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=17))[0] == 17
+    assert ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3))[0] == 3
+    assert ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3))[0] == 3
+    assert ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3, default=7))[0] == 3
+    assert ef.resolve_env_group_value(d1a, dict(default=7))[0] == 7
+
+    assert ef.resolve_env_group_value(prod, dict(d0=1, prod=18))[0] == 18
+    assert ef.resolve_env_group_value(prod, dict(d0=1, d1a=17, prod=18))[0] == 18
+    assert ef.resolve_env_group_value(prod, dict(d0=1, d1a=17, g_prod=19, prod=18))[0] == 18
+    assert ef.resolve_env_group_value(prod, dict(d0=1, d1a=17, g_d1ab_d2a=3, g_prod=19, prod=18))[0] == 18
+    assert ef.resolve_env_group_value(prod, dict(g_prod=19, prod=18, d0=1, g_d1ab_d2a=17))[0] == 18
+    assert ef.resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_prod=19, prod=18))[0] == 18
+    assert ef.resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_prod=19))[0] == 19
+    assert ef.resolve_env_group_value(prod, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=17, default=18))[0] == 18
+
+    assert ef.resolve_env_group_value(d1a, dict(d0=1, prod=18, g_d13_overlap1=20))[0] == 20
+    assert ef.resolve_env_group_value(d1a, dict(d0=1, d1a=17, prod=18, g_d13_overlap1=20))[0] == 17
+    assert ef.resolve_env_group_value(d1a, dict(g_d13_overlap1=20, d0=1, g_prod=19, prod=18))[0] == 20
+    assert ef.resolve_env_group_value(d1a, dict(d0=1, g_d13_overlap1=20, g_prod=19, prod=18))[0] == 20
+    assert ef.resolve_env_group_value(d1a, dict(g_prod=19, prod=18, d0=1, g_d13_overlap1=20))[0] == 20
+    assert ef.resolve_env_group_value(d1a, dict(d0=1, g_prod=19, prod=18, g_d13_overlap1=20))[0] == 20
+
+    assert ef.resolve_env_group_value(d3b, dict(d0=1, prod=18, g_d13_overlap1=20, g_d13_overlap2=21))[0] == 21
+    assert ef.resolve_env_group_value(d3b, dict(d0=1, d1a=17, prod=18, g_d13_overlap1=20, g_d13_overlap2=21))[0] == 21
+    assert ef.resolve_env_group_value(d3b, dict(g_d13_overlap2=21, g_d13_overlap1=20, d0=1, d1a=17, g_prod=19, prod=18))[0] == 21
+    assert ef.resolve_env_group_value(d3b, dict(d0=1, g_d13_overlap2=21, g_d13_overlap1=20, d1a=17, g_d1ab_d2a=3, g_prod=19, prod=18))[0] == 21
+    assert ef.resolve_env_group_value(d3b, dict(g_prod=19, prod=18, d0=1, g_d13_overlap2=21, g_d1ab_d2a=17, g_d13_overlap1=20))[0] == 21
+    assert ef.resolve_env_group_value(d3b, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_prod=19, prod=18, g_d13_overlap1=20, g_d13_overlap2=21))[0] == 21
+    assert ef.resolve_env_group_value(d3b, dict(d0=1, g_d1ab_d2a=17, g_d13_overlap1=20, g_d1ab_d2a_d1cd2c=3, g_prod=19, g_d13_overlap2=21))[0] == 21
+    assert ef.resolve_env_group_value(d3b, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=17, g_d13_overlap1=20, default=18, g_d13_overlap2=21))[0] == 21
+
+
+def test_resolve_env_group_value_missing():
+    ef = EnvFactory()
+
+    d0 = ef.Env('d0')
+
+    d1a = ef.Env('d1a')
+    d1b = ef.Env('d1b')
+    d1c = ef.Env('d1c')
+
+    d2a = ef.Env('d2a')
+    d2b = ef.Env('d2b')
+    d2c = ef.Env('d2c')
+
+    g_d1ab_d2a = ef.EnvGroup('g_d1ab_d2a', d1a, d1b, d2a)  # No d2b
+    g_d1b_d2ab = ef.EnvGroup('g_d1b_d2ab', d1b, d2a, d2b)  # No d1a
+    g_d1ab_d2a_d1cd2c = ef.EnvGroup('g_d1ab_d2a_d1cd2c', g_d1ab_d2a, d1c, d2c)
+
+    d3a = ef.Env('d3a')
+    d3b = ef.Env('d3b')
+    d3c = ef.Env('d3c')
+
+    g_d3ab = ef.EnvGroup('g_d3ab', d3a, d3b)
+    g_d3ab_d3c = ef.EnvGroup('g_d3', g_d3ab, d3c)
+
+    g_d1_overlap1 = ef.EnvGroup('g_d1_overlap1', d1a)
+    g_d1_overlap2 = ef.EnvGroup('g_d1_overlap2', d1a)
+
+    g_d13_overlap1 = ef.EnvGroup('g_d13_overlap1', d1a, d3a)
+    g_d13_overlap2 = ef.EnvGroup('g_d13_overlap2', d1b, d3b)
+    g_d13_overlap3 = ef.EnvGroup('g_d13_overlap3', d1a, d3b)
+
+    pp = ef.Env('pp')
+    prod = ef.Env('prod')
+    g_prod = ef.EnvGroup('g_prod', pp, prod)
+
+    ef.calc_env_group_order()
+
+    with raises(MissingValueEnvException) as exinfo:
+        ef.resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))
+    assert str(exinfo.value) == "No value for: Env('prod')"
+
+    with raises(MissingValueEnvException) as exinfo:
+        ef.resolve_env_group_value(pp, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_d1b_d2ab=9))
+
+    with raises(MissingValueEnvException) as exinfo:
+        ef.resolve_env_group_value(prod, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=1, g_d1_overlap1=1, g_d1_overlap2=1, g_d13_overlap1=1, g_d13_overlap3=1, pp=9))
+
+
+def test_resolve_env_group_value_ambiguous():
+    ef = EnvFactory()
+
+    d0 = ef.Env('d0')
+
+    d1a = ef.Env('d1a')
+    d1b = ef.Env('d1b')
+    d1c = ef.Env('d1c')
+
+    d2a = ef.Env('d2a')
+    d2b = ef.Env('d2b')
+    d2c = ef.Env('d2c')
+
+    g_d1ab_d2a = ef.EnvGroup('g_d1ab_d2a', d1a, d1b, d2a)  # No d2b
+    g_d1b_d2ab = ef.EnvGroup('g_d1b_d2ab', d1b, d2a, d2b)  # No d1a
+    g_d1ab_d2a_d1cd2c = ef.EnvGroup('g_d1ab_d2a_d1cd2c', g_d1ab_d2a, d1c, d2c)
+
+    d3a = ef.Env('d3a')
+    d3b = ef.Env('d3b')
+    d3c = ef.Env('d3c')
+
+    g_d3ab = ef.EnvGroup('g_d3ab', d3a, d3b)
+    g_d3ab_d3c = ef.EnvGroup('g_d3', g_d3ab, d3c)
+
+    g_d1_overlap1 = ef.EnvGroup('g_d1_overlap1', d1a)
+    g_d1_overlap2 = ef.EnvGroup('g_d1_overlap2', d1a)
+
+    g_d13_overlap1 = ef.EnvGroup('g_d13_overlap1', d1a, d3a)
+    g_d13_overlap2 = ef.EnvGroup('g_d13_overlap2', d1b, d3b)
+    g_d13_overlap3 = ef.EnvGroup('g_d13_overlap3', d1a, d3b)
+
+    pp = ef.Env('pp')
+    prod = ef.Env('prod')
+    g_prod = ef.EnvGroup('g_prod', pp, prod)
+
+    ef.calc_env_group_order()
+
+    with raises(AmbiguousEnvException) as exinfo:
+        ef.resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))
+    assert str(exinfo.value) == "Ambiguous values for: Env('d1a')"
+    assert exinfo.value.ambiguous == [g_d1ab_d2a, g_d13_overlap1]
+
+    with raises(AmbiguousEnvException) as exinfo:
+        ef.resolve_env_group_value(d2a, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_d1b_d2ab=9))
+    assert exinfo.value.ambiguous == [g_d1ab_d2a, g_d1b_d2ab]
+
+    with raises(AmbiguousEnvException) as exinfo:
+        ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=1, g_d1_overlap1=1, g_d1_overlap2=1, g_d13_overlap1=1, g_d13_overlap3=1, pp=9))
+    assert exinfo.value.ambiguous == [g_d1ab_d2a, g_d1_overlap1, g_d1_overlap2, g_d13_overlap1, g_d13_overlap3]
