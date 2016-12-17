@@ -149,10 +149,16 @@ class _ConfigBase(object):
 
         where = self._mc_where
         self._mc_where = Where.IN_MC_INIT
+        must_pop = False
+        if self.__class__._mc_hierarchy[-1] != self:
+            must_pop = True
+            self.__class__._mc_hierarchy.append(self)
         try:
             self.mc_init()
         finally:
             self._mc_where = where
+            if must_pop:
+                self.__class__._mc_hierarchy.pop()
 
         if self._mc_attributes_to_check:
             msg = "The following attribues defined earlier never received a proper value for {env}:".format(env=self.env)
@@ -276,7 +282,7 @@ class _ConfigBase(object):
                     if (from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg) and not mc_force:
                         return
 
-                if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH:
+                if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH and not mc_force:
                     # Trying to set the same attribute again in with block
                     msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
                     self._mc_print_error_caller(msg, mc_error_info_up_level)

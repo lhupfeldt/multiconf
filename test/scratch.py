@@ -62,7 +62,7 @@ class root(ConfigRoot):
 #             with NestedRepeatable(id='c') as nr:
 #                 nr.a = 7
 #             with X() as ci:
-#                 ci.setattr('b?', prod=1)
+#                 ci.setattr('b', prod=1, mc_set_unknown=True)
 #                 with NestedRepeatable(id='d') as ci:
 #                     ci.setattr('a', prod=2)
 #                     with X() as ci:
@@ -76,4 +76,4 @@ class root(ConfigRoot):
 
 with root(prod, ef):
     with RepeatableConfigItem(mc_key='a') as ci:
-        ci.setattr('aa?', 1)
+        ci.setattr('aa', 1, mc_set_unknown=True)
