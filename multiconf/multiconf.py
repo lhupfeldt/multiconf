@@ -436,6 +436,68 @@ class _ConfigBase(object):
     def contained_in(self):
         return self._mc_contained_in
 
+    def find_contained_in_or_none(self, named_as):
+        """Find first parent container named as 'named_as', by searching backwards towards root_conf, starting with parent container"""
+        contained_in = self.contained_in
+        while contained_in:
+            if contained_in.named_as() == named_as:
+                return contained_in
+            contained_in = contained_in.contained_in
+        return None
+
+    def find_contained_in(self, named_as):
+        """Find first parent container named as 'named_as', by searching backwards towards root_conf, starting with parent container"""
+        contained_in = self.contained_in
+        while contained_in:
+            if contained_in.named_as() == named_as:
+                return contained_in
+            contained_in = contained_in.contained_in
+
+        # Error, create error message
+        contained_in = self.contained_in
+        contained_in_names = []
+        while contained_in:
+            contained_in_names.append(contained_in.named_as())
+            contained_in = contained_in.contained_in
+
+        msg = ': Could not find a parent container named as: ' + repr(named_as) + ' in hieracy with names: ' + repr(contained_in_names)
+        raise ConfigException("Searching from: " + repr(type(self)) + msg)
+
+    def find_attribute_or_none(self, name):
+        """Find first occurence of attribute or child item 'name', by searching backwards towards root_conf, starting with self."""
+        contained_in = self
+        while contained_in:
+            attr = contained_in._mc_attributes.get(name)
+            if attr:
+                return getattr(contained_in, name)
+            item = contained_in._mc_items.get(name)
+            if item:
+                return item
+            contained_in = contained_in.contained_in
+        return None
+
+    def find_attribute(self, name):
+        """Find first occurence of attribute or child item 'name', by searching backwards towards root_conf, starting with self."""
+        contained_in = self
+        while contained_in:
+            attr = contained_in._mc_attributes.get(name)
+            if attr:
+                return getattr(contained_in, name)
+            item = contained_in._mc_items.get(name)
+            if item:
+                return item
+            contained_in = contained_in.contained_in
+
+        # Error, create error message
+        contained_in = self
+        contained_in_names = []
+        while contained_in:
+            contained_in_names.append(contained_in.named_as())
+            contained_in = contained_in.contained_in
+
+        msg = ': Could not find an attribute named: ' + repr(name) + ' in hieracy with names: ' + repr(contained_in_names)
+        raise ConfigException("Searching from: " + repr(type(self)) + msg)
+
 
 class _ConfigItemBase(_ConfigBase):
     def __init__(self, mc_include=None, mc_exclude=None):

@@ -15,3 +15,5 @@ The '?' postfix for 'setattr' to set unknown attributes (attributes not defined 
 Json filter and fallback can only be specifed on mc_config and the same filter/fallback will be applied on all objects
 
 None is not a special value any more! !!! In earlier versions of multiconf  None would be overriden with non-None values in mc_init. This is no longer the case. Use MC_REQUIRED to assign default values which MUST be overriden.
+
+The argument name for 'find_attribute...' was changed from 'attribute_name' to 'name' as the method finds not only attributs, but also child items.
