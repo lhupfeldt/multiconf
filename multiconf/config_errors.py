@@ -83,3 +83,6 @@ def _warning_msg(message):
 
 def _api_error_msg(message):
     return 'MultiConfApiError: ' + message
+
+
+failed_property_call_msg = "Attribute '{attr}' is defined as a multiconf attribute and as a @property method but value is undefined for {env} and @property method call failed with: {ex_type}: {ex}"

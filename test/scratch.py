@@ -9,17 +9,18 @@ import sys
 import os.path
 from os.path import join as jp
 here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
+sys.path.insert(0, jp(here, '..'))
 
-from multiconf import ConfigRoot, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED, RepeatableConfigItem
-from multiconf.decorators import nested_repeatables, named_as, required, unchecked
+from multiconf import mc_config, ConfigItem, ConfigException, ConfigDefinitionException, MC_REQUIRED, RepeatableConfigItem
+from multiconf.decorators import nested_repeatables, named_as, required
 from multiconf.envs import EnvFactory
-from multiconf.test.utils.utils import lineno
-from multiconf.test.utils.check_containment import check_containment
+from test.utils.utils import line_num
+from test.utils.check_containment import check_containment
 
 
 ef = EnvFactory()
 prod = ef.Env('prod')
+pp = ef.Env('pp')
 
 
 @named_as('someitems')
@@ -39,41 +40,26 @@ class X(ConfigItem):
         self.a = MC_REQUIRED
 
 
-@nested_repeatables('someitems')
-class root(ConfigRoot):
-    def __init__(self, selected_env, env_factory, mc_json_filter=None, mc_json_fallback=None,
-                 mc_allow_todo=False, mc_allow_current_env_todo=False):
-        super(root, self).__init__(
-            selected_env=selected_env, env_factory=env_factory, mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
-            mc_allow_todo=mc_allow_todo, mc_allow_current_env_todo=mc_allow_current_env_todo)
-        self.a = None
-        self.q = None
+
+@named_as('someitem')
+class Nested(ConfigItem):
+    @property
+    def m(self):
+        raise Exception("bad property method")
 
 
-# with root(prod, ef) as cr:
-#     cr.a = 0
-#     cr.q = 17
-#     NestedRepeatable(id=1)
-#     with X() as ci:
-#         ci.setattr('a', prod=0)
-#         with NestedRepeatable(id='a') as nr:
-#             nr.a = 9
-#         with NestedRepeatable(id='b') as ci:
-#             with NestedRepeatable(id='c') as nr:
-#                 nr.a = 7
-#             with X() as ci:
-#                 ci.setattr('b', prod=1, mc_set_unknown=True)
-#                 with NestedRepeatable(id='d') as ci:
-#                     ci.setattr('a', prod=2)
-#                     with X() as ci:
-#                         ci.setattr('a', prod=3)
+@mc_config(ef)
+def _(_):
+    with Nested() as nn:
+        nn.setattr('m', prod=7, mc_overwrite_property=True)
 
+cr = ef.config(prod)
+assert cr.someitem.m == 7
 
+@mc_config(ef)
+def _(_):
+    with Nested() as nn:
+        nn.setattr('m', pp=7, mc_overwrite_property=True)
 
-@nested_repeatables('RepeatableConfigItems')
-class root(ConfigRoot):
-    pass
-
-with root(prod, ef):
-    with RepeatableConfigItem(mc_key='a') as ci:
-        ci.setattr('aa', 1, mc_set_unknown=True)
+cr = ef.config(prod)
+print(cr.someitem.m)

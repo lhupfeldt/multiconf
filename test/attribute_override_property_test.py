@@ -1,10 +1,10 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import re
+import sys, re, traceback
 
 # pylint: disable=E0611
-from pytest import raises, xfail
+from pytest import raises
 
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
 
@@ -12,6 +12,9 @@ from multiconf.decorators import named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import py3_local, config_error, next_line_num
+
+
+major_version = sys.version_info[0]
 
 
 def ce(line_num, *lines):
@@ -154,11 +157,13 @@ def test_attribute_clash_property_method_error_in_init_def(capsys):
 
 
 def test_attribute_overrides_property_method_failing():
-    xfail('TODO, exception message')
+    errorline = [None]
+
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
         def m(self):
+            errorline[0] = next_line_num()
             raise Exception("bad property method")
 
     @mc_config(ef)
@@ -175,10 +180,17 @@ def test_attribute_overrides_property_method_failing():
             nn.setattr('m', pp=7, mc_overwrite_property=True)
 
     cr = ef.config(prod)
-    with raises(Exception) as exinfo:
+    with raises(ConfigException) as exinfo:
         print(cr.someitem.m)
 
-    exp = "Attribute 'm' is defined as muticonf attribute and as @property method but value is undefined for Env('prod') and method call failed."
-    print(exinfo.value)
-    traceback.print_tb(sys.exc_info()[2], file=sys.stdout)
-    assert 'TODO' + exp in str(exinfo.value)
+    origin_line_exp = 'raise Exception("bad property method")'
+
+    if major_version >= 3:
+        origin = traceback.extract_tb(exinfo.value.__cause__.__traceback__)[-1]
+        assert origin.filename == __file__
+        assert origin.lineno == errorline[0]
+        assert origin.line == origin_line_exp
+
+    exp = "Attribute 'm' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed"
+    exp += " with: Exception: bad property method"
+    assert exp in str(exinfo.value)

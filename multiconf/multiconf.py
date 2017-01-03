@@ -10,7 +10,13 @@ import json
 from .envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException, EnvException
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED
 from .attribute import _McAttribute, Where
-from .property_wrapper import _McPropertyWrapper
+
+major_version = sys.version_info[0]
+if major_version < 3:
+    from .property_wrapper_py2 import _McPropertyWrapper
+else:
+    from .property_wrapper_py3 import _McPropertyWrapper
+
 from .repeatable import RepeatableDict
 from .config_errors import ConfigAttributeError, ConfigException, ConfigApiException, caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg
 from .json_output import ConfigItemEncoder
