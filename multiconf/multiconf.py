@@ -12,7 +12,7 @@ from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED
 from .attribute import _McAttribute, Where
 from .property_wrapper import _McPropertyWrapper
 from .repeatable import RepeatableDict
-from .config_errors import ConfigAttributeError, ConfigException, caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg
+from .config_errors import ConfigAttributeError, ConfigException, ConfigApiException, caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg
 from .json_output import ConfigItemEncoder
 from .bases import get_bases, get_real_attr
 
@@ -132,6 +132,20 @@ class _ConfigBase(object):
 
         pass
 
+    def mc_post_validate(self):
+        """This is a user defined callback method.
+
+        This method is called once for each item after other initialization has been done for all envs, so cross env checking and cross object/attribute
+        checking is possible. Since it is called once, and not per env, there is no current env and regular attribute access is not possible, instead the
+        ite.getattr(name, env) method must be used to get attribute values for different envs. This makes it possible to checks like the following:
+
+        assert item.getattr('mem_size', pprd) == item.getattr('mem_size', prod) <= item.getattr('mem_size', tst1)
+
+        Note that no modifications can be done in this method!
+        """
+
+        pass
+
     def __bool__(self):
         if not self._mc_is_excluded():
             return True
@@ -168,7 +182,7 @@ class _ConfigBase(object):
             print(_error_msg(msg), file=sys.stderr)
 
             for attr_name, info in self._mc_attributes_to_check.items():
-                value, value_file_name, value_line_num = info  # TODO
+                value, where_from, value_file_name, value_line_num = info  # TODO, 'use where'_from in error message
                 self._mc_print_value_error_msg(attr_name, value, value_file_name, value_line_num)
 
         missing_req = []
@@ -183,6 +197,23 @@ class _ConfigBase(object):
 
         self._mc_raise_if_errors()
         self._mc_frozen = True
+
+    def _mc_post_validate_freeze(self):
+        where = self._mc_where
+        self._mc_where = Where.IN_MC_INIT
+        try:
+            self.mc_post_validate()
+        finally:
+            self._mc_where = where
+
+    def _mc_call_post_validate_recursively(self):
+        """Call the user defined 'mc_post_validate' methods on all items"""
+        if self._mc_is_excluded():
+            return
+
+        self._mc_post_validate_freeze()
+        for child_item in self._mc_items.values():
+            child_item._mc_call_post_validate_recursively()
 
     def __enter__(self):
         self._mc_where = Where.IN_WITH
@@ -307,13 +338,21 @@ class _ConfigBase(object):
             if value == MC_NO_VALUE:
                 env_attr.set(current_env, value, self._mc_where, from_eg)
 
-            # This is not an error now, as we allow partial set in __init__ but we must remember to test later if the attribute has been set
+            # This is not an error now, as we allow partial set in __init__ and setting value to MC_REQUIRED in 'with' block
+            # to postpone check until after 'mc_init', but we must remember to test later if the attribute has been set.
             mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
-            self._mc_attributes_to_check[attr_name] = (value, mc_caller_file_name, mc_caller_line_num)
+            self._mc_attributes_to_check[attr_name] = (value, self._mc_where, mc_caller_file_name, mc_caller_line_num)
             return
 
         mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
         self._mc_print_value_error_msg(attr_name, value, mc_caller_file_name, mc_caller_line_num)
+
+    def _setattr_disabled(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
+        """Common code for assignment and item.setattr to disable attribute modification after config is loaded"""
+        msg = "Trying to set attribute '{}'. Setting attributes is not allowed after configuration is loaded (in order to enforce derived value validity)."
+        raise ConfigApiException(msg.format(attr_name))
+
+    _setattr_real = _setattr  # Keep a reference to the real _setattr
 
     def __setattr__(self, attr_name, value):
         if attr_name[0] == '_':
@@ -380,6 +419,10 @@ class _ConfigBase(object):
                 value = env_values[eg.name]
                 msg += "\nvalue: " + repr(value) + ", from: " + repr(eg)
             self._mc_print_error_caller(msg, mc_error_info_up_level)
+        except AttributeError:
+            if current_env is None:
+                self._setattr_disabled(None, attr_name, None, None, None, None, None, None)
+            raise
 
     def __getattr__(self, attr_name):
         # Only called is self.<attr_name> is not found
@@ -396,7 +439,10 @@ class _ConfigBase(object):
         try:
             return self._mc_attributes[attr_name].env_values[self._mc_root._mc_env]
         except KeyError:
-            raise ConfigAttributeError(self, attr_name)
+            if self._mc_root._mc_env != None:
+                raise ConfigAttributeError(self, attr_name)
+            msg = "Trying to access attribute '{}'. Item.attribute access is not allowed in 'mc_post_validate' as there i no current env, use: item.getattr(attr_name, env)"
+            raise ConfigApiException(msg.format(attr_name))
 
     def getattr(self, attr_name, env):
         """Get an attribute value for any env."""
@@ -786,6 +832,9 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
         cr = _ConfigRoot(env_factory, mc_allow_todo, mc_json_filter, mc_json_fallback)
         cr._mc_check_unknown = True
 
+        # Make sure _setattr is the real one if decorator is used multiple times
+        _ConfigBase._setattr = _ConfigBase._setattr_real
+
         # Load envs
         error_envs = []
         for env in env_factory.envs.values():
@@ -816,6 +865,12 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
         if error_envs:
             raise ConfigException("The following envs had errors {}".format(error_envs))
 
+        # No modifications are allowed after this
         cr._mc_config_loaded = True
+        _ConfigBase._setattr = _ConfigBase._setattr_disabled
+
+        # Call mc_post_validate
+        cr._mc_env = None
+        cr._mc_call_post_validate_recursively()
 
     return deco

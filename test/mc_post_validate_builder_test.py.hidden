@@ -1,0 +1,46 @@
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
+from __future__ import print_function
+
+# pylint: disable=E0611
+from pytest import raises
+
+from multiconf import mc_config, ConfigBuilder
+from ..decorators import nested_repeatables
+from ..envs import EnvFactory
+
+
+ef2_pp_prod = EnvFactory()
+pp2 = ef2_pp_prod.Env('pp')
+prod2 = ef2_pp_prod.Env('prod')
+ef2_pp_prod.EnvGroup('g_prod_like', prod2, pp2)
+
+
+def test_automatic_freeze_call_of_mc_post_validate_builder():
+    class builder(ConfigBuilder):
+        def mc_post_validate(self):
+            self.y = 7
+
+        def build(self):
+            pass
+
+    with nc_aa_root(prod2, ef2_pp_prod, aa=0):
+        ii = builder()
+
+    assert ii.y == 7
+
+
+def test_builder_user_mc_post_validate_error():
+    class builder(ConfigBuilder):
+        def build(self):
+            pass
+
+        def mc_post_validate(self):
+            raise Exception("Error in builder mc_post_validate")
+
+    with raises(Exception) as exinfo:
+        with ConfigRoot(prod, ef):
+            builder()
+
+    assert str(exinfo.value) == "Error in builder mc_post_validate"

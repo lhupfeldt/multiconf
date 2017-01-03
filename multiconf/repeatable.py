@@ -47,3 +47,8 @@ class RepeatableDict(OrderedDict):
             if val:
                 count += 1
         return count
+
+    def _mc_call_post_validate_recursively(self):
+        """Call the user defined 'mc_post_validate' methods on all items"""
+        for item in self.values():
+            item._mc_call_post_validate_recursively()

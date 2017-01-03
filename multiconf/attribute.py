@@ -8,8 +8,7 @@ class Where(Enum):
     NOWHERE = 0
     IN_INIT = 1
     IN_MC_INIT = 2
-    IN_BUILD = 3
-    IN_WITH = 4
+    IN_WITH = 3
 
 
 class _McAttribute(object):
