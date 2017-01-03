@@ -46,7 +46,7 @@ class ConfigItemEncoder(object):
     recursion_check.warn_nesting = _warn_json_nesting
 
     def __init__(self, filter_callable, fallback_callable, compact, sort_attributes, property_methods, builders, warn_nesting,
-                 multiconf_base_type, multiconf_builder_type, muticonf_property_wrapper_type):
+                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type):
         """Encoder for json.
 
         Arguments:
@@ -71,7 +71,7 @@ class ConfigItemEncoder(object):
         self.builders = builders
         self.multiconf_base_type = multiconf_base_type
         self.multiconf_builder_type = multiconf_builder_type
-        self.muticonf_property_wrapper_type = muticonf_property_wrapper_type
+        self.multiconf_property_wrapper_type = multiconf_property_wrapper_type
 
         self.filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'mc_config_result')
         self.seen = {}
@@ -311,7 +311,7 @@ class ConfigItemEncoder(object):
                     for cls in get_bases(object.__getattribute__(obj, '__class__')):
                         try:
                             real_attr = object.__getattribute__(cls, real_key)
-                            if isinstance(real_attr, self.muticonf_property_wrapper_type):
+                            if isinstance(real_attr, self.multiconf_property_wrapper_type):
                                 val = real_attr.prop.__get__(obj, type(obj))
                                 calc_or_static = _calculated_value
                             elif isinstance(real_attr, property):

@@ -104,7 +104,7 @@ class _ConfigBase(object):
                                     compact=compact, sort_attributes=sort_attributes, property_methods=property_methods,
                                     builders=builders, warn_nesting=warn_nesting,
                                     multiconf_base_type=_ConfigBase, multiconf_builder_type=_ConfigBuilder,
-                                    muticonf_property_wrapper_type=_McPropertyWrapper)
+                                    multiconf_property_wrapper_type=_McPropertyWrapper)
         # python3 doesn't need  separators=(',', ': ')
         json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
         self._mc_json_errors = encoder.num_errors
