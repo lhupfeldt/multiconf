@@ -1,8 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-# pylint: disable=E0611
-from pytest import raises, xfail
+from pytest import raises
 
 from multiconf import mc_config, ConfigItem, MC_REQUIRED, ConfigException
 from multiconf.envs import EnvFactory

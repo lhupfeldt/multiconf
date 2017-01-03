@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 
 # pylint: disable=E0611
-from pytest import raises, xfail
+from pytest import raises
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException
 from multiconf.config_errors import ConfigAttributeError

@@ -3,9 +3,6 @@
 
 from __future__ import print_function
 
-# pylint: disable=E0611
-from pytest import xfail
-
 from multiconf import mc_config, ConfigItem, MC_REQUIRED
 
 from multiconf.envs import EnvFactory

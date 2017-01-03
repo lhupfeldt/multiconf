@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 
 # pylint: disable=E0611
-from pytest import raises, xfail
+from pytest import raises
 
 from .utils.utils import api_error, config_error, next_line_num
 

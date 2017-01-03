@@ -5,8 +5,7 @@ from __future__ import print_function
 
 import os.path
 
-import pytest
-from pytest import raises, mark, xfail  # pylint: disable=no-name-in-module
+from pytest import raises
 
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
 from multiconf.envs import EnvFactory
