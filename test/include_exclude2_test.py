@@ -232,7 +232,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_init(capsys):
         @mc_config(ef)
         def _(_):
             errorline[0] = next_line_num()
-            item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
+            item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
 
     print(str(exinfo.value))
     assert "There were 2 errors when defining item" in str(exinfo.value)
@@ -266,7 +266,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs(c
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
         def _(_):
-            with item() as it:
+            with item(anattr=1) as it:
                 errorline[0] = next_line_num()
                 it.mc_select_envs(include=[g_dev12_3, pp], exclude=[g_dev34, g_dev2_34])
 
@@ -282,7 +282,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_r
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
         def _(_):
-            with item() as it:
+            with item(anattr=1) as it:
                 errorline[0] = next_line_num()
                 it.mc_select_envs(include=[g_dev34, g_dev2_34], exclude=[g_dev12_3, pp])
 
@@ -296,7 +296,7 @@ def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolve
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
         def _(_):
-            item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3])
+            item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3])
 
     assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
