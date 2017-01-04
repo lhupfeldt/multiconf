@@ -187,9 +187,11 @@ def test_attribute_overrides_property_method_failing():
 
     if major_version >= 3:
         origin = traceback.extract_tb(exinfo.value.__cause__.__traceback__)[-1]
-        assert origin.filename == __file__
-        assert origin.lineno == errorline[0]
-        assert origin.line == origin_line_exp
+        filename, lineno, function_name, line = origin
+        assert filename == __file__
+        assert lineno == errorline[0]
+        assert function_name == 'm'
+        assert line == origin_line_exp
 
     exp = "Attribute 'm' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed"
     exp += " with: Exception: bad property method"
