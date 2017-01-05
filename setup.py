@@ -50,7 +50,7 @@ if __name__ == "__main__":
         setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
         # pytest version is duplicated in .travis.yml
-        tests_require=['pytest>=2.8.2,<=3.0.2', 'pytest-cov>=2.2.0,<=2.3.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
+        tests_require=['pytest>=3.0.5', 'pytest-cov>=2.4.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
         cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
