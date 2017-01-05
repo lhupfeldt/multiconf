@@ -519,11 +519,12 @@ def test_assigning_owerwrites_attribute(capsys):
     assert replace_ids(str(exinfo.value), named_as=False) == _assigning_owerwrites_attribute_expected_ex
 
 
-def test_configitem_outside_of_root():
-    xfail("TODO ConfigItem outside mc_config?")
-    with raises(ConfigException) as exinfo:
+def test_configitem_outside_of_mc_config():
+    # TODO: Explicitly check this?
+    with raises(Exception) as exinfo:
         ConfigItem()
 
+    xfail('TODO?')
     assert str(exinfo.value) == "ConfigItem object must be nested (indirectly) in a 'ConfigItem'"
 
 
