@@ -52,3 +52,6 @@ class RepeatableDict(OrderedDict):
         """Call the user defined 'mc_post_validate' methods on all items"""
         for item in self.values():
             item._mc_call_post_validate_recursively()
+
+    def _mc_is_excluded(self):
+        return False

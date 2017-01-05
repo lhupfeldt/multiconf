@@ -468,7 +468,7 @@ class _ConfigBase(object):
 
     def items(self):
         for key, item in self._mc_items.items():
-            if hasattr(item, '_mc_is_excluded') and item._mc_is_excluded():
+            if item._mc_is_excluded():
                 continue
             yield key, item
 

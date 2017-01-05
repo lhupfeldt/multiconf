@@ -96,7 +96,7 @@ class ConfigItemEncoder(object):
         return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', id(obj))))
 
     def _excl_str(self, objval):
-        return ' excluded' if  hasattr(objval, '_mc_is_excluded') and objval._mc_is_excluded() else ''
+        return ' excluded' if  objval._mc_is_excluded() else ''
 
     def _ref_earlier_str(self, objval):
         return "#ref" + self._excl_str(objval) + ", id: " + repr(id(objval))
