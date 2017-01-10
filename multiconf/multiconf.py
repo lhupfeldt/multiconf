@@ -623,10 +623,6 @@ class ConfigItem(_ConfigItemBase):
         # print('ConfigItem __new__', cls._debug_hierarchy())
         name = cls.named_as()
 
-        if name in contained_in.__class__._mc_deco_nested_repeatables:
-            msg = "'{name}': {cls} is not defined as repeatable, but this is defined as a repeatable item in the containing class: {contained_in}"
-            raise ConfigException(msg.format(name=name, cls=cls, contained_in=contained_in))
-
         try:
             self = object.__getattribute__(contained_in, name)
             if self._mc_handled_env_bits & self._mc_root._mc_env.mask:
@@ -637,6 +633,10 @@ class ConfigItem(_ConfigItemBase):
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
             return self
         except AttributeError:
+            if name in contained_in.__class__._mc_deco_nested_repeatables:
+                msg = "'{name}': {cls} is not defined as repeatable, but this is defined as a repeatable item in the containing class: {contained_in}"
+                raise ConfigException(msg.format(name=name, cls=cls, contained_in=contained_in), is_fatal=True)
+
             self = super(ConfigItem, cls).__new__(cls)
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = OrderedDict()
@@ -654,7 +654,7 @@ class ConfigItem(_ConfigItemBase):
             if name in contained_in._mc_attributes:
                 self._mc_frozen = False
                 msg = "'{name}' is defined both as simple value and a contained item: {self}".format(name=name, self=self)
-                raise ConfigException(msg)
+                raise ConfigException(msg, is_fatal=True)
             object.__setattr__(contained_in, name, self)
             contained_in._mc_items[name] = self  # Needed to implement reliable 'items' method
 
@@ -682,15 +682,14 @@ class RepeatableConfigItem(_ConfigItemBase):
         contained_in = cls._mc_hierarchy[-1]
         # print('RepeatableConfigItem __new__', cls._debug_hierarchy())
 
-        # Insert self in parent attributes
+        # Get the key for inserting/looking-up self in parent attributes
         my_class_key = cls.named_as()
 
-        # Validate that this class specifies item as repeatable
+        # Validate that containing class specifies item as repeatable
         if my_class_key not in contained_in.__class__._mc_deco_nested_repeatables:
             msg = repr(my_class_key) + ': ' + repr(cls) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
-                repr(contained_in.named_as())
+                  repr(contained_in.named_as())
             raise ConfigException(msg)
-
         repeatable = object.__getattribute__(contained_in, my_class_key)
 
         try:
@@ -852,7 +851,7 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
                 with cr:
                     res = conf_func(cr)
             except ConfigException as ex:
-                if not error_next_env:
+                if not error_next_env or ex.is_fatal:
                     raise
 
                 if not ex.is_summary:

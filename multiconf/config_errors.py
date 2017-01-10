@@ -8,6 +8,7 @@ import sys
 
 class ConfigBaseException(Exception):
     is_summary = False
+    is_fatal = False
 
 
 class ConfigDefinitionException(ConfigBaseException):
@@ -16,9 +17,10 @@ class ConfigDefinitionException(ConfigBaseException):
 
 
 class ConfigException(ConfigBaseException):
-    def __init__(self, msg, is_summary=False):
+    def __init__(self, msg, is_summary=False, is_fatal=False):
         super(ConfigException, self).__init__(msg)
         self.is_summary = is_summary
+        self.is_fatal = is_fatal
 
 
 class InvalidUsageException(ConfigBaseException):
