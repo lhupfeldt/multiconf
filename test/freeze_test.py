@@ -152,7 +152,7 @@ def test_automatic_freeze_of_previous_sibling():
 #         def validate(self):
 #             self.y = 7
 #
-#         def build(self):
+#         def mc_build(self):
 #             pass
 #
 #     with nc_aa_item(prod2, ef2_pp_prod, aa=0):

@@ -19,6 +19,7 @@ if major_version > 2:
 _warn_json_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
 _calculated_value = ' #calculated'
 _static_value = ' #static'
+_dynamic_value = ' #dynamic'
 
 
 class NestedJsonCallError(Exception):
@@ -212,6 +213,7 @@ class ConfigItemEncoder(object):
                             continue
 
                     if not self.builders and isinstance(val, self.multiconf_builder_type):
+                        # TODO: 'ref builder' A reference from an atribute to a builder
                         continue
 
                     val = self._check_nesting(obj, val)
@@ -258,6 +260,9 @@ class ConfigItemEncoder(object):
                         dd[key] = attr_dict[key]
 
                 for key, item in obj._mc_items.items():
+                    if not self.builders and isinstance(item, self.multiconf_builder_type):
+                        continue
+
                     if hasattr(item, '_mc_is_excluded') and item._mc_is_excluded():
                         if self.compact:
                             dd[key] = 'false #' + repr(item)
@@ -320,7 +325,8 @@ class ConfigItemEncoder(object):
                                 calc_or_static = _static_value
                             break
                         except AttributeError:
-                            pass
+                            # This can happen for Builders
+                            calc_or_static = _dynamic_value
 
                     if (self.compact or real_key in attributes_overriding_property) and isinstance(val, (str, int, long, float)):
                         dd[key] = str(val) + calc_or_static

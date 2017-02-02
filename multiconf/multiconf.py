@@ -19,12 +19,19 @@ else:
 
 from .repeatable import RepeatableDict
 from .config_errors import ConfigAttributeError, ConfigException, ConfigApiException, caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg
+from .config_errors import not_repatable_in_parent_msg
 from .json_output import ConfigItemEncoder
 from .bases import get_bases, get_real_attr
 
 
 class _McExcludedException(Exception):
     pass
+
+
+_debug_enabled = False
+def _debug(*args):
+    if _debug_enabled:
+        print(*args)
 
 
 class _ConfigBase(object):
@@ -34,11 +41,12 @@ class _ConfigBase(object):
     _mc_deco_required = ()
     _mc_deco_nested_repeatables = ()
 
-    # @classmethod
-    # def _debug_hierarchy(cls):
-    #     return '_mc_hierarchy: {}'.format([id(item) for item in cls._mc_hierarchy])
+    @classmethod
+    def _debug_hierarchy(cls, msg):
+        _debug(msg, cls, '_mc_hierarchy: {}'.format([id(item) for item in cls._mc_hierarchy]))
 
     def __init__(self):
+        # _debug(type(self), '__init__')
         self._mc_where = Where.IN_INIT
         self._mc_json_errors = 0
         self._mc_frozen = False
@@ -166,19 +174,16 @@ class _ConfigBase(object):
             return
 
         self._mc_raise_if_errors()
+        orig_where = self._mc_where
 
-        where = self._mc_where
         self._mc_where = Where.IN_MC_INIT
         must_pop = False
         if self.__class__._mc_hierarchy[-1] != self:
             must_pop = True
             self.__class__._mc_hierarchy.append(self)
-        try:
-            self.mc_init()
-        finally:
-            self._mc_where = where
-            if must_pop:
-                self.__class__._mc_hierarchy.pop()
+
+        # Call user 'mc_init' callback
+        self.mc_init()
 
         if self._mc_attributes_to_check:
             msg = "The following attribues defined earlier never received a proper value for {env}:".format(env=self.env)
@@ -191,40 +196,44 @@ class _ConfigBase(object):
                 value, where_from, value_file_name, value_line_num = info  # TODO, 'use where'_from in error message
                 self._mc_print_value_error_msg(attr_name, value, value_file_name, value_line_num)
 
-        missing_req = []
-        for req in self._mc_deco_required:
-            if not req in self._mc_items:
-                missing_req.append(req)
-        if missing_req:
-            if mc_error_info_up_level is not None:
-                mc_caller_file_name, mc_caller_line_num = find_user_file_line(up_level_start=mc_error_info_up_level)
-                print(_line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num), file=sys.stderr)
-            print(self._mc_error_msg("Missing '@required' items: {}".format(missing_req)), file=sys.stderr)
+        if isinstance(self, _ConfigBuilder):
+            self._mc_builder_freeze()
+
+        if must_pop:
+            self.__class__._mc_hierarchy.pop()
+        self._mc_where = orig_where
+
+        if self._mc_where != Where.IN_MC_BUILD:
+            missing_req = []
+            for req in self._mc_deco_required:
+                if not req in self._mc_items:
+                    missing_req.append(req)
+            if missing_req:
+                if mc_error_info_up_level is not None:
+                    mc_caller_file_name, mc_caller_line_num = find_user_file_line(up_level_start=mc_error_info_up_level)
+                    print(_line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num), file=sys.stderr)
+                print(self._mc_error_msg("Missing '@required' items: {}".format(missing_req)), file=sys.stderr)
 
         self._mc_raise_if_errors()
         self._mc_frozen = True
-
-    def _mc_post_validate_freeze(self):
-        where = self._mc_where
-        self._mc_where = Where.IN_MC_INIT
-        try:
-            self.mc_post_validate()
-        finally:
-            self._mc_where = where
 
     def _mc_call_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items"""
         if self._mc_is_excluded():
             return
 
-        self._mc_post_validate_freeze()
+        orig_where = self._mc_where
+        self._mc_where = Where.IN_MC_INIT
+        self.mc_post_validate()
+        self._mc_where = orig_where
+
         for child_item in self._mc_items.values():
             child_item._mc_call_post_validate_recursively()
 
     def __enter__(self):
         self._mc_where = Where.IN_WITH
         self.__class__._mc_hierarchy.append(self)
-        # print('ci __enter__ {},'.format(id(self)), self.__class__._debug_hierarchy())
+        self.__class__._debug_hierarchy('_ConfigBase.__enter__')
         return self
 
     def __exit__(self, exc_type, value, traceback):
@@ -233,14 +242,14 @@ class _ConfigBase(object):
 
         cls = self.__class__
         try:
-            previous_item = cls._mc_last_item
+            previous_item = _ConfigBase._mc_last_item
             if previous_item != self and previous_item != self._mc_contained_in and previous_item and not previous_item._mc_frozen:
                 previous_item._mc_freeze(mc_error_info_up_level=1)
 
             if not exc_type:
                 self._mc_freeze(mc_error_info_up_level=1)
         finally:
-            # print('ci __exit__ {},'.format(id(self)), self.__class__._debug_hierarchy())
+            self.__class__._debug_hierarchy('_ConfigBase.__exit__')
             cls._mc_hierarchy.pop()
 
         return True if exc_type and exc_type is _McExcludedException else None
@@ -445,7 +454,7 @@ class _ConfigBase(object):
         try:
             return self._mc_attributes[attr_name].env_values[self._mc_root._mc_env]
         except KeyError:
-            if self._mc_root._mc_env != None:
+            if self._mc_root._mc_env != None or attr_name not in self._mc_attributes:
                 raise ConfigAttributeError(self, attr_name)
             msg = "Trying to access attribute '{}'. Item.attribute access is not allowed in 'mc_post_validate' as there i no current env, use: item.getattr(attr_name, env)"
             raise ConfigApiException(msg.format(attr_name))
@@ -468,7 +477,7 @@ class _ConfigBase(object):
 
     def items(self):
         for key, item in self._mc_items.items():
-            if item._mc_is_excluded():
+            if item._mc_is_excluded() or isinstance(item, _ConfigBuilder):
                 continue
             yield key, item
 
@@ -486,7 +495,10 @@ class _ConfigBase(object):
 
     @property
     def contained_in(self):
-        return self._mc_contained_in
+        mc_contained_in = self._mc_contained_in
+        while isinstance(mc_contained_in, _ConfigBuilder):
+            mc_contained_in = mc_contained_in._mc_contained_in
+        return mc_contained_in
 
     def find_contained_in_or_none(self, named_as):
         """Find first parent container named as 'named_as', by searching backwards towards root_conf, starting with parent container"""
@@ -557,6 +569,7 @@ class _ConfigItemBase(_ConfigBase):
         previous_item = self.__class__._mc_last_item
         if previous_item != self._mc_contained_in and previous_item and not previous_item._mc_frozen:
             try:
+                _debug("freeze in init, previous:", type(previous_item))
                 previous_item._mc_freeze(mc_error_info_up_level=None)
             except Exception as ex:
                 print("Exception validating previously defined object -", file=sys.stderr)
@@ -619,8 +632,14 @@ class _ConfigItemBase(_ConfigBase):
 
 class ConfigItem(_ConfigItemBase):
     def __new__(cls, *init_args, **init_kwargs):
-        contained_in = cls._mc_hierarchy[-1]
-        # print('ConfigItem __new__', cls._debug_hierarchy())
+        cls._debug_hierarchy('ConfigItem.__new__')
+        _mc_contained_in = cls._mc_hierarchy[-1]
+
+        # Find the first parent which is not a builder if we are in the mc_build method of a builder
+        contained_in = _mc_contained_in
+        while contained_in._mc_where == Where.IN_MC_BUILD:
+            contained_in = contained_in._mc_contained_in
+
         name = cls.named_as()
 
         try:
@@ -633,17 +652,17 @@ class ConfigItem(_ConfigItemBase):
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
             return self
         except AttributeError:
-            if name in contained_in.__class__._mc_deco_nested_repeatables:
-                msg = "'{name}': {cls} is not defined as repeatable, but this is defined as a repeatable item in the containing class: {contained_in}"
-                raise ConfigException(msg.format(name=name, cls=cls, contained_in=contained_in), is_fatal=True)
-
             self = super(ConfigItem, cls).__new__(cls)
+            self._mc_where = Where.IN_INIT
+            self._mc_json_errors = 0
+            self._mc_frozen = False
+
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = OrderedDict()
             self._mc_items = OrderedDict()
-            self._mc_contained_in = contained_in
+            self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
-            self._mc_excluded = set()  # TODO bis
+            self._mc_excluded = set()  # TODO bits
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict(key, self)
@@ -651,8 +670,11 @@ class ConfigItem(_ConfigItemBase):
                 object.__setattr__(self, key, od)
 
             # Insert self in parent
+            if name in contained_in.__class__._mc_deco_nested_repeatables:
+                msg = "'{name}': {cls} is not defined as repeatable, but this is defined as a repeatable item in the containing class: {contained_in}"
+                raise ConfigException(msg.format(name=name, cls=cls, contained_in=contained_in), is_fatal=True)
+
             if name in contained_in._mc_attributes:
-                self._mc_frozen = False
                 msg = "'{name}' is defined both as simple value and a contained item: {self}".format(name=name, self=self)
                 raise ConfigException(msg, is_fatal=True)
             object.__setattr__(contained_in, name, self)
@@ -679,17 +701,29 @@ class _DummyItem(_ConfigBase):
 
 class RepeatableConfigItem(_ConfigItemBase):
     def __new__(cls, mc_key, *init_args, **init_kwargs):
-        contained_in = cls._mc_hierarchy[-1]
-        # print('RepeatableConfigItem __new__', cls._debug_hierarchy())
+        cls._debug_hierarchy('RepeatableConfigItem.__new__')
+        _mc_contained_in = cls._mc_hierarchy[-1]
+
+        # Find the first parent which is not a builder if we are in the mc_build method of a builder
+        contained_in = _mc_contained_in
+        while contained_in._mc_where == Where.IN_MC_BUILD:
+            contained_in = contained_in._mc_contained_in
 
         # Get the key for inserting/looking-up self in parent attributes
         my_class_key = cls.named_as()
 
         # Validate that containing class specifies item as repeatable
         if my_class_key not in contained_in.__class__._mc_deco_nested_repeatables:
-            msg = repr(my_class_key) + ': ' + repr(cls) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
-                  repr(contained_in.named_as())
-            raise ConfigException(msg)
+            if not isinstance(contained_in, _ConfigBuilder):
+                msg = repr(my_class_key) + ': ' + repr(cls) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
+                      repr(contained_in.named_as())
+                raise ConfigException(msg)
+
+            if not hasattr(contained_in, my_class_key):
+                od = RepeatableDict(my_class_key, contained_in)
+                contained_in._mc_items[my_class_key] = od
+                object.__setattr__(contained_in, my_class_key, od)
+
         repeatable = object.__getattribute__(contained_in, my_class_key)
 
         try:
@@ -703,12 +737,16 @@ class RepeatableConfigItem(_ConfigItemBase):
             return self
         except KeyError:
             self = super(RepeatableConfigItem, cls).__new__(cls)
+            self._mc_where = Where.IN_INIT
+            self._mc_json_errors = 0
+            self._mc_frozen = False
+
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = OrderedDict()
             self._mc_items = OrderedDict()
-            self._mc_contained_in = contained_in
+            self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
-            self._mc_excluded = set()  # TODO bis
+            self._mc_excluded = set()  # TODO bits
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict(key, self)
@@ -733,27 +771,127 @@ class RepeatableConfigItem(_ConfigItemBase):
 
 
 class _ConfigBuilder(_ConfigItemBase):
-    # TODO
-    pass
+    def __new__(cls, *init_args, **init_kwargs):
+        cls._debug_hierarchy('_ConfigBuilder.__new__')
+        _mc_contained_in = cls._mc_hierarchy[-1]
+
+        # Find the first parent which is not a builder if we are in the mc_build method of a builder
+        contained_in = _mc_contained_in
+        while contained_in._mc_where == Where.IN_MC_BUILD:
+            contained_in = contained_in._mc_contained_in
+
+        name = cls.named_as()
+
+        try:
+            return contained_in._mc_items[name]
+        except KeyError:
+            self = super(_ConfigBuilder, cls).__new__(cls)
+            self._mc_where = Where.IN_INIT
+            self._mc_json_errors = 0
+            self._mc_frozen = False
+
+            self._mc_attributes = OrderedDict()
+            self._mc_attributes_to_check = OrderedDict()
+            self._mc_items = OrderedDict()
+            self._mc_contained_in = _mc_contained_in
+            self._mc_root = contained_in._mc_root
+            self._mc_excluded = set()  # TODO bits
+
+            # Insert self in parent
+            if hasattr(contained_in, name):
+                msg = "'{name}' is already defined in parent, cannot create builder: {self}".format(name=name, self=self)
+                raise ConfigException(msg)
+            contained_in._mc_items[name] = self
+
+            return self
+
+    @classmethod
+    def named_as(cls):
+        """Try to generate a unique name"""
+        return cls.__name__ + '-ConfigBuilder'
+
+    def _mc_builder_freeze(self):
+        _debug("_mc_builder_freeze:", type(self))
+        self._mc_where = Where.IN_MC_BUILD
+
+        _debug("_mc_builder_freeze - calling mc_build")
+        self.mc_build()
+        _debug("_mc_builder_freeze - mc_build finished")
+
+        def insert_proxy_item(from_build, from_with_key, from_with):
+            _debug("insert:", type(from_build), from_with_key, type(from_with))
+            pp = _ItemParentProxy(from_build, from_with)
+            from_build._mc_items[from_with_key] = pp
+            object.__setattr__(from_build, from_with_key, pp)
+
+        def insert_proxy_repeatable_item(repeatable, from_build, from_with_key, from_with):
+            assert isinstance(repeatable, RepeatableDict)
+            _debug("insert repetable:", type(from_build), from_with_key, type(from_with))
+            pp = _ItemParentProxy(from_build, from_with)
+            repeatable[from_with_key] = pp
+
+        # Now set all items created in the 'with' block of the builder on the items created in the 'mc_build' method
+        # Find the first parent which is not a builder if we are in the mc_build method of a builder
+        contained_in = self._mc_contained_in
+        while contained_in._mc_where == Where.IN_MC_BUILD:
+            contained_in = contained_in._mc_contained_in
+        for item_from_with_key, item_from_with in self.items():
+            _debug("item_from_with:", item_from_with_key)
+            for item_from_build_key, item_from_build in contained_in.items():
+
+                if isinstance(item_from_build, RepeatableDict):
+                    _debug("item_from_build, repeatable:", item_from_build_key)
+                    for bi_key, bi in item_from_build.items():
+                        if bi._mc_contained_in is not self:
+                            continue
+
+                        if isinstance(item_from_with, RepeatableDict):
+                            _debug("item_from_with, repeatable:", item_from_with_key)
+                            repeatable = object.__getattribute__(bi, item_from_with_key)
+                            for wi_key, wi in item_from_with.items():
+                                insert_proxy_repeatable_item(repeatable, bi, wi_key, wi)
+                            continue
+
+                        insert_proxy_item(bi, item_from_with_key, item_from_with)
+                        continue
+                    continue
+
+                if item_from_build._mc_contained_in is not self:
+                    continue
+
+                if isinstance(item_from_with, RepeatableDict):
+                    _debug("item_from_with, repeatable:", item_from_with_key)
+                    repeatable = object.__getattribute__(item_from_build, item_from_with_key)
+                    for wi_key, wi in item_from_with.items():
+                        insert_proxy_repeatable_item(repeatable, item_from_build, wi_key, wi)
+                    continue
+
+                insert_proxy_item(item_from_build, item_from_with_key, item_from_with)
 
 
 class _ItemParentProxy(object):
     """The purpose of this is to set the current '_mc_contained_in' when accessing an item created by a builder and assigned under mutiple parent items"""
-    __slots__ = ('_mc_root', '_mc_item')
+    __slots__ = ('_mc_contained_in', '_mc_item')
 
-    def __init__(self, cr, item):
-        object.__setattr__(self, '_mc_root', cr)
+    def __init__(self, ci, item):
+        object.__setattr__(self, '_mc_contained_in', ci)
         object.__setattr__(self, '_mc_item', item)
 
     def __getattr__(self, name):
-        return object.__getattribute__(self._mc_item, name)
+        item = self._mc_item
+        orig_ci = item._mc_contained_in
+        item._mc_contained_in = self._mc_contained_in
+        try:
+            return getattr(item, name)
+        finally:
+            item._mc_contained_in = orig_ci
 
     def __setattr__(self, name, value):
-        object.__setattr__(self._mc_item, name, value)
+        raise ConfigApiException("Not settable")
 
     @property
     def env(self):
-        return self._mc_root._mc_env
+        return self._mc_contained_in._mc_env
 
 
 class _ConfigRoot(_ConfigBase):
@@ -843,10 +981,12 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
         # Load envs
         error_envs = []
         for env in env_factory.envs.values():
+            _debug("\n==== Loading", env, "====")
             rp = _RootEnvProxy(env, cr)
             cr._mc_env = env
             del cr.__class__._mc_hierarchy[:]
             _ConfigBase._mc_last_item = None
+
             try:
                 with cr:
                     res = conf_func(cr)

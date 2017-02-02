@@ -6,7 +6,7 @@ from __future__ import print_function
 from collections import OrderedDict
 
 from multiconf import ConfigItem  #, ConfigBuilder
-from multiconf.multiconf import _RootEnvProxy
+from multiconf.multiconf import _RootEnvProxy, _ItemParentProxy
 
 
 def _id_name_type(item):
@@ -16,6 +16,8 @@ def _id_name_type(item):
 def check_containment(start_item, level=0, prefix="  ", verbose=False):
     if isinstance(start_item, _RootEnvProxy):
         start_item = start_item.root_conf
+    if isinstance(start_item, _ItemParentProxy):
+        start_item = start_item._mc_item
     if verbose:
         print(prefix, 'level:', level, start_item.json(compact=True, builders=True))
     for key, item in start_item.items():
@@ -24,7 +26,7 @@ def check_containment(start_item, level=0, prefix="  ", verbose=False):
                 check_containment(ritem, level+1, "R ", verbose=verbose)
             continue
 
-        if isinstance(item, ConfigItem):  #  and not isinstance(item, ConfigBuilder):
+        if isinstance(item, (ConfigItem, _ItemParentProxy)):  #  and not isinstance(item, ConfigBuilder):
             ci = item.contained_in
             assert id(ci) == id(start_item), \
                 "Wrong containment:\n" + \
