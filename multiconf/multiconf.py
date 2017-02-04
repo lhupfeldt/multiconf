@@ -580,7 +580,7 @@ class _ConfigItemBase(_ConfigBase):
                 print("Exception validating previously defined object -", file=sys.stderr)
                 print("  type:", type(previous_item), file=sys.stderr)
                 print("Stack trace will be misleading!", file=sys.stderr)
-                print("This happens if there is an error (e.g. attributes with value MC_REQUIRED or missing '@required' ConfigItems ) in", file=sys.stderr)
+                print("This happens if there is an error (e.g. attributes with value MC_REQUIRED or missing '@required' ConfigItems) in", file=sys.stderr)
                 print("an object that was not directly enclosed in a with statement. Objects that are not arguments to a with", file=sys.stderr)
                 print("statement will not be validated until the next ConfigItem is declared or an outer with statement is exited.", file=sys.stderr)
                 raise
