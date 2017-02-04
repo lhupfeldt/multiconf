@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from collections import OrderedDict
-from pytest import xfail
+from pytest import xfail, raises
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
 from multiconf.decorators import nested_repeatables, named_as, required
@@ -76,15 +76,17 @@ def test_configbuilder_with_required_item_decorator():
     assert cr.xses['server4'].server_num == 4
     assert cr.xses['server3'].b_item.xx == 6
 
-    xfail("TODO Fix different number of repeatable in different envs")
     cr = ef2_pp_prod.config(pp2).Root
-    assert len(cr.xses) == 4
+    assert len(cr.xses) == 1
     assert cr.xses['server1'].aa == 2
-    assert cr.xses['server4'].aa == 2
     assert cr.xses['server1'].server_num == 1
-    assert cr.xses['server3'].server_num == 3
-    assert cr.xses['server4'].server_num == 4
-    assert cr.xses['server3'].b_item.xx == 6
+
+    with raises(KeyError):
+        cr.xses['server2']
+    with raises(KeyError):
+        cr.xses['server3']
+    with raises(KeyError):
+        cr.xses['server4']
     
 
 def test_configbuilder_build_with_mc_required():

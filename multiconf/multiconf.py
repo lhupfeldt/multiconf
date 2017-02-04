@@ -168,6 +168,11 @@ class _ConfigBase(object):
     # Python2 compatibility
     __nonzero__ = __bool__
 
+    def _mc_exists_in_env(self):
+        if self._mc_root._mc_env is None:
+            return True
+        return self._mc_handled_env_bits & self._mc_root._mc_env.mask
+
     def _mc_freeze(self, mc_error_info_up_level):
         if self._mc_is_excluded():
             self._mc_frozen = True
