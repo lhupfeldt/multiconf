@@ -2,7 +2,8 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from framework import weblogic_config, admin_server, managed_server, managed_servers, datasource
-from multiconf.envs import mc_config, EnvFactory
+from multiconf import mc_config
+from multiconf.envs import EnvFactory
 
 # Define environments
 
@@ -63,18 +64,19 @@ def _(_):
         # Here we are getting the domain base port value set above
         port = dc.base_port + 110
         # And we are using this variable to pass as 'port' parameter
-        with managed_server(name='ms5', host='ms.'+dc.env.name+'.mydomain', port=port+1) as ms:
+        with managed_server('ms5', host='ms.'+dc.env.name+'.mydomain', port=port+1) as ms:
             # Same as above - we cannot use default host naming in two environments
             ms.setattr('host', devs='ms.special.otherdomain', devlocal='localhost')
             # This server needs to have custom property, which is set to different values
             # in different environment groups
             # We will have that property set to one in prod and preprod and two in all dev environments
-            ms.setattr('custom_property', g_prod=1, g_dev=2)
+            # This property is not defined in the framework, so we need to specify mc_set_unknown
+            ms.setattr('custom_property', g_prod=1, g_dev=2, mc_set_unknown=True)
 
         # Add a special managed server, and override default value
         port = dc.base_port + 210
         # Managed server 'ms6' have property 'another_prop', which is set to default value [1, 2]
-        with managed_server(name='ms6', host='ms.'+dc.env.name+'.mydomain', port=port+1) as ms:
+        with managed_server('ms6', host='ms.'+dc.env.name+'.mydomain', port=port+1) as ms:
             # But on 'g_dev' group it needs to be set to another value
             ms.setattr('another_prop', default=[1, 2], g_dev=[1])
             # Same as above - we cannot use default host naming in two environments
@@ -84,17 +86,17 @@ def _(_):
         # This means all environment will have the same settings for this
         # server
         # Except 'host' parameter, which is different for two environments
-        with managed_server(name='ms7', host='ms.'+dc.env.name+'.mydomain', port=port+2) as ms:
+        with managed_server('ms7', host='ms.'+dc.env.name+'.mydomain', port=port+2) as ms:
             # Same as above - we cannot use default host naming in two environments
             ms.setattr('host', devs='ms.special.otherdomain', devlocal='localhost')
 
         # Here we define data source used by this domain
-        with datasource(name='SampleDS_one', database_type="OracleRAC") as c:
+        with datasource('SampleDS_one', database_type="OracleRAC") as c:
             # but in dev envs we are not using RAC
             c.setattr('database_type', g_dev="Oracle")
 
         # This datasource is the same for all environments
-        datasource(name='SampleDS_two', database_type="SQLServer")
+        datasource('SampleDS_two', database_type="SQLServer")
 
         # Returned weblogic config will have settings only for environment
         # passed as argument for this function

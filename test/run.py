@@ -25,14 +25,14 @@ def main(args):
 
     rc = pytest.main(['--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else []))
 
-    # print("Validating demo for all envs")
-    # try:
-    #     del os.environ['PYTHONPATH']
-    # except KeyError:
-    #     pass
-    # for env_name in 'prod', 'preprod', 'devlocal', 'devs', 'devi':
-    #     print()
-    #     osenv = {'PYTHONPATH': ':'.join(sys.path)}
-    #     rc |= subprocess.call((sys.executable, here + '/../demo/demo.py', '--env', env_name), env=osenv)
+    print("Validating demo for all envs")
+    try:
+        del os.environ['PYTHONPATH']
+    except KeyError:
+        pass
+    for env_name in 'prod', 'preprod', 'devlocal', 'devs', 'devi':
+        print()
+        osenv = {'PYTHONPATH': ':'.join(sys.path)}
+        rc |= subprocess.check_call((sys.executable, here + '/../demo/demo.py', '--env', env_name), env=osenv)
 
     return rc
