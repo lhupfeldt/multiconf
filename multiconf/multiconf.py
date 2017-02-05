@@ -139,8 +139,9 @@ class _ConfigBase(object):
         return self._mc_json_errors
 
     def mc_init(self):
-        """This is called at the exit from a with statement.
+        """This is a user defined callback method.
 
+        This is called at the exit from a with statement.
         May be used for e.g. setting default values based on other properties or cross validation of different properties
         """
 
