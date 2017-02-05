@@ -830,24 +830,30 @@ class _ConfigBuilder(_ConfigItemBase):
         return '_mc_ConfigBuilder_' + cls.__name__
 
     def _mc_builder_freeze(self):
-        _debug("_mc_builder_freeze:", type(self))
         self._mc_where = Where.IN_MC_BUILD
 
         _debug("_mc_builder_freeze - calling mc_build")
         self.mc_build()
         _debug("_mc_builder_freeze - mc_build finished")
 
-        def insert_proxy_item(from_build, from_with_key, from_with):
-            _debug("insert:", type(from_build), from_with_key, type(from_with))
+        def insert(from_build, from_with_key, from_with):
+            """Insert items from with statement (single or repeatable) in a single (non repeatable) item from mc_build."""
+            if from_build._mc_contained_in is not self:
+                return
+
+            if isinstance(from_with, RepeatableDict):
+                _debug("from_with, repeatable:", from_with_key)
+                repeatable = object.__getattribute__(from_build, from_with_key)
+                for wi_key, wi in from_with.items():
+                    _debug("insert repetable:", type(from_build), wi_key, type(wi))
+                    pp = _ItemParentProxy(from_build, wi)
+                    repeatable[wi_key] = pp
+                return
+
+            _debug("insert from_with not repeatable:", type(from_build), from_with_key, type(from_with))
             pp = _ItemParentProxy(from_build, from_with)
             from_build._mc_items[from_with_key] = pp
             object.__setattr__(from_build, from_with_key, pp)
-
-        def insert_proxy_repeatable_item(repeatable, from_build, from_with_key, from_with):
-            assert isinstance(repeatable, RepeatableDict)
-            _debug("insert repetable:", type(from_build), from_with_key, type(from_with))
-            pp = _ItemParentProxy(from_build, from_with)
-            repeatable[from_with_key] = pp
 
         # Now set all items created in the 'with' block of the builder on the items created in the 'mc_build' method
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
@@ -861,31 +867,14 @@ class _ConfigBuilder(_ConfigItemBase):
                 if isinstance(item_from_build, RepeatableDict):
                     _debug("item_from_build, repeatable:", item_from_build_key)
                     for bi_key, bi in item_from_build.items():
-                        if bi._mc_contained_in is not self:
-                            continue
-
-                        if isinstance(item_from_with, RepeatableDict):
-                            _debug("item_from_with, repeatable:", item_from_with_key)
-                            repeatable = object.__getattribute__(bi, item_from_with_key)
-                            for wi_key, wi in item_from_with.items():
-                                insert_proxy_repeatable_item(repeatable, bi, wi_key, wi)
-                            continue
-
-                        insert_proxy_item(bi, item_from_with_key, item_from_with)
+                        insert(bi, item_from_with_key, item_from_with)
                         continue
                     continue
 
                 if item_from_build._mc_contained_in is not self:
                     continue
 
-                if isinstance(item_from_with, RepeatableDict):
-                    _debug("item_from_with, repeatable:", item_from_with_key)
-                    repeatable = object.__getattribute__(item_from_build, item_from_with_key)
-                    for wi_key, wi in item_from_with.items():
-                        insert_proxy_repeatable_item(repeatable, item_from_build, wi_key, wi)
-                    continue
-
-                insert_proxy_item(item_from_build, item_from_with_key, item_from_with)
+                insert(item_from_build, item_from_with_key, item_from_with)
 
 
 class _ItemParentProxy(object):
