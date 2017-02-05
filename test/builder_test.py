@@ -491,11 +491,9 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
 
 
 def test_configbuilder_repeated():
-    builders = {}
-
     class XBuilder(ConfigBuilder):
-        def __init__(self, first=1, last=2):
-            super(XBuilder, self).__init__()
+        def __init__(self, mc_key=None, first=1, last=2):
+            super(XBuilder, self).__init__(mc_key=mc_key)
             self.first = first
             self.last = last
 
@@ -503,25 +501,21 @@ def test_configbuilder_repeated():
             for num in range(self.first, self.last+1):
                 with Xses(mc_key='server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2, mc_set_unknown=True)
-            self.setattr('q', default=self.last, mc_set_unknown=True)  # TODO: Only way to set an attribute in mc_build, does this even make sense?
+            self.setattr('q', default=self.last, mc_set_unknown=True)  # TODO: Only way to set an attribute in mc_build
 
     @nested_repeatables('xses')
     class Root(ConfigItem):
         aaa = 2
 
-    xfail("TODO: repeatable check")
-
     @mc_config(ef2_pp_prod)
     def _(_):
         with Root() as cr:
             with XBuilder() as xb1:
-                builders['xb1'] = xb1
                 XChild(mc_key=10)
                 XChild(mc_key=11)
-            with XBuilder(first=3) as xb2:
-                builders['xb2'] = xb2
+            with XBuilder(mc_key='b2', first=3) as xb2:
                 xb2.last = 3
-                XChild(mc_key=12)
+                XChild(mc_key=10)
 
     cr = ef2_pp_prod.config(prod2).Root
 
@@ -536,6 +530,41 @@ def test_configbuilder_repeated():
     print(cr)
     assert total_children == 5
 
+
+def test_configbuilder_repeated_what_built():
+    builders = {}
+
+    class XBuilder(ConfigBuilder):
+        def __init__(self, mc_key=None, first=1, last=2):
+            super(XBuilder, self).__init__(mc_key=mc_key)
+            self.first = first
+            self.last = last
+
+        def mc_build(self):
+            for num in range(self.first, self.last+1):
+                with Xses(mc_key='server%d' % num, server_num=num) as c:
+                    c.setattr('something', prod=1, pp=2, mc_set_unknown=True)
+            self.setattr('q', default=self.last, mc_set_unknown=True)  # TODO: Only way to set an attribute in mc_build, does this even make sense?
+
+    @nested_repeatables('xses')
+    class Root(ConfigItem):
+        aaa = 2
+
+    @mc_config(ef2_pp_prod)
+    def _(_):
+        with Root() as cr:
+            with XBuilder() as xb1:
+                builders['xb1'] = xb1
+                XChild(mc_key=10)
+                XChild(mc_key=11)
+            with XBuilder(mc_key='b2', first=3) as xb2:
+                builders['xb2'] = xb2
+                xb2.last = 3
+                XChild(mc_key=10)
+
+    cr = ef2_pp_prod.config(prod2).Root
+
+    xfail("TODO: Implement 'what_built'?")
     xb1 = builders['xb1']
     assert len(xb1.what_built()) == 2
     assert isinstance(xb1.what_built(), OrderedDict) == True

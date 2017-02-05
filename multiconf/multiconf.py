@@ -776,7 +776,7 @@ class RepeatableConfigItem(_ConfigItemBase):
 
 
 class _ConfigBuilder(_ConfigItemBase):
-    def __new__(cls, *init_args, **init_kwargs):
+    def __new__(cls, mc_key='default-builder', *init_args, **init_kwargs):
         cls._debug_hierarchy('_ConfigBuilder.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
 
@@ -785,10 +785,17 @@ class _ConfigBuilder(_ConfigItemBase):
         while contained_in._mc_where == Where.IN_MC_BUILD:
             contained_in = contained_in._mc_contained_in
 
-        name = cls.named_as()
+        private_key = cls.named_as() + ' ' + str(mc_key)
 
         try:
-            return contained_in._mc_items[name]
+            self = contained_in._mc_items[private_key]
+            if self._mc_handled_env_bits & self._mc_root._mc_env.mask:
+                # We are trying to replace an object with the same mc_key. In mc_init we ignore this.
+                if contained_in._mc_where == Where.IN_MC_INIT:
+                    return _DummyItem()
+                raise ConfigException("Re-used key " + repr(mc_key) + " in repeated " + cls.__name__)
+            self._mc_handled_env_bits |= self._mc_root._mc_env.mask
+            return self
         except KeyError:
             self = super(_ConfigBuilder, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
@@ -803,17 +810,23 @@ class _ConfigBuilder(_ConfigItemBase):
             self._mc_excluded = set()  # TODO bits
 
             # Insert self in parent
-            if hasattr(contained_in, name):
-                msg = "'{name}' is already defined in parent, cannot create builder: {self}".format(name=name, self=self)
+            if hasattr(contained_in, private_key):
+                msg = "'{mc_key}' is already defined in parent, cannot create {cls}: {self}".format(mc_key=mc_key, cls=cls.__name__, self=self)
                 raise ConfigException(msg)
-            contained_in._mc_items[name] = self
+
+            self._mc_handled_env_bits = self._mc_root._mc_env.mask
+            contained_in._mc_items[private_key] = self
 
             return self
+
+    def __init__(self, mc_key='default-builder', mc_include=None, mc_exclude=None):
+        # Overridden to accept 'mc_key'
+        super(_ConfigBuilder, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
     @classmethod
     def named_as(cls):
         """Try to generate a unique name"""
-        return cls.__name__ + '-ConfigBuilder'
+        return '_mc_ConfigBuilder_' + cls.__name__
 
     def _mc_builder_freeze(self):
         _debug("_mc_builder_freeze:", type(self))
