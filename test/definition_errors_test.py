@@ -15,6 +15,8 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigExcepti
 from multiconf.decorators import nested_repeatables, required
 from multiconf.envs import EnvFactory
 
+from utils.messages import not_repeatable_in_parent_msg
+
 
 # ef1
 ef1_prod = EnvFactory()
@@ -342,8 +344,6 @@ def test_attribute_redefinition_attempt5(capsys):
     assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_item_expected_ex % ('pp', 1)
 
 
-_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class_expected_ex = """'RepeatableItems': <class 'test.definition_errors_test.RepeatableItem'> is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'ConfigItem'"""
-
 def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class():
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
@@ -351,7 +351,10 @@ def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class(
             with ConfigItem() as cr:
                 RepeatableItem(mc_key=None)
 
-    assert replace_ids(str(exinfo.value), named_as=False) == _nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class_expected_ex
+    exp = not_repeatable_in_parent_msg.format(
+        repeatable_cls_key='RepeatableItems', repeatable_cls="<class 'test.definition_errors_test.RepeatableItem'>",
+        ci_named_as='ConfigItem', ci_cls="<class 'multiconf.multiconf.ConfigItem'>")
+    assert replace_ids(str(exinfo.value), named_as=False) == exp
 
 
 _non_repeatable_but_container_expects_repeatable_expected = """'RepeatableItems': <class 'test.definition_errors_test.%(py3_local)sRepeatableItems'> is not defined as repeatable, but this is defined as a repeatable item in the containing class: {

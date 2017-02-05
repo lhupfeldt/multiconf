@@ -19,7 +19,7 @@ else:
 
 from .repeatable import RepeatableDict
 from .config_errors import ConfigAttributeError, ConfigException, ConfigApiException, caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg
-from .config_errors import not_repatable_in_parent_msg
+from .config_errors import not_repeatable_in_parent_msg, repeatable_in_parent_msg
 from .json_output import ConfigItemEncoder
 from .bases import get_bases, get_real_attr
 
@@ -677,8 +677,8 @@ class ConfigItem(_ConfigItemBase):
 
             # Insert self in parent
             if name in contained_in.__class__._mc_deco_nested_repeatables:
-                msg = "'{name}': {cls} is not defined as repeatable, but this is defined as a repeatable item in the containing class: {contained_in}"
-                raise ConfigException(msg.format(name=name, cls=cls, contained_in=contained_in), is_fatal=True)
+                msg = repeatable_in_parent_msg.format(named_as=name, cls=cls, ci_item=contained_in)
+                raise ConfigException(msg, is_fatal=True)
 
             if name in contained_in._mc_attributes:
                 msg = "'{name}' is defined both as simple value and a contained item: {self}".format(name=name, self=self)
@@ -721,8 +721,8 @@ class RepeatableConfigItem(_ConfigItemBase):
         # Validate that containing class specifies item as repeatable
         if my_class_key not in contained_in.__class__._mc_deco_nested_repeatables:
             if not isinstance(contained_in, _ConfigBuilder):
-                msg = repr(my_class_key) + ': ' + repr(cls) + ' is defined as repeatable, but this is not defined as a repeatable item in the containing class: ' + \
-                      repr(contained_in.named_as())
+                msg = not_repeatable_in_parent_msg.format(
+                    repeatable_cls_key=my_class_key, repeatable_cls=cls, ci_named_as=contained_in.named_as(), ci_cls=type(contained_in))
                 raise ConfigException(msg)
 
             if not hasattr(contained_in, my_class_key):

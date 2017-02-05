@@ -89,4 +89,5 @@ def _api_error_msg(message):
 
 failed_property_call_msg = "Attribute '{attr}' is defined as a multiconf attribute and as a @property method but value is undefined for {env} and @property method call failed with: {ex_type}: {ex}"
 
-not_repatable_in_parent_msg = "'{class_key}': {cls} is defined as repeatable, but this is not defined as a repeatable item in the containing class: '{ci_named_as}'"
+not_repeatable_in_parent_msg = "'{repeatable_cls_key}': {repeatable_cls} is defined as repeatable, but this is not defined as a repeatable item in the containing class: '{ci_named_as}': {ci_cls}"
+repeatable_in_parent_msg = "'{named_as}': {cls} is not defined as repeatable, but this is defined as a repeatable item in the containing class: {ci_item}"
