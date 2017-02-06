@@ -8,7 +8,7 @@ from pytest import raises, xfail
 
 from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
 
-from multiconf.decorators import named_as, strict_setattr
+from multiconf.decorators import named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import next_line_num
@@ -33,25 +33,34 @@ def test_attribute_overrides_property_method_builder():
             return 1
 
     class NestedBuilder(ConfigBuilder):
-        def build(self):
+        def mc_build(self):
             Nested1()
             Nested2()
 
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with NestedBuilder() as nn:
             nn.setattr('m', default=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
     assert cr.n1.m == 7
     assert cr.n2.m == 7
 
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with NestedBuilder() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
     assert cr.n1.m == 7
     assert cr.n2.m == 7
 
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with NestedBuilder() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
     assert cr.n1.m == 1
     assert cr.n2.m == 1
 
@@ -69,7 +78,6 @@ def test_attribute_overrides_property_no_property_mix_builder():
     class Nested2(ConfigItem):
         m = MC_REQUIRED
 
-    @strict_setattr()
     @named_as('n3')
     class Nested3(ConfigItem):
         m = 13
@@ -91,7 +99,7 @@ def test_attribute_overrides_property_no_property_mix_builder():
             self.m = 24
 
     class NestedBuilder(ConfigBuilder):
-        def build(self):
+        def mc_build(self):
             Nested1()
             Nested2()
             Nested3()
@@ -99,39 +107,51 @@ def test_attribute_overrides_property_no_property_mix_builder():
             Nested5()
 
     # Validate 'm' values without override
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         Nested1()
         Nested2()
         Nested3()
         Nested4()
         Nested5()
+
+    cr = ef.config(prod)
     assert cr.n1.m == 1
     assert hasattr(cr.n2, 'm')
     assert cr.n3.m == 13
     assert cr.n4.m == 23
     assert cr.n5.m == 24
 
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with NestedBuilder() as nn:
             nn.setattr('m', default=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
     assert cr.n1.m == 7
     assert cr.n2.m == 7
     assert cr.n3.m == 7
     assert cr.n4.m == 7
     assert cr.n5.m == 7
 
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with NestedBuilder() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
     assert cr.n1.m == 7
     assert cr.n2.m == 7
     assert cr.n3.m == 7
     assert cr.n4.m == 7
     assert cr.n5.m == 7
 
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with NestedBuilder() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
     assert cr.n1.m == 1
     assert hasattr(cr.n2, 'm')
     assert cr.n3.m == 13
@@ -161,25 +181,34 @@ def test_attribute_overrides_property_inherited_builder():
         pass
 
     class NestedBuilder(ConfigBuilder):
-        def build(self):
+        def mc_build(self):
             Nested1()
             Nested2()
 
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with NestedBuilder() as nn:
             nn.setattr('m', default=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
     assert cr.n1.m == 7
     assert cr.n2.m == 7
 
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with NestedBuilder() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
     assert cr.n1.m == 7
     assert cr.n2.m == 7
 
-    with ConfigItem(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with NestedBuilder() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
     assert cr.n1.m == 1
     assert not hasattr(cr.n2, 'm')
 
@@ -200,7 +229,7 @@ def test_attribute_overrides_errors_builder():
             return 1
 
     class NestedBuilder(ConfigBuilder):
-        def build(self):
+        def mc_build(self):
             Nested1()
             Nested2()
             Nested3()
