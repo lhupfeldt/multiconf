@@ -6,10 +6,11 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
+from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException
+from multiconf.envs import EnvFactory
+
 from .utils.utils import api_error, config_error, next_line_num
 
-from .. import ConfigItem, ConfigBuilder, ConfigException
-from ..envs import EnvFactory
 
 ef1_prod = EnvFactory()
 prod1 = ef1_prod.Env('prod')
@@ -24,17 +25,19 @@ def ce(line_num, *lines):
 
 
 def test_setattr_to_attribute_underscore_attribute_builder(capsys):
-    msg = """Trying to set attribute '_b' on a config item. Atributes starting with '_' can not be set using item.setattr. Use assignment instead."""
+    errorline = [None]
 
     class CB(ConfigBuilder):
-        def build(self):
+        def mc_build(self):
             pass
 
     with raises(ConfigException) as exinfo:
-        with ConfigItem(prod1, ef1_prod):
+        @mc_config(ef1_prod)
+        def _(_):
             with CB() as ci:
-                errorline = next_line_num()
+                errorline[0] = next_line_num()
                 ci.setattr('_b', default=7)
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, msg)
+    exp = """Trying to set attribute '_b' on a config item. Atributes starting with '_' cannot be set using item.setattr. Use assignment instead."""
+    assert serr == ce(errorline[0], exp)
