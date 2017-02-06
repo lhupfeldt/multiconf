@@ -635,6 +635,21 @@ class _ConfigItemBase(_ConfigBase):
         except ConfigException as ex:
             self._mc_print_error_caller(str(ex), mc_error_info_up_level)
 
+    def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
+        """Return repeatable if item has repeatable with 'repeatable_class_key', if not raise am exception."""
+        if repeatable_class_key in self.__class__._mc_deco_nested_repeatables:
+            return object.__getattribute__(self, repeatable_class_key)
+
+        if isinstance(repeatable_cls_or_dict, RepeatableDict):
+            # Get class of first item for error message
+            for item in repeatable_cls_or_dict.values():
+                repeatable_cls_or_dict = type(item)
+                break
+
+        msg = not_repeatable_in_parent_msg.format(
+            repeatable_cls_key=repeatable_class_key, repeatable_cls=repeatable_cls_or_dict, ci_named_as=self.named_as(), ci_cls=type(self))
+        raise ConfigException(msg)
+
 
 class ConfigItem(_ConfigItemBase):
     def __new__(cls, *init_args, **init_kwargs):
@@ -715,22 +730,7 @@ class RepeatableConfigItem(_ConfigItemBase):
         while contained_in._mc_where == Where.IN_MC_BUILD:
             contained_in = contained_in._mc_contained_in
 
-        # Get the key for inserting/looking-up self in parent attributes
-        my_class_key = cls.named_as()
-
-        # Validate that containing class specifies item as repeatable
-        if my_class_key not in contained_in.__class__._mc_deco_nested_repeatables:
-            if not isinstance(contained_in, _ConfigBuilder):
-                msg = not_repeatable_in_parent_msg.format(
-                    repeatable_cls_key=my_class_key, repeatable_cls=cls, ci_named_as=contained_in.named_as(), ci_cls=type(contained_in))
-                raise ConfigException(msg)
-
-            if not hasattr(contained_in, my_class_key):
-                od = RepeatableDict(my_class_key, contained_in)
-                contained_in._mc_items[my_class_key] = od
-                object.__setattr__(contained_in, my_class_key, od)
-
-        repeatable = object.__getattribute__(contained_in, my_class_key)
+        repeatable = contained_in._mc_get_repeatable(cls.named_as(), cls)
 
         try:
             self = repeatable[mc_key]
@@ -829,6 +829,16 @@ class _ConfigBuilder(_ConfigItemBase):
         """Try to generate a unique name"""
         return '_mc_ConfigBuilder_' + cls.__name__
 
+    def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
+        repeatable = getattr(self, repeatable_class_key, None)
+        if repeatable:
+            return repeatable
+
+        repeatable = RepeatableDict(repeatable_class_key, self)
+        self._mc_items[repeatable_class_key] = repeatable
+        object.__setattr__(self, repeatable_class_key, repeatable)
+        return repeatable
+
     def _mc_builder_freeze(self):
         self._mc_where = Where.IN_MC_BUILD
 
@@ -843,7 +853,7 @@ class _ConfigBuilder(_ConfigItemBase):
 
             if isinstance(from_with, RepeatableDict):
                 _debug("from_with, repeatable:", from_with_key)
-                repeatable = object.__getattribute__(from_build, from_with_key)
+                repeatable = from_build._mc_get_repeatable(from_with_key, from_with)
                 for wi_key, wi in from_with.items():
                     _debug("insert repetable:", type(from_build), wi_key, type(wi))
                     pp = _ItemParentProxy(from_build, wi)
@@ -869,9 +879,6 @@ class _ConfigBuilder(_ConfigItemBase):
                     for bi_key, bi in item_from_build.items():
                         insert(bi, item_from_with_key, item_from_with)
                         continue
-                    continue
-
-                if item_from_build._mc_contained_in is not self:
                     continue
 
                 insert(item_from_build, item_from_with_key, item_from_with)
