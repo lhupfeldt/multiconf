@@ -91,7 +91,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
                 with XBuilder():
                     pass
 
-    xfail("TODO") 
+    xfail("TODO")
     print(str(exinfo.value))
     assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
 
@@ -233,6 +233,8 @@ def test_configbuilders_repeated_non_repeatable_in_build():
     class OuterItem(ConfigItem):
         pass
 
+    exp = "Repeated non repeatable conf item: 'MiddleItem': <class 'test.builder_definition_errors_test.%(py3_local)sMiddleItem'>" % dict(py3_local=py3_local())
+
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
         def _(_):
@@ -240,8 +242,6 @@ def test_configbuilders_repeated_non_repeatable_in_build():
                 root.name = 'myp'
                 with OuterItem():
                     MiddleBuilder('base1')
-
-    exp = "Repeated non repeatable conf item: 'MiddleItem': <class 'test.builder_definition_errors_test.%(py3_local)sMiddleItem'>" % dict(py3_local=py3_local())
 
     assert replace_ids(str(exinfo.value), False) == exp
 
@@ -251,5 +251,43 @@ def test_configbuilders_repeated_non_repeatable_in_build():
             with ItemWithName() as root:
                 root.name = 'myp'
                 MiddleBuilder('base2')
+
+    assert replace_ids(str(exinfo.value), False) == exp
+
+
+def test_configbuilder_undeclared_repeatable_child(capsys):
+    """Test that a repeatable declared in 'with' raises an error when assigned under an item from 'mc_build' which has not declared the repeatable."""
+    class YBuilder(ConfigBuilder):
+        def __init__(self):
+            super(YBuilder, self).__init__()
+
+        def mc_build(self):
+            Y('y1')
+
+    @nested_repeatables('ys')
+    class ItemWithYs(ConfigItem):
+        aaa = 2
+
+    @named_as('ys')
+    class Y(RepeatableConfigItem):
+        def __init__(self, mc_key):
+            super(Y, self).__init__(mc_key=mc_key)
+
+    @named_as('y_children')
+    class YChild(RepeatableConfigItem):
+        def __init__(self, mc_key, a):
+            super(YChild, self).__init__(mc_key=mc_key)
+            self.a = a
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef1_prod)
+        def _(_):
+            with ItemWithYs():
+                with YBuilder() as yb1:
+                    YChild(mc_key=None, a=10)
+
+    exp = not_repeatable_in_parent_msg.format(
+        repeatable_cls_key='y_children', repeatable_cls="<class 'test.builder_definition_errors_test.%(py3_local)sYChild'>" % dict(py3_local=py3_local()),
+        ci_named_as='ys', ci_cls="<class 'test.builder_definition_errors_test.%(py3_local)sY'>"% dict(py3_local=py3_local()))
 
     assert replace_ids(str(exinfo.value), False) == exp

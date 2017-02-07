@@ -180,7 +180,6 @@ class _ConfigBase(object):
             return
 
         self._mc_raise_if_errors()
-        orig_where = self._mc_where
 
         self._mc_where = Where.IN_MC_INIT
         must_pop = False
@@ -207,18 +206,16 @@ class _ConfigBase(object):
 
         if must_pop:
             self.__class__._mc_hierarchy.pop()
-        self._mc_where = orig_where
 
-        if self._mc_where != Where.IN_MC_BUILD:
-            missing_req = []
-            for req in self._mc_deco_required:
-                if not req in self._mc_items:
-                    missing_req.append(req)
-            if missing_req:
-                if mc_error_info_up_level is not None:
-                    mc_caller_file_name, mc_caller_line_num = find_user_file_line(up_level_start=mc_error_info_up_level)
-                    print(_line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num), file=sys.stderr)
-                print(self._mc_error_msg("Missing '@required' items: {}".format(missing_req)), file=sys.stderr)
+        missing_req = []
+        for req in self._mc_deco_required:
+            if not req in self._mc_items:
+                missing_req.append(req)
+        if missing_req:
+            if mc_error_info_up_level is not None:
+                mc_caller_file_name, mc_caller_line_num = find_user_file_line(up_level_start=mc_error_info_up_level)
+                print(_line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num), file=sys.stderr)
+            print(self._mc_error_msg("Missing '@required' items: {}".format(missing_req)), file=sys.stderr)
 
         self._mc_raise_if_errors()
         self._mc_frozen = True
@@ -228,10 +225,8 @@ class _ConfigBase(object):
         if self._mc_is_excluded():
             return
 
-        orig_where = self._mc_where
-        self._mc_where = Where.IN_MC_INIT
+        self._mc_where = Where.NOWHERE
         self.mc_post_validate()
-        self._mc_where = orig_where
 
         for child_item in self._mc_items.values():
             child_item._mc_call_post_validate_recursively()
@@ -502,8 +497,14 @@ class _ConfigBase(object):
     @property
     def contained_in(self):
         mc_contained_in = self._mc_contained_in
+        child = self
         while isinstance(mc_contained_in, _ConfigBuilder):
+            if mc_contained_in._mc_where == Where.IN_WITH and not child._mc_where == Where.IN_MC_BUILD:
+                msg = "Use of 'contained_in' in not allowed in object while under the 'with statement of a ConfigBuilder. The final containment is still unknown."
+                self._mc_print_error_caller(msg, mc_error_info_up_level=2)
+                raise ConfigApiException(msg)
             mc_contained_in = mc_contained_in._mc_contained_in
+            child = child._mc_contained_in
         return mc_contained_in
 
     def find_contained_in_or_none(self, named_as):
@@ -840,9 +841,8 @@ class _ConfigBuilder(_ConfigItemBase):
         return repeatable
 
     def _mc_builder_freeze(self):
-        self._mc_where = Where.IN_MC_BUILD
-
         _debug("_mc_builder_freeze - calling mc_build")
+        self._mc_where = Where.IN_MC_BUILD
         self.mc_build()
         _debug("_mc_builder_freeze - mc_build finished")
 
