@@ -11,7 +11,7 @@ from .utils.messages import already_printed_msg, exception_previous_object_expec
 from .utils.messages import mc_required_expected, config_error_mc_required_expected
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, ConfigDefinitionException, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, MC_REQUIRED
 from multiconf.decorators import nested_repeatables, required
 from multiconf.envs import EnvFactory
 

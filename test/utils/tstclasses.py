@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 
-from multiconf import ConfigItem, RepeatableConfigItem, MC_REQUIRED
+from multiconf import ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
 from multiconf.decorators import named_as
 
 
@@ -29,4 +29,10 @@ class ItemWithAABB(ConfigItem):
 class RepeatableItemWithAA(RepeatableConfigItem):
     def __init__(self, mc_key, aa=MC_REQUIRED):
         super(RepeatableItemWithAA, self).__init__(mc_key=mc_key)
+        self.aa = aa
+
+
+class BuilderWithAA(ConfigBuilder):
+    def __init__(self, aa=MC_REQUIRED):
+        super(BuilderWithAA, self).__init__()
         self.aa = aa

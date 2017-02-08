@@ -9,7 +9,7 @@ import keyword
 
 from .config_errors import ConfigDefinitionException, _line_msg, _error_msg, _warning_msg
 from .repeatable import RepeatableDict
-#from . import ConfigBuilder
+from . import ConfigBuilder
 
 
 def _isidentifier(name):
@@ -18,12 +18,12 @@ def _isidentifier(name):
     return re.match(r'^[a-z_][a-z0-9_]*$', name, re.I) is not None
 
 
-# def _not_config_builder(cls, decorator_name):
-#     if issubclass(cls, ConfigBuilder):
-#         print(_line_msg(up_level=2), file=sys.stderr)
-#         msg = "Decorator '@" + decorator_name + "' is not allowed on instance of " + ConfigBuilder.__name__ + "."
-#         print(_error_msg(msg), file=sys.stderr)
-#         raise ConfigDefinitionException(msg)
+def _not_config_builder(cls, decorator_name):
+    if issubclass(cls, ConfigBuilder):
+        print(_line_msg(up_level=2), file=sys.stderr)
+        msg = "Decorator '@" + decorator_name + "' is not allowed on instance of " + ConfigBuilder.__name__ + "."
+        print(_error_msg(msg), file=sys.stderr)
+        raise ConfigDefinitionException(msg)
 
 
 def _check_valid_identifier(name):
@@ -58,7 +58,7 @@ def _add_super_list_deco_values(cls, attr_names, deco_attr_name):
 
 def named_as(insert_as_name):
     def deco(cls):
-        # _not_config_builder(cls, 'named_as')
+        _not_config_builder(cls, 'named_as')
         _check_valid_identifier(insert_as_name)
         cls._mc_deco_named_as = insert_as_name
         return cls
@@ -68,7 +68,7 @@ def named_as(insert_as_name):
 
 def nested_repeatables(*attr_names):
     def deco(cls):
-        # _not_config_builder(cls, 'nested_repeatables')
+        _not_config_builder(cls, 'nested_repeatables')
         cls._mc_deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
 
         # Make descriptor work, an instance of the descriptor class mut be assigened at the class level
