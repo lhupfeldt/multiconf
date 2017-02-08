@@ -5,7 +5,6 @@ from __future__ import print_function
 
 # pylint: disable=E0611
 from pytest import raises
-from .utils.utils import replace_user_file_line_msg
 
 from multiconf.envs import EnvFactory, EnvException
 
@@ -171,7 +170,7 @@ def test_env_factory_in_use(capsys):
     sout, serr = capsys.readouterr()
     assert sout == ''
     assert str(exinfo.value) == "EnvFactory is already in use. No more groups may be added."
-    assert replace_user_file_line_msg(serr) == ''  # TODO empty error message
+    assert serr == ''  # TODO empty error message
 
     with raises(EnvException) as exinfo:
         myef = EnvFactory()
@@ -181,7 +180,7 @@ def test_env_factory_in_use(capsys):
 
     _sout, serr = capsys.readouterr()
     assert str(exinfo.value) == "EnvFactory is already in use. No more envs may be added."
-    assert replace_user_file_line_msg(serr) == ''  # TODO empty error message
+    assert serr == ''  # TODO empty error message
 
 
 def test_group_members_not_same_factory(capsys):
@@ -194,7 +193,7 @@ def test_group_members_not_same_factory(capsys):
 
     _sout, serr = capsys.readouterr()
     assert str(exinfo.value) == "EnvGroup: The group members must be from the same 'env_factory' as the group being declared. 'Env' or 'EnvGroup' found: Env('dev1')"
-    assert replace_user_file_line_msg(serr) == ''  # TODO empty error message
+    assert serr == ''  # TODO empty error message
 
 
 _eg_name_used_expected_ex = """Name 'g_dev' is already used by group: EnvGroup('g_dev') {

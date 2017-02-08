@@ -6,7 +6,7 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from .utils.utils import config_error, next_line_num, replace_ids, replace_user_file_line_msg, assert_lines_in, py3_local, total_msg, start_file_line
+from .utils.utils import config_error, next_line_num, replace_ids, assert_lines_in, py3_local, total_msg, start_file_line
 from .utils.messages import already_printed_msg, exception_previous_object_expected_stderr
 from .utils.messages import mc_required_expected, config_error_mc_required_expected
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
@@ -442,7 +442,7 @@ def test_value_defined_through_two_groups(capsys):
             cr.setattr('aa', default=7, prod=1, g_dev2=2, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr.strip(), line_no=errorline[0]) == _value_defined_through_two_groups_expected % dict(line=errorline[0])
+    assert serr.strip() == _value_defined_through_two_groups_expected % dict(line=errorline[0])
     assert replace_ids(str(exinfo.value), False) == _value_defined_through_two_groups_expected_ex
 
 
@@ -478,7 +478,7 @@ def test_value_defined_through_three_groups(capsys):
             cr.setattr('aa', g_dev_overlap2=7, default=7, prod=1, g_dev2=2, g_dev_overlap1=3)
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr.strip(), line_no=errorline[0]) == _value_defined_through_three_groups_expected % dict(line=errorline[0])
+    assert serr.strip() == _value_defined_through_three_groups_expected % dict(line=errorline[0])
     assert replace_ids(str(exinfo.value), False) == _value_defined_through_three_groups_expected_ex
 
 
@@ -492,7 +492,7 @@ def test_two_values_defined_through_two_groups(capsys):
             cr.setattr('aa', prod=1, dev3st=14, pp=33, g_dev2=2, g_dev3=12, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    assert replace_user_file_line_msg(serr.strip(), line_no=errorline[0]) == _p_expected.strip() % dict(line=errorline[0])
+    assert serr.strip() == _p_expected.strip() % dict(line=errorline[0])
     assert replace_ids(str(exinfo.value), False) == _p_expected_ex
 
 

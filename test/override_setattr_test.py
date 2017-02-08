@@ -4,10 +4,10 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from multiconf import mc_config, ConfigItem, ConfigException, caller_file_line
+from multiconf import mc_config, ConfigItem, ConfigException
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, next_line_num, replace_ids, replace_user_file_line_tuple, replace_user_file_line_msg, assert_lines_in
+from .utils.utils import config_error, next_line_num, replace_ids
 from .utils.messages import already_printed_msg, mc_required_expected
 from .utils.tstclasses import ItemWithAA
 

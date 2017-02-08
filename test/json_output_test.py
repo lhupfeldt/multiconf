@@ -10,7 +10,7 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageE
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import replace_ids, next_line_num, to_compact, replace_user_file_line_msg, replace_multiconf_file_line_msg, config_error
+from .utils.utils import replace_ids, next_line_num, to_compact, replace_multiconf_file_line_msg, config_error, file_line
 from .utils.utils import py3_local
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithName, ItemWithAA, ItemWithAA
@@ -797,7 +797,7 @@ _json_dump_dir_error_expected_stderr = """Error in json generation:
 Traceback (most recent call last):
   File "fake_multiconf_dir/json_output.py", line 999, in __call__
     entries = dir(obj)
-  File "fake_dir/json_output_test.py", line %s, in __dir__
+  %(file_line)s, in __dir__
     raise Exception('Error in dir()')
 Exception: Error in dir()
 """
@@ -841,7 +841,7 @@ def test_json_dump_dir_error(capsys):
     cr.json()
     _sout, serr = capsys.readouterr()
     # pylint: disable=W0212
-    assert replace_user_file_line_msg(replace_multiconf_file_line_msg(serr), cr.someitem._errorline) == _json_dump_dir_error_expected_stderr % cr.someitem._errorline
+    assert replace_multiconf_file_line_msg(serr) == _json_dump_dir_error_expected_stderr % dict(file_line=file_line(__file__, cr.someitem._errorline))
     assert compare_json(cr, _json_dump_dir_error_expected, expect_num_errors=1)
 
 
