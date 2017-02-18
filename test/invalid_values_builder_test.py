@@ -6,27 +6,29 @@ from __future__ import print_function
 import pytest
 from pytest import raises, mark  # pylint: disable=no-name-in-module
 
-from .utils.utils import next_line_num, replace_ids, assert_lines_in
-from .utils.messages import already_printed_msg
-from .utils.messages import config_error_mc_required_current_env_expected, config_error_mc_required_other_env_expected
-from .utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
-from .utils.messages import config_error_mc_todo_current_env_expected
-from .utils.tstclasses import ItemWithAA
-
-from multiconf import ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
 from multiconf.envs import EnvFactory
+
+from .utils.utils import line_num, replace_ids, assert_lines_in, start_file_line
+from .utils.messages import already_printed_msg
+from .utils.messages import config_error_mc_required_expected
 
 ef1_prod_pp = EnvFactory()
 pp1 = ef1_prod_pp.Env('pp')
 prod1 = ef1_prod_pp.Env('prod')
 
 
-_attribute_mc_required_init_args_missing_env_values_builder_expected_ex = """There were 2 errors when defining item: {
-    "__class__": "Requires #as: 'Requires', id: 0000",
+_attribute_mc_required_init_args_missing_env_values_builder_expected_ex = """There was 1 error when defining item: {
+    "__class__": "Requires #as: 'Requires', id: 0000, not-frozen",
+    "env": {
+        "__class__": "Env",
+        "name": "pp"
+    },
     "aa": "MC_REQUIRED"
 }""" + already_printed_msg
 
 def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
+    errorline = [None]
     class Requires(ConfigItem):
         def __init__(self, aa=MC_REQUIRED):
             super(Requires, self).__init__()
@@ -36,19 +38,19 @@ def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
         def __init__(self):
             super(Builder, self).__init__()
 
-        def build(self):
+        def mc_build(self):
             Requires()
 
     with raises(ConfigException) as exinfo:
-        with ConfigItem(prod1, ef1_prod_pp):
+        @mc_config(ef1_prod_pp)
+        def _(_):
             with Builder():
-                errorline = next_line_num()
+                errorline[0] = line_num()
 
     _sout, serr = capsys.readouterr()
     assert_lines_in(
         serr,
-        start_file_line(__file__, errorline),
-        config_error_mc_required_other_env_expected.format(attr='aa', env=pp1),
-        config_error_mc_required_current_env_expected.format(attr='aa', env=prod1),
+        start_file_line(__file__, errorline[0]),
+        config_error_mc_required_expected.format(attr='aa', env=pp1),
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_init_args_missing_env_values_builder_expected_ex

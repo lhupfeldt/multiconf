@@ -892,6 +892,10 @@ class _ConfigBuilder(_ConfigItemBase):
 
                 insert(item_from_build, item_from_with_key, item_from_with)
 
+        previous_item = _ConfigBase._mc_last_item
+        if previous_item != self and previous_item != self._mc_contained_in and previous_item and not previous_item._mc_frozen:
+            previous_item._mc_freeze(mc_error_info_up_level=1)
+
 
 class _ItemParentProxy(object):
     """The purpose of this is to set the current '_mc_contained_in' when accessing an item created by a builder and assigned under mutiple parent items"""
