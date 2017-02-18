@@ -474,7 +474,10 @@ class _ConfigBase(object):
             return getattr(self, attr_name)
 
     def _mc_is_excluded(self):
-        return self.env in self._mc_excluded or self._mc_contained_in._mc_is_excluded()
+        mc_contained_in = self._mc_contained_in
+        while isinstance(mc_contained_in, _ConfigBuilder):
+            mc_contained_in = mc_contained_in._mc_contained_in
+        return self.env in self._mc_excluded or mc_contained_in._mc_is_excluded()
 
     def items(self):
         for key, item in self._mc_items.items():
@@ -841,9 +844,14 @@ class _ConfigBuilder(_ConfigItemBase):
         return repeatable
 
     def _mc_builder_freeze(self):
-        _debug("_mc_builder_freeze - calling mc_build")
+        _debug("_mc_builder_freeze - calling mc_build:", type(self), id(self))
         self._mc_where = Where.IN_MC_BUILD
-        self.mc_build()
+        try:
+            self.mc_build()
+        except _McExcludedException:
+            _debug("_mc_builder_freeze - excluded")
+            pass
+        self._mc_where = Where.NOWHERE
         _debug("_mc_builder_freeze - mc_build finished")
 
         def insert(from_build, from_with_key, from_with):
@@ -870,6 +878,7 @@ class _ConfigBuilder(_ConfigItemBase):
         contained_in = self._mc_contained_in
         while contained_in._mc_where == Where.IN_MC_BUILD:
             contained_in = contained_in._mc_contained_in
+
         for item_from_with_key, item_from_with in self.items():
             _debug("item_from_with:", item_from_with_key)
             for item_from_build_key, item_from_build in contained_in.items():
