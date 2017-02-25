@@ -905,10 +905,13 @@ class _ItemParentProxy(object):
         object.__setattr__(self, '_mc_contained_in', ci)
         object.__setattr__(self, '_mc_item', item)
 
-    def __getattr__(self, name):
-        item = self._mc_item
+    def __getattribute__(self, name):
+        if name in object.__getattribute__(self, '__slots__'):
+            return object.__getattribute__(self, name)
+
+        item = object.__getattribute__(self, '_mc_item')
         orig_ci = item._mc_contained_in
-        item._mc_contained_in = self._mc_contained_in
+        item._mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
         try:
             return getattr(item, name)
         finally:

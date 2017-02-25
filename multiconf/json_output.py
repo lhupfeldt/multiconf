@@ -41,6 +41,13 @@ def _attr_ref_msg(obj, attr_name):
     return ''
 
 
+def ref_id(obj):
+    try:
+        return id(object.__getattribute__(obj, '_mc_item'))
+    except AttributeError:
+        return id(obj)
+
+
 class ConfigItemEncoder(object):
     recursion_check = threading.local()
     recursion_check.in_default = None
@@ -86,30 +93,30 @@ class ConfigItemEncoder(object):
     if major_version < 3:
         def _class_dict(self, obj):
             if self.compact:
-                return OrderedDict((_class_tuple(obj, ' #id: ' + repr(id(obj))),))
-            return OrderedDict((_class_tuple(obj), ('__id__', id(obj))))
+                return OrderedDict((_class_tuple(obj, ' #id: ' + repr(ref_id(obj))),))
+            return OrderedDict((_class_tuple(obj), ('__id__', ref_id(obj))))
 
     def _mc_class_dict(self, obj):
         not_frozen_msg = "" if obj._mc_frozen else ", not-frozen"
         if self.compact:
-            msg = " #as: '" + obj.named_as() + "', id: " + str(id(obj)) + not_frozen_msg
+            msg = " #as: '" + obj.named_as() + "', id: " + str(ref_id(obj)) + not_frozen_msg
             return OrderedDict((_class_tuple(obj, msg),))
-        return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', id(obj))))
+        return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', ref_id(obj))))
 
     def _excl_str(self, objval):
         return ' excluded' if  objval._mc_is_excluded() else ''
 
     def _ref_earlier_str(self, objval):
-        return "#ref" + self._excl_str(objval) + ", id: " + repr(id(objval))
+        return "#ref" + self._excl_str(objval) + ", id: " + repr(ref_id(objval))
 
     def _ref_later_str(self, objval):
-        return "#ref later" + self._excl_str(objval) + ", id: " + repr(id(objval))
+        return "#ref later" + self._excl_str(objval) + ", id: " + repr(ref_id(objval))
 
     def _ref_self_str(self, objval):
-        return "#ref self" + self._excl_str(objval) + ", id: " + repr(id(objval))
+        return "#ref self" + self._excl_str(objval) + ", id: " + repr(ref_id(objval))
 
     def _ref_mc_item_str(self, objval):
-        if id(objval) in self.seen:
+        if ref_id(objval) in self.seen:
             return self._ref_earlier_str(objval)
         return self._ref_later_str(objval)
 
@@ -121,7 +128,7 @@ class ConfigItemEncoder(object):
         if child_obj is obj:
             return self._ref_self_str(child_obj)
 
-        if self.seen.get(id(child_obj)):
+        if self.seen.get(ref_id(child_obj)):
             return self._ref_earlier_str(child_obj)
 
         if isinstance(child_obj, self.multiconf_base_type):
@@ -139,7 +146,7 @@ class ConfigItemEncoder(object):
                 contained_in = contained_in._mc_contained_in
             else:
                 # We found a reference to an item which is outside of the currently dumped hierarchy
-                # Showing id(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
+                # Showing ref_id(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
                 ref_msg = "#outside-ref: "
                 mc_key_msg = _attr_ref_msg(child_obj, 'mc_key')
                 name_msg = _attr_ref_msg(child_obj, 'name')
@@ -163,9 +170,9 @@ class ConfigItemEncoder(object):
         try:
             ConfigItemEncoder.recursion_check.in_default = obj
 
-            if self.seen.get(id(obj)):
+            if self.seen.get(ref_id(obj)):
                 return self._ref_earlier_str(obj)
-            self.seen[id(obj)] = obj
+            self.seen[ref_id(obj)] = obj
 
             if isinstance(obj, self.multiconf_base_type):
                 # Handle ConfigItems", type(obj)
@@ -287,7 +294,7 @@ class ConfigItemEncoder(object):
                         key += ' #!overridden @property'
 
                     try:
-                        val = object.__getattribute__(obj, real_key)
+                        val = getattr(obj, real_key)
                     except InvalidUsageException as ex:
                         self.num_invalid_usages += 1
                         dd[key + ' #invalid usage context'] = repr(ex)
@@ -388,7 +395,7 @@ class ConfigItemEncoder(object):
                 dd = self._class_dict(obj)
                 for key, val in obj.__dict__.items():
                     if key[0] != '_':
-                        dd[key] = self._ref_earlier_str(val) if self.seen.get(id(val)) else val
+                        dd[key] = self._ref_earlier_str(val) if self.seen.get(ref_id(val)) else val
                 return dd
 
             self.num_errors += 1
