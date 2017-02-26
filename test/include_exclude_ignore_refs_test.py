@@ -87,7 +87,7 @@ _include_exclude_for_configitem_expected_json = """{
     "item #Excluded: <class 'test.include_exclude_ignore_refs_test.item'>": true
 }"""
 
-def test_exclude_refs_for_nested_configitem():
+def test_exclude_refs_for_nested_configitem1():
     @mc_config(ef)
     def conf(_):
         with root() as cr:
@@ -279,38 +279,13 @@ def test_exclude_refs_for_repeatable_nested_configitem_required_items():
     with raises(ConfigException):
         _ = cr.x['q']
 
-    cr = ef.confif(dev3).root
+    cr = ef.config(dev3).root
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
     assert cr.ritems['a'].anattr == 2
     assert not cr.ritems['a'].item
     assert len(cr.ritems) == 1
-
-
-def test_exclude_refs_for_nested_configitem_before_exit():
-    """Test that en excluded item ignores atribute references before it's with block scope is exited"""
-    @mc_config(ef)
-    def conf(_):
-        with root() as cr:
-            with item(mc_exclude=[dev2, dev3, prod]) as it1:
-                it1.setattr('anattr', pp=1, g_dev12_3=2)
-                it1.setattr('anotherattr', dev1=1, pp=2)
-                with item() as it2:
-                    it2.setattr('anattr', pp=1, g_dev12_3=2)
-                    it2.setattr('anotherattr', dev1=1, pp=2)
-
-                cr.y = it1.item
-
-    cr = ef.config(prod).root
-    assert not cr.item
-    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
-    assert not cr.y
-
-    cr = ef.config(dev1).root
-    assert cr.item.item.anattr == 2
-    assert cr.item.item.anotherattr == 1
-    assert cr.y == cr.item.item
 
 
 def test_exclude_refs_for_nested_configitem_before_exit_with_mc_required_refs():
