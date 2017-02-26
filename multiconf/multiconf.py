@@ -125,7 +125,7 @@ class _ConfigBase(object):
         return json_str
 
     def __repr__(self):
-        if not self._mc_is_excluded():
+        if self:
             # Don't call property methods in repr?, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
             return self.json(compact=True, property_methods=True, builders=True)
         return "Excluded: " + repr(type(self))
@@ -162,9 +162,7 @@ class _ConfigBase(object):
         pass
 
     def __bool__(self):
-        if not self._mc_is_excluded():
-            return True
-        return False
+        return self.env not in self._mc_excluded
 
     # Python2 compatibility
     __nonzero__ = __bool__
@@ -175,7 +173,7 @@ class _ConfigBase(object):
         return self._mc_handled_env_bits & self._mc_root._mc_env.mask
 
     def _mc_freeze(self, mc_error_info_up_level):
-        if self._mc_is_excluded():
+        if not self:
             self._mc_frozen = True
             return
 
@@ -222,7 +220,7 @@ class _ConfigBase(object):
 
     def _mc_call_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items"""
-        if self._mc_is_excluded():
+        if not self:
             return
 
         self._mc_where = Where.NOWHERE
@@ -350,7 +348,7 @@ class _ConfigBase(object):
             if value != MC_NO_VALUE:
                 return
 
-        if self._mc_where == Where.IN_INIT or self._mc_is_excluded():
+        if self._mc_where == Where.IN_INIT or not self:
             if value == MC_NO_VALUE:
                 env_attr.set(current_env, value, self._mc_where, from_eg)
 
@@ -442,7 +440,7 @@ class _ConfigBase(object):
 
     def __getattr__(self, attr_name):
         # Only called is self.<attr_name> is not found
-        if self._mc_is_excluded() and self._mc_root._mc_config_loaded:
+        if not self and self._mc_root._mc_config_loaded:
             ex = ConfigException("Accessing attribute '{}' on an excluded object:".format(attr_name), self)
             ex.excluded = True
             ex.attr_name = attr_name
@@ -473,15 +471,9 @@ class _ConfigBase(object):
                 return prop.prop.__get__(self, type(self))
             return getattr(self, attr_name)
 
-    def _mc_is_excluded(self):
-        mc_contained_in = self._mc_contained_in
-        while isinstance(mc_contained_in, _ConfigBuilder):
-            mc_contained_in = mc_contained_in._mc_contained_in
-        return self.env in self._mc_excluded or mc_contained_in._mc_is_excluded()
-
     def items(self):
         for key, item in self._mc_items.items():
-            if item._mc_is_excluded() or isinstance(item, _ConfigBuilder):
+            if not item or isinstance(item, _ConfigBuilder):
                 continue
             yield key, item
 
@@ -592,16 +584,15 @@ class _ConfigItemBase(_ConfigBase):
 
         _ConfigBase._mc_last_item = self
 
+        if not self._mc_contained_in:
+            self._mc_excluded.add(self.env)
+            raise _McExcludedException()
+
         if mc_include or mc_exclude:
             self._mc_select_envs(mc_include, mc_exclude)
 
     def _mc_select_envs(self, include, exclude):
         """Calculate whether to include or exclude item in env."""
-
-        if self._mc_contained_in._mc_is_excluded():
-            self._mc_excluded.add(self.env)
-            raise _McExcludedException()
-
         try:
             selected = self._mc_root._mc_env_factory.select_env_list(self.env, exclude or [], include or [])
         except AmbiguousEnvException as ex:
@@ -905,6 +896,10 @@ class _ItemParentProxy(object):
         object.__setattr__(self, '_mc_contained_in', ci)
         object.__setattr__(self, '_mc_item', item)
 
+        env = ci._mc_root._mc_env
+        if env in ci._mc_excluded:
+            item._mc_excluded.add(ci._mc_root._mc_env)
+
     def __getattribute__(self, name):
         if name in object.__getattribute__(self, '__slots__'):
             return object.__getattribute__(self, name)
@@ -949,8 +944,8 @@ class _ConfigRoot(_ConfigBase):
     def mc_config_result(self):
         return self._mc_config_result[self.env]
 
-    def _mc_is_excluded(self):
-        return False
+    def __bool__(self):
+        return True
 
 
 class _RootEnvProxy(object):

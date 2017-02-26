@@ -104,7 +104,7 @@ class ConfigItemEncoder(object):
         return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', ref_id(obj))))
 
     def _excl_str(self, objval):
-        return ' excluded' if  objval._mc_is_excluded() else ''
+        return ' excluded' if not objval else ''
 
     def _ref_earlier_str(self, objval):
         return "#ref" + self._excl_str(objval) + ", id: " + repr(ref_id(objval))
@@ -270,7 +270,7 @@ class ConfigItemEncoder(object):
                     if not self.builders and isinstance(item, self.multiconf_builder_type):
                         continue
 
-                    if hasattr(item, '_mc_is_excluded') and item._mc_is_excluded():
+                    if not item and isinstance(item, self.multiconf_base_type):
                         if self.compact:
                             dd[key] = 'false #' + repr(item)
                             continue
