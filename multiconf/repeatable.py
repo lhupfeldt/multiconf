@@ -16,7 +16,7 @@ class RepeatableDict(OrderedDict):
 
     def __get__(self, obj, objtype):
         if obj._mc_root._mc_config_loaded:
-            return OrderedDict(((key, val) for (key, val) in obj.__dict__[self.attr_name].items() if val and val._mc_exists_in_env()))
+            return OrderedDict(((key, val) for (key, val) in obj.__dict__[self.attr_name].items() if val._mc_exists_in_env()))
         return obj.__dict__[self.attr_name]
 
     def __set__(self, obj, val):
@@ -26,25 +26,25 @@ class RepeatableDict(OrderedDict):
 
     def items(self):
         for (key, val) in super(RepeatableDict, self.obj.__dict__[self.attr_name]).items():
-            if val and val._mc_exists_in_env():
+            if val._mc_exists_in_env():
                 yield key, val
 
     iteritems = items
 
     def keys(self):
         for (key, val) in super(RepeatableDict, self.obj.__dict__[self.attr_name]).items():
-            if val and val._mc_exists_in_env():
+            if val._mc_exists_in_env():
                 yield key
 
     def values(self):
         for val in super(RepeatableDict, self.obj.__dict__[self.attr_name]).values():
-            if val and val._mc_exists_in_env():
+            if val._mc_exists_in_env():
                 yield val
 
     def __len__(self):
         count = 0
         for val in super(RepeatableDict, self.obj.__dict__[self.attr_name]).values():
-            if val and val._mc_exists_in_env():
+            if val._mc_exists_in_env():
                 count += 1
         return count
 

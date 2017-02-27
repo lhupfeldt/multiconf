@@ -169,6 +169,8 @@ class _ConfigBase(object):
 
     def _mc_exists_in_env(self):
         env_mask = self._mc_root._mc_env.mask
+        if env_mask & self._mc_excluded:
+            return False
         return self._mc_handled_env_bits & env_mask or env_mask == 0
 
     def _mc_freeze(self, mc_error_info_up_level):
