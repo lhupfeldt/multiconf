@@ -331,3 +331,7 @@ class EnvFactory(object):
             raise ConfigException("Trying to get invalid configuration containing MC_TODO")
 
         return cr
+
+
+class NO_ENV(object):
+    mask = 0

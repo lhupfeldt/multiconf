@@ -7,7 +7,7 @@ import sys, traceback
 from collections import OrderedDict
 import json
 
-from .envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException, EnvException
+from .envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED
 from .attribute import _McAttribute, Where
 
@@ -162,15 +162,14 @@ class _ConfigBase(object):
         pass
 
     def __bool__(self):
-        return self.env not in self._mc_excluded
+        return not (self._mc_root._mc_env.mask & self._mc_excluded)
 
     # Python2 compatibility
     __nonzero__ = __bool__
 
     def _mc_exists_in_env(self):
-        if self._mc_root._mc_env is None:
-            return True
-        return self._mc_handled_env_bits & self._mc_root._mc_env.mask
+        env_mask = self._mc_root._mc_env.mask
+        return self._mc_handled_env_bits & env_mask or env_mask == 0
 
     def _mc_freeze(self, mc_error_info_up_level):
         if not self:
@@ -434,7 +433,7 @@ class _ConfigBase(object):
                 msg += "\nvalue: " + repr(value) + ", from: " + repr(eg)
             self._mc_print_error_caller(msg, mc_error_info_up_level)
         except AttributeError:
-            if current_env is None:
+            if current_env is NO_ENV:
                 self._setattr_disabled(None, attr_name, None, None, None, None, None, None)
             raise
 
@@ -453,14 +452,14 @@ class _ConfigBase(object):
         try:
             return self._mc_attributes[attr_name].env_values[self._mc_root._mc_env]
         except KeyError:
-            if self._mc_root._mc_env != None or attr_name not in self._mc_attributes:
+            if self._mc_root._mc_env or attr_name not in self._mc_attributes:
                 raise ConfigAttributeError(self, attr_name)
             msg = "Trying to access attribute '{}'. Item.attribute access is not allowed in 'mc_post_validate' as there i no current env, use: item.getattr(attr_name, env)"
             raise ConfigApiException(msg.format(attr_name))
 
     def getattr(self, attr_name, env):
         """Get an attribute value for any env."""
-        if env in self._mc_excluded and self._mc_root._mc_config_loaded:
+        if not self and self._mc_root._mc_config_loaded:
             raise ConfigException("Accessing attribute '{name}' for {env} on an excluded object:".format(name=attr_name, env=env), self)
 
         try:
@@ -585,7 +584,7 @@ class _ConfigItemBase(_ConfigBase):
         _ConfigBase._mc_last_item = self
 
         if not self._mc_contained_in:
-            self._mc_excluded.add(self.env)
+            self._mc_excluded |= self._mc_root._mc_env.mask
             raise _McExcludedException()
 
         if mc_include or mc_exclude:
@@ -602,7 +601,7 @@ class _ConfigItemBase(_ConfigBase):
             raise ConfigException(msg.format(env=self.env, egx=ex.ambiguous[0], egi=ex.ambiguous[1]))
 
         if selected == 1 or (selected is None and include):
-            self._mc_excluded.add(self.env)
+            self._mc_excluded |= self._mc_root._mc_env.mask
             return True
 
         return False
@@ -678,7 +677,7 @@ class ConfigItem(_ConfigItemBase):
             self._mc_items = OrderedDict()
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
-            self._mc_excluded = set()  # TODO bits
+            self._mc_excluded = 0
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict(key, self)
@@ -747,7 +746,7 @@ class RepeatableConfigItem(_ConfigItemBase):
             self._mc_items = OrderedDict()
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
-            self._mc_excluded = set()  # TODO bits
+            self._mc_excluded = 0
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict(key, self)
@@ -803,7 +802,7 @@ class _ConfigBuilder(_ConfigItemBase):
             self._mc_items = OrderedDict()
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
-            self._mc_excluded = set()  # TODO bits
+            self._mc_excluded = 0
 
             # Insert self in parent
             if hasattr(contained_in, private_key):
@@ -897,8 +896,8 @@ class _ItemParentProxy(object):
         object.__setattr__(self, '_mc_item', item)
 
         env = ci._mc_root._mc_env
-        if env in ci._mc_excluded:
-            item._mc_excluded.add(ci._mc_root._mc_env)
+        if not ci:
+            item._mc_excluded |= env.mask
 
     def __getattribute__(self, name):
         if name in object.__getattribute__(self, '__slots__'):
@@ -930,7 +929,6 @@ class _ConfigRoot(_ConfigBase):
         self._mc_attributes = OrderedDict()
         self._mc_attributes_to_check = OrderedDict()
         self._mc_items = OrderedDict()
-        self._mc_excluded = set()  # TODO bits
         self._mc_contained_in = None
         self._mc_root = self
         self._mc_num_warnings = 0
@@ -946,6 +944,8 @@ class _ConfigRoot(_ConfigBase):
 
     def __bool__(self):
         return True
+
+    __nonzero__ = __bool__
 
 
 class _RootEnvProxy(object):
@@ -1041,7 +1041,7 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
         _ConfigBase._setattr = _ConfigBase._setattr_disabled
 
         # Call mc_post_validate
-        cr._mc_env = None
+        cr._mc_env = NO_ENV
         cr._mc_call_post_validate_recursively()
 
     return deco
