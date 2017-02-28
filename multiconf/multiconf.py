@@ -233,7 +233,7 @@ class _ConfigBase(object):
     def __enter__(self):
         self._mc_where = Where.IN_WITH
         self.__class__._mc_hierarchy.append(self)
-        self.__class__._debug_hierarchy('_ConfigBase.__enter__')
+        # self.__class__._debug_hierarchy('_ConfigBase.__enter__')
         return self
 
     def __exit__(self, exc_type, value, traceback):
@@ -249,7 +249,7 @@ class _ConfigBase(object):
             if not exc_type:
                 self._mc_freeze(mc_error_info_up_level=1)
         finally:
-            self.__class__._debug_hierarchy('_ConfigBase.__exit__')
+            # self.__class__._debug_hierarchy('_ConfigBase.__exit__')
             cls._mc_hierarchy.pop()
 
         return True if exc_type and exc_type is _McExcludedException else None
@@ -572,7 +572,6 @@ class _ConfigItemBase(_ConfigBase):
         previous_item = self.__class__._mc_last_item
         if previous_item != self._mc_contained_in and previous_item and not previous_item._mc_frozen:
             try:
-                _debug("freeze in init, previous:", type(previous_item))
                 previous_item._mc_freeze(mc_error_info_up_level=None)
             except Exception as ex:
                 print("Exception validating previously defined object -", file=sys.stderr)
@@ -649,7 +648,7 @@ class _ConfigItemBase(_ConfigBase):
 
 class ConfigItem(_ConfigItemBase):
     def __new__(cls, *init_args, **init_kwargs):
-        cls._debug_hierarchy('ConfigItem.__new__')
+        # cls._debug_hierarchy('ConfigItem.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
@@ -718,7 +717,7 @@ class _DummyItem(_ConfigBase):
 
 class RepeatableConfigItem(_ConfigItemBase):
     def __new__(cls, mc_key, *init_args, **init_kwargs):
-        cls._debug_hierarchy('RepeatableConfigItem.__new__')
+        # cls._debug_hierarchy('RepeatableConfigItem.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
@@ -774,7 +773,7 @@ class RepeatableConfigItem(_ConfigItemBase):
 
 class _ConfigBuilder(_ConfigItemBase):
     def __new__(cls, mc_key='default-builder', *init_args, **init_kwargs):
-        cls._debug_hierarchy('_ConfigBuilder.__new__')
+        # cls._debug_hierarchy('_ConfigBuilder.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
@@ -836,15 +835,12 @@ class _ConfigBuilder(_ConfigItemBase):
         return repeatable
 
     def _mc_builder_freeze(self):
-        _debug("_mc_builder_freeze - calling mc_build:", type(self), id(self))
         self._mc_where = Where.IN_MC_BUILD
         try:
             self.mc_build()
         except _McExcludedException:
-            _debug("_mc_builder_freeze - excluded")
             pass
         self._mc_where = Where.NOWHERE
-        _debug("_mc_builder_freeze - mc_build finished")
 
         def insert(from_build, from_with_key, from_with):
             """Insert items from with statement (single or repeatable) in a single (non repeatable) item from mc_build."""
@@ -852,15 +848,12 @@ class _ConfigBuilder(_ConfigItemBase):
                 return
 
             if isinstance(from_with, RepeatableDict):
-                _debug("from_with, repeatable:", from_with_key)
                 repeatable = from_build._mc_get_repeatable(from_with_key, from_with)
                 for wi_key, wi in from_with.items():
-                    _debug("insert repetable:", type(from_build), wi_key, type(wi))
                     pp = _ItemParentProxy(from_build, wi)
                     repeatable[wi_key] = pp
                 return
 
-            _debug("insert from_with not repeatable:", type(from_build), from_with_key, type(from_with))
             pp = _ItemParentProxy(from_build, from_with)
             from_build._mc_items[from_with_key] = pp
             object.__setattr__(from_build, from_with_key, pp)
@@ -872,11 +865,9 @@ class _ConfigBuilder(_ConfigItemBase):
             contained_in = contained_in._mc_contained_in
 
         for item_from_with_key, item_from_with in self.items():
-            _debug("item_from_with:", item_from_with_key)
             for item_from_build_key, item_from_build in contained_in.items():
 
                 if isinstance(item_from_build, RepeatableDict):
-                    _debug("item_from_build, repeatable:", item_from_build_key)
                     for bi_key, bi in item_from_build.items():
                         insert(bi, item_from_with_key, item_from_with)
                         continue
