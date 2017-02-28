@@ -3,50 +3,79 @@
 
 from __future__ import print_function
 
-from collections import OrderedDict
+from collections import Mapping, OrderedDict
 
 
 class RepeatableDict(OrderedDict):
     """Dictionary dedicated for holding RepeatableConfigItem"""
 
     def __init__(self, attr_name, obj):
-        super(RepeatableDict, self).__init__()
         self.attr_name = attr_name
         self.obj = obj
-
-    def __get__(self, obj, objtype):
-        if obj._mc_root._mc_config_loaded:
-            return OrderedDict(((key, val) for (key, val) in obj.__dict__[self.attr_name].items() if val._mc_exists_in_env()))
-        return obj.__dict__[self.attr_name]
+        self._items = OrderedDict()
 
     def __set__(self, obj, val):
         if not isinstance(val, RepeatableDict):
             raise AttributeError("Not settable: " + self.attr_name)
         obj.__dict__[val.attr_name] = val
 
+    def __setitem__(self, key, val):
+        self._items[key] = val
+
+    def __getitem__(self, key):
+        val = self._items[key]
+        if val._mc_exists_in_env():
+            return val
+        raise KeyError(key)
+
+    def __contains__(self, key):
+        val = self._items.get(key)
+        if val and val._mc_exists_in_env():
+            return True
+        return False
+
+    def get(self, key, default=None):
+        val = self._items.get(key)
+        if val and val._mc_exists_in_env():
+            return val
+        return default
+
+    def __eq__(self, other):
+        return OrderedDict(self.items()) == other
+
+    def __ne__(self, other):
+        return self != other
+
+    def __iter__(self):
+        for key in self.keys():
+            yield key
+
     def items(self):
-        for (key, val) in super(RepeatableDict, self.obj.__dict__[self.attr_name]).items():
+        for key, val in self._items.items():
             if val._mc_exists_in_env():
                 yield key, val
 
     iteritems = items
 
     def keys(self):
-        for (key, val) in super(RepeatableDict, self.obj.__dict__[self.attr_name]).items():
+        for key, val in self._items.items():
             if val._mc_exists_in_env():
                 yield key
 
     def values(self):
-        for val in super(RepeatableDict, self.obj.__dict__[self.attr_name]).values():
+        for _, val in self._items.items():
             if val._mc_exists_in_env():
                 yield val
 
     def __len__(self):
         count = 0
-        for val in super(RepeatableDict, self.obj.__dict__[self.attr_name]).values():
+        for _, val in self._items.items():
             if val._mc_exists_in_env():
                 count += 1
         return count
+
+    def __repr__(self):
+        return repr(OrderedDict(((key, val) for (key, val) in self._items.items() if val._mc_exists_in_env())))
 
     def _mc_call_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items"""

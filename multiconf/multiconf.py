@@ -168,7 +168,10 @@ class _ConfigBase(object):
     __nonzero__ = __bool__
 
     def _mc_exists_in_env(self):
-        env_mask = self._mc_root._mc_env.mask
+        cr = self._mc_root
+        if not cr._mc_config_loaded:
+            return True
+        env_mask = cr._mc_env.mask
         if env_mask & self._mc_excluded:
             return False
         return self._mc_handled_env_bits & env_mask or env_mask == 0
