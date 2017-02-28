@@ -4,7 +4,7 @@
 from __future__ import print_function
 
 import sys, os, threading, traceback
-from collections import OrderedDict
+from collections import Mapping, OrderedDict
 import types
 
 from . import envs
@@ -225,7 +225,7 @@ class ConfigItemEncoder(object):
 
                     val = self._check_nesting(obj, val)
                     if val != McInvalidValue.MC_NO_VALUE:
-                        if isinstance(val, dict):
+                        if isinstance(val, Mapping):
                             new_val = OrderedDict()
                             for inner_key, maybeitem in val.items():
                                 if not isinstance(maybeitem, self.multiconf_base_type):
@@ -347,7 +347,7 @@ class ConfigItemEncoder(object):
                         dd[key + calc_or_static] = True
                         continue
 
-                    if isinstance(val, dict):
+                    if isinstance(val, Mapping):
                         new_dict = OrderedDict()
                         for item_key, item in val.items():
                             new_dict[item_key] = self._check_nesting(obj, item)
@@ -381,7 +381,7 @@ class ConfigItemEncoder(object):
             except TypeError:
                 pass
             else:
-                # print "# Handle iterable objects", type(obj)
+                # print("# Handle iterable objects", type(obj))
                 return list(iterable)
 
             if self.user_fallback_callable:
