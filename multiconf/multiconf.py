@@ -48,7 +48,6 @@ class _ConfigBase(object):
     def __init__(self):
         # _debug(type(self), '__init__')
         self._mc_where = Where.IN_INIT
-        self._mc_json_errors = 0
         self._mc_frozen = False
         try:
             del self._mc_num_errors
@@ -121,7 +120,7 @@ class _ConfigBase(object):
                                     multiconf_property_wrapper_type=_McPropertyWrapper)
         # python3 doesn't need  separators=(',', ': ')
         json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
-        self._mc_json_errors = encoder.num_errors
+        self._mc_root._mc_json_errors = encoder.num_errors
         return json_str
 
     def __repr__(self):
@@ -136,7 +135,7 @@ class _ConfigBase(object):
         Return 0 if json() has not been called
         """
 
-        return self._mc_json_errors
+        return self._mc_root._mc_json_errors
 
     def mc_init(self):
         """This is a user defined callback method.
@@ -673,7 +672,6 @@ class ConfigItem(_ConfigItemBase):
         except AttributeError:
             self = super(ConfigItem, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
-            self._mc_json_errors = 0
             self._mc_frozen = False
 
             self._mc_attributes = OrderedDict()
@@ -742,7 +740,6 @@ class RepeatableConfigItem(_ConfigItemBase):
         except KeyError:
             self = super(RepeatableConfigItem, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
-            self._mc_json_errors = 0
             self._mc_frozen = False
 
             self._mc_attributes = OrderedDict()
@@ -798,7 +795,6 @@ class _ConfigBuilder(_ConfigItemBase):
         except KeyError:
             self = super(_ConfigBuilder, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
-            self._mc_json_errors = 0
             self._mc_frozen = False
 
             self._mc_attributes = OrderedDict()
