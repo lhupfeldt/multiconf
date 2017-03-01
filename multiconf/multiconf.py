@@ -411,13 +411,14 @@ class _ConfigBase(object):
             return
 
         cr = self._mc_root
+        env_factory = cr._mc_env_factory
+
         if cr._mc_check_unknown:
             # Check that there are no undefined eg names specified
-            ef = self.env_factory
             undefined = []
             for eg_name in env_values:
                 try:
-                    ef.env_or_group_from_name(eg_name)
+                    env_factory.env_or_group_from_name(eg_name)
                 except EnvException:
                     undefined.append(eg_name)
             if undefined:
@@ -425,7 +426,6 @@ class _ConfigBase(object):
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
 
         current_env = cr._mc_env
-        env_factory = cr._mc_env_factory
         try:
             value, eg = env_factory.resolve_env_group_value(current_env, env_values)
             self._setattr(current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level=mc_error_info_up_level + 1)
