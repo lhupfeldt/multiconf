@@ -755,7 +755,6 @@ class RepeatableConfigItem(_ConfigItemBase):
                 self._mc_items[key] = od  # Needed to implement reliable 'items' method
                 object.__setattr__(self, key, od)
 
-            self._mc_repeatable_item_key = mc_key
             self._mc_handled_env_bits = self._mc_root._mc_env.mask
 
             # Insert self in repeatable
