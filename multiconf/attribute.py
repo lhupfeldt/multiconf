@@ -10,6 +10,7 @@ class Where(Enum):
     IN_MC_INIT = 2
     IN_MC_BUILD = 3
     IN_WITH = 4
+    FROZEN = 5
 
 
 class _McAttribute(object):

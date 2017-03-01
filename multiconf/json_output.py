@@ -11,6 +11,7 @@ from . import envs
 from .values import McInvalidValue
 from .config_errors import InvalidUsageException, ConfigException
 from .bases import get_bases
+from .attribute import Where
 
 major_version = sys.version_info[0]
 if major_version > 2:
@@ -97,7 +98,7 @@ class ConfigItemEncoder(object):
             return OrderedDict((_class_tuple(obj), ('__id__', ref_id(obj))))
 
     def _mc_class_dict(self, obj):
-        not_frozen_msg = "" if obj._mc_frozen else ", not-frozen"
+        not_frozen_msg = "" if obj._mc_where == Where.FROZEN else ", not-frozen"
         if self.compact:
             msg = " #as: '" + obj.named_as() + "', id: " + str(ref_id(obj)) + not_frozen_msg
             return OrderedDict((_class_tuple(obj, msg),))

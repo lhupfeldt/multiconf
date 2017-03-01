@@ -48,7 +48,6 @@ class _ConfigBase(object):
     def __init__(self):
         # _debug(type(self), '__init__')
         self._mc_where = Where.IN_INIT
-        self._mc_frozen = False
         try:
             del self._mc_num_errors
         except AttributeError:
@@ -177,7 +176,7 @@ class _ConfigBase(object):
 
     def _mc_freeze(self, mc_error_info_up_level):
         if not self:
-            self._mc_frozen = True
+            self._mc_where = Where.FROZEN
             return
 
         self._mc_raise_if_errors()
@@ -219,7 +218,7 @@ class _ConfigBase(object):
             print(self._mc_error_msg("Missing '@required' items: {}".format(missing_req)), file=sys.stderr)
 
         self._mc_raise_if_errors()
-        self._mc_frozen = True
+        self._mc_where = Where.FROZEN
 
     def _mc_call_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items"""
@@ -228,6 +227,7 @@ class _ConfigBase(object):
 
         self._mc_where = Where.NOWHERE
         self.mc_post_validate()
+        self._mc_where = Where.FROZEN
 
         for child_item in self._mc_items.values():
             child_item._mc_call_post_validate_recursively()
@@ -245,7 +245,7 @@ class _ConfigBase(object):
         cls = self.__class__
         try:
             previous_item = _ConfigBase._mc_last_item
-            if previous_item != self and previous_item != self._mc_contained_in and previous_item and not previous_item._mc_frozen:
+            if previous_item != self and previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
                 previous_item._mc_freeze(mc_error_info_up_level=1)
 
             if not exc_type:
@@ -347,7 +347,8 @@ class _ConfigBase(object):
             env_attr.set(current_env, value, self._mc_where, from_eg)
 
         if value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
-            self._mc_attributes_to_check.pop(attr_name, None)
+            if self._mc_attributes_to_check:
+                self._mc_attributes_to_check.pop(attr_name, None)
             if value != MC_NO_VALUE:
                 return
 
@@ -358,6 +359,8 @@ class _ConfigBase(object):
             # This is not an error now, as we allow partial set in __init__ and setting value to MC_REQUIRED in 'with' block
             # to postpone check until after 'mc_init', but we must remember to test later if the attribute has been set.
             mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
+            if self._mc_attributes_to_check is None:
+                self._mc_attributes_to_check = OrderedDict()
             self._mc_attributes_to_check[attr_name] = (value, self._mc_where, mc_caller_file_name, mc_caller_line_num)
             return
 
@@ -572,7 +575,7 @@ class _ConfigItemBase(_ConfigBase):
     def __init__(self, mc_include=None, mc_exclude=None):
         super(_ConfigItemBase, self).__init__()
         previous_item = self.__class__._mc_last_item
-        if previous_item != self._mc_contained_in and previous_item and not previous_item._mc_frozen:
+        if previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
             try:
                 previous_item._mc_freeze(mc_error_info_up_level=None)
             except Exception as ex:
@@ -633,7 +636,7 @@ class _ConfigItemBase(_ConfigBase):
             self._mc_print_error_caller(str(ex), mc_error_info_up_level)
 
     def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
-        """Return repeatable if item has repeatable with 'repeatable_class_key', if not raise am exception."""
+        """Return repeatable if item has repeatable with 'repeatable_class_key', if not raise an exception."""
         if repeatable_class_key in self.__class__._mc_deco_nested_repeatables:
             return object.__getattribute__(self, repeatable_class_key)
 
@@ -672,10 +675,9 @@ class ConfigItem(_ConfigItemBase):
         except AttributeError:
             self = super(ConfigItem, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
-            self._mc_frozen = False
 
             self._mc_attributes = OrderedDict()
-            self._mc_attributes_to_check = OrderedDict()
+            self._mc_attributes_to_check = None
             self._mc_items = OrderedDict()
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
@@ -740,10 +742,9 @@ class RepeatableConfigItem(_ConfigItemBase):
         except KeyError:
             self = super(RepeatableConfigItem, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
-            self._mc_frozen = False
 
             self._mc_attributes = OrderedDict()
-            self._mc_attributes_to_check = OrderedDict()
+            self._mc_attributes_to_check = None
             self._mc_items = OrderedDict()
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
@@ -795,10 +796,9 @@ class _ConfigBuilder(_ConfigItemBase):
         except KeyError:
             self = super(_ConfigBuilder, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
-            self._mc_frozen = False
 
             self._mc_attributes = OrderedDict()
-            self._mc_attributes_to_check = OrderedDict()
+            self._mc_attributes_to_check = None
             self._mc_items = OrderedDict()
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
@@ -875,7 +875,7 @@ class _ConfigBuilder(_ConfigItemBase):
                 insert(item_from_build, item_from_with_key, item_from_with)
 
         previous_item = _ConfigBase._mc_last_item
-        if previous_item != self and previous_item != self._mc_contained_in and previous_item and not previous_item._mc_frozen:
+        if previous_item != self and previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
             previous_item._mc_freeze(mc_error_info_up_level=1)
 
 
@@ -919,7 +919,7 @@ class _ConfigRoot(_ConfigBase):
         self._mc_todo_msgs = []
 
         self._mc_attributes = OrderedDict()
-        self._mc_attributes_to_check = OrderedDict()
+        self._mc_attributes_to_check = None
         self._mc_items = OrderedDict()
         self._mc_contained_in = None
         self._mc_root = self
