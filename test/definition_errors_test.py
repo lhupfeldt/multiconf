@@ -767,7 +767,7 @@ def test_setattr_no_envs_set_unknown(capsys):
     # ConfigItem
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def _0(_):
             with ConfigItem() as cr:
                 errorline[0] = next_line_num()
                 cr.setattr('aa', mc_set_unknown=True)
@@ -776,7 +776,7 @@ def test_setattr_no_envs_set_unknown(capsys):
 
     with raises(Exception) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def _1(_):
             with ConfigItem() as cr:
                 errorline[0] = next_line_num()
                 cr.setattr('aa', 1, mc_set_unknown=True)
@@ -786,7 +786,7 @@ def test_setattr_no_envs_set_unknown(capsys):
     # RepeatableItem
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def _2(_):
             with project():
                 with RepeatableItem(mc_key='a') as ci:
                     errorline[0] = next_line_num()
@@ -796,7 +796,7 @@ def test_setattr_no_envs_set_unknown(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def _3(_):
             with project():
                 with RepeatableItem(mc_key='a') as ci:
                     errorline[0] = next_line_num()
