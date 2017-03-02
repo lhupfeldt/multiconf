@@ -41,17 +41,12 @@ class XChild(RepeatableConfigItem):
         self.a = a
 
 
-_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Nested repeatable from 'build', key: 'server1', value: {
-    "__class__": "X #as: 'xses', id: 0000, not-frozen",
-    "name": "server1",
-    "num_servers": 2,
-    "server_num": 1,
-    "something": 1
-} overwrites existing entry in parent: {
+_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex = """Re-used key 'server1' in repeated item <class 'test.builder_definition_errors_test.X'> from 'mc_build' overwrites existing entry in parent:
+{
     "__class__": "Root #as: 'Root', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
-        "name": "prod"
+        "name": "pp"
     },
     "xses": {
         "server1": {
@@ -61,8 +56,8 @@ _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expe
             "something": null
         }
     },
-    "XBuilder.builder.0000": {
-        "__class__": "XBuilder #as: 'XBuilder.builder.0000', id: 0000, not-frozen",
+    "_mc_ConfigBuilder_XBuilder default-builder": {
+        "__class__": "XBuilder #as: '_mc_ConfigBuilder_XBuilder', id: 0000, not-frozen",
         "num_servers": 2
     }
 }"""
@@ -91,7 +86,6 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
                 with XBuilder():
                     pass
 
-    xfail("TODO")
     print(str(exinfo.value))
     assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expected_ex
 

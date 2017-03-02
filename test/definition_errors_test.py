@@ -402,6 +402,20 @@ def test_repeated_non_repeatable_item():
     assert str(exinfo.value) == "Repeated non repeatable conf item: 'ConfigItem': <class 'multiconf.multiconf.ConfigItem'>"
 
 
+_nested_repeatable_items_with_repeated_mc_key_expected_ex = """Re-used key 'my_name' in repeated item <class 'test.definition_errors_test.RepeatableItem'>  overwrites existing entry in parent:
+{
+    "__class__": "project #as: 'project', id: 0000, not-frozen",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "RepeatableItems": {
+        "my_name": {
+            "__class__": "RepeatableItem #as: 'RepeatableItems', id: 0000, not-frozen"
+        }
+    }
+}"""
+
 def test_nested_repeatable_items_with_repeated_mc_key():
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
@@ -410,7 +424,8 @@ def test_nested_repeatable_items_with_repeated_mc_key():
                 RepeatableItem(mc_key='my_name')
                 RepeatableItem(mc_key='my_name')
 
-    assert str(exinfo.value) == "Re-used key 'my_name' in nested objects"
+    print(exinfo.value)
+    assert replace_ids(str(exinfo.value), False) == _nested_repeatable_items_with_repeated_mc_key_expected_ex
 
 
 _value_defined_through_two_groups_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
