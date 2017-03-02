@@ -68,7 +68,7 @@ def test_nested_item_overrides_simple_attribute():
         @mc_config(ef2_pp_prod)
         def _(_):
             with ConfigItem() as cr:
-                cr.setattr('ConfigItem', prod="hello", mc_set_unknown=True)
+                cr.setattr('ConfigItem', default="hello", mc_set_unknown=True)
                 ConfigItem()
 
     assert replace_ids(str(exinfo.value), named_as=False) == _nested_item_overrides_simple_attribute_expected_ex
