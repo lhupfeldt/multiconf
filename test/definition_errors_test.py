@@ -523,7 +523,11 @@ def test_assigning_owerwrites_attribute(capsys):
 
 
 def test_configitem_outside_of_mc_config():
-    # TODO: Explicitly check this?
+    # TODO: Explicitly check for this?
+
+    # Need to make sure that the static _mc_hierarchy is set corectly
+    del ConfigItem._mc_hierarchy[:]
+
     with raises(Exception) as exinfo:
         ConfigItem()
 

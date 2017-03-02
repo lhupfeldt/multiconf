@@ -239,22 +239,19 @@ class _ConfigBase(object):
         return self
 
     def __exit__(self, exc_type, value, traceback):
-        if exc_type and exc_type is not _McExcludedException:
-            return None
-
-        cls = self.__class__
-        try:
+        if not exc_type:
             previous_item = _ConfigBase._mc_last_item
             if previous_item != self and previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
                 previous_item._mc_freeze(mc_error_info_up_level=1)
 
-            if not exc_type:
-                self._mc_freeze(mc_error_info_up_level=1)
-        finally:
-            # self.__class__._debug_hierarchy('_ConfigBase.__exit__')
-            cls._mc_hierarchy.pop()
+            self._mc_freeze(mc_error_info_up_level=1)
+            self.__class__._mc_hierarchy.pop()
+            return None
 
-        return True if exc_type and exc_type is _McExcludedException else None
+        # self.__class__._debug_hierarchy('_ConfigBase.__exit__')
+        if exc_type is _McExcludedException:
+            self.__class__._mc_hierarchy.pop()
+            return True
 
     def _setattr(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
         """Common code for assignment and item.setattr"""
