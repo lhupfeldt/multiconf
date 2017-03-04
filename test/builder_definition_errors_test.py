@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-from pytest import raises, xfail
+from pytest import raises
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
 from multiconf.decorators import nested_repeatables, named_as
@@ -202,9 +202,7 @@ def test_unexpected_repeatable_child_nested_builders_no_with():
     assert replace_ids(str(exinfo.value), False) == exp
 
 
-_configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex = """'x_children': {
-    "__class__": "XChild #as: 'x_children', id: 0000, not-frozen"
-} is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'xses'"""
+_configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex = """'x_children': <class 'test.builder_definition_errors_test.XChild'> is defined as repeatable, but this is not defined as a repeatable item in the containing class: 'xses': <class 'test.builder_definition_errors_test.X'>"""
 
 def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
     class XBuilder(ConfigBuilder):
@@ -225,7 +223,6 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
             with Root():
                 XBuilder()
 
-    xfail("TODO")
     assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex
 
 
