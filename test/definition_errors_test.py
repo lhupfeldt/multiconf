@@ -106,54 +106,6 @@ _single_error_on_item_expected_ex = """There was 1 error when defining item: {
 }""" + already_printed_msg
 
 
-_single_error_on_project_expected_ex = """There was 1 error when defining item: {
-    "__class__": "project #as: 'project', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    %s
-}""" + already_printed_msg
-
-_repeatable_item_json = """{
-        "a": {
-            "__class__": "RepeatableItem #as: 'RepeatableItems', id: 0000"
-        }
-    }
-""".strip()
-
-
-_p_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
-ConfigError: Value for env 'dev2ct' is specified more than once, with no single most specific group or direct env:
-value: 2, from: EnvGroup('g_dev2') {
-     Env('dev2ct'),
-     Env('dev2st')
-}
-value: 3, from: EnvGroup('g_dev_overlap') {
-     Env('dev2ct'),
-     Env('dev3ct')
-}
-File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
-ConfigError: Value for env 'dev3ct' is specified more than once, with no single most specific group or direct env:
-value: 12, from: EnvGroup('g_dev3') {
-     Env('dev3ct'),
-     Env('dev3st')
-}
-value: 3, from: EnvGroup('g_dev_overlap') {
-     Env('dev2ct'),
-     Env('dev3ct')
-}"""
-
-_p_expected_ex = """There were 2 errors when defining item: {
-    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "aa": 1
-}""" + already_printed_msg
-
-
 @nested_repeatables('RepeatableItems')
 class project(ConfigItem):
     pass
@@ -463,54 +415,82 @@ def test_value_defined_through_two_groups(capsys):
     assert replace_ids(str(exinfo.value), False) == _value_defined_through_two_groups_expected_ex
 
 
-_value_defined_through_three_groups_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
-ConfigError: Value for env 'dev2ct' is specified more than once, with no single most specific group or direct env:
+_value_defined_through_three_groups_expected = """
+ConfigError: Value for Env('dev2ct') is specified more than once, with no single most specific group or direct env:
 value: 2, from: EnvGroup('g_dev2') {
-     Env('dev2ct'),
-     Env('dev2st')
+   Env('dev2ct'),
+   Env('dev2st')
 }
 value: 3, from: EnvGroup('g_dev_overlap1') {
-     Env('dev2ct')
+   Env('dev2ct')
 }
 value: 7, from: EnvGroup('g_dev_overlap2') {
-     Env('dev2ct')
-}"""
+   Env('dev2ct')
+}""".strip()
 
 _value_defined_through_three_groups_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000",
+    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
-        "name": "prod"
+        "name": "dev2ct"
     },
-    "aa": 1
+    "aa": "MC_REQUIRED"
 }""" + already_printed_msg
 
 def test_value_defined_through_three_groups(capsys):
-    xfail("duplicate?")
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        with ItemWithAA(prod5, ef5_dev_prod) as cr:
-            errorline[0] = next_line_num()
-            cr.setattr('aa', g_dev_overlap2=7, default=7, prod=1, g_dev2=2, g_dev_overlap1=3)
+        @mc_config(ef5_dev_prod)
+        def _(_):
+            with ItemWithAA() as cr:
+                errorline[0] = next_line_num()
+                cr.setattr('aa', g_dev_overlap2=7, default=7, prod=1, g_dev2=2, g_dev_overlap1=3)
 
     _sout, serr = capsys.readouterr()
-    assert serr.strip() == _value_defined_through_three_groups_expected % dict(line=errorline[0])
+    assert serr.startswith(file_line(__file__, errorline[0]))
+    assert _value_defined_through_three_groups_expected in serr
     assert replace_ids(str(exinfo.value), False) == _value_defined_through_three_groups_expected_ex
 
 
+_two_values_defined_through_two_groups_expected1 = """
+ConfigError: Value for Env('dev2ct') is specified more than once, with no single most specific group or direct env:
+value: 2, from: EnvGroup('g_dev2') {
+   Env('dev2ct'),
+   Env('dev2st')
+}
+value: 3, from: EnvGroup('g_dev_overlap') {
+   Env('dev2ct'),
+   Env('dev3ct')
+}"""
+
+
+_two_values_defined_through_two_groups_expected2 = """
+ConfigError: Value for Env('dev3ct') is specified more than once, with no single most specific group or direct env:
+value: 12, from: EnvGroup('g_dev3') {
+   Env('dev3ct'),
+   Env('dev3st')
+}
+value: 3, from: EnvGroup('g_dev_overlap') {
+   Env('dev2ct'),
+   Env('dev3ct')
+}"""
+
 def test_two_values_defined_through_two_groups(capsys):
-    xfail("duplicate?")
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        with ItemWithAA(prod4, ef4_dev_prod) as cr:
-            errorline[0] = next_line_num()
-            cr.setattr('aa', prod=1, dev3st=14, pp=33, g_dev2=2, g_dev3=12, g_dev_overlap=3)
+        @mc_config(ef4_dev_prod, error_next_env=True)
+        def _(_):
+            with ItemWithAA() as cr:
+                errorline[0] = next_line_num()
+                cr.setattr('aa', prod=1, dev3st=14, pp=33, g_dev2=2, g_dev3=12, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    assert serr.strip() == _p_expected.strip() % dict(line=errorline[0])
-    assert replace_ids(str(exinfo.value), False) == _p_expected_ex
+    assert serr.startswith(file_line(__file__, errorline[0]))
+    assert _two_values_defined_through_two_groups_expected1 in serr
+    assert _two_values_defined_through_two_groups_expected2 in serr
+    assert replace_ids(str(exinfo.value), False) == "The following envs had errors [Env('dev2ct'), Env('dev3ct')]"
 
 
 _assigning_owerwrites_attribute_expected_ex = """There was 1 error when defining item: {
