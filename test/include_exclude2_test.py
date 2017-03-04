@@ -2,9 +2,9 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # pylint: disable=E0611
-from pytest import raises, xfail
+from pytest import raises
 
-from .utils.utils import config_error, next_line_num, assert_lines_in
+from .utils.utils import config_error, next_line_num, assert_lines_in, file_line
 from .utils.compare_json import compare_json
 
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
@@ -247,8 +247,25 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_init_reversed():
     assert _exclude_include_overlapping_groups_excluded_unresolved_init_reversed_ex in str(exinfo.value)
 
 
+_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_expected = """
+ConfigError: Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev2_34') {
+   Env('dev2'),
+   EnvGroup('g_dev23') {
+      Env('dev3'),
+      Env('dev4')
+   }
+}
+ - from include: EnvGroup('g_dev12_3') {
+   EnvGroup('g_dev12') {
+      Env('dev1'),
+      Env('dev2')
+   },
+   Env('dev3')
+}
+""".strip()
+
 def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs(capsys):
-    xfail("TODO implement test")
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
@@ -258,13 +275,31 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs(c
                 errorline[0] = next_line_num()
                 it.mc_select_envs(include=[g_dev12_3, pp], exclude=[g_dev34, g_dev2_34])
 
-    assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
-    assert _exclude_include_overlapping_groups_excluded_unresolved_expected_ex % dict(file=__file__, line=errorline[0]) in serr
+    assert serr.startswith(file_line(__file__, errorline[0]))
+    assert _exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_expected in serr
+    assert "There was 1 error when defining item" in str(exinfo.value)
 
+
+_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_reversed_expected = """
+ConfigError: Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev12_3') {
+   EnvGroup('g_dev12') {
+      Env('dev1'),
+      Env('dev2')
+   },
+   Env('dev3')
+}
+ - from include: EnvGroup('g_dev2_34') {
+   Env('dev2'),
+   EnvGroup('g_dev23') {
+      Env('dev3'),
+      Env('dev4')
+   }
+}
+""".strip()
 
 def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_reversed(capsys):
-    xfail("TODO implement test")
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
@@ -274,22 +309,19 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_r
                 errorline[0] = next_line_num()
                 it.mc_select_envs(include=[g_dev34, g_dev2_34], exclude=[g_dev12_3, pp])
 
-    assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
-    assert _exclude_include_overlapping_groups_excluded_unresolved_expected_ex % dict(file=__file__, line=errorline[0]) in serr
+    assert serr.startswith(file_line(__file__, errorline[0]))
+    assert _exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_reversed_expected in serr
 
 
-def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolved(capsys):
-    xfail("TODO implement test")
+def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolved():
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
         def _(_):
             item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3])
 
-    assert "There was 1 error when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    expected = "ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:"
-    assert expected in serr
+    expected = "Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:"
+    assert expected in str(exinfo.value)
 
 
 def test_exclude_include_overlapping_groups_dev3_dev2_finally_resolved():
@@ -300,7 +332,6 @@ def test_exclude_include_overlapping_groups_dev3_dev2_finally_resolved():
 
 
 def test_exclude_include_error_before_exclude(capsys):
-    xfail("TODO implement test")
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
@@ -310,8 +341,7 @@ def test_exclude_include_error_before_exclude(capsys):
                 errorline[0] = next_line_num()
                 it.setattr('_a', 7)
                 it.mc_select_envs(exclude=[prod])
-                raise Exception()
 
     _sout, serr = capsys.readouterr()
-    msg = "Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.setattr. Use assignment instead."
+    msg = "Trying to set attribute '_a' on a config item. Atributes starting with '_' cannot be set using item.setattr. Use assignment instead."
     assert ce(errorline[0], msg) == serr
