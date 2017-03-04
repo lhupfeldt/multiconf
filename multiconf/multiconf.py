@@ -18,8 +18,8 @@ else:
     from .property_wrapper_py3 import _McPropertyWrapper
 
 from .repeatable import RepeatableDict
-from .config_errors import ConfigAttributeError, ConfigException, ConfigApiException, caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg
-from .config_errors import not_repeatable_in_parent_msg, repeatable_in_parent_msg
+from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigException, ConfigApiException
+from .config_errors import caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg, not_repeatable_in_parent_msg, repeatable_in_parent_msg
 from .json_output import ConfigItemEncoder
 from .bases import get_bases, get_real_attr
 
@@ -444,14 +444,7 @@ class _ConfigBase(object):
     def __getattr__(self, attr_name):
         # Only called is self.<attr_name> is not found
         if not self and self._mc_root._mc_config_loaded:
-            ex = ConfigException("Accessing attribute '{}' on an excluded object:".format(attr_name), self)
-            ex.excluded = True
-            ex.attr_name = attr_name
-            try:
-                ex.value = self._mc_attributes[attr_name].env_values[self._mc_root._mc_env]
-            except KeyError:
-                pass
-            raise ex
+            raise ConfigExcludedAttributeError(self, attr_name)
 
         try:
             return self._mc_attributes[attr_name].env_values[self._mc_root._mc_env]
@@ -464,7 +457,7 @@ class _ConfigBase(object):
     def getattr(self, attr_name, env):
         """Get an attribute value for any env."""
         if not self and self._mc_root._mc_config_loaded:
-            raise ConfigException("Accessing attribute '{name}' for {env} on an excluded object:".format(name=attr_name, env=env), self)
+            raise ConfigExcludedAttributeError(self, attr_name)
 
         try:
             return self._mc_attributes[attr_name].env_values[env]

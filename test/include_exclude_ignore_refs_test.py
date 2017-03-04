@@ -62,7 +62,7 @@ class root(ConfigItem):
 @required('anitem')
 class decorated_ritem(ritem):
     pass
-        
+
 
 @named_as('root')
 @nested_repeatables('ritems', 'decorated_ritems')
@@ -111,7 +111,6 @@ def test_exclude_refs_for_nested_configitem1():
 
 
 def test_exclude_refs_for_nested_configitem_with_mc_required():
-    xfail('TODO')
     @mc_config(ef)
     def conf(_):
         with root() as cr:
@@ -122,20 +121,30 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
                     it2.setattr('anattr', pp=1, g_dev12_3=2)
                     it2.setattr('anotherattr', dev1=1, pp=2)
 
-            cr.x = it1.anattr  # This is illegal if it1.anattr has not been set because it1 was excluded
-            cr.y = it1.item
-            cr.z = it1.item.anattr
+    cr = ef.config(prod).root
+
+    assert not cr.item
 
     with raises(AttributeError) as exinfo:
-        ef.config(prod)
-    assert "Attribute 'anattr' MC_REQUIRED (on excluded object) is undefined for current env Env('prod')" in str(exinfo.value)
+        cr.item.anattr  # This is illegal if it1.anattr has not been set because it1 was excluded
+    exp = "Accessing attribute 'anattr' for Env('prod') on an excluded config item: Excluded: <class 'test.include_exclude_ignore_refs_test.item'>"
+    assert exp in str(exinfo.value)
+
+    # It would be nice it this would raise AttributeError as above as cr.item is excluded, but that would require a different implementation
+    assert not cr.item.item
+
+    with raises(AttributeError) as exinfo:
+        cr.item.item.anattr
+    exp = "Accessing attribute 'anattr' for Env('prod') on an excluded config item: Excluded: <class 'test.include_exclude_ignore_refs_test.item'>"
+    assert exp in str(exinfo.value)
 
     cr = ef.config(dev1).root
+    assert cr.item
+    assert cr.item.anattr == 2
+    assert cr.item.anotherattr == 1
+    assert cr.item.item
     assert cr.item.item.anattr == 2
     assert cr.item.item.anotherattr == 1
-    assert cr.x == cr.item.anattr
-    assert cr.y == cr.item.item
-    assert cr.z == cr.item.item.anattr
 
 
 def test_exclude_refs_for_repeatable_nested_configitem():
@@ -324,7 +333,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
             with ritem(mc_key='a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, pp=2, dev3=117)
-                
+
                 with item(mc_exclude=[dev3]) as it1:
                     it1.setattr('anattr', pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, pp=2)
@@ -332,11 +341,11 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
                     with ritem(mc_key='a') as it2:
                         it2.setattr('anattr', pp=1, g_dev12_3=2)
                         it2.setattr('anotherattr', dev1=1, pp=2)
-                        
+
                     with ritem(mc_key='b', mc_exclude=[dev1]) as it2:
                         it2.setattr('anattr', pp=1, g_dev12_3=2)
                         it2.setattr('anotherattr', dev1=1, pp=2)
-                
+
                         it1.x = it1.ritems['a']
                         it1.y = it1.ritems['b'].anattr
 
@@ -345,7 +354,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
             with ritem(mc_key='b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
-                
+
                 with item() as it1:
                     it1.setattr('anattr', prod=33, pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
@@ -397,7 +406,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
                 rit.mc_select_envs(exclude=[dev2, prod])
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, pp=2, dev3=117)
-            
+
                 with item() as it1:
                     it1.mc_select_envs(exclude=[dev3])
                     it1.setattr('anattr', pp=1, g_dev12_3=2)

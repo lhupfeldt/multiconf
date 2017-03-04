@@ -39,19 +39,32 @@ class ConfigAttributeError(AttributeError):
 
     @property
     def message(self):
-        error_message = "%(mc_object_repr_and_type)s has no attribute %(attr_name)s"
+        error_message = "%(item_repr_and_type)s has no attribute %(attr_name)s"
         repeatable_attr_name = self.attr_name + 's'
         if self.mc_object._mc_attributes.get(repeatable_attr_name):
             error_message += ", but found attribute " + repr(repeatable_attr_name)
         try:
-            arg_reprs = dict(mc_object_repr_and_type=repr(self.mc_object) + ", object of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
+            return error_message % dict(item_repr_and_type=repr(self.mc_object) + ", object of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
         except:  # pylint: disable=bare-except
-            arg_reprs = dict(mc_object_repr_and_type="Object of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
-
-        return error_message % arg_reprs
+            return error_message % dict(item_repr_and_type="Object of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
 
     def __str__(self):
         return self.message
+
+
+class ConfigExcludedAttributeError(ConfigAttributeError):
+    def __init__(self, mc_object, attr_name):
+        super(ConfigExcludedAttributeError, self).__init__(mc_object, attr_name)
+        self.excluded = True
+        try:
+            self.value = mc_object._mc_attributes[attr_name].env_values[mc_object._mc_root._mc_env]
+        except KeyError:
+            pass
+
+    @property
+    def message(self):
+        error_message = "Accessing attribute '{attr_name}' for {env} on an excluded config item: {item}"
+        return error_message.format(attr_name=self.attr_name, env=self.mc_object._mc_root._mc_env, item=self.mc_object)
 
 
 def caller_file_line(up_level=2):
