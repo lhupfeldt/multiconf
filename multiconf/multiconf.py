@@ -594,7 +594,9 @@ class _ConfigItemBase(_ConfigBase):
             msg = "{env} is specified in both include and exclude, with no single most specific group or direct env:"
             msg += "\n - from exclude: {egx}"
             msg += "\n - from include: {egi}"
-            raise ConfigException(msg.format(env=self.env, egx=ex.ambiguous[0], egi=ex.ambiguous[1]))
+            ex = ConfigException(msg.format(env=self.env, egx=ex.ambiguous[0], egi=ex.ambiguous[1]))
+            ex.__suppress_context__ = True
+            raise ex
 
         if selected == 1 or (selected is None and include):
             self._mc_excluded |= self._mc_root._mc_env.mask

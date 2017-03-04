@@ -167,81 +167,56 @@ def test_exclude_include_overlapping_groups_included_resolved():
     assert cr.item.anattr == 1
 
 
-_exclude_include_overlapping_groups_excluded_unresolved_expected_ex = """
-Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:
- - from exclude: EnvGroup('g_dev12_3') {
+_exclude_include_overlapping_groups_excluded_unresolved_expected_ex1 = """
+ConfigException: Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev2_34') {
+   Env('dev2'),
+   EnvGroup('g_dev23') {
+      Env('dev3'),
+      Env('dev4')
+   }
+}
+ - from include: EnvGroup('g_dev12_3') {
    EnvGroup('g_dev12') {
       Env('dev1'),
       Env('dev2')
    },
    Env('dev3')
 }
- - from include: EnvGroup('g_dev2_34') {
-   Env('dev2'),
-   EnvGroup('g_dev23') {
-      Env('dev3'),
-      Env('dev4')
-   }
-}""".strip()
+Error in config for Env('dev2') above.
 
+""".lstrip()
 
-# TODO multiple envs errors
-"""File "%(file)s", line %(line)d
-ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:
-    from: EnvGroup('g_dev12_3') {
-     EnvGroup('g_dev12') {
-       Env('dev1'),
-       Env('dev2')
-  },
-     Env('dev3')
+_exclude_include_overlapping_groups_excluded_unresolved_expected_ex2 = """
+ConfigException: Env('dev3') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev23') {
+   Env('dev3'),
+   Env('dev4')
 }
-    from: EnvGroup('g_dev2_34') {
-     Env('dev2'),
-     EnvGroup('g_dev23') {
-       Env('dev3'),
-       Env('dev4')
-  }
+ - from include: EnvGroup('g_dev12_3') {
+   EnvGroup('g_dev12') {
+      Env('dev1'),
+      Env('dev2')
+   },
+   Env('dev3')
 }
-File "%(file)s", line %(line)d
-ConfigError: Env 'dev3' is specified in both include and exclude, with no single most specific group or direct env:
-    from: EnvGroup('g_dev23') {
-     Env('dev3'),
-     Env('dev4')
-}
-    from: EnvGroup('g_dev12_3') {
-     EnvGroup('g_dev12') {
-       Env('dev1'),
-       Env('dev2')
-  },
-     Env('dev3')
-}
-    from: EnvGroup('g_dev2_34') {
-     Env('dev2'),
-     EnvGroup('g_dev23') {
-       Env('dev3'),
-       Env('dev4')
-  }
-}
-""".strip()
+Error in config for Env('dev3') above.
+
+""".lstrip()
 
 def test_exclude_include_overlapping_groups_excluded_unresolved_init(capsys):
-    xfail("TODO implement test")
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, error_next_env=True)
         def _(_):
             errorline[0] = next_line_num()
             item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
 
-    print(str(exinfo.value))
-    assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
     print(serr)
-    expected = _exclude_include_overlapping_groups_excluded_unresolved_expected_ex % dict(file=__file__, line=errorline[0])
-    print('---------------------')
-    print(expected)
-    assert expected in serr
+    assert _exclude_include_overlapping_groups_excluded_unresolved_expected_ex1 in serr
+    assert serr.endswith(_exclude_include_overlapping_groups_excluded_unresolved_expected_ex2)
 
 
 def test_exclude_include_overlapping_groups_excluded_unresolved_init_reversed(capsys):
@@ -254,9 +229,8 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_init_reversed(ca
             errorline[0] = next_line_num()
             item(anattr=1, mc_include=[g_dev34, g_dev2_34], mc_exclude=[g_dev12_3, pp])
 
-    #assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
-    assert _exclude_include_overlapping_groups_excluded_unresolved_expected_ex % dict(file=__file__, line=errorline[0]) in serr
+    assert _exclude_include_overlapping_groups_excluded_unresolved_expected_ex1 in serr
 
 
 def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs(capsys):
