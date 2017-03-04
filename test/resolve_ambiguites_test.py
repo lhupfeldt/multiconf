@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from pytest import xfail
-
 from multiconf import mc_config
 from multiconf.envs import EnvFactory
 
@@ -132,4 +130,4 @@ def test_value_defined_through_three_groups_resolved_multiple_x():
 
     ef2_x_prod.config(prod2)
     ef2_x_prod.config(x2ct2)
-    xfail('TODO')
+    # TODO test values
