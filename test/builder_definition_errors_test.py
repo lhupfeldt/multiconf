@@ -123,29 +123,38 @@ def test_unexpected_repeatable_child_builder():
     assert replace_ids(str(exinfo.value), False) == exp
 
 
-def test_unexpected_repeatable_child_nested_builders():
-    @named_as('arepeatable')
-    class RepItem(RepeatableConfigItem):
-        def __init__(self):
-            super(RepItem, self).__init__(mc_key='a')
-            self.name = 'a'
+@named_as('arepeatable')
+class RepItem(RepeatableConfigItem):
+    def __new__(cls):
+        super(RepItem, cls).__new__(cls, mc_key='a')
 
+    def __init__(self):
+        super(RepItem, self).__init__(mc_key='a')
+        self.name = 'a'
+
+
+def test_unexpected_repeatable_child_nested_builders_with():
     class InnerBuilder(ConfigBuilder):
         def mc_build(self):
-            RepItem()
+            print("InnerBuilder.mc_build", self._mc_where, self._mc_contained_in._mc_where)
+            with RepItem():
+                pass
 
     class MiddleBuilder(ConfigBuilder):
         def mc_build(self):
-            InnerBuilder()
+            print("MiddleBuilder.mc_build", self._mc_where, self._mc_contained_in._mc_where)
+            with InnerBuilder():
+                pass
 
     class OuterBuilder(ConfigBuilder):
         def mc_build(self):
-            MiddleBuilder()
+            print("OuterBuilder.mc_build", self._mc_where, self._mc_contained_in._mc_where)
+            with MiddleBuilder():
+                pass
 
     class ItemWithoutARepeatable(ConfigItem):
         pass
 
-    xfail("TODO")
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
         def _(_):
@@ -153,8 +162,43 @@ def test_unexpected_repeatable_child_nested_builders():
                 OuterBuilder()
 
     exp = not_repeatable_in_parent_msg.format(
-        repeatable_cls_key='arepeatable', repeatable_cls="<class 'test.builder_definition_errors_test.RepItem'>",
-        ci_named_as='ItemWithoutARepeatable', ci_cls="<class 'test.builder_definition_errors_test.ItemWithoutARepeatable'>")
+        repeatable_cls_key='arepeatable',
+        repeatable_cls="<class 'test.builder_definition_errors_test.RepItem'>",
+        ci_named_as='ItemWithoutARepeatable',
+        ci_cls="<class 'test.builder_definition_errors_test.%(py3_local)sItemWithoutARepeatable'>" % dict(py3_local=py3_local()))
+    assert replace_ids(str(exinfo.value), False) == exp
+
+
+def test_unexpected_repeatable_child_nested_builders_no_with():
+    class InnerBuilder(ConfigBuilder):
+        def mc_build(self):
+            print("InnerBuilder.mc_build", self._mc_where, self._mc_contained_in._mc_where)
+            RepItem()
+
+    class MiddleBuilder(ConfigBuilder):
+        def mc_build(self):
+            print("MiddleBuilder.mc_build", self._mc_where, self._mc_contained_in._mc_where)
+            InnerBuilder()
+
+    class OuterBuilder(ConfigBuilder):
+        def mc_build(self):
+            print("OuterBuilder.mc_build", self._mc_where, self._mc_contained_in._mc_where)
+            MiddleBuilder()
+
+    class ItemWithoutARepeatable(ConfigItem):
+        pass
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef1_prod)
+        def _(_):
+            with ItemWithoutARepeatable():
+                OuterBuilder()
+
+    exp = not_repeatable_in_parent_msg.format(
+        repeatable_cls_key='arepeatable',
+        repeatable_cls="<class 'test.builder_definition_errors_test.RepItem'>",
+        ci_named_as='ItemWithoutARepeatable',
+        ci_cls="<class 'test.builder_definition_errors_test.%(py3_local)sItemWithoutARepeatable'>" % dict(py3_local=py3_local()))
     assert replace_ids(str(exinfo.value), False) == exp
 
 

@@ -832,7 +832,6 @@ class _ConfigBuilder(_ConfigItemBase):
             self.mc_build()
         except _McExcludedException:
             pass
-        self._mc_where = Where.NOWHERE
 
         def insert(from_build, from_with_key, from_with):
             """Insert items from with statement (single or repeatable) in a single (non repeatable) item from mc_build."""
@@ -870,6 +869,8 @@ class _ConfigBuilder(_ConfigItemBase):
         previous_item = _ConfigBase._mc_last_item
         if previous_item != self and previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
             previous_item._mc_freeze(mc_error_info_up_level=1)
+
+        self._mc_where = Where.NOWHERE
 
 
 class _ItemParentProxy(object):
