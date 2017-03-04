@@ -6,7 +6,7 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from .utils.utils import config_error, next_line_num, replace_ids, assert_lines_in, py3_local, total_msg, start_file_line
+from .utils.utils import config_error, next_line_num, replace_ids, assert_lines_in, py3_local, total_msg, start_file_line, file_line
 from .utils.messages import already_printed_msg, exception_previous_object_expected_stderr
 from .utils.messages import mc_required_expected, config_error_mc_required_expected
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
@@ -428,36 +428,38 @@ def test_nested_repeatable_items_with_repeated_mc_key():
     assert replace_ids(str(exinfo.value), False) == _nested_repeatable_items_with_repeated_mc_key_expected_ex
 
 
-_value_defined_through_two_groups_expected = """File "fake_dir/multiconf_definition_errors_test.py", line %(line)s
-ConfigError: Value for env 'dev2ct' is specified more than once, with no single most specific group or direct env:
+_value_defined_through_two_groups_expected = """
+ConfigError: Value for Env('dev2ct') is specified more than once, with no single most specific group or direct env:
 value: 2, from: EnvGroup('g_dev2') {
-     Env('dev2ct'),
-     Env('dev2st')
+   Env('dev2ct'),
+   Env('dev2st')
 }
 value: 3, from: EnvGroup('g_dev_overlap') {
-     Env('dev2ct')
+   Env('dev2ct')
 }"""
 
 _value_defined_through_two_groups_expected_ex = """There was 1 error when defining item: {
-    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000",
+    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
-        "name": "prod"
+        "name": "dev2ct"
     },
-    "aa": 1
+    "aa": "MC_REQUIRED"
 }""" + already_printed_msg
 
 def test_value_defined_through_two_groups(capsys):
-    xfail("duplicate?")
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        with ItemWithAA(prod3, ef3_dev_prod) as cr:
-            errorline[0] = next_line_num()
-            cr.setattr('aa', default=7, prod=1, g_dev2=2, g_dev_overlap=3)
+        @mc_config(ef3_dev_prod)
+        def _(_):
+            with ItemWithAA() as cr:
+                errorline[0] = next_line_num()
+                cr.setattr('aa', default=7, prod=1, g_dev2=2, g_dev_overlap=3)
 
     _sout, serr = capsys.readouterr()
-    assert serr.strip() == _value_defined_through_two_groups_expected % dict(line=errorline[0])
+    assert serr.startswith(file_line(__file__, errorline[0]))
+    assert _value_defined_through_two_groups_expected in serr
     assert replace_ids(str(exinfo.value), False) == _value_defined_through_two_groups_expected_ex
 
 

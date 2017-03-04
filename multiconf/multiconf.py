@@ -431,8 +431,8 @@ class _ConfigBase(object):
             self._setattr(current_env, attr_name, MC_NO_VALUE, env_factory.eg_none, mc_overwrite_property, mc_set_unknown, False, mc_error_info_up_level=mc_error_info_up_level + 1)
             return
         except AmbiguousEnvException as ex:
-            msg = "Value for env {env:r} is specified more than once, with no single most specific group or direct env:".format(env=current_env.name)
-            for eg in sorted(ex.ambiguous):
+            msg = "Value for {env} is specified more than once, with no single most specific group or direct env:".format(env=current_env)
+            for eg in ex.ambiguous:
                 value = env_values[eg.name]
                 msg += "\nvalue: " + repr(value) + ", from: " + repr(eg)
             self._mc_print_error_caller(msg, mc_error_info_up_level)
