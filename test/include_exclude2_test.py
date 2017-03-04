@@ -214,13 +214,28 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_init(capsys):
             item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
 
     _sout, serr = capsys.readouterr()
-    print(serr)
     assert _exclude_include_overlapping_groups_excluded_unresolved_expected_ex1 in serr
     assert serr.endswith(_exclude_include_overlapping_groups_excluded_unresolved_expected_ex2)
 
 
-def test_exclude_include_overlapping_groups_excluded_unresolved_init_reversed(capsys):
-    xfail("TODO implement test")
+_exclude_include_overlapping_groups_excluded_unresolved_init_reversed_ex = """
+Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev12_3') {
+   EnvGroup('g_dev12') {
+      Env('dev1'),
+      Env('dev2')
+   },
+   Env('dev3')
+}
+ - from include: EnvGroup('g_dev2_34') {
+   Env('dev2'),
+   EnvGroup('g_dev23') {
+      Env('dev3'),
+      Env('dev4')
+   }
+}""".strip()
+
+def test_exclude_include_overlapping_groups_excluded_unresolved_init_reversed():
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
@@ -229,8 +244,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_init_reversed(ca
             errorline[0] = next_line_num()
             item(anattr=1, mc_include=[g_dev34, g_dev2_34], mc_exclude=[g_dev12_3, pp])
 
-    _sout, serr = capsys.readouterr()
-    assert _exclude_include_overlapping_groups_excluded_unresolved_expected_ex1 in serr
+    assert _exclude_include_overlapping_groups_excluded_unresolved_init_reversed_ex in str(exinfo.value)
 
 
 def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs(capsys):
