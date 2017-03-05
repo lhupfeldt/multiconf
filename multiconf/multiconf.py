@@ -442,7 +442,7 @@ class _ConfigBase(object):
             raise
 
     def __getattr__(self, attr_name):
-        # Only called is self.<attr_name> is not found
+        # Only called if self.<attr_name> is not found
         if not self and self._mc_root._mc_config_loaded:
             raise ConfigExcludedAttributeError(self, attr_name)
 
