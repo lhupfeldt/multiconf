@@ -30,13 +30,13 @@ class RepeatableDict(OrderedDict):
 
     def __contains__(self, key):
         val = self._items.get(key)
-        if val and val._mc_exists_in_env():
+        if val is not None and val._mc_exists_in_env():
             return True
         return False
 
     def get(self, key, default=None):
         val = self._items.get(key)
-        if val and val._mc_exists_in_env():
+        if val is not None and val._mc_exists_in_env():
             return val
         return default
 
