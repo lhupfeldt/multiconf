@@ -4,7 +4,7 @@
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, ConfigExcludedAttributeError, MC_REQUIRED
 from multiconf.decorators import named_as, nested_repeatables, required
 from multiconf.envs import EnvFactory
 
@@ -147,8 +147,31 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
     assert cr.item.item.anotherattr == 1
 
 
+def test_exclude_refs_for_multilevel_excluded_configitem():
+    with raises(AttributeError) as exinfo:
+        @mc_config(ef)
+        def _(_):
+            with decorated_root() as cr:
+                with ritem(mc_key='a', mc_exclude=[dev2, prod]) as rit:
+                    rit.setattr('anattr', pp=1, g_dev12_3=2)
+                    rit.setattr('anotherattr', dev1=1, pp=2, dev3=117)
+
+                    with item(mc_exclude=[dev3]) as it1:
+                        it1.setattr('anattr', pp=1, g_dev12_3=2)
+                        it1.setattr('anotherattr', dev1=1, pp=2)
+
+                        with ritem(mc_key='a') as it2:
+                            it2.setattr('anattr', pp=1, g_dev12_3=2)
+                            it2.setattr('anotherattr', dev1=1, pp=2)
+
+                # This is invalid as all of rit, rit.item and rit.item.ritems are included
+                cr.x = rit.item.ritems['a'].anotherattr
+
+    exp = "Accessing attribute 'anotherattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_ignore_refs_test.ritem'>"
+    assert exp in str(exinfo.value)
+
+
 def test_exclude_refs_for_repeatable_nested_configitem():
-    xfail('TODO')
     @mc_config(ef)
     def conf(_):
         with decorated_root() as cr:
@@ -172,7 +195,7 @@ def test_exclude_refs_for_repeatable_nested_configitem():
                     it1.x = it1.ritems['a']
                     it1.y = it1.ritems['b'].anattr
 
-            cr.x = rit.item.ritems['a'].anotherattr
+            cr.x = rit.item.ritems['a']
 
             with ritem(mc_key='b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
@@ -205,10 +228,17 @@ def test_exclude_refs_for_repeatable_nested_configitem():
     assert cr.a == 1
     assert 'a' not in cr.ritems
     assert not cr.x
-    with raises(ConfigException):
+
+    with raises(ConfigExcludedAttributeError) as exinfo:
         _ = cr.x.a
-    with raises(ConfigException):
-        _ = cr.x['q']
+    exp = "Accessing attribute 'a' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_ignore_refs_test.ritem'>"
+    assert exp in str(exinfo.value)
+
+    with raises(AttributeError):
+        _ = cr.x.a
+
+    with raises(AttributeError):
+        _ = cr.x.bbb
 
     cr = ef.config(dev3).root
     assert cr.a == 1

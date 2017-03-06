@@ -238,6 +238,18 @@ class _ConfigBase(object):
         # self.__class__._debug_hierarchy('_ConfigBase.__enter__')
         return self
 
+    @staticmethod
+    def _update_mc_excluded_recursively(parent, mc_excluded_mask):
+        for child_item in parent._mc_items.values():
+            if isinstance(child_item, RepeatableDict):
+                for child_item in child_item.values():
+                    child_item._mc_excluded |= mc_excluded_mask
+                    _ConfigBase._update_mc_excluded_recursively(child_item, mc_excluded_mask)
+                return
+
+            child_item._mc_excluded |= mc_excluded_mask
+            _ConfigBase._update_mc_excluded_recursively(child_item, mc_excluded_mask)
+
     def __exit__(self, exc_type, value, traceback):
         if not exc_type:
             previous_item = _ConfigBase._mc_last_item
@@ -250,6 +262,8 @@ class _ConfigBase(object):
 
         # self.__class__._debug_hierarchy('_ConfigBase.__exit__')
         if exc_type is _McExcludedException:
+            # We need to update _mc_excluded mask on all children which may have been skipped
+            _ConfigBase._update_mc_excluded_recursively(self, self._mc_excluded)
             self.__class__._mc_hierarchy.pop()
             return True
 
@@ -450,8 +464,11 @@ class _ConfigBase(object):
             return self._mc_attributes[attr_name].env_values[self._mc_root._mc_env]
         except KeyError:
             if self._mc_root._mc_env or attr_name not in self._mc_attributes:
+                if not self:
+                    raise ConfigExcludedAttributeError(self, attr_name)
                 raise ConfigAttributeError(self, attr_name)
-            msg = "Trying to access attribute '{}'. Item.attribute access is not allowed in 'mc_post_validate' as there i no current env, use: item.getattr(attr_name, env)"
+            msg = "Trying to access attribute '{}'. "
+            msg += "Item.attribute access is not allowed in 'mc_post_validate' as there i no current env, use: item.getattr(attr_name, env)"
             raise ConfigApiException(msg.format(attr_name))
 
     def getattr(self, attr_name, env):

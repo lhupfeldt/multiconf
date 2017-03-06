@@ -13,4 +13,5 @@ else:
     from .multiconf_builder_py3 import ConfigBuilder
 
 from .config_errors import caller_file_line, ConfigException, ConfigDefinitionException, ConfigApiException, InvalidUsageException
+from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError
 from .values import MC_REQUIRED, MC_TODO
