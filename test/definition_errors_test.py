@@ -798,7 +798,7 @@ def test_init_line_num(capsys):
 
     with raises(Exception) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def _1(_):
             with ConfigItem():
                 errorline[0] = next_line_num()
                 init_overidden1()
@@ -816,7 +816,7 @@ def test_init_line_num(capsys):
 
     with raises(Exception) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def _2(_):
             with ConfigItem(prod2, ef2_pp_prod):
                 errorline[0] = next_line_num()
                 intermediate()
@@ -836,7 +836,7 @@ def test_init_line_num(capsys):
 
     with raises(Exception) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def _3(_):
             with ConfigItem(prod2, ef2_pp_prod):
                 errorline[0] = next_line_num()
                 init_overidden2()
