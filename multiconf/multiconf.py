@@ -480,9 +480,15 @@ class _ConfigBase(object):
             return self._mc_attributes[attr_name].env_values[env]
         except KeyError:
             prop = object.__getattribute__(self.__class__, attr_name)
-            if isinstance(prop, _McPropertyWrapper):
-                return prop.prop.__get__(self, type(self))
-            return getattr(self, attr_name)
+            try:
+                # TODO: Thread safety
+                orig_env = self._mc_root._mc_env
+                self._mc_root._mc_env = env
+                if isinstance(prop, _McPropertyWrapper):
+                    return prop.prop.__get__(self, type(self))
+                return getattr(self, attr_name)
+            finally:
+                self._mc_root._mc_env = orig_env
 
     def items(self):
         for key, item in self._mc_items.items():
