@@ -96,10 +96,6 @@ def _warning_msg(message):
     return 'ConfigWarning: ' + message
 
 
-def _api_error_msg(message):
-    return 'MultiConfApiError: ' + message
-
-
 failed_property_call_msg = "Attribute '{attr}' is defined as a multiconf attribute and as a @property method but value is undefined for {env} and @property method call failed with: {ex_type}: {ex}"
 
 not_repeatable_in_parent_msg = "'{repeatable_cls_key}': {repeatable_cls} is defined as repeatable, but this is not defined as a repeatable item in the containing class: '{ci_named_as}': {ci_cls}"
