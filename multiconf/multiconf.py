@@ -456,10 +456,11 @@ class _ConfigBase(object):
         try:
             return self._mc_attributes[attr_name].env_values[self._mc_root._mc_env]
         except KeyError:
-            if self._mc_root._mc_env or attr_name not in self._mc_attributes:
+            if self._mc_root._mc_env is not NO_ENV or attr_name not in self._mc_attributes:
                 if not self:
                     raise ConfigExcludedAttributeError(self, attr_name)
                 raise ConfigAttributeError(self, attr_name)
+
             msg = "Trying to access attribute '{}'. "
             msg += "Item.attribute access is not allowed in 'mc_post_validate' as there i no current env, use: item.getattr(attr_name, env)"
             raise ConfigApiException(msg.format(attr_name))

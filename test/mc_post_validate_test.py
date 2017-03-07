@@ -6,8 +6,7 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigApiException
-from multiconf.decorators import nested_repeatables
+from multiconf import mc_config, ConfigItem, ConfigApiException
 from multiconf.envs import EnvFactory
 
 from .utils.tstclasses import ItemWithAA
@@ -23,15 +22,7 @@ prod2 = ef2_pp_prod.Env('prod')
 ef2_pp_prod.EnvGroup('g_prod_like', prod2, pp2)
 
 
-@nested_repeatables('children')
-class nc_aa_root(ConfigItem):
-    def __init__(self, aa=None):
-        super(nc_aa_root, self).__init__()
-        self.aa = aa
-
-
 def test_mc_post_validate_getattr_env():
-    @nested_repeatables('children')
     class root(ItemWithAA):
         def mc_init(self):
             self.aa = 7
@@ -49,7 +40,6 @@ def test_mc_post_validate_getattr_env():
 
 
 def test_setattr_not_allowed_in_mc_post_validate():
-    @nested_repeatables('children')
     class root(ConfigItem):
         def mc_post_validate(self):
             self.setattr('y', default=7, mc_set_unknown=True)
@@ -61,6 +51,22 @@ def test_setattr_not_allowed_in_mc_post_validate():
                 pass
 
     exp = "Trying to set attribute 'y'. Setting attributes is not allowed after configuration is loaded (in order to enforce derived value validity)."
+    assert str(exinfo.value) == exp
+
+
+def test_item_dot_attr_not_allowed_in_mc_post_validate():
+    class root(ItemWithAA):
+        def mc_post_validate(self):
+            print(self.aa)
+
+    with raises(ConfigApiException) as exinfo:
+        @mc_config(ef2_pp_prod)
+        def _(_):
+            with root() as rt:
+                rt.aa = 1
+
+    exp = "Trying to access attribute 'aa'. "
+    exp += "Item.attribute access is not allowed in 'mc_post_validate' as there i no current env, use: item.getattr(attr_name, env)"
     assert str(exinfo.value) == exp
 
 
