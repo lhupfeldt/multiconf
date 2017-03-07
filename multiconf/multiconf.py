@@ -70,13 +70,6 @@ class _ConfigBase(object):
             msg = "There {ww} {nerr} {err} when defining item: {self}{already}.".format(ww=ww, nerr=nerr, err=err, self=self, already=already)
             raise ConfigException(msg, is_summary = True)
 
-    @staticmethod
-    def _mc_print_file_line_and_messages(messages, file_name=None, line_num=None):
-        """Print multiple messages preceeded by a single file:line message"""
-        print(_line_msg(file_name=file_name, line_num=line_num), file=sys.stderr)
-        for msg in messages:
-            print(msg, file=sys.stderr)
-
     def _mc_print_error(self, message, file_name, line_num):
         """Print a single message preceeded by file:line"""
         print(_line_msg(file_name=file_name, line_num=line_num) + '\n' + self._mc_error_msg(message), file=sys.stderr)

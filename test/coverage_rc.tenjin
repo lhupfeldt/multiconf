@@ -12,9 +12,11 @@ exclude_lines =
     # Don't complain if tests don't hit defensive assertion code:
     raise .*Internal error.*
     raise .*AbstractNotImplemented.*
+    # Should not happen
 
     if _debug_exc:
-    def debug\(
+    def _debug\(
+    def _debug_hierarchy\(
     long = int
     <?py if major_version == 2: ?>
     _py3 import
