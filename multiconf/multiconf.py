@@ -115,11 +115,14 @@ class _ConfigBase(object):
         self._mc_root._mc_json_errors = encoder.num_errors
         return json_str
 
+    def _excl_repr(self):
+        return "Excluded: " + repr(type(self))
+
     def __repr__(self):
         if self:
             # Don't call property methods in repr?, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
             return self.json(compact=True, property_methods=True, builders=True)
-        return "Excluded: " + repr(type(self))
+        return self._excl_repr()
 
     def num_json_errors(self):
         """
@@ -451,14 +454,14 @@ class _ConfigBase(object):
     def __getattr__(self, attr_name):
         # Only called if self.<attr_name> is not found
         if not self and self._mc_root._mc_config_loaded:
-            raise ConfigExcludedAttributeError(self, attr_name)
+            raise ConfigExcludedAttributeError(self, attr_name, self._mc_root._mc_env)
 
         try:
             return self._mc_attributes[attr_name].env_values[self._mc_root._mc_env]
         except KeyError:
             if self._mc_root._mc_env is not NO_ENV or attr_name not in self._mc_attributes:
                 if not self:
-                    raise ConfigExcludedAttributeError(self, attr_name)
+                    raise ConfigExcludedAttributeError(self, attr_name, self._mc_root._mc_env)
                 raise ConfigAttributeError(self, attr_name)
 
             msg = "Trying to access attribute '{}'. "
@@ -467,8 +470,8 @@ class _ConfigBase(object):
 
     def getattr(self, attr_name, env):
         """Get an attribute value for any env."""
-        if not self and self._mc_root._mc_config_loaded:
-            raise ConfigExcludedAttributeError(self, attr_name)
+        if env.mask & self._mc_excluded and self._mc_root._mc_config_loaded:
+            raise ConfigExcludedAttributeError(self, attr_name, env)
 
         try:
             return self._mc_attributes[attr_name].env_values[env]

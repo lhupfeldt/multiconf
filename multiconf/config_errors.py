@@ -53,18 +53,19 @@ class ConfigAttributeError(AttributeError):
 
 
 class ConfigExcludedAttributeError(ConfigAttributeError):
-    def __init__(self, mc_object, attr_name):
+    def __init__(self, mc_object, attr_name, env):
         super(ConfigExcludedAttributeError, self).__init__(mc_object, attr_name)
+        self.env = env
         self.excluded = True
         try:
-            self.value = mc_object._mc_attributes[attr_name].env_values[mc_object._mc_root._mc_env]
+            self.value = mc_object._mc_attributes[attr_name].env_values[env]
         except KeyError:
             pass
 
     @property
     def message(self):
-        error_message = "Accessing attribute '{attr_name}' for {env} on an excluded config item: {item}"
-        return error_message.format(attr_name=self.attr_name, env=self.mc_object._mc_root._mc_env, item=self.mc_object)
+        error_message = "Accessing attribute '{attr_name}' for {env} on an excluded config item: {item_excl_repr}"
+        return error_message.format(attr_name=self.attr_name, env=self.env, item_excl_repr=self.mc_object._excl_repr())
 
 
 def caller_file_line(up_level=2):

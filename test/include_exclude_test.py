@@ -6,7 +6,7 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import fail, raises
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, ConfigExcludedAttributeError, MC_REQUIRED
 from multiconf.decorators import named_as, nested_repeatables, required
 from multiconf.config_errors import caller_file_line
 from multiconf.envs import EnvFactory
@@ -687,4 +687,47 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init_overri
                 X()
 
     exp = "Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:"
+    assert exp in str(exinfo.value)
+
+
+def test_exclude__getattr__():
+    @mc_config(ef)
+    def conf(_):
+        with ConfigItem() as cr:
+            with item(mc_exclude=[dev2]) as it:
+                it.anattr = 1
+                it.anotherattr = 2
+
+    cr = ef.config(prod).ConfigItem
+    assert cr.item
+    assert cr.item.anattr
+
+    cr = ef.config(dev2).ConfigItem
+    assert not cr.item
+    with raises(ConfigExcludedAttributeError) as exinfo:
+        _ = cr.item.anattr
+    exp = "Accessing attribute 'anattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_test.item'>"
+    assert exp in str(exinfo.value)
+
+
+def test_exclude_getattr():
+    @mc_config(ef)
+    def conf(_):
+        with ConfigItem() as cr:
+            with item(mc_exclude=[dev2]) as it:
+                it.anattr = 1
+                it.anotherattr = 2
+
+    cr = ef.config(prod).ConfigItem
+    assert cr.item
+    with raises(ConfigExcludedAttributeError) as exinfo:
+        _ = cr.item.getattr('anattr', dev2)
+    exp = "Accessing attribute 'anattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_test.item'>"
+    assert exp in str(exinfo.value)
+
+    cr = ef.config(dev2).ConfigItem
+    assert not cr.item
+    with raises(ConfigExcludedAttributeError) as exinfo:
+        _ = cr.item.getattr('anattr', dev2)
+    exp = "Accessing attribute 'anattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_test.item'>"
     assert exp in str(exinfo.value)
