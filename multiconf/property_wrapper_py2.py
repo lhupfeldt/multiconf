@@ -24,6 +24,3 @@ class _McPropertyWrapper(object):
         except Exception:
             extype, ex, tb = sys.exc_info()
             raise ConfigException, failed_property_call_msg.format(attr=self.prop_name, env=current_env, ex_type=type(ex).__name__, ex=ex), tb
-
-    def __set__(self, obj, val):
-        raise Exception("Not settable")

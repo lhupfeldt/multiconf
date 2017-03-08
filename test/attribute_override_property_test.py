@@ -107,7 +107,7 @@ def test_attribute_overrides_property_method_is_regular_method(capsys):
     assert msg == ce(errorline[0], expected)
 
 
-def test_attribute_clash_property_method_error_in_with_block(capsys):
+def test_setattr_replace_property_in_with_not_allowed(capsys):
     errorline = [None]
 
     @named_as('someitem')
@@ -131,7 +131,7 @@ def test_attribute_clash_property_method_error_in_with_block(capsys):
     assert serr == ce(errorline[0], exp)
 
 
-def test_attribute_clash_property_method_error_in_init_def(capsys):
+def test_assigment_replace_property_in_init_not_allowed(capsys):
     errorline = [None]
 
     @named_as('someitem')
@@ -156,7 +156,50 @@ def test_attribute_clash_property_method_error_in_init_def(capsys):
     assert serr == ce(errorline[0], exp)
 
 
-def test_attribute_overrides_property_method_failing():
+def test_assigment_replace_property_in_with_not_allowed(capsys):
+    errorline = [None]
+
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def mm(self):
+            return 1
+
+    with raises(Exception) as exinfo:
+        @mc_config(ef)
+        def _(_):
+            with Nested() as nn:
+                errorline[0] = next_line_num()
+                nn.mm = 7
+
+    _sout, serr = capsys.readouterr()
+    exp = "The attribute 'mm' clashes with a @property or method. Use item.setattr with mc_overwrite_property=True if overwrite intended."
+    assert serr == ce(errorline[0], exp)
+
+
+def test_assigment_replace_mc_property_wrapper_not_allowed(capsys):
+    errorline = [None]
+
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def mm(self):
+            return 1
+
+    with raises(Exception) as exinfo:
+        @mc_config(ef)
+        def _(_):
+            with Nested() as nn:
+                nn.setattr('mm', prod=3, mc_overwrite_property=True)
+                errorline[0] = next_line_num()
+                nn.mm = 7
+
+    _sout, serr = capsys.readouterr()
+    exp = "The attribute 'mm' clashes with a @property or method. Use item.setattr with mc_overwrite_property=True if overwrite intended."
+    assert serr == ce(errorline[0], exp)
+
+
+def test_attribute_overrides_failing_property_method():
     errorline = [None]
 
     @named_as('someitem')
@@ -167,7 +210,7 @@ def test_attribute_overrides_property_method_failing():
             raise Exception("bad property method")
 
     @mc_config(ef)
-    def _(_):
+    def _0(_):
         with Nested() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
 
@@ -175,7 +218,7 @@ def test_attribute_overrides_property_method_failing():
     assert cr.someitem.m == 7
 
     @mc_config(ef)
-    def _(_):
+    def _1(_):
         with Nested() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
 
