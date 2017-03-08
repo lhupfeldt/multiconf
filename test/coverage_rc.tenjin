@@ -40,6 +40,8 @@ partial_branches =
     # We always have base classes, so these loops will alvays be entered
     for cls in get_bases
 
+    for index, gg in enumerate\(env_groups\):
+
     # Get the first item to use for error message
 
 omit =

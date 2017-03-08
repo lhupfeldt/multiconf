@@ -269,6 +269,12 @@ def test_repeated_nested_group_member_reversed():
     assert jj3 in jj4
 
 
+def test_no_groups(capsys):
+    myef = EnvFactory()
+    mydev1 = myef.Env('dev1')
+    myef.calc_env_group_order()
+
+
 test_json_json = """{
     "type": "<class 'multiconf.envs.EnvGroup'>",
     "name": "jj4",

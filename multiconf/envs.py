@@ -17,7 +17,9 @@ class EnvException(Exception):
 
 
 class AmbiguousEnvException(EnvException):
-    pass
+    def __init__(self, msg, ambiguous):
+        super(AmbiguousEnvException, self).__init__(msg)
+        self.ambiguous = ambiguous
 
 
 class MissingValueEnvException(EnvException):
@@ -257,9 +259,7 @@ class EnvFactory(object):
                         if amb_group.name in env_values:
                             found_ambiguous.append(amb_group)
                     if found_ambiguous:
-                        ex = AmbiguousEnvException("Ambiguous values for: " + str(env))
-                        ex.ambiguous = [gg] + found_ambiguous
-                        raise ex
+                        raise AmbiguousEnvException("Ambiguous values for: " + str(env), [gg] + found_ambiguous)
                     return env_values[gg.name], gg
         raise MissingValueEnvException("No value for: " + str(env))
 
@@ -285,20 +285,20 @@ class EnvFactory(object):
                 eg2 = eg
                 break
 
-        if eg1 or eg2:
-            if eg1:
-                if not eg2 or eg1 in eg2:
-                    return 1
-            if eg2:
-                if not eg1 or eg2 in eg1:
-                    return 2
+        if eg1:
+            if not eg2 or eg1 in eg2:
+                return 1
 
-            ambiguous = [eg1, eg2]
-            ex = AmbiguousEnvException("Ambiguous env select for '{}'.".format(env))
-            ex.ambiguous = ambiguous
-            raise ex
+            if eg2 in eg1:
+                return 2
+
+            raise AmbiguousEnvException("Ambiguous env select for '{}'.".format(env), [eg1, eg2])
+
+        if eg2:
+            return 2
 
         return None
+
 
     def config(self, env, allow_todo=False):
         """Configuration for specific env.
