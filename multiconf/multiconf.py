@@ -45,11 +45,6 @@ class _ConfigBase(object):
     def _debug_hierarchy(cls, msg):
         _debug(msg, cls, '_mc_hierarchy: {}'.format([id(item) for item in cls._mc_hierarchy]))
 
-    def __init__(self):
-        # _debug(type(self), '__init__')
-        self._mc_where = Where.IN_INIT
-        self._mc_num_errors = 0
-
     def _mc_error_msg(self, message):
         self._mc_num_errors += 1
         return _error_msg(message)
@@ -579,7 +574,6 @@ class _ConfigBase(object):
 
 class _ConfigItemBase(_ConfigBase):
     def __init__(self, mc_include=None, mc_exclude=None):
-        super(_ConfigItemBase, self).__init__()
         previous_item = self.__class__._mc_last_item
         if previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
             try:
@@ -679,10 +673,14 @@ class ConfigItem(_ConfigItemBase):
                     return _DummyItem()
                 raise ConfigException("Repeated non repeatable conf item: '{name}': {cls}".format(name=name, cls=cls))
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
+
+            self._mc_where = Where.IN_INIT
+            self._mc_num_errors = 0            
             return self
         except AttributeError:
             self = super(ConfigItem, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
+            self._mc_num_errors = 0
 
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = None
@@ -690,7 +688,6 @@ class ConfigItem(_ConfigItemBase):
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
             self._mc_excluded = 0
-            self._mc_num_errors = 0
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict(key, self)
@@ -749,10 +746,14 @@ class RepeatableConfigItem(_ConfigItemBase):
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
+
+            self._mc_where = Where.IN_INIT
+            self._mc_num_errors = 0            
             return self
         except KeyError:
             self = super(RepeatableConfigItem, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
+            self._mc_num_errors = 0
 
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = None
@@ -760,7 +761,6 @@ class RepeatableConfigItem(_ConfigItemBase):
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
             self._mc_excluded = 0
-            self._mc_num_errors = 0
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict(key, self)
@@ -805,10 +805,14 @@ class _ConfigBuilder(_ConfigItemBase):
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
+
+            self._mc_where = Where.IN_INIT
+            self._mc_num_errors = 0            
             return self
         except KeyError:
             self = super(_ConfigBuilder, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
+            self._mc_num_errors = 0
 
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = None
@@ -816,7 +820,6 @@ class _ConfigBuilder(_ConfigItemBase):
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
             self._mc_excluded = 0
-            self._mc_num_errors = 0
 
             # Insert self in parent
             if hasattr(contained_in, private_key):
@@ -928,11 +931,15 @@ class _ItemParentProxy(object):
 
 class _ConfigRoot(_ConfigBase):
     def __init__(self, env_factory, mc_allow_todo, mc_json_filter, mc_json_fallback):
-        super(_ConfigRoot, self).__init__()
         self._mc_env_factory = env_factory
         self._mc_allow_todo = mc_allow_todo
-        self._mc_todo_msgs = []
+        self._mc_json_filter = mc_json_filter
+        self._mc_json_fallback = mc_json_fallback
 
+        self._mc_where = Where.IN_INIT
+        self._mc_num_errors = 0
+
+        self._mc_todo_msgs = []
         self._mc_attributes = OrderedDict()
         self._mc_attributes_to_check = None
         self._mc_items = OrderedDict()
@@ -941,9 +948,6 @@ class _ConfigRoot(_ConfigBase):
         self._mc_num_warnings = 0
         self._mc_config_result = {}
         self._mc_config_loaded = False
-
-        self._mc_json_filter = mc_json_filter
-        self._mc_json_fallback = mc_json_fallback
 
     @property
     def mc_config_result(self):
