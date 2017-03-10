@@ -48,14 +48,9 @@ class _ConfigBase(object):
     def __init__(self):
         # _debug(type(self), '__init__')
         self._mc_where = Where.IN_INIT
-        try:
-            del self._mc_num_errors
-        except AttributeError:
-            pass
+        self._mc_num_errors = 0
 
     def _mc_error_msg(self, message):
-        if not hasattr(self, '_mc_num_errors'):
-            self._mc_num_errors = 0
         self._mc_num_errors += 1
         return _error_msg(message)
 
@@ -63,12 +58,11 @@ class _ConfigBase(object):
         self._mc_root._mc_num_warnings += 1
         return _warning_msg(msg)
 
-    def _mc_raise_if_errors(self, already="\nCheck already printed error messages"):
-        if hasattr(self, '_mc_num_errors'):
-            nerr = self._mc_num_errors
-            ww, err = ('were', 'errors') if nerr > 1 else ('was', 'error')
-            msg = "There {ww} {nerr} {err} when defining item: {self}{already}.".format(ww=ww, nerr=nerr, err=err, self=self, already=already)
-            raise ConfigException(msg, is_summary = True)
+    def _mc_raise_errors(self, already="\nCheck already printed error messages"):
+        nerr = self._mc_num_errors
+        ww, err = ('were', 'errors') if nerr > 1 else ('was', 'error')
+        msg = "There {ww} {nerr} {err} when defining item: {self}{already}.".format(ww=ww, nerr=nerr, err=err, self=self, already=already)
+        raise ConfigException(msg, is_summary = True)
 
     def _mc_print_error(self, message, file_name, line_num):
         """Print a single message preceeded by file:line"""
@@ -175,7 +169,8 @@ class _ConfigBase(object):
             self._mc_where = Where.FROZEN
             return
 
-        self._mc_raise_if_errors()
+        if self._mc_num_errors:
+            self._mc_raise_errors()
 
         self._mc_where = Where.IN_MC_INIT
         must_pop = False
@@ -213,7 +208,8 @@ class _ConfigBase(object):
                 print(_line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num), file=sys.stderr)
             print(self._mc_error_msg("Missing '@required' items: {}".format(missing_req)), file=sys.stderr)
 
-        self._mc_raise_if_errors()
+        if self._mc_num_errors:
+            self._mc_raise_errors()
         self._mc_where = Where.FROZEN
 
     def _mc_call_post_validate_recursively(self):
@@ -694,6 +690,7 @@ class ConfigItem(_ConfigItemBase):
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
             self._mc_excluded = 0
+            self._mc_num_errors = 0
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict(key, self)
@@ -763,6 +760,7 @@ class RepeatableConfigItem(_ConfigItemBase):
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
             self._mc_excluded = 0
+            self._mc_num_errors = 0
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict(key, self)
@@ -818,6 +816,7 @@ class _ConfigBuilder(_ConfigItemBase):
             self._mc_contained_in = _mc_contained_in
             self._mc_root = contained_in._mc_root
             self._mc_excluded = 0
+            self._mc_num_errors = 0
 
             # Insert self in parent
             if hasattr(contained_in, private_key):

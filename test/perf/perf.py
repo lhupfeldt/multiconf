@@ -5,6 +5,7 @@
 
 import sys
 import cProfile
+import timeit
 
 heap_check = sys.version_info.major < 3 and len(sys.argv) > 1 and sys.argv[1] == 'mem'
 if heap_check:
@@ -14,24 +15,32 @@ if heap_check:
 import os.path
 from os.path import join as jp
 here = os.path.dirname(__file__)
-sys.path.insert(0, jp(here, '..'))
+sys.path.insert(0, jp(here, '..', '..'))
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem
 from multiconf.decorators import nested_repeatables, named_as, required
 from multiconf.envs import EnvFactory
 
-ef = EnvFactory()
 
-dev1 = ef.Env('dev1')
-dev2 = ef.Env('dev2')
-g_dev = ef.EnvGroup('g_dev', dev1, dev2)
+ef = None
+prod = None
 
-tst = ef.Env('tst')
+def envs_setup():
+    global ef
+    global prod
 
-pp = ef.Env('pp')
-prod = ef.Env('prod')
+    ef = EnvFactory()
 
-g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
+    dev1 = ef.Env('dev1')
+    dev2 = ef.Env('dev2')
+    g_dev = ef.EnvGroup('g_dev', dev1, dev2)
+
+    tst = ef.Env('tst')
+
+    pp = ef.Env('pp')
+    prod = ef.Env('prod')
+
+    g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
 
 
 @nested_repeatables('children_init', 'children_default', 'children_env', 'children_mc_init')
@@ -80,11 +89,12 @@ class rchild_env(RepeatableConfigItem):
         self.name = name
 
 
-def perf1():
-    first_range = 2000
-    second_range = 2000
-    third_range = 2000
+first_range = 2000
+second_range = 2000
+third_range = 2000
 
+
+def perf_config():
     @mc_config(ef)
     def _(_):
         with root() as cr:
@@ -133,6 +143,8 @@ def perf1():
     if heap_check:
         print(hp.heap())
 
+
+def perf_config_use():
     cr = ef.config(prod).root
     for ii in range(0, 5):
         for jj in range(0, first_range):
@@ -142,7 +154,8 @@ def perf1():
         for jj in range(0, third_range):
             assert getattr(cr.children_env[repr(jj)], 'bb' + str(jj)) == 3
 
-    return cr
 
 
-cProfile.run("perf1()", "perf.profile")
+cProfile.run("envs_setup()", jp(here, "envs_setup.profile"))
+cProfile.run("perf_config()", jp(here, "per_config.profile"))
+cProfile.run("perf_config_use()", jp(here, "perf_config_use.profile"))
