@@ -328,7 +328,7 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
     assert replace_ids(str(exinfo.value), False) == exp
 
 
-_configbuilder_repeated = """Re-used key 'aa' in repeated item <class 'test.builder_definition_errors_test.XBuilder'> overwrites existing entry in parent:
+_configbuilder_repeated = """Re-used key 'aa' in repeated item <class 'test.builder_definition_errors_test.%(py3_local)sXBuilder'> overwrites existing entry in parent:
 {
     "__class__": "Root #as: 'Root', id: 0000, not-frozen",
     "env": {
@@ -359,4 +359,4 @@ def test_configbuilder_repeated():
                 XBuilder('aa')
 
     print(str(exinfo.value))
-    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_repeated
+    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_repeated % dict(py3_local=py3_local())
