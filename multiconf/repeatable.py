@@ -14,11 +14,6 @@ class RepeatableDict(OrderedDict):
         self.obj = obj
         self._items = OrderedDict()
 
-    def __set__(self, obj, val):
-        if not isinstance(val, RepeatableDict):
-            raise AttributeError("Not settable: " + self.attr_name)
-        obj.__dict__[val.attr_name] = val
-
     def __setitem__(self, key, val):
         self._items[key] = val
 
