@@ -218,7 +218,6 @@ class EnvFactory(object):
         self._mc_frozen = True
 
         self.default = self._EnvGroup('default', members=list(self.groups.values()) + list(self.envs.values()))
-        self.eg_none = self._EnvGroup('_mc_eg_none', members=[])
 
         for env_name, env in self.envs.items():
             # print("env, name, typ:", env_name, env)
@@ -248,13 +247,15 @@ class EnvFactory(object):
             # for group in env.lookup_order:
             #     print("    ", group.name, '- amb ->', [gg.name for gg in group.ambiguous[env.name]])
 
+        self.eg_none = self._EnvGroup('_mc_eg_none', members=[])
+
     def resolve_env_group_value(self, env, env_values):
         try:
             return env_values[env.name], env
         except KeyError:
+            found_ambiguous = []
             for gg in env.lookup_order:
                 if gg.name in env_values:
-                    found_ambiguous = []
                     for amb_group in gg.ambiguous[env.name]:
                         if amb_group.name in env_values:
                             found_ambiguous.append(amb_group)
