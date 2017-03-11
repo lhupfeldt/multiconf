@@ -3,14 +3,13 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import sys
 import cProfile
 import timeit
 
-heap_check = sys.version_info.major < 3 and len(sys.argv) > 1 and sys.argv[1] == 'mem'
-if heap_check:
-    from guppy import hpy
-    hp = hpy()
+import click
 
 import os.path
 from os.path import join as jp
@@ -24,6 +23,7 @@ from multiconf.envs import EnvFactory
 
 ef = None
 prod = None
+hp = None
 
 def envs_setup():
     global ef
@@ -89,12 +89,14 @@ class rchild_env(RepeatableConfigItem):
         self.name = name
 
 
-first_range = 2000
-second_range = 2000
-third_range = 2000
+first_range = 100
+second_range = 100
+third_range = 100
 
 
-def perf_config():
+def config():
+    global hp
+
     @mc_config(ef)
     def _(_):
         with root() as cr:
@@ -140,11 +142,11 @@ def perf_config():
                         ci.setattr('qq' + repr(ii), default=7, g_dev=8, tst=9, pp=18, prod=5, mc_set_unknown=True)
                         ci.setattr('rr' + repr(ii), g_dev=8, tst=9, pp=19, prod=3, mc_set_unknown=True)
 
-    if heap_check:
+    if hp:
         print(hp.heap())
 
 
-def perf_config_use():
+def use():
     cr = ef.config(prod).root
     for ii in range(0, 5):
         for jj in range(0, first_range):
@@ -155,7 +157,41 @@ def perf_config_use():
             assert getattr(cr.children_env[repr(jj)], 'bb' + str(jj)) == 3
 
 
+@click.command()
+@click.option("--time/--no-time", default=True)
+@click.option("--profile/--no-pofile", default=False)
+@click.option("--heap-check/--no-heap-check", default=False)
+def cli(time, profile, heap_check):
+    global hp
 
-cProfile.run("envs_setup()", jp(here, "envs_setup.profile"))
-cProfile.run("perf_config()", jp(here, "per_config.profile"))
-cProfile.run("perf_config_use()", jp(here, "perf_config_use.profile"))
+    if time:
+        def _test(name, ff, test, setup, repeat, number):
+            times = sorted(timeit.repeat(test, setup=setup, repeat=repeat, number=number))
+            times = ["{:.4f}".format(tt) for tt in times]
+            print(name, times)
+            print(name, times, file=ff)
+
+        tfile = jp(here, "times.txt")
+        if os.path.exists(tfile):
+            with open(tfile) as ff:
+                print('previous:')
+                print(ff.read())
+            print('new:')
+
+        with open(tfile, 'w') as ff:
+            _test("envs", ff, "envs_setup()", setup="from __main__ import envs_setup", repeat=10, number=20000)
+            _test("load", ff, "config()", setup="from __main__ import config", repeat=10, number=10)
+            _test("use", ff, "use()", setup="from __main__ import use", repeat=10, number=300)
+
+    if sys.version_info.major < 3 and heap_check:
+        from guppy import hpy
+        hp = hpy()
+
+    if profile:
+        cProfile.run("envs_setup()", jp(here, "envs_setup.profile"))
+        cProfile.run("config()", jp(here, "config.profile"))
+        cProfile.run("use()", jp(here, "use.profile"))
+
+
+if __name__ == "__main__":
+    cli()

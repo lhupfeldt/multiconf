@@ -14,3 +14,5 @@ coverage_rc.tenjin.cache
 dist
 .tox
 build
+test/perf/*.profile
+test/perf/times.txt
