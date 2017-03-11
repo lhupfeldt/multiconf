@@ -742,7 +742,7 @@ class RepeatableConfigItem(_ConfigItemBase):
                 # We are trying to replace an object with the same mc_key. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     return _DummyItem()
-                build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else " "
+                build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else ""
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
@@ -801,7 +801,7 @@ class _ConfigBuilder(_ConfigItemBase):
                 # We are trying to replace an object with the same mc_key. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     return _DummyItem()
-                build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else " "
+                build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else ""
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask

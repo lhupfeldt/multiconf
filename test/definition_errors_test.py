@@ -354,7 +354,7 @@ def test_repeated_non_repeatable_item():
     assert str(exinfo.value) == "Repeated non repeatable conf item: 'ConfigItem': <class 'multiconf.multiconf.ConfigItem'>"
 
 
-_nested_repeatable_items_with_repeated_mc_key_expected_ex = """Re-used key 'my_name' in repeated item <class 'test.definition_errors_test.RepeatableItem'>  overwrites existing entry in parent:
+_nested_repeatable_items_with_repeated_mc_key_expected_ex = """Re-used key 'my_name' in repeated item <class 'test.definition_errors_test.RepeatableItem'> overwrites existing entry in parent:
 {
     "__class__": "project #as: 'project', id: 0000, not-frozen",
     "env": {
