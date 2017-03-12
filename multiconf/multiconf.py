@@ -967,9 +967,6 @@ class _RootEnvProxy(object):
         cr._mc_env = self._mc_env
         return getattr(cr, name)
 
-    def __setattr__(self, name, value):
-        setattr(self._mc_root, name, value)
-
     @property
     def env(self):
         return self._mc_env
