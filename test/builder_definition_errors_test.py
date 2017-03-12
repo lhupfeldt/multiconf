@@ -360,3 +360,22 @@ def test_configbuilder_repeated():
 
     print(str(exinfo.value))
     assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_repeated % dict(py3_local=py3_local())
+
+
+def test_configbuilder_repeated_in_mc_init():
+    class XBuilder(ConfigBuilder):
+        def __init__(self, mc_key):
+            super(XBuilder, self).__init__(mc_key)
+
+        def mc_build(self):
+            pass
+
+    class Root(ConfigItem):
+        def mc_init(self):
+            # This redefinition is ignored as it it interpreted as a defult value
+            XBuilder('aa')
+
+    @mc_config(ef2_prod_pp)
+    def _(_):
+        with Root():
+            XBuilder('aa')
