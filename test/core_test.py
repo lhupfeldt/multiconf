@@ -619,3 +619,20 @@ def test_attribute_args_partial_set_in_init_overridden_or_finished_in_mc_init():
     cr = ef2_pp_prod.config(pp2)
     assert cr.Requires.aa == 7
     assert cr.Requires.bb == 3
+
+
+def test_item_equality():
+    class X(ConfigItem):
+        pass
+
+    class Y(ConfigItem):
+        pass
+
+    @mc_config(ef2_pp_prod)
+    def _(_):
+        X()
+        Y()
+
+    cr = ef2_pp_prod.config(prod2)
+    assert cr.X == cr.X
+    assert cr.X != cr.Y  # TODO? Equality between items?

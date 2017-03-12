@@ -36,10 +36,10 @@ class RepeatableDict(OrderedDict):
         return default
 
     def __eq__(self, other):
-        return OrderedDict(self.items()) == other
+        return self is other or len(self) == 0 and len(other) == 0
 
     def __ne__(self, other):
-        return self != other
+        return not self.__eq__(other)
 
     def __iter__(self):
         for key in self.keys():

@@ -3,7 +3,9 @@
 
 from __future__ import print_function
 
-from pytest import fail
+import sys
+
+from pytest import fail, raises
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem
 from multiconf.decorators import nested_repeatables, named_as
@@ -11,6 +13,8 @@ from multiconf.envs import EnvFactory
 
 from .utils.tstclasses import ItemWithAABB
 
+
+major_version = sys.version_info[0]
 
 ef = EnvFactory()
 pp = ef.Env('pp')
@@ -150,3 +154,58 @@ def test_mc_init_repeatable_items():
     assert not hasattr(cr.Y.Xs['aa'], 'bb')
     assert cr.Y.Xs['bb'].aa == 1
     assert cr.Y.Xs['bb'].bb == 1
+
+
+def test_repeatable_items_get():
+    class X(RepeatableConfigItem):
+        pass
+
+    @nested_repeatables('Xs')
+    class Y(ConfigItem):
+        pass
+
+    @mc_config(ef)
+    def config(_):
+        with Y() as y:
+            X(mc_key='aa')
+            X(mc_key='bb')
+
+    cr = ef.config(prod)
+
+    assert cr.Y.Xs.get('aa')
+
+    assert cr.Y.Xs.get('cc') == None
+
+
+def test_repeatable_items_equal():
+    @named_as('Xs')
+    class X(RepeatableConfigItem):
+        pass
+
+    @named_as('Ys')
+    class Y(RepeatableConfigItem):
+        pass
+
+    @named_as('Zs')
+    class Z(RepeatableConfigItem):
+        pass
+
+    @nested_repeatables('Xs', 'Ys', 'Zs')
+    class HasRepeatables(ConfigItem):
+        pass
+
+    @mc_config(ef)
+    def config(_):
+        with HasRepeatables() as y:
+            X(mc_key='aa')
+            X(mc_key='bb')
+            Y(mc_key='aa')
+            Z(mc_key='aa')
+            Z(mc_key='bb')
+
+    cr = ef.config(prod)
+
+    assert cr.HasRepeatables.Xs == cr.HasRepeatables.Xs
+    # assert cr.HasRepeatables.Xs == cr.HasRepeatables.Zs  # TODO? Equality between different dicts?
+    assert cr.HasRepeatables.Xs != cr.HasRepeatables.Ys
+    assert cr.HasRepeatables.Ys != cr.HasRepeatables.Zs
