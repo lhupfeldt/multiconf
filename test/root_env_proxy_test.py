@@ -45,3 +45,30 @@ def test_assignment_root(capsys):
 
     _sout, serr = capsys.readouterr()
     assert replace_ids(serr) == ce(errorline[0], _setattr_strict_bad_expected.format('aa'))
+
+
+def test_env_root():
+    @mc_config(ef)
+    def _(root):
+        pass
+
+    cr = ef.config(prod)
+    assert cr.env == prod
+
+
+_repr_root_expected = """{
+    "__class__": "_ConfigRoot #as: '_ConfigRoot', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 2
+}"""
+
+def test_repr_root():
+    @mc_config(ef)
+    def _(root):
+        root.setattr('aa', default=1, prod=2, mc_set_unknown=True)
+
+    cr = ef.config(prod)
+    assert replace_ids(repr(cr), False) == _repr_root_expected

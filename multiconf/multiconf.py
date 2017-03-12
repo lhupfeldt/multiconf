@@ -901,8 +901,7 @@ class _ItemParentProxy(object):
         object.__setattr__(self, '_mc_item', item)
 
         env = ci._mc_root._mc_env
-        if not ci:
-            item._mc_excluded |= env.mask
+        item._mc_excluded |= ci._mc_excluded
 
     def __getattribute__(self, name):
         if name in object.__getattribute__(self, '__slots__'):
@@ -915,9 +914,6 @@ class _ItemParentProxy(object):
             return getattr(item, name)
         finally:
             item._mc_contained_in = orig_ci
-
-    def __setattr__(self, name, value):
-        raise ConfigApiException("Not settable")
 
     @property
     def env(self):
