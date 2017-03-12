@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-from collections import Mapping, OrderedDict
+from collections import OrderedDict
 
 
 class RepeatableDict(OrderedDict):
