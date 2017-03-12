@@ -821,11 +821,6 @@ class _ConfigBuilder(_ConfigItemBase):
             self._mc_root = contained_in._mc_root
             self._mc_excluded = 0
 
-            # Insert self in parent
-            if hasattr(contained_in, private_key):
-                msg = "'{mc_key}' is already defined in parent, cannot create {cls}: {self}".format(mc_key=mc_key, cls=cls.__name__, self=self)
-                raise ConfigException(msg)
-
             self._mc_handled_env_bits = self._mc_root._mc_env.mask
             contained_in._mc_items[private_key] = self
 
