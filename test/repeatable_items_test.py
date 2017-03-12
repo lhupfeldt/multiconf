@@ -209,3 +209,27 @@ def test_repeatable_items_equal():
     # assert cr.HasRepeatables.Xs == cr.HasRepeatables.Zs  # TODO? Equality between different dicts?
     assert cr.HasRepeatables.Xs != cr.HasRepeatables.Ys
     assert cr.HasRepeatables.Ys != cr.HasRepeatables.Zs
+
+
+def test_repeatable_items_iter():
+    @named_as('Xs')
+    class X(RepeatableConfigItem):
+        pass
+
+    @nested_repeatables('Xs', 'Ys', 'Zs')
+    class HasRepeatables(ConfigItem):
+        pass
+
+    @mc_config(ef)
+    def config(_):
+        with HasRepeatables() as y:
+            X(mc_key='aa')
+            X(mc_key='bb')
+            X(mc_key='cc')
+
+    cr = ef.config(prod)
+
+    keys = []
+    for key in cr.HasRepeatables.Xs:
+        keys.append(key)
+    assert keys == ['aa', 'bb', 'cc']
