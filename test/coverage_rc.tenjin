@@ -12,7 +12,7 @@ exclude_lines =
     # Don't complain if tests don't hit defensive assertion code:
     raise .*Internal error.*
     raise .*AbstractNotImplemented.*
-    # Should not happen
+    raise *\# Should not happen
 
     if _debug_exc:
     def _debug\(
