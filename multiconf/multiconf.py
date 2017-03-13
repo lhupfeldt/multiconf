@@ -347,8 +347,7 @@ class _ConfigBase(object):
         if value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
             if self._mc_attributes_to_check:
                 self._mc_attributes_to_check.pop(attr_name, None)
-            if value != MC_NO_VALUE:
-                return
+            return
 
         if self._mc_where == Where.IN_INIT or not self:
             if value == MC_NO_VALUE:
