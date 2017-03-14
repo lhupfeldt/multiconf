@@ -5,7 +5,7 @@ from multiconf import mc_config, ConfigItem
 from multiconf.envs import EnvFactory
 
 from .utils.compare_json import compare_json
-from .utils.tstclasses import ItemWithAA
+from .utils.tstclasses import ItemWithAA, ItemWithName
 
 
 ef = EnvFactory()
@@ -213,3 +213,29 @@ def test_json_dump_attr_tuple_ref_item():
     assert ref1.mm == ref1
     assert ref1.nn == cr
     assert ref2.r1mmnn == 4
+
+
+_json_dump_ref_outside_exluded_item_expected_json = """{
+    "__class__": "Ref1",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": "#outside-ref: Excluded: <class 'test.utils.tstclasses.ItemWithName'>: name: Tootsi"
+}"""
+
+def test_json_dump_ref_outside_exluded_item():
+    class Ref1(ItemWithAA):
+        pass
+
+    @mc_config(ef)
+    def _(_):
+        with ItemWithName('Tootsi') as it:
+            it.mc_select_envs(exclude=[prod])
+        with Ref1() as ref1:
+            ref1.aa = it
+
+    cr = ef.config(prod)
+    ref1 = cr.Ref1
+    assert compare_json(ref1, _json_dump_ref_outside_exluded_item_expected_json)

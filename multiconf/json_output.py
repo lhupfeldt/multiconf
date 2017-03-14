@@ -9,7 +9,7 @@ import types
 
 from . import envs
 from .values import McInvalidValue
-from .config_errors import InvalidUsageException, ConfigException
+from .config_errors import InvalidUsageException, ConfigException, ConfigExcludedAttributeError
 from .bases import get_bases
 from .attribute import Where
 
@@ -33,13 +33,14 @@ def _class_tuple(obj, obj_info=""):
 
 def _attr_ref_msg(obj, attr_name):
     try:
-        if hasattr(obj, attr_name):
-            return attr_name + ": " + repr(getattr(obj, attr_name))
-    except ConfigException as ex:
-        if hasattr(ex, 'excluded') and hasattr(ex, 'value'):
-            return attr_name + ": " + repr(ex.value)
-
-    return ''
+        return attr_name + ": " + repr(getattr(obj, attr_name))
+    except ConfigExcludedAttributeError as ex:
+        try:
+            return attr_name + ": " + ex.value
+        except AttributeError:
+            return ''
+    except AttributeError:
+        return ''
 
 
 def ref_id(obj):
@@ -152,9 +153,10 @@ class ConfigItemEncoder(object):
                 mc_key_msg = _attr_ref_msg(child_obj, 'mc_key')
                 name_msg = _attr_ref_msg(child_obj, 'name')
                 id_msg = _attr_ref_msg(child_obj, 'id')
-                additionl_ref_info_msg = ', '.join([msg for msg in ( id_msg, name_msg, mc_key_msg) if msg])
+                additionl_ref_info_msg = ', '.join([msg for msg in (id_msg, name_msg, mc_key_msg) if msg])
                 additionl_ref_info_msg = ': ' + additionl_ref_info_msg if additionl_ref_info_msg else ''
-                return ref_msg + child_obj.__class__.__name__ + additionl_ref_info_msg
+                cls_msg = child_obj.__class__.__name__  if child_obj else repr(child_obj)
+                return ref_msg + cls_msg + additionl_ref_info_msg
 
         return child_obj
 
