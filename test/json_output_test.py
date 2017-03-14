@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, os
+import sys
 from collections import OrderedDict
 import pytest
 
@@ -13,7 +13,7 @@ from multiconf.envs import EnvFactory
 from .utils.utils import replace_ids, next_line_num, to_compact, replace_multiconf_file_line_msg, config_error, file_line
 from .utils.utils import py3_local
 from .utils.compare_json import compare_json
-from .utils.tstclasses import ItemWithName, ItemWithAA, ItemWithAA
+from .utils.tstclasses import ItemWithAA
 
 
 ef = EnvFactory()
