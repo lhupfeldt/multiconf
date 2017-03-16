@@ -159,7 +159,7 @@ def use():
 
 @click.command()
 @click.option("--time/--no-time", default=True)
-@click.option("--profile/--no-pofile", default=False)
+@click.option("--profile/--no-profile", default=False)
 @click.option("--heap-check/--no-heap-check", default=False)
 def cli(time, profile, heap_check):
     global hp
@@ -186,6 +186,9 @@ def cli(time, profile, heap_check):
     if sys.version_info.major < 3 and heap_check:
         from guppy import hpy
         hp = hpy()
+        envs_setup()
+        config()
+        use()
 
     if profile:
         cProfile.run("envs_setup()", jp(here, "envs_setup.profile"))
