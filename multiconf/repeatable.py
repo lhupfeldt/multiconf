@@ -6,12 +6,12 @@ from __future__ import print_function
 from collections import OrderedDict
 
 
-class RepeatableDict(OrderedDict):
+class RepeatableDict(object):
     """Dictionary dedicated for holding RepeatableConfigItem"""
+    __slots__ = ('_items',)
+    __class__ = OrderedDict
 
-    def __init__(self, attr_name, obj):
-        self.attr_name = attr_name
-        self.obj = obj
+    def __init__(self):
         self._items = OrderedDict()
 
     def __setitem__(self, key, val):
@@ -76,3 +76,7 @@ class RepeatableDict(OrderedDict):
         """Call the user defined 'mc_post_validate' methods on all items"""
         for item in self.values():
             item._mc_call_post_validate_recursively()
+
+
+a = RepeatableDict()
+assert isinstance(a, dict)

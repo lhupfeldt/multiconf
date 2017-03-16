@@ -73,7 +73,7 @@ def nested_repeatables(*attr_names):
 
         # Make descriptor work, an instance of the descriptor class mut be assigened at the class level
         for name in attr_names:
-            setattr(cls, name, RepeatableDict(name, None))
+            setattr(cls, name, RepeatableDict())
 
         return cls
 

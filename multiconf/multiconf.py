@@ -689,7 +689,7 @@ class ConfigItem(_ConfigItemBase):
             self._mc_excluded = 0
 
             for key in cls._mc_deco_nested_repeatables:
-                od = RepeatableDict(key, self)
+                od = RepeatableDict()
                 self._mc_items[key] = od  # Needed to implement reliable 'items' method
                 object.__setattr__(self, key, od)
 
@@ -762,7 +762,7 @@ class RepeatableConfigItem(_ConfigItemBase):
             self._mc_excluded = 0
 
             for key in cls._mc_deco_nested_repeatables:
-                od = RepeatableDict(key, self)
+                od = RepeatableDict()
                 self._mc_items[key] = od  # Needed to implement reliable 'items' method
                 object.__setattr__(self, key, od)
 
@@ -839,7 +839,7 @@ class _ConfigBuilder(_ConfigItemBase):
         if repeatable:
             return repeatable
 
-        repeatable = RepeatableDict(repeatable_class_key, self)
+        repeatable = RepeatableDict()
         self._mc_items[repeatable_class_key] = repeatable
         object.__setattr__(self, repeatable_class_key, repeatable)
         return repeatable
