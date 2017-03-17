@@ -209,9 +209,6 @@ class _ConfigBase(object):
 
     def _mc_call_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items"""
-        if not self:
-            return
-
         self._mc_where = Where.NOWHERE
         self.mc_post_validate()
         self._mc_where = Where.FROZEN

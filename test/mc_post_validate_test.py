@@ -4,17 +4,15 @@
 from __future__ import print_function
 
 # pylint: disable=E0611
-from pytest import raises
+from pytest import raises, fail
 
-from multiconf import mc_config, ConfigItem, ConfigApiException
+from multiconf import mc_config, ConfigItem, ConfigApiException, ConfigExcludedAttributeError
+from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from .utils.tstclasses import ItemWithAA
+from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
+from .utils.utils import py3_local, config_error, next_line_num
 
-
-
-ef = EnvFactory()
-prod = ef.Env('prod')
 
 ef2_pp_prod = EnvFactory()
 pp2 = ef2_pp_prod.Env('pp')
@@ -82,3 +80,48 @@ def test_mc_post_validate_exception():
                 item()
 
     assert str(exinfo.value) == "Error in item mc_post_validate"
+
+
+def test_mc_post_validate_excluded_item():
+    class root(ItemWithAA):
+        def mc_init(self):
+            self.aa = 7
+
+        def mc_post_validate(self):
+            assert self.getattr('aa', prod2) == self.getattr('aa', pp2) == 7
+
+    with raises(ConfigExcludedAttributeError) as exinfo:
+        @mc_config(ef2_pp_prod)
+        def _(_):
+            with root() as rt:
+                rt.mc_select_envs(exclude=[pp2])
+
+    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(py3_local)sroot'>" % dict(py3_local=py3_local())
+    exp = "Accessing attribute 'aa' for Env('pp') on an excluded config item: " + exp_class
+    assert exp in str(exinfo.value)
+
+
+def test_mc_post_validate_excluded_repeatable_item():
+    @nested_repeatables('reps')
+    class Root(ConfigItem):
+        pass
+
+    @named_as('reps')
+    class Rep(RepeatableItemWithAA):
+        def mc_init(self):
+            self.aa = 7
+
+        def mc_post_validate(self):
+            assert self.getattr('aa', prod2) == self.getattr('aa', pp2) == 7
+
+    with raises(ConfigExcludedAttributeError) as exinfo:
+        @mc_config(ef2_pp_prod)
+        def _(_):
+            with Root() as rt:
+                Rep(1)
+                with Rep(2) as r2:
+                    r2.mc_select_envs(exclude=[pp2])
+
+    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(py3_local)sRep'>" % dict(py3_local=py3_local())
+    exp = "Accessing attribute 'aa' for Env('pp') on an excluded config item: " + exp_class
+    assert exp in str(exinfo.value)
