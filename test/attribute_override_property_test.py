@@ -37,7 +37,7 @@ def test_attribute_overrides_property_method():
             return 1
 
     @mc_config(ef)
-    def _(_):
+    def _0(_):
         with Nested() as nn:
             nn.setattr('m', default=7, mc_overwrite_property=True)
 
@@ -45,7 +45,7 @@ def test_attribute_overrides_property_method():
     assert cr.someitem.m == 7
 
     @mc_config(ef)
-    def _(_):
+    def _1(_):
         with Nested() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
 
@@ -53,7 +53,42 @@ def test_attribute_overrides_property_method():
     assert cr.someitem.m == 7
 
     @mc_config(ef)
-    def _(_):
+    def _2(_):
+        with Nested() as nn:
+            nn.setattr('m', pp=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
+    assert cr.someitem.m == 1
+
+
+def test_attribute_overrides_property_inherited_method():
+    @named_as('someitem')
+    class NestedBase(ConfigItem):
+        @property
+        def m(self):
+            return 1
+
+    class Nested(NestedBase):
+        pass
+
+    @mc_config(ef)
+    def _0(_):
+        with Nested() as nn:
+            nn.setattr('m', default=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
+    assert cr.someitem.m == 7
+
+    @mc_config(ef)
+    def _1(_):
+        with Nested() as nn:
+            nn.setattr('m', prod=7, mc_overwrite_property=True)
+
+    cr = ef.config(prod)
+    assert cr.someitem.m == 7
+
+    @mc_config(ef)
+    def _2(_):
         with Nested() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
 
@@ -88,15 +123,10 @@ def test_attribute_overrides_property_method_is_regular_method(capsys):
         def m(self):
             return 2
 
-        @property
-        def n(self):
-            return 2
-
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
         def _(_):
             with Nested() as nn:
-                nn.setattr('n', default=7, mc_overwrite_property=True)
                 errorline[0] = next_line_num()
                 nn.setattr('m', default=7, mc_overwrite_property=True)
 
@@ -195,7 +225,7 @@ def test_assigment_replace_mc_property_wrapper_not_allowed(capsys):
                 nn.mm = 7
 
     _sout, serr = capsys.readouterr()
-    exp = "The attribute 'mm' clashes with a @property or method. Use item.setattr with mc_overwrite_property=True if overwrite intended."
+    exp = "The attribute 'mm' is already fully defined."
     assert serr == ce(errorline[0], exp)
 
 

@@ -21,7 +21,7 @@ from .repeatable import RepeatableDict
 from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigException, ConfigApiException
 from .config_errors import caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg, not_repeatable_in_parent_msg, repeatable_in_parent_msg
 from .json_output import ConfigItemEncoder
-from .bases import get_bases, get_real_attr
+from .bases import get_bases
 
 
 class _McExcludedException(Exception):
@@ -254,37 +254,50 @@ class _ConfigBase(object):
     def _setattr(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
         """Common code for assignment and item.setattr"""
 
+        # print("Hello -1:", current_env)
         try:
-            prop = object.__getattribute__(self.__class__, attr_name)
+            real_attr = None
+            try:
+                real_attr = object.__getattribute__(self, attr_name)
+            except AttributeError:
+                raise
+            except Exception as ex:
+                pass
 
-            if not mc_overwrite_property:
-                real_attr = get_real_attr(self, attr_name)
+            if attr_name in self._mc_items:
                 if isinstance(real_attr, RepeatableDict):
                     msg = "'{name}' is already defined as a nested-repeatable and may not be replaced with an attribute.".format(name=attr_name)
                 else:
+                    msg = "'{name}' {typ} is already defined and may not be replaced with an attribute.".format(name=attr_name, typ=type(real_attr))
+                self._mc_print_error_caller(msg, mc_error_info_up_level)
+                return
+
+            for cls in get_bases(object.__getattribute__(self, '__class__')):
+                try:
+                    prop = object.__getattribute__(cls, attr_name)
+                except AttributeError:
+                    prop = None
+                    continue
+
+                if isinstance(prop, _McPropertyWrapper):
+                    break
+
+                if not mc_overwrite_property:
                     base_msg = "The attribute '{name}' clashes with a @property or method".format(name=attr_name)
                     msg = base_msg + " and 'mc_overwrite_property' is False."
                     if is_assign:
                         msg = base_msg + ". Use item.setattr with mc_overwrite_property=True if overwrite intended."
+                    self._mc_print_error_caller(msg, mc_error_info_up_level)
+                    return
+
+                if isinstance(prop, property):
+                    setattr(cls, attr_name, _McPropertyWrapper(attr_name, prop))
+                    break
+
+                msg = "'mc_overwrite_property' specified but existing attribute '{name}' with value '{value}' is not a @property.".format(
+                    name=attr_name, value=prop)
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
                 return
-
-            if not isinstance(prop, _McPropertyWrapper):
-                # This is expensive so do the quick __getattribute__ above first and only do this when necessary, i.e. we found an attribute
-                for cls in get_bases(object.__getattribute__(self, '__class__')):
-                    try:
-                        real_attr = object.__getattribute__(cls, attr_name)
-                        if isinstance(real_attr, property):
-                            setattr(self.__class__, attr_name, _McPropertyWrapper(attr_name, prop))
-                            break
-
-                        msg = "'mc_overwrite_property' specified but existing attribute '{name}' with value '{value}' is not a @property.".format(
-                            name=attr_name, value=real_attr)
-                        self._mc_print_error_caller(msg, mc_error_info_up_level)
-                        return
-
-                    except AttributeError:
-                        pass
 
         except AttributeError:
             if mc_overwrite_property:
@@ -296,12 +309,6 @@ class _ConfigBase(object):
 
         env_attr = self._mc_attributes.get(attr_name)
         if env_attr is None:
-            if attr_name in self._mc_items:
-                real_attr = getattr(self, attr_name)
-                msg = "'{name}' {typ} is already defined and may not be replaced with an attribute.".format(name=attr_name, typ=type(real_attr))
-                self._mc_print_error_caller(msg, mc_error_info_up_level)
-                return
-
             if self._mc_where != Where.IN_INIT and not mc_set_unknown and not prop:
                 msg = "All attributes must be defined in __init__ or set with 'mc_set_unknown'. " + \
                       "Attempting to set attribute '{attr_name}' which does not exist.".format(attr_name=attr_name)
