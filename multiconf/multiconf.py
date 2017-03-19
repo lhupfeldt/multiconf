@@ -327,16 +327,18 @@ class _ConfigBase(object):
                     self._mc_print_error_caller(msg, mc_error_info_up_level)
                     return
 
-                if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
-                    # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
-                    if (from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg) and not mc_force:
+                if not mc_force:
+                    if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
+                        # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
+                        if (from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg):
+                            return
+
+                    if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH:
+                        # Trying to set the same attribute again in with block
+                        msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)
                         return
 
-                if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH and not mc_force:
-                    # Trying to set the same attribute again in with block
-                    msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
-                    self._mc_print_error_caller(msg, mc_error_info_up_level)
-                    return
             except KeyError:
                 old_value = MC_NO_VALUE
 
