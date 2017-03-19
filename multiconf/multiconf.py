@@ -459,7 +459,7 @@ class _ConfigBase(object):
                 raise ConfigAttributeError(self, attr_name)
 
             msg = "Trying to access attribute '{}'. "
-            msg += "Item.attribute access is not allowed in 'mc_post_validate' as there i no current env, use: item.getattr(attr_name, env)"
+            msg += "Item.attribute access is not allowed in 'mc_post_validate' as there is no current env, use: item.getattr(attr_name, env)"
             raise ConfigApiException(msg.format(attr_name))
 
     def getattr(self, attr_name, env):
