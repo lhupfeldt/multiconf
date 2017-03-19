@@ -678,7 +678,7 @@ class ConfigItem(_ConfigItemBase):
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
 
             self._mc_where = Where.IN_INIT
-            self._mc_num_errors = 0            
+            self._mc_num_errors = 0
             return self
         except AttributeError:
             self = super(ConfigItem, cls).__new__(cls)
@@ -751,7 +751,7 @@ class RepeatableConfigItem(_ConfigItemBase):
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
 
             self._mc_where = Where.IN_INIT
-            self._mc_num_errors = 0            
+            self._mc_num_errors = 0
             return self
         except KeyError:
             self = super(RepeatableConfigItem, cls).__new__(cls)
@@ -810,7 +810,7 @@ class _ConfigBuilder(_ConfigItemBase):
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
 
             self._mc_where = Where.IN_INIT
-            self._mc_num_errors = 0            
+            self._mc_num_errors = 0
             return self
         except KeyError:
             self = super(_ConfigBuilder, cls).__new__(cls)
