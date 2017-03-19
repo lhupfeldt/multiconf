@@ -917,10 +917,6 @@ class _ItemParentProxy(object):
         finally:
             item._mc_contained_in = orig_ci
 
-    @property
-    def env(self):
-        return self._mc_contained_in._mc_env
-
 
 class _ConfigRoot(_ConfigBase):
     def __init__(self, env_factory, mc_allow_todo, mc_json_filter, mc_json_fallback):

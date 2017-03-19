@@ -860,3 +860,31 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel():
     cr = ef1_prod.config(prod1)
     cr.json(builders=True)
     check_containment(cr)
+
+
+def test_item_parent_proxy_get_env():
+    @named_as('inners')
+    class InnerItem(RepeatableConfigItem):
+        def __init__(self, mc_key):
+            super(InnerItem, self).__init__(mc_key=mc_key)
+            self.name = mc_key
+
+    class Builder(ConfigBuilder):
+        def __init__(self):
+            super(Builder, self).__init__()
+
+        def mc_build(self):
+            InnerItem('innermost')
+
+    @nested_repeatables('inners')
+    class OuterItem(ConfigItem):
+        pass
+
+    @mc_config(ef1_prod)
+    def _(_):
+        with OuterItem():
+            with Builder():
+                ConfigItem()
+
+    cr = ef1_prod.config(prod1)
+    assert cr.OuterItem.inners['innermost'].ConfigItem.env == prod1
