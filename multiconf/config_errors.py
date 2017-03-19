@@ -65,7 +65,7 @@ class ConfigExcludedAttributeError(ConfigAttributeError):
     @property
     def message(self):
         error_message = "Accessing attribute '{attr_name}' for {env} on an excluded config item: {item_excl_repr}"
-        return error_message.format(attr_name=self.attr_name, env=self.env, item_excl_repr=self.mc_object._excl_repr())
+        return error_message.format(attr_name=self.attr_name, env=self.env, item_excl_repr=self.mc_object._mc_excl_repr())
 
 
 def caller_file_line(up_level=2):

@@ -28,9 +28,9 @@ class _McExcludedException(Exception):
     pass
 
 
-_debug_enabled = False
-def _debug(*args):
-    if _debug_enabled:
+_mc_debug_enabled = False
+def _mc_debug(*args):
+    if _mc_debug_enabled:
         print(*args)
 
 
@@ -42,8 +42,8 @@ class _ConfigBase(object):
     _mc_deco_nested_repeatables = ()
 
     @classmethod
-    def _debug_hierarchy(cls, msg):
-        _debug(msg, cls, '_mc_hierarchy: {}'.format([id(item) for item in cls._mc_hierarchy]))
+    def _mc_debug_hierarchy(cls, msg):
+        _mc_debug(msg, cls, '_mc_hierarchy: {}'.format([id(item) for item in cls._mc_hierarchy]))
 
     def _mc_error_msg(self, message):
         self._mc_num_errors += 1
@@ -104,14 +104,14 @@ class _ConfigBase(object):
         self._mc_root._mc_json_errors = encoder.num_errors
         return json_str
 
-    def _excl_repr(self):
+    def _mc_excl_repr(self):
         return "Excluded: " + repr(type(self))
 
     def __repr__(self):
         if self:
             # Don't call property methods in repr?, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
             return self.json(compact=True, property_methods=True, builders=True)
-        return self._excl_repr()
+        return self._mc_excl_repr()
 
     def num_json_errors(self):
         """
@@ -219,7 +219,7 @@ class _ConfigBase(object):
     def __enter__(self):
         self._mc_where = Where.IN_WITH
         self.__class__._mc_hierarchy.append(self)
-        # self.__class__._debug_hierarchy('_ConfigBase.__enter__')
+        # self.__class__._mc_debug_hierarchy('_ConfigBase.__enter__')
         return self
 
     @staticmethod
@@ -244,14 +244,14 @@ class _ConfigBase(object):
             self.__class__._mc_hierarchy.pop()
             return None
 
-        # self.__class__._debug_hierarchy('_ConfigBase.__exit__')
+        # self.__class__._mc_debug_hierarchy('_ConfigBase.__exit__')
         if exc_type is _McExcludedException:
             # We need to update _mc_excluded mask on all children which may have been skipped
             _ConfigBase._update_mc_excluded_recursively(self, self._mc_excluded)
             self.__class__._mc_hierarchy.pop()
             return True
 
-    def _setattr(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
+    def _mc_setattr(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
         """Common code for assignment and item.setattr"""
 
         # print("Hello -1:", current_env)
@@ -368,12 +368,12 @@ class _ConfigBase(object):
         mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
         self._mc_print_value_error_msg(attr_name, value, mc_caller_file_name, mc_caller_line_num)
 
-    def _setattr_disabled(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
+    def _mc_setattr_disabled(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
         """Common code for assignment and item.setattr to disable attribute modification after config is loaded"""
         msg = "Trying to set attribute '{}'. Setting attributes is not allowed after configuration is loaded (in order to enforce derived value validity)."
         raise ConfigApiException(msg.format(attr_name))
 
-    _setattr_real = _setattr  # Keep a reference to the real _setattr
+    _mc_setattr_real = _mc_setattr  # Keep a reference to the real _mc_setattr
 
     def __setattr__(self, attr_name, value):
         if attr_name[0] == '_':
@@ -381,7 +381,7 @@ class _ConfigBase(object):
             return
 
         cr = self._mc_root
-        self._setattr(cr._mc_env, attr_name, value, cr._mc_env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
+        self._mc_setattr(cr._mc_env, attr_name, value, cr._mc_env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
 
     def setattr(self, attr_name, mc_overwrite_property=False, mc_set_unknown=False, mc_force=False, mc_error_info_up_level=2, **env_values):
         """Set env specific values for an attribute.
@@ -429,10 +429,10 @@ class _ConfigBase(object):
         current_env = cr._mc_env
         try:
             value, eg = env_factory.resolve_env_group_value(current_env, env_values)
-            self._setattr(current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level=mc_error_info_up_level + 1)
+            self._mc_setattr(current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level=mc_error_info_up_level + 1)
             return
         except MissingValueEnvException:
-            self._setattr(current_env, attr_name, MC_NO_VALUE, env_factory.eg_none, mc_overwrite_property, mc_set_unknown, False, mc_error_info_up_level=mc_error_info_up_level + 1)
+            self._mc_setattr(current_env, attr_name, MC_NO_VALUE, env_factory.eg_none, mc_overwrite_property, mc_set_unknown, False, mc_error_info_up_level=mc_error_info_up_level + 1)
             return
         except AmbiguousEnvException as ex:
             msg = "Value for {env} is specified more than once, with no single most specific group or direct env:".format(env=current_env)
@@ -442,7 +442,7 @@ class _ConfigBase(object):
             self._mc_print_error_caller(msg, mc_error_info_up_level)
         except AttributeError:
             if current_env is NO_ENV:
-                self._setattr_disabled(None, attr_name, None, None, None, None, None, None)
+                self._mc_setattr_disabled(None, attr_name, None, None, None, None, None, None)
             raise
 
     def __getattr__(self, attr_name):
@@ -658,7 +658,7 @@ class _ConfigItemBase(_ConfigBase):
 
 class ConfigItem(_ConfigItemBase):
     def __new__(cls, *init_args, **init_kwargs):
-        # cls._debug_hierarchy('ConfigItem.__new__')
+        # cls._mc_debug_hierarchy('ConfigItem.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
@@ -729,7 +729,7 @@ class _DummyItem(_ConfigBase):
 
 class RepeatableConfigItem(_ConfigItemBase):
     def __new__(cls, mc_key, *init_args, **init_kwargs):
-        # cls._debug_hierarchy('RepeatableConfigItem.__new__')
+        # cls._mc_debug_hierarchy('RepeatableConfigItem.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
@@ -788,7 +788,7 @@ class RepeatableConfigItem(_ConfigItemBase):
 
 class _ConfigBuilder(_ConfigItemBase):
     def __new__(cls, mc_key='default-builder', *init_args, **init_kwargs):
-        # cls._debug_hierarchy('_ConfigBuilder.__new__')
+        # cls._mc_debug_hierarchy('_ConfigBuilder.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
@@ -1003,13 +1003,13 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
         cr = _ConfigRoot(env_factory, mc_allow_todo, mc_json_filter, mc_json_fallback)
         cr._mc_check_unknown = True
 
-        # Make sure _setattr is the real one if decorator is used multiple times
-        _ConfigBase._setattr = _ConfigBase._setattr_real
+        # Make sure _mc_setattr is the real one if decorator is used multiple times
+        _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
 
         # Load envs
         error_envs = []
         for env in env_factory.envs.values():
-            _debug("\n==== Loading", env, "====")
+            _mc_debug("\n==== Loading", env, "====")
             rp = _RootEnvProxy(env, cr)
             cr._mc_env = env
             del cr.__class__._mc_hierarchy[:]
@@ -1040,7 +1040,7 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
 
         # No modifications are allowed after this
         cr._mc_config_loaded = True
-        _ConfigBase._setattr = _ConfigBase._setattr_disabled
+        _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
 
         # Call mc_post_validate
         cr._mc_env = NO_ENV
