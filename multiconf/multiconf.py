@@ -903,7 +903,6 @@ class _ItemParentProxy(object):
         object.__setattr__(self, '_mc_contained_in', ci)
         object.__setattr__(self, '_mc_item', item)
 
-        env = ci._mc_root._mc_env
         item._mc_excluded |= ci._mc_excluded
 
     def __getattribute__(self, name):
