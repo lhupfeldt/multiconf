@@ -339,6 +339,12 @@ class _ConfigBase(object):
                         self._mc_print_error_caller(msg, mc_error_info_up_level)
                         return
 
+                    if env_attr.where_from == Where.FROZEN:
+                        msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
+                        msg += "Setting attributes is not allowed after value has been used (in order to enforce derived value validity)."
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)
+                        return
+
             except KeyError:
                 old_value = MC_NO_VALUE
 
@@ -453,7 +459,9 @@ class _ConfigBase(object):
             raise ConfigExcludedAttributeError(self, attr_name, self._mc_root._mc_env)
 
         try:
-            return self._mc_attributes[attr_name].env_values[self._mc_root._mc_env]
+            attr = self._mc_attributes[attr_name]
+            attr.where_from = Where.FROZEN
+            return attr.env_values[self._mc_root._mc_env]
         except KeyError:
             if self._mc_root._mc_env is not NO_ENV or attr_name not in self._mc_attributes:
                 if not self:
@@ -470,7 +478,9 @@ class _ConfigBase(object):
             raise ConfigExcludedAttributeError(self, attr_name, env)
 
         try:
-            return self._mc_attributes[attr_name].env_values[env]
+            attr = self._mc_attributes[attr_name]
+            attr.where_from = Where.FROZEN
+            return attr.env_values[env]
         except KeyError:
             prop = object.__getattribute__(self.__class__, attr_name)
             try:

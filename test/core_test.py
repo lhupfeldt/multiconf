@@ -537,7 +537,7 @@ def test_mc_init_setattr_ref_env_value():
             self.aa = aa
 
         def mc_init(self):
-            self.setattr("aa", default=self.aa, prod=3)
+            self.setattr("aa", prod=3)
 
     @mc_config(ef2_pp_prod)
     def _(_):
@@ -557,7 +557,7 @@ def test_mc_init_setattr_ref_env_value_from_with():
             self.aa = aa
 
         def mc_init(self):
-            self.setattr("aa", default=self.aa, prod=3)
+            self.setattr("aa", prod=3)
 
     @mc_config(ef2_pp_prod)
     def _(_):

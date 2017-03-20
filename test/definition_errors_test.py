@@ -232,6 +232,7 @@ def test_attribute_redefinition_attempt1(capsys):
     assert serr.startswith(ce(errorline[0], _fully_defined).strip())
     assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_item_expected_ex % ('prod', 1)
 
+
 def test_attribute_redefinition_attempt2(capsys):
     errorline = [None]
 
@@ -294,6 +295,35 @@ def test_attribute_redefinition_attempt5(capsys):
     _sout, serr = capsys.readouterr()
     assert serr.startswith(ce(errorline[0], _fully_defined).strip())
     assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_item_expected_ex % ('pp', 1)
+
+
+_single_error_on_item_with_bb_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000, not-frozen",
+    "env": {
+        "__class__": "Env",
+        "name": "pp"
+    },
+    "aa": 1,
+    "bb": 1
+}""" + already_printed_msg
+
+def test_setattr_after_getattr(capsys):
+    errorline = [None]
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef2_pp_prod)
+        def _(_):
+            with ItemWithAA(1) as cr:
+                # Use the default value of aa when setting bb
+                cr.setattr('bb', pp=cr.aa, mc_set_unknown=True)
+                errorline[0] = next_line_num()
+                cr.setattr('aa', prod=2)  # Attempt to override the default value of aa after use
+
+    _sout, serr = capsys.readouterr()
+    print(serr)
+    exp = "Trying to set attribute 'aa'. Setting attributes is not allowed after value has been used (in order to enforce derived value validity)."
+    assert serr.startswith(ce(errorline[0], exp))
+    assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_item_with_bb_expected_ex
 
 
 def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class():

@@ -227,8 +227,7 @@ def test_attribute_mc_required_args_all_overridden_in_mc_init():
             self.aa = aa
 
         def mc_init(self):
-            if self.aa == MC_REQUIRED:
-                self.aa = 7
+            self.aa = 7
 
     @mc_config(ef1_prod_pp)
     def config(root):
