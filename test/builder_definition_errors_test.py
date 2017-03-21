@@ -8,8 +8,8 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, replace_ids, replace_ids_builder, py3_local
-from .utils.tstclasses import ItemWithName
+from .utils.utils import config_error, replace_ids, replace_ids_builder, py3_local, next_line_num
+from .utils.tstclasses import ItemWithName, ItemWithAA
 from .utils.messages import not_repeatable_in_parent_msg
 
 
@@ -379,3 +379,102 @@ def test_configbuilder_repeated_in_mc_init():
     def _(_):
         with Root():
             XBuilder('aa')
+
+
+
+
+_assign_on_built_item_after_it_is_built_expected_ex = """There was 1 error when defining item: {
+    "__class__": "Y #as: 'y', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "something": null
+}
+Check already printed error messages."""
+
+def test_assign_on_built_item_after_it_is_built(capsys):
+    errorline = [None]
+
+    class YBuilder(ConfigBuilder):
+        def __init__(self, start=1):
+            super(YBuilder, self).__init__()
+
+        def mc_build(self):
+            Y()
+
+    @named_as('y')
+    class Y(ConfigItem):
+        def __init__(self):
+            super(Y, self).__init__()
+            self.something = None
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef1_prod)
+        def _(root):
+            with YBuilder():
+                pass
+
+            errorline[0] = next_line_num()
+            root.y.something = 1  # TODO? Should getattr finalize previous object
+
+    _sout, serr = capsys.readouterr()
+    exp = "Trying to set attribute 'something'. Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
+    assert serr == ce(errorline[0], exp)
+    assert replace_ids(str(exinfo.value), False) == _assign_on_built_item_after_it_is_built_expected_ex
+
+
+_assign_on_proxied_built_item_child_after_freeze_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 17
+}
+Check already printed error messages."""
+
+def test_assign_and_assign_on_proxied_built_item_child_after_freeze(capsys):
+    """This will go through the proxy object"""
+    errorline = [None]
+
+    class YBuilder(ConfigBuilder):
+        def __init__(self, start=1):
+            super(YBuilder, self).__init__()
+
+        def mc_build(self):
+            Y()
+
+    @named_as('y')
+    class Y(ConfigItem):
+        def __init__(self):
+            super(Y, self).__init__()
+            self.something = None
+
+    # Test assignment error
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef1_prod)
+        def _1(root):
+            with YBuilder():
+                ItemWithAA(17)
+            errorline[0] = next_line_num()
+            root.y.ItemWithAA.aa = 1
+
+    _sout, serr = capsys.readouterr()
+    exp = "Trying to set attribute 'aa'. Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
+    assert serr == ce(errorline[0], exp)
+    assert replace_ids(str(exinfo.value), False) == _assign_on_proxied_built_item_child_after_freeze_expected_ex
+
+    # Test setattr error
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef1_prod)
+        def _2(root):
+            with YBuilder():
+                ItemWithAA(17)
+            errorline[0] = next_line_num()
+            root.y.ItemWithAA.setattr('aa', default=1)
+
+    _sout, serr = capsys.readouterr()
+    exp = "Trying to set attribute 'aa'. Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
+    assert serr == ce(errorline[0], exp)
+    assert replace_ids(str(exinfo.value), False) == _assign_on_proxied_built_item_child_after_freeze_expected_ex

@@ -326,6 +326,33 @@ def test_setattr_after_getattr(capsys):
     assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_item_with_bb_expected_ex
 
 
+_setattr_after_item_frozen_expected_ex = """There was 1 error when defining item: {
+    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "pp"
+    },
+    "aa": 1
+}""" + already_printed_msg
+
+def test_setattr_after_item_frozen(capsys):
+    errorline = [None]
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef2_pp_prod)
+        def _(_):
+            with ItemWithAA(1) as cr:
+                pass
+
+            errorline[0] = next_line_num()
+            cr.setattr('aa', prod=2)  # Attempt to override the default value of aa after item is frozen (with scope is exited)
+
+    _sout, serr = capsys.readouterr()
+    exp = "Trying to set attribute 'aa'. Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
+    assert serr.startswith(ce(errorline[0], exp))
+    assert replace_ids(str(exinfo.value), named_as=False) == _setattr_after_item_frozen_expected_ex
+
+
 def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class():
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)

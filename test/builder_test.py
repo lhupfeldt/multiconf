@@ -888,3 +888,30 @@ def test_item_parent_proxy_get_env():
 
     cr = ef1_prod.config(prod1)
     assert cr.OuterItem.inners['innermost'].ConfigItem.env == prod1
+
+
+def test_assign_underscore_on_proxied_built_item_child_after_freeze():
+    """This will go through the proxy object"""
+    class YBuilder(ConfigBuilder):
+        def __init__(self, start=1):
+            super(YBuilder, self).__init__()
+
+        def mc_build(self):
+            Y()
+
+    @named_as('y')
+    class Y(ConfigItem):
+        def __init__(self):
+            super(Y, self).__init__()
+            self.something = None
+
+    # Test assignment '_xxx'ok
+    @mc_config(ef1_prod)
+    def _(root):
+        with YBuilder():
+            ConfigItem()
+
+        root.y.ConfigItem._aa = 1
+
+    cr = ef1_prod.config(prod1)
+    assert cr.y.ConfigItem._aa == 1

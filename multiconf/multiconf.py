@@ -67,6 +67,9 @@ class _ConfigBase(object):
         """Print a single message preceeded by file:line"""
         file_name, line_num = caller_file_line(up_level=mc_error_info_up_level + 1)
         print(_line_msg(file_name=file_name, line_num=line_num) + '\n' + self._mc_error_msg(message), file=sys.stderr)
+        if self._mc_where == Where.FROZEN:
+            # We need to raise now, self is already frozen so error count will not be checked later
+            self._mc_raise_errors()
 
     def _mc_print_warning(self, message, file_name, line_num):
         """Print a single message preceeded by file:line"""
@@ -342,6 +345,12 @@ class _ConfigBase(object):
                     if env_attr.where_from == Where.FROZEN:
                         msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
                         msg += "Setting attributes is not allowed after value has been used (in order to enforce derived value validity)."
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)
+                        return
+
+                    if self._mc_where == Where.FROZEN:
+                        msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
+                        msg += "Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
                         self._mc_print_error_caller(msg, mc_error_info_up_level)
                         return
 
@@ -928,6 +937,14 @@ class _ItemParentProxy(object):
             return getattr(item, name)
         finally:
             item._mc_contained_in = orig_ci
+
+    def __setattr__(self, attr_name, value):
+        if attr_name[0] == '_':
+            object.__setattr__(self._mc_item, attr_name, value)
+            return
+
+        cr = self._mc_item._mc_root
+        self._mc_item._mc_setattr(cr._mc_env, attr_name, value, cr._mc_env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
 
 
 class _ConfigRoot(_ConfigBase):
