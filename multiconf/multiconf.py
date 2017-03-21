@@ -257,7 +257,6 @@ class _ConfigBase(object):
     def _mc_setattr(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
         """Common code for assignment and item.setattr"""
 
-        # print("Hello -1:", current_env)
         try:
             real_attr = None
             try:
@@ -446,10 +445,10 @@ class _ConfigBase(object):
         current_env = cr._mc_env
         try:
             value, eg = env_factory.resolve_env_group_value(current_env, env_values)
-            self._mc_setattr(current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level=mc_error_info_up_level + 1)
+            self._mc_setattr(current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level + 1)
             return
         except MissingValueEnvException:
-            self._mc_setattr(current_env, attr_name, MC_NO_VALUE, env_factory.eg_none, mc_overwrite_property, mc_set_unknown, False, mc_error_info_up_level=mc_error_info_up_level + 1)
+            self._mc_setattr(current_env, attr_name, MC_NO_VALUE, env_factory.eg_none, mc_overwrite_property, mc_set_unknown, False, mc_error_info_up_level + 1)
             return
         except AmbiguousEnvException as ex:
             msg = "Value for {env} is specified more than once, with no single most specific group or direct env:".format(env=current_env)
