@@ -662,7 +662,7 @@ class _ConfigItemBase(_ConfigBase):
 
         if isinstance(repeatable_cls_or_dict, RepeatableDict):
             # Get class of first item for error message
-            for item in repeatable_cls_or_dict.values():
+            for item in repeatable_cls_or_dict.values():  # pragma: no branch
                 repeatable_cls_or_dict = type(item)
                 break
 

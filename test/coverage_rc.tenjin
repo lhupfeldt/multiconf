@@ -41,8 +41,6 @@ partial_branches =
 
     for index, gg in enumerate\(env_groups\):
 
-    # Get the first item to use for error message
-
 omit =
     test/*
     setup.py
