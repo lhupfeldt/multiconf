@@ -336,3 +336,5 @@ class EnvFactory(object):
 
 class NO_ENV(object):
     mask = 0
+    name = "MC_NO_ENV"
+    lookup_order = ()

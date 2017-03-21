@@ -350,8 +350,7 @@ class _ConfigBase(object):
                     if self._mc_where == Where.FROZEN:
                         msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
                         msg += "Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
-                        self._mc_print_error_caller(msg, mc_error_info_up_level)
-                        return
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)  # Note: This always raises en exception
 
             except KeyError:
                 old_value = MC_NO_VALUE
@@ -456,10 +455,6 @@ class _ConfigBase(object):
                 value = env_values[eg.name]
                 msg += "\nvalue: " + repr(value) + ", from: " + repr(eg)
             self._mc_print_error_caller(msg, mc_error_info_up_level)
-        except AttributeError:
-            if current_env is NO_ENV:
-                self._mc_setattr_disabled(None, attr_name, None, None, None, None, None, None)
-            raise
 
     def __getattr__(self, attr_name):
         # Only called if self.<attr_name> is not found
