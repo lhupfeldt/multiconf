@@ -93,7 +93,7 @@ class _ConfigBase(object):
         """Return the named_as property set by the @named_as decorator"""
         return cls._mc_deco_named_as or cls.__name__
 
-    def json(self, compact=False, sort_attributes=False, property_methods=True, builders=False, skipkeys=True, warn_nesting=None):
+    def json(self, compact=False, sort_attributes=False, property_methods=True, builders=False, skipkeys=True, warn_nesting=None, show_all_envs=False):
         """See json_output.ConfigItemEncoder for parameters"""
         filter_callable = self._mc_root._mc_json_filter
         fallback_callable = self._mc_root._mc_json_fallback
@@ -101,7 +101,8 @@ class _ConfigBase(object):
                                     compact=compact, sort_attributes=sort_attributes, property_methods=property_methods,
                                     builders=builders, warn_nesting=warn_nesting,
                                     multiconf_base_type=_ConfigBase, multiconf_builder_type=_ConfigBuilder,
-                                    multiconf_property_wrapper_type=_McPropertyWrapper)
+                                    multiconf_property_wrapper_type=_McPropertyWrapper,
+                                    show_all_envs=show_all_envs)
         # python3 doesn't need  separators=(',', ': ')
         json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
         self._mc_root._mc_json_errors = encoder.num_errors

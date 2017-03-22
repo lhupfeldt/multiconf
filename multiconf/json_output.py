@@ -56,7 +56,7 @@ class ConfigItemEncoder(object):
     recursion_check.warn_nesting = _warn_json_nesting
 
     def __init__(self, filter_callable, fallback_callable, compact, sort_attributes, property_methods, builders, warn_nesting,
-                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type):
+                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs):
         """Encoder for json.
 
         Arguments:
