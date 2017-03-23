@@ -222,7 +222,7 @@ _json_dump_ref_outside_exluded_item_expected_json = """{
         "__class__": "Env",
         "name": "prod"
     },
-    "aa": "#outside-ref: Excluded: <class 'test.utils.tstclasses.ItemWithName'>: name: Tootsi"
+    "aa": "#outside-ref: Excluded: <class 'test.utils.tstclasses.ItemWithName'>, name: Tootsi"
 }"""
 
 def test_json_dump_ref_outside_exluded_item():

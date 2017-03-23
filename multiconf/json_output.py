@@ -88,6 +88,7 @@ class ConfigItemEncoder(object):
         self.start_obj = None
         self.num_errors = 0
         self.num_invalid_usages = 0
+        self.show_all_envs = show_all_envs
 
         if warn_nesting != None:
             self.recursion_check.warn_nesting = warn_nesting
@@ -105,17 +106,34 @@ class ConfigItemEncoder(object):
             return OrderedDict((_class_tuple(obj, msg),))
         return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', ref_id(obj))))
 
-    def _excl_str(self, objval):
-        return ' excluded' if not objval else ''
+    def _identification_msg_str(self, objval):
+        """Generate a string which may identify an item which is not itself being dumped"""
+        mc_key_msg = _attr_ref_msg(objval, 'mc_key')
+        name_msg = _attr_ref_msg(objval, 'name')
+        id_msg = _attr_ref_msg(objval, 'id')
+        additionl_ref_info_msg = ''.join([', ' + msg for msg in (id_msg, name_msg, mc_key_msg) if msg])
+        cls_msg = repr(type(objval)) if objval else repr(objval)
+        return cls_msg + additionl_ref_info_msg
+
+    def _excl_and_builder_str(self, objval):
+        excl = ' excluded' if not objval else ''
+        if isinstance(objval, self.multiconf_builder_type):
+            bldr = ' builder'
+            id_msg = (", id: " + repr(ref_id(objval))) if self.builders else (" " + self._identification_msg_str(objval))
+        else:
+            bldr = ''
+            id_msg = ", id: " + repr(ref_id(objval))
+
+        return excl + bldr + id_msg
 
     def _ref_earlier_str(self, objval):
-        return "#ref" + self._excl_str(objval) + ", id: " + repr(ref_id(objval))
+        return "#ref" + self._excl_and_builder_str(objval)
 
     def _ref_later_str(self, objval):
-        return "#ref later" + self._excl_str(objval) + ", id: " + repr(ref_id(objval))
+        return "#ref later" + self._excl_and_builder_str(objval)
 
     def _ref_self_str(self, objval):
-        return "#ref self" + self._excl_str(objval) + ", id: " + repr(ref_id(objval))
+        return "#ref self" + self._excl_and_builder_str(objval)
 
     def _ref_mc_item_str(self, objval):
         if ref_id(objval) in self.seen:
@@ -134,31 +152,77 @@ class ConfigItemEncoder(object):
             return self._ref_earlier_str(child_obj)
 
         if isinstance(child_obj, self.multiconf_base_type):
-            top = child_obj
             contained_in = child_obj._mc_contained_in
-            if contained_in is obj:
-                # This is the actual object, not a reference
-                return child_obj
-
             while contained_in is not None:
                 if contained_in is self.start_obj:
                     # We know we are referencing a later object, because it was not in 'seen'
                     return self._ref_later_str(child_obj)
-                top = contained_in
                 contained_in = contained_in._mc_contained_in
-            else:
-                # We found a reference to an item which is outside of the currently dumped hierarchy
-                # Showing ref_id(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
-                ref_msg = "#outside-ref: "
-                mc_key_msg = _attr_ref_msg(child_obj, 'mc_key')
-                name_msg = _attr_ref_msg(child_obj, 'name')
-                id_msg = _attr_ref_msg(child_obj, 'id')
-                additionl_ref_info_msg = ', '.join([msg for msg in (id_msg, name_msg, mc_key_msg) if msg])
-                additionl_ref_info_msg = ': ' + additionl_ref_info_msg if additionl_ref_info_msg else ''
-                cls_msg = child_obj.__class__.__name__  if child_obj else repr(child_obj)
-                return ref_msg + cls_msg + additionl_ref_info_msg
+
+            # We found a reference to an item which is outside of the currently dumped hierarchy
+            # Showing ref_id(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
+            return "#outside-ref: " + self._identification_msg_str(child_obj)
 
         return child_obj
+
+    def _handle_one_attr(self, obj, entries, attributes_overriding_property, attr_dict, key, mc_attr):
+        overridden_attr = False
+        try:
+            val = orig_val = mc_attr.env_values[obj.env]
+            if key in entries:
+                attributes_overriding_property.add(key)
+                overridden_attr = key + ' #!overrides @property'
+        except KeyError as ex:
+            # mc_attribute overriding @property OR the value for current env has not yet been set
+            try:
+                val = orig_val = getattr(obj, key)
+                overridden_attr = key + ' #value for current env provided by @property'
+            except AttributeError:
+                val = orig_val = McInvalidValue.MC_NO_VALUE
+
+        if self.user_filter_callable:
+            key, val = self.user_filter_callable(obj, key, val)
+            if key is False:
+                return
+
+        val = self._check_nesting(obj, val)
+        if val != McInvalidValue.MC_NO_VALUE:
+            if isinstance(val, Mapping):
+                new_val = OrderedDict()
+                for inner_key, maybeitem in val.items():
+                    if not isinstance(maybeitem, self.multiconf_base_type):
+                        new_val[inner_key] = maybeitem
+                        continue
+                    new_val[inner_key] = self._ref_mc_item_str(maybeitem)
+                attr_dict[key] = new_val
+            else:
+                try:
+                    iterable = iter(val)
+                except TypeError:
+                    attr_dict[key] = val
+                else:
+                    # TODO: Include type of iterable in json meta info
+                    if isinstance(orig_val, str):
+                        attr_dict[key] = val
+                    else:
+                        new_val = []
+                        found_mc_ref = False
+                        for maybeitem in val:
+                            if not isinstance(maybeitem, self.multiconf_base_type):
+                                new_val.append(maybeitem)
+                                continue
+                            found_mc_ref = True
+                            new_val.append(self._ref_mc_item_str(maybeitem))
+                        if found_mc_ref:
+                            attr_dict[key] = new_val
+                        else:
+                            # We leave this to be handled later
+                            attr_dict[key] = val
+
+        if overridden_attr:
+            attr_dict[overridden_attr] = True
+        if val == McInvalidValue.MC_NO_VALUE:
+            attr_dict[key + ' #no value for current env'] = True
 
     def __call__(self, obj):
         if ConfigItemEncoder.recursion_check.in_default:
@@ -178,6 +242,9 @@ class ConfigItemEncoder(object):
             self.seen[ref_id(obj)] = obj
 
             if isinstance(obj, self.multiconf_base_type):
+                if not self.builders and isinstance(obj, self.multiconf_builder_type):
+                    return
+
                 # Handle ConfigItems", type(obj)
                 dd = self._mc_class_dict(obj)
                 if not self.start_obj:
@@ -195,7 +262,7 @@ class ConfigItemEncoder(object):
                     traceback.print_exception(*sys.exc_info())
                     dd['__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included'] = repr(ex)
 
-                # Handle attributes
+                # --- Handle attributes ---
                 attributes_overriding_property = set()
                 if self.sort_attributes:
                     attr_dict = {}
@@ -203,72 +270,13 @@ class ConfigItemEncoder(object):
                     attr_dict = dd
 
                 for key, mc_attr in obj._mc_attributes.items():
-                    overridden_attr = False
-                    try:
-                        val = orig_val = mc_attr.env_values[obj.env]
-                        if key in entries:
-                            attributes_overriding_property.add(key)
-                            overridden_attr = key + ' #!overrides @property'
-                    except KeyError as ex:
-                        # mc_attribute overriding @property OR the value for current env has not yet been set
-                        try:
-                            val = orig_val = getattr(obj, key)
-                            overridden_attr = key + ' #value for current env provided by @property'
-                        except AttributeError:
-                            val = orig_val = McInvalidValue.MC_NO_VALUE
-
-                    if self.user_filter_callable:
-                        key, val = self.user_filter_callable(obj, key, val)
-                        if key is False:
-                            continue
-
-                    if not self.builders and isinstance(val, self.multiconf_builder_type):
-                        # TODO: 'ref builder' A reference from an atribute to a builder
-                        continue
-
-                    val = self._check_nesting(obj, val)
-                    if val != McInvalidValue.MC_NO_VALUE:
-                        if isinstance(val, Mapping):
-                            new_val = OrderedDict()
-                            for inner_key, maybeitem in val.items():
-                                if not isinstance(maybeitem, self.multiconf_base_type):
-                                    new_val[inner_key] = maybeitem
-                                    continue
-                                new_val[inner_key] = self._ref_mc_item_str(maybeitem)
-                            attr_dict[key] = new_val
-                        else:
-                            try:
-                                iterable = iter(val)
-                            except TypeError:
-                                attr_dict[key] = val
-                            else:
-                                # TODO: Include type of iterable in json meta info
-                                if isinstance(orig_val, str):
-                                    attr_dict[key] = val
-                                else:
-                                    new_val = []
-                                    found_mc_ref = False
-                                    for maybeitem in val:
-                                        if not isinstance(maybeitem, self.multiconf_base_type):
-                                            new_val.append(maybeitem)
-                                            continue
-                                        found_mc_ref = True
-                                        new_val.append(self._ref_mc_item_str(maybeitem))
-                                    if found_mc_ref:
-                                        attr_dict[key] = new_val
-                                    else:
-                                        # We leave this to be handled later
-                                        attr_dict[key] = val
-
-                    if overridden_attr:
-                        attr_dict[overridden_attr] = True
-                    if val == McInvalidValue.MC_NO_VALUE:
-                        attr_dict[key + ' #no value for current env'] = True
+                    self._handle_one_attr(obj, entries, attributes_overriding_property, attr_dict, key, mc_attr)
 
                 if self.sort_attributes:
                     for key in sorted(attr_dict):
                         dd[key] = attr_dict[key]
 
+                # --- Handle child items ---
                 for key, item in obj._mc_items.items():
                     if not self.builders and isinstance(item, self.multiconf_builder_type):
                         continue

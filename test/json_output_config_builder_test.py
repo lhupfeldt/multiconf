@@ -1,16 +1,13 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys
-from collections import OrderedDict
-import pytest
-
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageException, ConfigException, ConfigBuilder, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.compare_json import compare_json
-from .utils.tstclasses import ItemWithName, ItemWithAA
+from .utils.utils import py3_local
+from .utils.tstclasses import ItemWithName
 
 
 ef = EnvFactory()
@@ -295,8 +292,6 @@ def test_json_dump_configbuilder():
     assert compare_json(cr.ys['server2'], _json_dump_configbuilder_expected_json_repeatable_item, replace_builders=False, dump_builders=False, test_decode=True)
 
 
-
-
 def test_json_dump_with_builders_containment_check():
     @named_as('inners')
     class InnerItem(RepeatableConfigItem):
@@ -349,3 +344,91 @@ def test_json_dump_with_builders_containment_check():
     cr.json(builders=True)
     # TODO
     assert True
+
+
+_json_dump_attr_ref_configbuilder_expected_json = """{
+    "__class__": "ItemWithYs",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "yb_ref": "#ref later builder <class 'test.json_output_config_builder_test.%(py3_local)sYBuilder'>",
+    "ys": {
+        "server1": {
+            "__class__": "Y",
+            "__id__": 0000,
+            "aa": 777
+        },
+        "server2": {
+            "__class__": "Y",
+            "__id__": 0000,
+            "aa": 777
+        }
+    },
+    "aaa": 2,
+    "aaa #static": true
+}"""
+
+_json_dump_attr_ref_configbuilder_expected_json_with_builders = """{
+    "__class__": "ItemWithYs",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "yb_ref": "#ref later builder, id: 0000",
+    "ys": {
+        "server1": {
+            "__class__": "Y",
+            "__id__": 0000,
+            "aa": 777
+        },
+        "server2": {
+            "__class__": "Y",
+            "__id__": 0000,
+            "aa": 777
+        }
+    },
+    "_mc_ConfigBuilder_YBuilder default-builder": {
+        "__class__": "YBuilder",
+        "__id__": 0000,
+        "b": 27,
+        "start": 1
+    },
+    "aaa": 2,
+    "aaa #static": true
+}"""
+
+def test_json_dump_attr_ref_configbuilder():
+    class YBuilder(ConfigBuilder):
+        def __init__(self, start=1):
+            super(YBuilder, self).__init__()
+            self.start = start
+
+        def mc_build(self):
+            for num in range(self.start, self.start + self.contained_in.aaa):
+                Y('server%d' % num)
+
+    @nested_repeatables('ys')
+    class ItemWithYs(ConfigItem):
+        aaa = 2
+
+    @named_as('ys')
+    class Y(RepeatableConfigItem):
+        def __init__(self, mc_key):
+            super(Y, self).__init__(mc_key=mc_key)
+            self.aa = 777
+
+    @mc_config(ef)
+    def _(_):
+        with ItemWithYs() as cr:
+            with YBuilder() as yb1:
+                yb1.setattr('b', default=27, mc_set_unknown=True)
+            cr.setattr('yb_ref', default=yb1, mc_set_unknown=True)
+
+    cr = ef.config(prod).ItemWithYs
+
+    assert compare_json(cr, _json_dump_attr_ref_configbuilder_expected_json % dict(py3_local=py3_local()),
+                        replace_builders=False, dump_builders=False, test_decode=True)
+    assert compare_json(cr, _json_dump_attr_ref_configbuilder_expected_json_with_builders, replace_builders=True)
