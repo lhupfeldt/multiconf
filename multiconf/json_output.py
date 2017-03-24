@@ -9,7 +9,7 @@ import types
 
 from . import envs
 from .values import McInvalidValue
-from .config_errors import InvalidUsageException, ConfigException, ConfigExcludedAttributeError
+from .config_errors import InvalidUsageException, ConfigExcludedAttributeError
 from .bases import get_bases
 from .attribute import Where
 
@@ -165,64 +165,55 @@ class ConfigItemEncoder(object):
 
         return child_obj
 
-    def _handle_one_attr(self, obj, entries, attributes_overriding_property, attr_dict, key, mc_attr):
-        overridden_attr = False
+    def _handle_one_attr(self, obj, entries, attributes_overriding_property, key, mc_attr):
+        attr_inf = []
         try:
-            val = orig_val = mc_attr.env_values[obj.env]
+            val = mc_attr.env_values[obj.env]
             if key in entries:
                 attributes_overriding_property.add(key)
-                overridden_attr = key + ' #!overrides @property'
+                attr_inf = [(key + ' #!overrides @property', True)]
         except KeyError as ex:
             # mc_attribute overriding @property OR the value for current env has not yet been set
             try:
-                val = orig_val = getattr(obj, key)
-                overridden_attr = key + ' #value for current env provided by @property'
+                val = getattr(obj, key)
+                attr_inf = [(key + ' #value for current env provided by @property', True)]
             except AttributeError:
-                val = orig_val = McInvalidValue.MC_NO_VALUE
+                val = McInvalidValue.MC_NO_VALUE
 
         if self.user_filter_callable:
             key, val = self.user_filter_callable(obj, key, val)
             if key is False:
-                return
+                return []
 
         val = self._check_nesting(obj, val)
-        if val != McInvalidValue.MC_NO_VALUE:
-            if isinstance(val, Mapping):
-                new_val = OrderedDict()
-                for inner_key, maybeitem in val.items():
-                    if not isinstance(maybeitem, self.multiconf_base_type):
-                        new_val[inner_key] = maybeitem
-                        continue
-                    new_val[inner_key] = self._ref_mc_item_str(maybeitem)
-                attr_dict[key] = new_val
-            else:
-                try:
-                    iterable = iter(val)
-                except TypeError:
-                    attr_dict[key] = val
-                else:
-                    # TODO: Include type of iterable in json meta info
-                    if isinstance(orig_val, str):
-                        attr_dict[key] = val
-                    else:
-                        new_val = []
-                        found_mc_ref = False
-                        for maybeitem in val:
-                            if not isinstance(maybeitem, self.multiconf_base_type):
-                                new_val.append(maybeitem)
-                                continue
-                            found_mc_ref = True
-                            new_val.append(self._ref_mc_item_str(maybeitem))
-                        if found_mc_ref:
-                            attr_dict[key] = new_val
-                        else:
-                            # We leave this to be handled later
-                            attr_dict[key] = val
-
-        if overridden_attr:
-            attr_dict[overridden_attr] = True
         if val == McInvalidValue.MC_NO_VALUE:
-            attr_dict[key + ' #no value for current env'] = True
+            return [(key + ' #no value for current env', True)]
+
+        if isinstance(val, Mapping):
+            new_val = OrderedDict()
+            for inner_key, maybeitem in val.items():
+                if not isinstance(maybeitem, self.multiconf_base_type):
+                    new_val[inner_key] = maybeitem
+                    continue
+                new_val[inner_key] = self._ref_mc_item_str(maybeitem)
+            return [(key, new_val)] + attr_inf
+
+        try:
+            iterable = iter(val)
+            # TODO?: Include type of iterable in json meta info
+        except TypeError:
+            return [(key, val)] + attr_inf
+
+        if isinstance(val, str):
+            return [(key, val)] + attr_inf
+
+        new_val = []
+        for maybeitem in val:
+            if not isinstance(maybeitem, self.multiconf_base_type):
+                new_val.append(maybeitem)
+                continue
+            new_val.append(self._ref_mc_item_str(maybeitem))
+        return [(key, new_val)] + attr_inf
 
     def __call__(self, obj):
         if ConfigItemEncoder.recursion_check.in_default:
@@ -242,9 +233,6 @@ class ConfigItemEncoder(object):
             self.seen[ref_id(obj)] = obj
 
             if isinstance(obj, self.multiconf_base_type):
-                if not self.builders and isinstance(obj, self.multiconf_builder_type):
-                    return
-
                 # Handle ConfigItems", type(obj)
                 dd = self._mc_class_dict(obj)
                 if not self.start_obj:
@@ -270,7 +258,9 @@ class ConfigItemEncoder(object):
                     attr_dict = dd
 
                 for key, mc_attr in obj._mc_attributes.items():
-                    self._handle_one_attr(obj, entries, attributes_overriding_property, attr_dict, key, mc_attr)
+                    attr_inf = self._handle_one_attr(obj, entries, attributes_overriding_property, key, mc_attr)
+                    for key, val in attr_inf:
+                        attr_dict[key] = val
 
                 if self.sort_attributes:
                     for key in sorted(attr_dict):
