@@ -19,6 +19,7 @@ from .utils.tstclasses import ItemWithAA
 ef = EnvFactory()
 pp = ef.Env('pp')
 prod = ef.Env('prod')
+g_p = ef.EnvGroup('g_p', pp, prod)
 
 ef2_prod = EnvFactory()
 prod2 = ef2_prod.Env('prod')
@@ -225,7 +226,7 @@ def test_json_dump_cyclic_references_in_conf_items():
         with root(aa=0):
             with NestedRepeatable(mc_key='a1', some_value=27) as ref_obj1:
                 ref_obj1.setattr('some_value', pp=1, prod=2)
-        
+
             with NestedRepeatable(mc_key='b1', someattr=12):
                 NestedRepeatable(mc_key='a2', referenced_item=ref_obj1)
                 with NestedRepeatable(mc_key='b2', a=MC_REQUIRED) as ref_obj2:
@@ -837,7 +838,7 @@ def test_json_dump_dir_error(capsys):
             with Nested() as nn:
                 nn.aa = 2
 
-    cr = ef.config(prod).ItemWithAA                
+    cr = ef.config(prod).ItemWithAA
     cr.json()
     _sout, serr = capsys.readouterr()
     # pylint: disable=W0212
@@ -1423,3 +1424,63 @@ def test_static_member_inherited_mc():
 
     cr = ef.config(prod)
     assert compare_json(cr, _static_member_inherited_mc_expected_json)
+
+
+_env_ref_expected_json = """{
+    "__class__": "_ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "Xx": {
+        "__class__": "Xx",
+        "__id__": 0000,
+        "env_ref": {
+            "__class__": "Env",
+            "name": "pp"
+        }
+    }
+}"""
+
+def test_env_ref():
+    class Xx(ConfigItem):
+        def mc_init(self):
+            self.setattr('env_ref', default=pp, mc_set_unknown=True)
+
+    @mc_config(ef)
+    def _(root):
+        Xx()
+
+    cr = ef.config(prod)
+    assert compare_json(cr, _env_ref_expected_json)
+
+
+_envgroup_ref_expected_json = """{
+    "__class__": "_ConfigRoot",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "Xx": {
+        "__class__": "Xx",
+        "__id__": 0000,
+        "egref": {
+            "__class__": "EnvGroup",
+            "name": "g_p"
+        }
+    }
+}"""
+
+def test_envgroup_ref():
+    class Xx(ConfigItem):
+        def mc_init(self):
+            self.setattr('egref', default=g_p, mc_set_unknown=True)
+
+    @mc_config(ef)
+    def _(root):
+        Xx()
+
+    cr = ef.config(prod)
+    assert compare_json(cr, _envgroup_ref_expected_json)

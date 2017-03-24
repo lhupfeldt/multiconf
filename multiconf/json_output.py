@@ -228,7 +228,7 @@ class ConfigItemEncoder(object):
         try:
             ConfigItemEncoder.recursion_check.in_default = obj
 
-            if self.seen.get(ref_id(obj)):
+            if self.seen.get(ref_id(obj)) and obj is not self.start_obj.env:
                 return self._ref_earlier_str(obj)
             self.seen[ref_id(obj)] = obj
 
@@ -363,11 +363,7 @@ class ConfigItemEncoder(object):
             if isinstance(obj, envs.BaseEnv):
                 # print "# Handle Env objects", type(obj)
                 dd = OrderedDict((_class_tuple(obj),))
-                if isinstance(obj, envs.EnvGroup):
-                    for group in obj.groups:
-                        dd['name'] = group.name
-                for env in obj.envs:
-                    dd['name'] = env.name
+                dd['name'] = obj.name
                 return dd
 
             if type(obj) == type:
