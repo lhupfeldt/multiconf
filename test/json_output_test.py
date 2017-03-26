@@ -66,13 +66,19 @@ _json_dump_root_expected_json = """{
     }
 }"""
 
+_json_dump_root_no_env_expected_json = """{
+    "__class__": "ConfigItem",
+    "__id__": 0000,
+    "env": "<class 'multiconf.envs.NO_ENV'>"
+}"""
+
 def test_json_dump_root():
     @mc_config(ef)
     def _(rt):
         ConfigItem()
 
     cr = ef.config(prod).ConfigItem
-    assert compare_json(cr, _json_dump_root_expected_json)
+    assert compare_json(cr, _json_dump_root_expected_json, expected_no_env_json=_json_dump_root_no_env_expected_json)
 
 
 _json_dump_simple_expected_json = """{
@@ -147,6 +153,131 @@ _json_dump_simple_expected_json = """{
     }
 }"""
 
+_json_dump_simple_all_envs_expected_json = """{
+    "__class__": "root",
+    "__id__": 0000,
+    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "aa #multiconf attribute": true,
+    "aa": {
+        "pp": 0,
+        "prod": 0
+    },
+    "someitems": {
+        "a-level1": {
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id #multiconf attribute": true,
+            "id": {
+                "pp": "a-level1",
+                "prod": "a-level1"
+            },
+            "someitems": {}
+        },
+        "b-level1": {
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id #multiconf attribute": true,
+            "id": {
+                "pp": "b-level1",
+                "prod": "b-level1"
+            },
+            "someitems": {
+                "a-level2": {
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "id #multiconf attribute": true,
+                    "id": {
+                        "pp": "a-level2",
+                        "prod": "a-level2"
+                    },
+                    "someitems": {}
+                },
+                "b-level2": {
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "id #multiconf attribute": true,
+                    "id": {
+                        "pp": "b-level2",
+                        "prod": "b-level2"
+                    },
+                    "someitems": {
+                        "a-level3": {
+                            "__class__": "NestedRepeatable",
+                            "__id__": 0000,
+                            "id #multiconf attribute": true,
+                            "id": {
+                                "pp": "a-level3",
+                                "prod": "a-level3"
+                            },
+                            "someitems": {}
+                        },
+                        "b-level3": {
+                            "__class__": "NestedRepeatable",
+                            "__id__": 0000,
+                            "id #multiconf attribute": true,
+                            "id": {
+                                "pp": "b-level3",
+                                "prod": "b-level3"
+                            },
+                            "a #multiconf attribute": true,
+                            "a": {
+                                "pp": 2,
+                                "prod": 1
+                            },
+                            "someitems": {}
+                        },
+                        "c-level3": {
+                            "__class__": "NestedRepeatable",
+                            "__id__": 0000,
+                            "id #multiconf attribute": true,
+                            "id": {
+                                "pp": "c-level3",
+                                "prod": "c-level3"
+                            },
+                            "something #multiconf attribute": true,
+                            "something": {
+                                "pp": 1,
+                                "prod": 1
+                            },
+                            "someitems": {}
+                        }
+                    }
+                },
+                "c-level2": {
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "id #multiconf attribute": true,
+                    "id": {
+                        "pp": "c-level2",
+                        "prod": "c-level2"
+                    },
+                    "something #multiconf attribute": true,
+                    "something": {
+                        "pp": 2,
+                        "prod": 2
+                    },
+                    "someitems": {}
+                }
+            }
+        },
+        "c-level1": {
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id #multiconf attribute": true,
+            "id": {
+                "pp": "c-level1",
+                "prod": "c-level1"
+            },
+            "something #multiconf attribute": true,
+            "something": {
+                "pp": 3,
+                "prod": 3
+            },
+            "someitems": {}
+        }
+    }
+}"""
+
 def test_json_dump_simple():
     @mc_config(ef)
     def _(rt):
@@ -163,7 +294,7 @@ def test_json_dump_simple():
             NestedRepeatable(mc_key='c-level1', something=3)
 
     cr = ef.config(prod).root
-    assert compare_json(cr, _json_dump_simple_expected_json, sort_attributes=False)
+    assert compare_json(cr, _json_dump_simple_expected_json, sort_attributes=False, expected_no_env_json=_json_dump_simple_all_envs_expected_json)
 
 
 _json_dump_cyclic_references_in_conf_items_expected_json = """{
@@ -316,8 +447,8 @@ _json_dump_property_attribute_method_override_expected_json = """{
         "__class__": "Nested",
         "__id__": 0000,
         "m": 7,
-        "m #!overrides @property": true,
-        "m #!overridden @property": "1 #calculated"
+        "m #overrides @property": true,
+        "m #overridden @property": "1 #calculated"
     }
 }"""
 
@@ -350,8 +481,26 @@ _json_dump_property_attribute_method_override_other_env_expected_json = """{
         "__class__": "Nested",
         "__id__": 0000,
         "m": 1,
-        "m #value for current env provided by @property": true,
+        "m #value for Env('prod') provided by @property": true,
         "m #calculated": true
+    }
+}"""
+
+_json_dump_property_attribute_method_override_other_env_all_envs_expected_json = """{
+    "__class__": "ConfigItem",
+    "__id__": 0000,
+    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "someitem": {
+        "__class__": "Nested",
+        "__id__": 0000,
+        "m": {
+            "pp": 7,
+            "pp m #overrides @property": true,
+            "prod": 1,
+            "prod m #value for Env('prod') provided by @property": true
+        },
+        "m #multiconf attribute": true,
+        "m #overridden @property": "1 #calculated"
     }
 }"""
 
@@ -369,7 +518,8 @@ def test_json_dump_property_attribute_method_override_other_env():
                 nn.setattr("m", mc_overwrite_property=True, pp=7)
 
     cr = ef.config(prod).ConfigItem
-    assert compare_json(cr, _json_dump_property_attribute_method_override_other_env_expected_json)
+    assert compare_json(cr, _json_dump_property_attribute_method_override_other_env_expected_json,
+                        expected_no_env_json=_json_dump_property_attribute_method_override_other_env_all_envs_expected_json)
     assert cr.someitem.m == 1
 
 

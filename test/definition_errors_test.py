@@ -695,7 +695,7 @@ _attribute_mc_required_args_partial_set_in_init_unfinished_expected_ex = """Ther
         "__class__": "Env",
         "name": "pp"
     },
-    "a #no value for current env": true,
+    "a #no value for Env('pp')": true,
     "b": 17
 }""" + already_printed_msg
 

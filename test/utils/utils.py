@@ -179,7 +179,7 @@ def replace_ids_builder(json_string, named_as=True):
 
 
 _compact_ids_regex = re.compile(r'("),\n *"__id__": ([0-9]+),')
-_compact_calculated_regex = re.compile(r': "?([^"$]+)"?(,\n *"[a-zA-Z0-9_]+ #value for current env provided by @property": true|),\n *"([a-zA-Z0-9_]+) #(calculated|static)": true')
+_compact_calculated_regex = re.compile(r': "?([^"$]+)"?(,\n *"[a-zA-Z0-9_]+ #value for .* provided by @property": true|),\n *"([a-zA-Z0-9_]+) #(calculated|static)": true')
 def to_compact(json_string):
     # There is no named_as in the non-compact format, just insert
     json_string = _compact_ids_regex.sub(r" #as: 'xxxx', id: \2\1,", json_string)

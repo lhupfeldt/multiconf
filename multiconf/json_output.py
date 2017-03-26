@@ -165,29 +165,34 @@ class ConfigItemEncoder(object):
 
         return child_obj
 
-    def _handle_one_attr(self, obj, entries, attributes_overriding_property, key, mc_attr):
+    def _handle_one_attr_one_env(self, obj, entries, attributes_overriding_property, key, mc_attr, env):
         attr_inf = []
         try:
-            val = mc_attr.env_values[obj.env]
+            val = mc_attr.env_values[env]
             if key in entries:
                 attributes_overriding_property.add(key)
-                attr_inf = [(key + ' #!overrides @property', True)]
+                attr_inf = [(key + ' #overrides @property', True)]
         except KeyError as ex:
-            # mc_attribute overriding @property OR the value for current env has not yet been set
+            # mc_attribute overriding @property OR the value for env has not yet been set
             try:
-                val = getattr(obj, key)
-                attr_inf = [(key + ' #value for current env provided by @property', True)]
+                val = obj.getattr(key, env)
+                attr_inf = [('{key} #value for {env} provided by @property'.format(key=key, env=env), True)]
             except AttributeError:
                 val = McInvalidValue.MC_NO_VALUE
 
         if self.user_filter_callable:
-            key, val = self.user_filter_callable(obj, key, val)
-            if key is False:
-                return []
+            try:
+                key, val = self.user_filter_callable(obj, key, val)
+                if key is False:
+                    return []
+            except:
+                # We ignore errors in 'user_filter_callable' when dumping all envs
+                if not self.show_all_envs:
+                    raise
 
         val = self._check_nesting(obj, val)
         if val == McInvalidValue.MC_NO_VALUE:
-            return [(key + ' #no value for current env', True)]
+            return [('{key} #no value for {env}'.format(key=key, env=env), True)]
 
         if isinstance(val, Mapping):
             new_val = OrderedDict()
@@ -214,6 +219,79 @@ class ConfigItemEncoder(object):
                 continue
             new_val.append(self._ref_mc_item_str(maybeitem))
         return [(key, new_val)] + attr_inf
+
+    def _handle_one_dir_entry_one_env(self, key, obj, attributes_overriding_property, dd):
+        if key.startswith('_') or key in self.filter_out_keys or key in obj._mc_items:
+            return
+
+        real_key = key
+        if key in attributes_overriding_property:
+            key += ' #overridden @property'
+
+        try:
+            val = getattr(obj, real_key)
+        except InvalidUsageException as ex:
+            self.num_invalid_usages += 1
+            dd[key + ' #invalid usage context'] = repr(ex)
+            return
+        except Exception as ex:
+            self.num_errors += 1
+            traceback.print_exception(*sys.exc_info())
+            dd[key + ' # json_error trying to handle property method'] = repr(ex)
+            return
+
+        if type(val) == types.MethodType:
+            return
+
+        if self.user_filter_callable:
+            real_key, val = self.user_filter_callable(obj, real_key, val)
+            if real_key is False:
+                return
+
+        if type(val) == type:
+            dd[key] = repr(val)
+            return
+
+        val = self._check_nesting(obj, val)
+
+        # Figure out if the attribute is a @property or a static value
+        for cls in get_bases(object.__getattribute__(obj, '__class__')):
+            try:
+                real_attr = object.__getattribute__(cls, real_key)
+                if isinstance(real_attr, self.multiconf_property_wrapper_type):
+                    val = real_attr.prop.__get__(obj, type(obj))
+                    calc_or_static = _calculated_value
+                elif isinstance(real_attr, property):
+                    calc_or_static = _calculated_value
+                else:
+                    calc_or_static = _static_value
+                break
+            except AttributeError:
+                # This can happen for Builders
+                calc_or_static = _dynamic_value
+
+        if (self.compact or real_key in attributes_overriding_property) and isinstance(val, (str, int, long, float)):
+            dd[key] = str(val) + calc_or_static
+            return
+
+        if isinstance(val, (list, tuple)):
+            new_list = []
+            for item in val:
+                new_list.append(self._check_nesting(obj, item))
+            dd[key] = new_list
+            dd[key + calc_or_static] = True
+            return
+
+        if isinstance(val, Mapping):
+            new_dict = OrderedDict()
+            for item_key, item in val.items():
+                new_dict[item_key] = self._check_nesting(obj, item)
+            dd[key] = new_dict
+            dd[key + calc_or_static] = True
+            return
+
+        dd[key] = val
+        dd[key + calc_or_static] = True
 
     def __call__(self, obj):
         if ConfigItemEncoder.recursion_check.in_default:
@@ -257,10 +335,25 @@ class ConfigItemEncoder(object):
                 else:
                     attr_dict = dd
 
-                for key, mc_attr in obj._mc_attributes.items():
-                    attr_inf = self._handle_one_attr(obj, entries, attributes_overriding_property, key, mc_attr)
-                    for key, val in attr_inf:
-                        attr_dict[key] = val
+                if not self.show_all_envs:
+                    for key, mc_attr in obj._mc_attributes.items():
+                        attr_inf = self._handle_one_attr_one_env(obj, entries, attributes_overriding_property, key, mc_attr, obj.env)
+                        for key, val in attr_inf:
+                            attr_dict[key] = val
+                else:
+                    for attr_key, mc_attr in obj._mc_attributes.items():
+                        env_values = OrderedDict()
+                        for env in obj.env_factory.envs.values():
+                            attr_inf = self._handle_one_attr_one_env(obj, entries, attributes_overriding_property, attr_key, mc_attr, env)
+                            if attr_inf:
+                                key, val = attr_inf[0]
+                                env_values[env.name] = val
+                            if len(attr_inf) > 1:
+                                for key, val in attr_inf[1:]:
+                                    env_values[env.name + ' ' + key] = val
+                        if env_values:
+                            attr_dict[attr_key + ' #multiconf attribute'] = True
+                            attr_dict[attr_key] = env_values
 
                 if self.sort_attributes:
                     for key in sorted(attr_dict):
@@ -286,78 +379,9 @@ class ConfigItemEncoder(object):
                     # Note also excludes class/static members
                     return dd
 
+                # --- Handle results form dir() call ---
                 for key in entries:
-                    if key.startswith('_') or key in self.filter_out_keys or key in obj._mc_items:
-                        continue
-
-                    real_key = key
-                    if key in attributes_overriding_property:
-                        key += ' #!overridden @property'
-
-                    try:
-                        val = getattr(obj, real_key)
-                    except InvalidUsageException as ex:
-                        self.num_invalid_usages += 1
-                        dd[key + ' #invalid usage context'] = repr(ex)
-                        continue
-                    except Exception as ex:
-                        self.num_errors += 1
-                        traceback.print_exception(*sys.exc_info())
-                        dd[key + ' # json_error trying to handle property method'] = repr(ex)
-                        continue
-
-                    if type(val) == types.MethodType:
-                        continue
-
-                    if self.user_filter_callable:
-                        real_key, val = self.user_filter_callable(obj, real_key, val)
-                        if real_key is False:
-                            continue
-
-                    if type(val) == type:
-                        dd[key] = repr(val)
-                        continue
-
-                    val = self._check_nesting(obj, val)
-
-                    # Figure out if the attribute is a @property or a static value
-                    for cls in get_bases(object.__getattribute__(obj, '__class__')):
-                        try:
-                            real_attr = object.__getattribute__(cls, real_key)
-                            if isinstance(real_attr, self.multiconf_property_wrapper_type):
-                                val = real_attr.prop.__get__(obj, type(obj))
-                                calc_or_static = _calculated_value
-                            elif isinstance(real_attr, property):
-                                calc_or_static = _calculated_value
-                            else:
-                                calc_or_static = _static_value
-                            break
-                        except AttributeError:
-                            # This can happen for Builders
-                            calc_or_static = _dynamic_value
-
-                    if (self.compact or real_key in attributes_overriding_property) and isinstance(val, (str, int, long, float)):
-                        dd[key] = str(val) + calc_or_static
-                        continue
-
-                    if isinstance(val, (list, tuple)):
-                        new_list = []
-                        for item in val:
-                            new_list.append(self._check_nesting(obj, item))
-                        dd[key] = new_list
-                        dd[key + calc_or_static] = True
-                        continue
-
-                    if isinstance(val, Mapping):
-                        new_dict = OrderedDict()
-                        for item_key, item in val.items():
-                            new_dict[item_key] = self._check_nesting(obj, item)
-                        dd[key] = new_dict
-                        dd[key + calc_or_static] = True
-                        continue
-
-                    dd[key] = val
-                    dd[key + calc_or_static] = True
+                    self._handle_one_dir_entry_one_env(key, obj, attributes_overriding_property, dd)
                 return dd
 
             if isinstance(obj, envs.BaseEnv):
