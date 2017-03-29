@@ -78,7 +78,7 @@ def test_json_dump_root():
         ConfigItem()
 
     cr = ef.config(prod).ConfigItem
-    assert compare_json(cr, _json_dump_root_expected_json, expected_no_env_json=_json_dump_root_no_env_expected_json)
+    assert compare_json(cr, _json_dump_root_expected_json, expected_all_envs_json=_json_dump_root_no_env_expected_json)
 
 
 _json_dump_simple_expected_json = """{
@@ -157,68 +157,40 @@ _json_dump_simple_all_envs_expected_json = """{
     "__class__": "root",
     "__id__": 0000,
     "env": "<class 'multiconf.envs.NO_ENV'>",
-    "aa #multiconf attribute": true,
-    "aa": {
-        "pp": 0,
-        "prod": 0
-    },
+    "aa": 0,
     "someitems": {
         "a-level1": {
             "__class__": "NestedRepeatable",
             "__id__": 0000,
-            "id #multiconf attribute": true,
-            "id": {
-                "pp": "a-level1",
-                "prod": "a-level1"
-            },
+            "id": "a-level1",
             "someitems": {}
         },
         "b-level1": {
             "__class__": "NestedRepeatable",
             "__id__": 0000,
-            "id #multiconf attribute": true,
-            "id": {
-                "pp": "b-level1",
-                "prod": "b-level1"
-            },
+            "id": "b-level1",
             "someitems": {
                 "a-level2": {
                     "__class__": "NestedRepeatable",
                     "__id__": 0000,
-                    "id #multiconf attribute": true,
-                    "id": {
-                        "pp": "a-level2",
-                        "prod": "a-level2"
-                    },
+                    "id": "a-level2",
                     "someitems": {}
                 },
                 "b-level2": {
                     "__class__": "NestedRepeatable",
                     "__id__": 0000,
-                    "id #multiconf attribute": true,
-                    "id": {
-                        "pp": "b-level2",
-                        "prod": "b-level2"
-                    },
+                    "id": "b-level2",
                     "someitems": {
                         "a-level3": {
                             "__class__": "NestedRepeatable",
                             "__id__": 0000,
-                            "id #multiconf attribute": true,
-                            "id": {
-                                "pp": "a-level3",
-                                "prod": "a-level3"
-                            },
+                            "id": "a-level3",
                             "someitems": {}
                         },
                         "b-level3": {
                             "__class__": "NestedRepeatable",
                             "__id__": 0000,
-                            "id #multiconf attribute": true,
-                            "id": {
-                                "pp": "b-level3",
-                                "prod": "b-level3"
-                            },
+                            "id": "b-level3",
                             "a #multiconf attribute": true,
                             "a": {
                                 "pp": 2,
@@ -229,16 +201,8 @@ _json_dump_simple_all_envs_expected_json = """{
                         "c-level3": {
                             "__class__": "NestedRepeatable",
                             "__id__": 0000,
-                            "id #multiconf attribute": true,
-                            "id": {
-                                "pp": "c-level3",
-                                "prod": "c-level3"
-                            },
-                            "something #multiconf attribute": true,
-                            "something": {
-                                "pp": 1,
-                                "prod": 1
-                            },
+                            "id": "c-level3",
+                            "something": 1,
                             "someitems": {}
                         }
                     }
@@ -246,16 +210,8 @@ _json_dump_simple_all_envs_expected_json = """{
                 "c-level2": {
                     "__class__": "NestedRepeatable",
                     "__id__": 0000,
-                    "id #multiconf attribute": true,
-                    "id": {
-                        "pp": "c-level2",
-                        "prod": "c-level2"
-                    },
-                    "something #multiconf attribute": true,
-                    "something": {
-                        "pp": 2,
-                        "prod": 2
-                    },
+                    "id": "c-level2",
+                    "something": 2,
                     "someitems": {}
                 }
             }
@@ -263,16 +219,8 @@ _json_dump_simple_all_envs_expected_json = """{
         "c-level1": {
             "__class__": "NestedRepeatable",
             "__id__": 0000,
-            "id #multiconf attribute": true,
-            "id": {
-                "pp": "c-level1",
-                "prod": "c-level1"
-            },
-            "something #multiconf attribute": true,
-            "something": {
-                "pp": 3,
-                "prod": 3
-            },
+            "id": "c-level1",
+            "something": 3,
             "someitems": {}
         }
     }
@@ -294,7 +242,7 @@ def test_json_dump_simple():
             NestedRepeatable(mc_key='c-level1', something=3)
 
     cr = ef.config(prod).root
-    assert compare_json(cr, _json_dump_simple_expected_json, sort_attributes=False, expected_no_env_json=_json_dump_simple_all_envs_expected_json)
+    assert compare_json(cr, _json_dump_simple_expected_json, sort_attributes=False, expected_all_envs_json=_json_dump_simple_all_envs_expected_json)
 
 
 _json_dump_cyclic_references_in_conf_items_expected_json = """{
@@ -448,7 +396,7 @@ _json_dump_property_attribute_method_override_expected_json = """{
         "__id__": 0000,
         "m": 7,
         "m #overrides @property": true,
-        "m #overridden @property": "1 #calculated"
+        "m #overridden @property #calculated value was": 1
     }
 }"""
 
@@ -495,12 +443,12 @@ _json_dump_property_attribute_method_override_other_env_all_envs_expected_json =
         "__id__": 0000,
         "m": {
             "pp": 7,
-            "pp m #overrides @property": true,
+            "pp #overrides @property": true,
             "prod": 1,
-            "prod m #value for Env('prod') provided by @property": true
+            "prod #value for Env('prod') provided by @property": true
         },
         "m #multiconf attribute": true,
-        "m #overridden @property": "1 #calculated"
+        "m #overridden @property #calculated value was": 1
     }
 }"""
 
@@ -519,7 +467,7 @@ def test_json_dump_property_attribute_method_override_other_env():
 
     cr = ef.config(prod).ConfigItem
     assert compare_json(cr, _json_dump_property_attribute_method_override_other_env_expected_json,
-                        expected_no_env_json=_json_dump_property_attribute_method_override_other_env_all_envs_expected_json)
+                        expected_all_envs_json=_json_dump_property_attribute_method_override_other_env_all_envs_expected_json)
     assert cr.someitem.m == 1
 
 
@@ -530,6 +478,18 @@ _json_dump_property_method_raises_InvalidUsageException_expected_json = """{
         "__class__": "Env",
         "name": "prod"
     },
+    "aa": 0,
+    "someitem": {
+        "__class__": "Nested",
+        "__id__": 0000,
+        "m #invalid usage context": "InvalidUsageException('No m now',)"
+    }
+}"""
+
+_json_dump_property_method_raises_InvalidUsageException_all_envs_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": "<class 'multiconf.envs.NO_ENV'>",
     "aa": 0,
     "someitem": {
         "__class__": "Nested",
@@ -551,10 +511,11 @@ def test_json_dump_property_method_raises_InvalidUsageException():
             Nested()
 
     cr = ef.config(prod).ItemWithAA
-    assert compare_json(cr, _json_dump_property_method_raises_InvalidUsageException_expected_json)
+    assert compare_json(cr, _json_dump_property_method_raises_InvalidUsageException_expected_json,
+                        expected_all_envs_json=_json_dump_property_method_raises_InvalidUsageException_all_envs_expected_json)
 
 
-_json_dump_property_method_raises_Exception_expected_json = """{
+_json_dump_property_method_raises_exception_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
     "env": {
@@ -565,11 +526,27 @@ _json_dump_property_method_raises_Exception_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m # json_error trying to handle property method": "Exception('Something is wrong',)"
+        "m #json_error trying to handle property method": "Exception('Something is wrong',)"
     }
 }"""
 
-def test_json_dump_property_method_raises_Exception():
+_json_dump_property_method_raises_exception_all_envs_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "aa": {
+        "pp": 1,
+        "prod": 0
+    },
+    "aa #multiconf attribute": true,
+    "someitem": {
+        "__class__": "Nested",
+        "__id__": 0000,
+        "m #json_error trying to handle property method": "Exception('Something is wrong',)"
+    }
+}"""
+
+def test_json_dump_property_method_raises_exception():
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
@@ -578,14 +555,76 @@ def test_json_dump_property_method_raises_Exception():
 
     @mc_config(ef)
     def _(rt):
-        with ItemWithAA(aa=0):
+        with ItemWithAA() as it:
+            it.setattr('aa', default=1, prod=0)
             Nested()
 
     cr = ef.config(prod).ItemWithAA
-    assert compare_json(cr, _json_dump_property_method_raises_Exception_expected_json, expect_num_errors=1)
+    assert compare_json(
+        cr, _json_dump_property_method_raises_exception_expected_json, expect_num_errors=1,
+        expected_all_envs_json=_json_dump_property_method_raises_exception_all_envs_expected_json, expect_all_envs_num_errors=2)
 
 
-_e2b_expected_json_output = _json_dump_property_method_raises_Exception_expected_json.replace('Exception', 'ConfigException')
+_json_dump_property_method_raises_exception_in_pp_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 0,
+    "someitem": {
+        "__class__": "Nested",
+        "__id__": 0000,
+        "aa": 1,
+        "m #json_error trying to handle property method": "Exception('Something is wrong',)"
+    }
+}"""
+
+_json_dump_property_method_raises_exception_in_pp_all_envs_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "aa": 0,
+    "someitem": {
+        "__class__": "Nested",
+        "__id__": 0000,
+        "aa": {
+            "pp": 17,
+            "prod": 1
+        },
+        "aa #multiconf attribute": true,
+        "m #multiconf env specific @property": true,
+        "m": {
+            "pp": 24,
+            "pp #calculated": true,
+            "prod #json_error trying to handle property method": "Exception('Something is wrong',)"
+        }
+    }
+}"""
+
+def test_json_dump_property_method_raises_exception_in_pp():
+    @named_as('someitem')
+    class Nested(ItemWithAA):
+        @property
+        def m(self):
+            if self.aa == 1:
+                raise Exception("Something is wrong")
+            return self.aa + 7
+
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA(aa=0):
+            with Nested() as nn:
+                nn.setattr('aa', default=1, pp=17)
+
+    cr = ef.config(prod).ItemWithAA
+    assert compare_json(
+        cr, _json_dump_property_method_raises_exception_in_pp_expected_json, expect_num_errors=1,
+        expected_all_envs_json=_json_dump_property_method_raises_exception_in_pp_all_envs_expected_json)
+
+
+_e2b_expected_json_output = _json_dump_property_method_raises_exception_expected_json.replace('Exception', 'ConfigException')
 
 def test_json_dump_property_method_raises_ConfigException():
     @named_as('someitem')
@@ -690,7 +729,7 @@ _json_dump_property_method_calls_json_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "other_conf_item # json_error trying to handle property method": "NestedJsonCallError('Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?',)"
+        "other_conf_item #json_error trying to handle property method": "NestedJsonCallError('Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?',)"
     }
 }"""
 
@@ -947,7 +986,7 @@ def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
 _json_dump_dir_error_expected_stderr = """Error in json generation:
 Traceback (most recent call last):
   File "fake_multiconf_dir/json_output.py", line 999, in __call__
-    entries = dir(obj)
+    dir_entries = dir(obj)
   %(file_line)s, in __dir__
     raise Exception('Error in dir()')
 Exception: Error in dir()

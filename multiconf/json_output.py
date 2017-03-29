@@ -165,18 +165,18 @@ class ConfigItemEncoder(object):
 
         return child_obj
 
-    def _handle_one_attr_one_env(self, obj, entries, attributes_overriding_property, key, mc_attr, env):
+    def _handle_one_attr_one_env(self, obj, key, mc_attr, env, attributes_overriding_property, dir_entries):
         attr_inf = []
         try:
             val = mc_attr.env_values[env]
-            if key in entries:
+            if key in dir_entries:
                 attributes_overriding_property.add(key)
-                attr_inf = [(key + ' #overrides @property', True)]
+                attr_inf = [(' #overrides @property', True)]
         except KeyError as ex:
             # mc_attribute overriding @property OR the value for env has not yet been set
             try:
                 val = obj.getattr(key, env)
-                attr_inf = [('{key} #value for {env} provided by @property'.format(key=key, env=env), True)]
+                attr_inf = [(' #value for {env} provided by @property'.format(env=env), True)]
             except AttributeError:
                 val = McInvalidValue.MC_NO_VALUE
 
@@ -184,15 +184,15 @@ class ConfigItemEncoder(object):
             try:
                 key, val = self.user_filter_callable(obj, key, val)
                 if key is False:
-                    return []
-            except:
-                # We ignore errors in 'user_filter_callable' when dumping all envs
-                if not self.show_all_envs:
-                    raise
+                    return key, []
+            except Exception as ex:
+                self.num_errors += 1
+                traceback.print_exception(*sys.exc_info())
+                attr_inf.append((' #json_error calling filter', repr(ex)),)
 
         val = self._check_nesting(obj, val)
         if val == McInvalidValue.MC_NO_VALUE:
-            return [('{key} #no value for {env}'.format(key=key, env=env), True)]
+            return key, [(' #no value for {env}'.format(env=env), True)]
 
         if isinstance(val, Mapping):
             new_val = OrderedDict()
@@ -201,16 +201,16 @@ class ConfigItemEncoder(object):
                     new_val[inner_key] = maybeitem
                     continue
                 new_val[inner_key] = self._ref_mc_item_str(maybeitem)
-            return [(key, new_val)] + attr_inf
+            return key, [('', new_val)] + attr_inf
 
         try:
             iterable = iter(val)
             # TODO?: Include type of iterable in json meta info
         except TypeError:
-            return [(key, val)] + attr_inf
+            return key, [('', val)] + attr_inf
 
         if isinstance(val, str):
-            return [(key, val)] + attr_inf
+            return key, [('', val)] + attr_inf
 
         new_val = []
         for maybeitem in val:
@@ -218,46 +218,53 @@ class ConfigItemEncoder(object):
                 new_val.append(maybeitem)
                 continue
             new_val.append(self._ref_mc_item_str(maybeitem))
-        return [(key, new_val)] + attr_inf
+        return key, [('', new_val)] + attr_inf
 
-    def _handle_one_dir_entry_one_env(self, key, obj, attributes_overriding_property, dd):
+    def _handle_one_dir_entry_one_env(self, obj, key, _val, env, attributes_overriding_property, _dir_entries):
         if key.startswith('_') or key in self.filter_out_keys or key in obj._mc_items:
-            return
+            return key, ()
 
-        real_key = key
+        overridden_property = ''
         if key in attributes_overriding_property:
-            key += ' #overridden @property'
+            overridden_property = ' #overridden @property'
 
+        orig_env = obj._mc_root._mc_env
         try:
-            val = getattr(obj, real_key)
+            obj._mc_root._mc_env = env
+            val = getattr(obj, key)
         except InvalidUsageException as ex:
             self.num_invalid_usages += 1
-            dd[key + ' #invalid usage context'] = repr(ex)
-            return
+            return key, [(overridden_property + ' #invalid usage context', repr(ex))]
         except Exception as ex:
             self.num_errors += 1
             traceback.print_exception(*sys.exc_info())
-            dd[key + ' # json_error trying to handle property method'] = repr(ex)
-            return
+            return key, [(overridden_property + ' #json_error trying to handle property method', repr(ex))]
+        finally:
+            obj._mc_root._mc_env = orig_env
 
         if type(val) == types.MethodType:
-            return
+            return key, ()
 
+        property_inf = []
         if self.user_filter_callable:
-            real_key, val = self.user_filter_callable(obj, real_key, val)
-            if real_key is False:
-                return
+            try:
+                key, val = self.user_filter_callable(obj, key, val)
+                if key is False:
+                    return key, []
+            except Exception as ex:
+                self.num_errors += 1
+                traceback.print_exception(*sys.exc_info())
+                property_inf = [(' #json_error calling filter', repr(ex))]
 
         if type(val) == type:
-            dd[key] = repr(val)
-            return
+            return key, [(overridden_property, repr(val))] + property_inf
 
         val = self._check_nesting(obj, val)
 
         # Figure out if the attribute is a @property or a static value
         for cls in get_bases(object.__getattribute__(obj, '__class__')):
             try:
-                real_attr = object.__getattribute__(cls, real_key)
+                real_attr = object.__getattribute__(cls, key)
                 if isinstance(real_attr, self.multiconf_property_wrapper_type):
                     val = real_attr.prop.__get__(obj, type(obj))
                     calc_or_static = _calculated_value
@@ -270,28 +277,54 @@ class ConfigItemEncoder(object):
                 # This can happen for Builders
                 calc_or_static = _dynamic_value
 
-        if (self.compact or real_key in attributes_overriding_property) and isinstance(val, (str, int, long, float)):
-            dd[key] = str(val) + calc_or_static
-            return
+        if isinstance(val, (str, int, long, float)):
+            if overridden_property:
+                return key, [(overridden_property + calc_or_static + ' value was', val)] + property_inf
+            if self.compact:
+                return key, [('', str(val) + calc_or_static)] + property_inf
+            return key, [('', val), (calc_or_static, True)] + property_inf
 
         if isinstance(val, (list, tuple)):
             new_list = []
             for item in val:
                 new_list.append(self._check_nesting(obj, item))
-            dd[key] = new_list
-            dd[key + calc_or_static] = True
-            return
+            return key, [(overridden_property, new_list), (calc_or_static, True)] + property_inf
 
         if isinstance(val, Mapping):
             new_dict = OrderedDict()
             for item_key, item in val.items():
                 new_dict[item_key] = self._check_nesting(obj, item)
-            dd[key] = new_dict
-            dd[key + calc_or_static] = True
+            return key, [(overridden_property, new_dict), (calc_or_static, True)] + property_inf
+
+        return key, [(overridden_property, val), (calc_or_static, True)] + property_inf
+
+    def _handle_one_value_multiple_envs(self, dd, obj, attr_key, attr_val, env, attributes_overriding_property, dir_entries, one_env_func, multi_value_meta_inf):
+        if not self.show_all_envs:
+            attr_key, property_inf = one_env_func(obj, attr_key, attr_val, env, attributes_overriding_property, dir_entries)
+            for meta_key, val in property_inf:
+                dd[attr_key + meta_key] = val
+            return
+        
+        env_values = OrderedDict()
+        prev_key_property_inf = None
+        multiple_values = False
+        for env in obj.env_factory.envs.values():
+            key_property_inf = one_env_func(obj, attr_key, attr_val, env, attributes_overriding_property, dir_entries)
+            if key_property_inf != prev_key_property_inf:
+                if prev_key_property_inf is not None:
+                    multiple_values = True
+                prev_key_property_inf = key_property_inf
+            attr_key, property_inf = key_property_inf
+            for meta_key, val in property_inf:
+                env_values[env.name + meta_key] = val
+
+        if env_values and multiple_values:
+            dd[attr_key + multi_value_meta_inf] = True
+            dd[attr_key] = env_values
             return
 
-        dd[key] = val
-        dd[key + calc_or_static] = True
+        for meta_key, val in property_inf:
+            dd[attr_key + meta_key] = val
 
     def __call__(self, obj):
         if ConfigItemEncoder.recursion_check.in_default:
@@ -319,9 +352,9 @@ class ConfigItemEncoder(object):
                     # Put 'env' once on the first object
                     dd['env'] = obj.env
 
-                entries = ()
+                dir_entries = ()
                 try:
-                    entries = dir(obj)
+                    dir_entries = dir(obj)
                 except Exception as ex:
                     self.num_errors += 1
                     print("Error in json generation:", file=sys.stderr)
@@ -335,25 +368,10 @@ class ConfigItemEncoder(object):
                 else:
                     attr_dict = dd
 
-                if not self.show_all_envs:
-                    for key, mc_attr in obj._mc_attributes.items():
-                        attr_inf = self._handle_one_attr_one_env(obj, entries, attributes_overriding_property, key, mc_attr, obj.env)
-                        for key, val in attr_inf:
-                            attr_dict[key] = val
-                else:
-                    for attr_key, mc_attr in obj._mc_attributes.items():
-                        env_values = OrderedDict()
-                        for env in obj.env_factory.envs.values():
-                            attr_inf = self._handle_one_attr_one_env(obj, entries, attributes_overriding_property, attr_key, mc_attr, env)
-                            if attr_inf:
-                                key, val = attr_inf[0]
-                                env_values[env.name] = val
-                            if len(attr_inf) > 1:
-                                for key, val in attr_inf[1:]:
-                                    env_values[env.name + ' ' + key] = val
-                        if env_values:
-                            attr_dict[attr_key + ' #multiconf attribute'] = True
-                            attr_dict[attr_key] = env_values
+                for attr_key, mc_attr in obj._mc_attributes.items():
+                    self._handle_one_value_multiple_envs(
+                        attr_dict, obj, attr_key, mc_attr, obj.env, attributes_overriding_property, dir_entries, self._handle_one_attr_one_env,
+                        ' #multiconf attribute')
 
                 if self.sort_attributes:
                     for key in sorted(attr_dict):
@@ -379,9 +397,13 @@ class ConfigItemEncoder(object):
                     # Note also excludes class/static members
                     return dd
 
-                # --- Handle results form dir() call ---
-                for key in entries:
-                    self._handle_one_dir_entry_one_env(key, obj, attributes_overriding_property, dd)
+                # --- Handle results from dir() call ---
+                for attr_key in dir_entries:
+                    self._handle_one_value_multiple_envs(
+                        dd, obj, attr_key, None, obj.env, attributes_overriding_property, None, self._handle_one_dir_entry_one_env,
+                        ' #multiconf env specific @property')
+
+                # --- End handle ConfigItem ---
                 return dd
 
             if isinstance(obj, envs.BaseEnv):
