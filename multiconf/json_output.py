@@ -398,10 +398,19 @@ class ConfigItemEncoder(object):
                     return dd
 
                 # --- Handle results from dir() call ---
+                if self.sort_attributes:
+                    property_dict = {}
+                else:
+                    property_dict = dd
+
                 for attr_key in dir_entries:
                     self._handle_one_value_multiple_envs(
-                        dd, obj, attr_key, None, obj.env, attributes_overriding_property, None, self._handle_one_dir_entry_one_env,
+                        property_dict, obj, attr_key, None, obj.env, attributes_overriding_property, None, self._handle_one_dir_entry_one_env,
                         ' #multiconf env specific @property')
+
+                if self.sort_attributes:
+                    for key in sorted(property_dict):
+                        dd[key] = property_dict[key]
 
                 # --- End handle ConfigItem ---
                 return dd

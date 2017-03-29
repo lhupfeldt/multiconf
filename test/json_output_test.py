@@ -594,12 +594,12 @@ _json_dump_property_method_raises_exception_in_pp_all_envs_expected_json = """{
             "prod": 1
         },
         "aa #multiconf attribute": true,
-        "m #multiconf env specific @property": true,
         "m": {
             "pp": 24,
             "pp #calculated": true,
             "prod #json_error trying to handle property method": "Exception('Something is wrong',)"
-        }
+        },
+        "m #multiconf env specific @property": true
     }
 }"""
 
