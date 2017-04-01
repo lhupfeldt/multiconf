@@ -163,6 +163,12 @@ class _ConfigBase(object):
     # Python2 compatibility
     __nonzero__ = __bool__
 
+    def _mc_exists_in_given_env(self, env):
+        env_mask = env.mask
+        if env_mask & self._mc_excluded:
+            return False
+        return self._mc_handled_env_bits & env_mask
+
     def _mc_exists_in_env(self):
         cr = self._mc_root
         if not cr._mc_config_loaded:

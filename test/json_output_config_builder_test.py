@@ -115,6 +115,166 @@ _json_dump_configbuilder_expected_json_full = """{
     "aaa #static": true
 }"""
 
+_json_dump_configbuilder_all_envs_expected_json_full = """{
+    "__class__": "ItemWithYs",
+    "__id__": 0000,
+    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "ys": {
+        "server1": {
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server1",
+            "server_num": 1,
+            "y_children": {
+                "Hugo": {
+                    "__class__": "YChild",
+                    "__id__": 0000,
+                    "a": 10,
+                    "name": "Hugo"
+                }
+            },
+            "ys": {
+                "server117": {
+                    "__class__": "Y",
+                    "__id__": 0000,
+                    "#item does not exist in": "Env('prod')",
+                    "name": {
+                        "pp": "server117",
+                        "prod #no value for Env('prod')": true
+                    },
+                    "name #multiconf attribute": true,
+                    "server_num": {
+                        "pp": 117,
+                        "prod #no value for Env('prod')": true
+                    },
+                    "server_num #multiconf attribute": true,
+                    "y_children": {
+                        "Hanna": {
+                            "__class__": "YChild",
+                            "__id__": 0000,
+                            "a": 11,
+                            "name": "Hanna"
+                        },
+                        "Herbert": {
+                            "__class__": "YChild",
+                            "__id__": 0000,
+                            "a": 12,
+                            "name": "Herbert"
+                        }
+                    },
+                    "ys": {}
+                },
+                "server118": {
+                    "__class__": "Y",
+                    "__id__": 0000,
+                    "#item does not exist in": "Env('prod')",
+                    "name": {
+                        "pp": "server118",
+                        "prod #no value for Env('prod')": true
+                    },
+                    "name #multiconf attribute": true,
+                    "server_num": {
+                        "pp": 118,
+                        "prod #no value for Env('prod')": true
+                    },
+                    "server_num #multiconf attribute": true,
+                    "y_children": {
+                        "Hanna": "#ref, id: 0000",
+                        "Herbert": "#ref, id: 0000"
+                    },
+                    "ys": {}
+                },
+                "server3": {
+                    "__class__": "Y",
+                    "__id__": 0000,
+                    "#item does not exist in": "Env('pp')",
+                    "name": {
+                        "pp #no value for Env('pp')": true,
+                        "prod": "server3"
+                    },
+                    "name #multiconf attribute": true,
+                    "server_num": {
+                        "pp #no value for Env('pp')": true,
+                        "prod": 3
+                    },
+                    "server_num #multiconf attribute": true,
+                    "y_children": {
+                        "Hanna": "#ref, id: 0000",
+                        "Herbert": "#ref, id: 0000"
+                    },
+                    "ys": {}
+                },
+                "server4": {
+                    "__class__": "Y",
+                    "__id__": 0000,
+                    "#item does not exist in": "Env('pp')",
+                    "name": {
+                        "pp #no value for Env('pp')": true,
+                        "prod": "server4"
+                    },
+                    "name #multiconf attribute": true,
+                    "server_num": {
+                        "pp #no value for Env('pp')": true,
+                        "prod": 4
+                    },
+                    "server_num #multiconf attribute": true,
+                    "y_children": {
+                        "Hanna": "#ref, id: 0000",
+                        "Herbert": "#ref, id: 0000"
+                    },
+                    "ys": {}
+                }
+            }
+        },
+        "server2": {
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server2",
+            "server_num": 2,
+            "y_children": {
+                "Hugo": "#ref, id: 0000"
+            },
+            "ys": {
+                "server117": "#ref, id: 0000",
+                "server118": "#ref, id: 0000",
+                "server3": "#ref, id: 0000",
+                "server4": "#ref, id: 0000"
+            }
+        }
+    },
+    "_mc_ConfigBuilder_YBuilder default-builder": {
+        "__class__": "YBuilder",
+        "__id__": 0000,
+        "b": 27,
+        "start": 1,
+        "y_children": {
+            "Hugo": "#ref, id: 0000"
+        },
+        "_mc_ConfigBuilder_YBuilder default-builder": {
+            "__class__": "YBuilder",
+            "__id__": 0000,
+            "c": 28,
+            "start": {
+                "pp": 117,
+                "prod": 3
+            },
+            "start #multiconf attribute": true,
+            "y_children": {
+                "Hanna": "#ref, id: 0000",
+                "Herbert": "#ref, id: 0000"
+            }
+        },
+        "ys": {
+            "server117": "#ref, id: 0000",
+            "server118": "#ref, id: 0000",
+            "server3": "#ref, id: 0000",
+            "server4": "#ref, id: 0000"
+        }
+    },
+    "aaa": 2,
+    "aaa #static": true
+}"""
+
 _json_dump_configbuilder_expected_json_repeatable_item = """{
     "__class__": "Y",
     "__id__": 0000,
@@ -278,14 +438,16 @@ def test_json_dump_configbuilder():
             with YBuilder() as yb1:
                 yb1.setattr('b', default=27, mc_set_unknown=True)
                 YChild('Hugo', a=10)
-                with YBuilder(start=3) as yb2:
+                with YBuilder() as yb2:
+                    yb2.setattr('start', default=3, pp=117)
                     yb2.setattr('c', default=28, mc_set_unknown=True)
                     YChild('Hanna', a=11)
                     YChild('Herbert', a=12)
 
     cr = ef.config(prod).ItemWithYs
 
-    assert compare_json(cr, _json_dump_configbuilder_expected_json_full, replace_builders=True, test_decode=True)
+    assert compare_json(cr, _json_dump_configbuilder_expected_json_full, replace_builders=True, test_decode=True,
+                        expected_all_envs_json=_json_dump_configbuilder_all_envs_expected_json_full)
     assert compare_json(cr.ys['server2'], _json_dump_configbuilder_expected_json_repeatable_item, replace_builders=True, test_decode=True)
 
     assert compare_json(cr, _json_dump_configbuilder_dont_dump_expected_json_full, replace_builders=False, dump_builders=False, test_decode=True)

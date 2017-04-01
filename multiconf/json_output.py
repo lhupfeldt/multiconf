@@ -352,6 +352,11 @@ class ConfigItemEncoder(object):
                     # Put 'env' once on the first object
                     dd['env'] = obj.env
 
+                if self.show_all_envs:
+                    not_in_envs = [str(env) for env in obj.env_factory.envs.values() if not obj._mc_exists_in_given_env(env)]
+                    if not_in_envs:
+                        dd["#item does not exist in"] = ', '.join(not_in_envs)
+
                 dir_entries = ()
                 try:
                     dir_entries = dir(obj)

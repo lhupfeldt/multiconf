@@ -75,16 +75,33 @@ _include_exclude_for_configitem_expected_json = """{
     "item #Excluded: <class 'test.include_exclude_test.item'>": true
 }"""
 
-_include_exclude_for_decorated_configitem_expected_json = """{
+_include_exclude_for_configitem_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
+    "env": "<class 'multiconf.envs.NO_ENV'>",
     "aa": 1,
-    "item": false,
-    "item #Excluded: <class 'test.include_exclude_test.decorated_item'>": true
+    "item": {
+        "__class__": "item",
+        "__id__": 0000,
+        "#item does not exist in": "Env('dev2'), Env('dev3'), Env('prod')",
+        "anattr": {
+            "dev1": 2,
+            "dev2": 2,
+            "dev3": 2,
+            "pp": 1,
+            "prod": "MC_REQUIRED"
+        },
+        "anattr #multiconf attribute": true,
+        "anotherattr": {
+            "dev1": 1,
+            "dev2": "MC_REQUIRED",
+            "dev3": "MC_REQUIRED",
+            "pp": 2,
+            "prod": "MC_REQUIRED"
+        },
+        "anotherattr #multiconf attribute": true,
+        "b": null
+    }
 }"""
 
 def test_include_for_configitem_with_mc_required():
@@ -100,12 +117,25 @@ def test_include_for_configitem_with_mc_required():
     cr = ef.config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
-    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True,
+                        expected_all_envs_json=_include_exclude_for_configitem_all_envs_expected_json)
 
     cr = ef.config(dev1).ItemWithAA
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
 
+
+_include_exclude_for_decorated_configitem_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 1,
+    "item": false,
+    "item #Excluded: <class 'test.include_exclude_test.decorated_item'>": true
+}"""
 
 def test_include_for_configitem_with_required_decorator():
     @mc_config(ef)
