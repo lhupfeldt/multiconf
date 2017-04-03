@@ -372,7 +372,7 @@ def test_mc_init_simple_items():
             KwargsItem(aa=1, bb=1)
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def _0(_):
         with ConfigItem():
             with X() as x:
                 x.aa = 2
@@ -382,10 +382,10 @@ def test_mc_init_simple_items():
     assert cr.X.aa == 2
     assert cr.X.bb == None  # v6 change: None is no longer overridable
     assert cr.X.KwargsItem.aa == 2
-    assert not hasattr(cr.X.KwargsItem, 'bb')
+    assert cr.X.KwargsItem.bb == 1 # v6 change: 'bb' exist because of object merge
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def _1(_):
         X()
 
     cr = ef2_pp_prod.config(prod2)
@@ -393,6 +393,51 @@ def test_mc_init_simple_items():
     assert cr.X.bb == None  # v6 change: None is no longer overridable
     assert cr.X.KwargsItem.aa == 1
     assert cr.X.KwargsItem.bb == 1
+
+
+def test_mc_init_simple_item_definition_more_specific_env_attr_value_merge_to_item_from_with_block():
+    class XChild(ConfigItem):
+        def __init__(self, aa=None):
+            # Don't try this at home
+            if aa is None:
+                self.setattr('aa', default=1, prod=17)
+            else:
+                self.aa = 1
+
+    class X(ItemWithAA):
+        def mc_init(self):
+            self.aa = 1
+            XChild()
+
+    @mc_config(ef2_pp_prod)
+    def _0(_):
+        with ConfigItem():
+            with X() as x:
+                x.aa = 2
+                XChild(aa=1)
+
+    cr = ef2_pp_prod.config(prod2).ConfigItem
+    assert cr.X.aa == 2
+    assert cr.X.XChild.aa == 17
+
+
+def test_mc_init_simple_item_definition_less_specific_env_attr_value_merge_to_item_from_with_block():
+    class X(ItemWithAA):
+        def mc_init(self):
+            self.aa = 1
+            ItemWithAA(aa=1)
+
+    @mc_config(ef2_pp_prod)
+    def _0(_):
+        with ConfigItem():
+            with X() as x:
+                x.aa = 2
+                with ItemWithAA() as it:
+                    it.setattr('aa', default=1, prod=17)
+
+    cr = ef2_pp_prod.config(prod2).ConfigItem
+    assert cr.X.aa == 2
+    assert cr.X.ItemWithAA.aa == 17
 
 
 def test_nested_mc_init_simple_items():
@@ -415,7 +460,7 @@ def test_nested_mc_init_simple_items():
             KwargsItem(aa=13, bb=13)
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def _0(_):
         with X1() as x:
             x.aa = 1
             KwargsItem(aa=1)
@@ -430,20 +475,20 @@ def test_nested_mc_init_simple_items():
     assert cr.X1.aa == 1
     assert cr.X1.bb == None  # v6 change: None is no longer overridable
     assert cr.X1.KwargsItem.aa == 1
-    assert not hasattr(cr.X1.KwargsItem, 'bb')
+    assert cr.X1.KwargsItem.bb == 11  # v6 change: 'bb' exist because of object merge
 
     assert cr.X1.X2.aa == 2
     assert cr.X1.X2.bb == None  # v6 change: None is no longer overridable
     assert cr.X1.X2.KwargsItem.aa == 2
-    assert not hasattr(cr.X1.X2.KwargsItem, 'bb')
+    assert cr.X1.X2.KwargsItem.bb == 12  # v6 change: 'bb' exist because of object merge
 
     assert cr.X1.X2.X3.aa == 3
     assert cr.X1.X2.X3.bb == None  # v6 change: None is no longer overridable
     assert cr.X1.X2.X3.KwargsItem.aa == 3
-    assert not hasattr(cr.X1.X2.X3.KwargsItem, 'bb')
+    assert cr.X1.X2.X3.KwargsItem.bb == 13  # v6 change: 'bb' exist because of object merge
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def _1(_):
         with X1() as x:
             x.aa = 1
             with X2() as x:

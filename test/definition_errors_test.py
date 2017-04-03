@@ -906,3 +906,51 @@ def test_init_line_num(capsys):
         config_error_mc_required_expected.format(attr='a', env=prod2),
         config_error_mc_required_expected.format(attr='b', env=prod2),
     )
+
+
+def test_mc_init_redefine_item_errors_more_specific_env(capsys):
+    errorline = [None]
+
+    class X(ConfigItem):
+        def mc_init(self):
+            with ItemWithAA() as aai:
+                aai.setattr('aa', prod=1)
+                errorline[0] = next_line_num()
+                aai.setattr('aa', default=2)
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef2_pp_prod)
+        def _0(_):
+            with X() as x:
+                ItemWithAA(aa=7)
+
+    _sout, serr = capsys.readouterr()
+    print(_sout)
+    print(serr)
+    assert serr.startswith(ce(errorline[0], _fully_defined).strip())
+    assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_item_expected_ex % ('prod', 1)
+
+
+def test_mc_init_redefine_item_errors_default(capsys):
+    errorline = [None]
+
+    class X(ConfigItem):
+        def mc_init(self):
+            with ItemWithAA() as aai:
+                aai.setattr('aa', default=1)
+                errorline[0] = next_line_num()
+                aai.setattr('aa', default=2)
+
+    xfail("TODO: This will not raise because the first aai.setatrt do not change the value, so value in second aai.setattr is still from __init__")
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef2_pp_prod)
+        def _0(_):
+            with X() as x:
+                ItemWithAA(aa=7)
+
+    _sout, serr = capsys.readouterr()
+    print(_sout)
+    print(serr)
+    assert serr.startswith(ce(errorline[0], _fully_defined).strip())
+    assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_item_expected_ex % ('prod', 1)
+    

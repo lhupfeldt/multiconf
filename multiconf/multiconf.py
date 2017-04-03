@@ -236,7 +236,7 @@ class _ConfigBase(object):
             child_item._mc_call_post_validate_recursively()
 
     def __enter__(self):
-        self._mc_where = Where.IN_WITH
+        self._mc_where = Where.IN_WITH if self._mc_where != Where.IN_RE_INIT else Where.IN_RE_WITH
         self.__class__._mc_hierarchy.append(self)
         # self.__class__._mc_debug_hierarchy('_ConfigBase.__enter__')
         return self
@@ -327,7 +327,7 @@ class _ConfigBase(object):
 
         env_attr = self._mc_attributes.get(attr_name)
         if env_attr is None:
-            if self._mc_where != Where.IN_INIT and not mc_set_unknown and not prop:
+            if self._mc_where not in (Where.IN_INIT, Where.IN_RE_INIT) and not mc_set_unknown and not prop:
                 msg = "All attributes must be defined in __init__ or set with 'mc_set_unknown'. " + \
                       "Attempting to set attribute '{attr_name}' which does not exist.".format(attr_name=attr_name)
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
@@ -348,8 +348,19 @@ class _ConfigBase(object):
                 if not mc_force:
                     if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
                         # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
-                        if (from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg):
+                        if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
                             return
+
+                    if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
+                        # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
+                        if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
+                            return
+
+                    if self._mc_where == Where.IN_RE_WITH and env_attr.where_from == Where.IN_RE_WITH:
+                        # Trying to set the same attribute again in with block
+                        msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)
+                        return
 
                     if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH:
                         # Trying to set the same attribute again in with block
@@ -609,7 +620,7 @@ class _ConfigBase(object):
 class _ConfigItemBase(_ConfigBase):
     def __init__(self, mc_include=None, mc_exclude=None):
         previous_item = self.__class__._mc_last_item
-        if previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
+        if previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN and previous_item is not self:
             try:
                 previous_item._mc_freeze(mc_error_info_up_level=None)
             except Exception as ex:
@@ -704,7 +715,8 @@ class ConfigItem(_ConfigItemBase):
             if self._mc_handled_env_bits & self._mc_root._mc_env.mask:
                 # We are trying to replace a non-repeatable object. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
-                    return _DummyItem()
+                    self._mc_where = Where.IN_RE_INIT
+                    return self
                 raise ConfigException("Repeated non repeatable conf item: '{name}': {cls}".format(name=name, cls=cls))
             self._mc_handled_env_bits |= self._mc_root._mc_env.mask
 
@@ -743,21 +755,6 @@ class ConfigItem(_ConfigItemBase):
             return self
 
 
-class _DummyItem(_ConfigBase):
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, value, traceback):
-        pass
-
-    def setattr(self, attr_name, mc_overwrite_property=False, mc_set_unknown=False, mc_force=False, mc_error_info_up_level=2,
-                **env_values):
-        pass
-
-    def getattr(self, attr_name, env):
-        pass
-
-
 class RepeatableConfigItem(_ConfigItemBase):
     def __new__(cls, mc_key, *init_args, **init_kwargs):
         # cls._mc_debug_hierarchy('RepeatableConfigItem.__new__')
@@ -775,7 +772,8 @@ class RepeatableConfigItem(_ConfigItemBase):
             if self._mc_handled_env_bits & self._mc_root._mc_env.mask:
                 # We are trying to replace an object with the same mc_key. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
-                    return _DummyItem()
+                    self._mc_where = Where.IN_RE_INIT
+                    return self
                 build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else ""
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
@@ -834,7 +832,8 @@ class _ConfigBuilder(_ConfigItemBase):
             if self._mc_handled_env_bits & self._mc_root._mc_env.mask:
                 # We are trying to replace an object with the same mc_key. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
-                    return _DummyItem()
+                    self._mc_where = Where.IN_RE_INIT
+                    return self
                 build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else ""
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))

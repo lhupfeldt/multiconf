@@ -7,10 +7,12 @@ from enum import Enum
 class Where(Enum):
     NOWHERE = 0
     IN_INIT = 1
-    IN_MC_INIT = 2
-    IN_MC_BUILD = 3
-    IN_WITH = 4
-    FROZEN = 5
+    IN_RE_INIT = 2
+    IN_MC_INIT = 3
+    IN_MC_BUILD = 4
+    IN_WITH = 5
+    IN_RE_WITH = 6
+    FROZEN = 7
 
 
 class _McAttribute(object):

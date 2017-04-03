@@ -137,7 +137,7 @@ def test_mc_init_repeatable_items():
             self.bb = 1
             with X(mc_key='aa', aa=1, bb=1) as x:
                 x.setattr('aa', prod=7)
-            X(mc_key='bb', aa=1, bb=1)
+            X(mc_key='bb', aa=1, bb=2)
             X(mc_key='cc', aa=1, bb=1)
 
     @mc_config(ef)
@@ -146,14 +146,18 @@ def test_mc_init_repeatable_items():
             y.aa = 3
             with X(mc_key='aa', aa=1) as x:
                 x.aa = 3
+            with X(mc_key='bb', aa=1) as x:
+                x.aa = 3
 
     cr = ef.config(prod)
 
     assert cr.Y.aa == 3
-    assert cr.Y.Xs['aa'].aa == 3
-    assert not hasattr(cr.Y.Xs['aa'], 'bb')
-    assert cr.Y.Xs['bb'].aa == 1
-    assert cr.Y.Xs['bb'].bb == 1
+    assert cr.Y.Xs['aa'].aa == 7  # v6 change, pre v6 this was 3, now it will be 7  because of object merge
+    assert cr.Y.Xs['aa'].bb == 1
+    assert cr.Y.Xs['bb'].aa == 3
+    assert cr.Y.Xs['bb'].bb == 2
+    assert cr.Y.Xs['cc'].aa == 1
+    assert cr.Y.Xs['cc'].bb == 1
 
 
 def test_repeatable_items_get():
