@@ -6,7 +6,7 @@ from __future__ import print_function
 from pytest import raises
 
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
-from multiconf.decorators import nested_repeatables, named_as
+from multiconf.decorators import nested_repeatables
 from multiconf.envs import EnvFactory
 
 from .utils.messages import setattr_not_defined_in_init_expected, config_error_mc_required_expected

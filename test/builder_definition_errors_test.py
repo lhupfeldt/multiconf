@@ -4,7 +4,7 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigException
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 

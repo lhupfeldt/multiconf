@@ -5,13 +5,12 @@ from __future__ import print_function
 
 import os.path
 
-import pytest
 from pytest import raises, mark, xfail  # pylint: disable=no-name-in-module
 
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, config_warning, next_line_num, replace_ids, lines_in, start_file_line, file_line, py3_tc
+from .utils.utils import config_error, config_warning, next_line_num, replace_ids, lines_in, start_file_line, py3_tc
 from .utils.messages import already_printed_msg
 from .utils.messages import config_error_mc_required_expected
 from .utils.messages import mc_required_expected

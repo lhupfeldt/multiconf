@@ -6,16 +6,13 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from .utils.utils import config_error, next_line_num, replace_ids, lines_in, py3_local, total_msg, start_file_line, file_line
-from .utils.messages import already_printed_msg, exception_previous_object_expected_stderr
-from .utils.messages import mc_required_expected, config_error_mc_required_expected
-from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
-
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, MC_REQUIRED
 from multiconf.decorators import nested_repeatables, required
 from multiconf.envs import EnvFactory
 
-from utils.messages import not_repeatable_in_parent_msg
+from .utils.utils import config_error, next_line_num, replace_ids, lines_in, py3_local, start_file_line, file_line
+from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
+from .utils.messages import already_printed_msg, mc_required_expected, config_error_mc_required_expected, not_repeatable_in_parent_msg
 
 
 # ef1

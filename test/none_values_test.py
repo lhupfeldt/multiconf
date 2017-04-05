@@ -1,14 +1,13 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import pytest
 from pytest import raises  # pylint: disable=no-name-in-module
 
 from multiconf import mc_config, ConfigItem, ConfigException
 from multiconf.envs import EnvFactory
 
-from utils.messages import config_error_no_value_expected, config_error_never_received_value_expected
-from utils.utils import next_line_num, start_file_line, lines_in
+from .utils.messages import config_error_no_value_expected, config_error_never_received_value_expected
+from .utils.utils import next_line_num, start_file_line, lines_in
 
 
 ef1_prod_pp = EnvFactory()

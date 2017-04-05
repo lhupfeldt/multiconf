@@ -11,7 +11,7 @@ from pytest import raises
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
 from multiconf.envs import EnvFactory
 
-from .utils.messages import already_printed_msg, config_error_mc_required_expected
+from .utils.messages import already_printed_msg
 from .utils.utils import next_line_num, lines_in, start_file_line, replace_ids
 
 

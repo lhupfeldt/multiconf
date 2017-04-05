@@ -9,8 +9,6 @@ from pytest import raises
 
 from multiconf.envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException
 
-from .utils.utils import next_line_num, lines_in, replace_ids
-
 
 def _names(groups):
     return [gg.name for gg in groups]

@@ -3,8 +3,7 @@
 
 from __future__ import print_function
 
-import pytest
-from pytest import raises, mark  # pylint: disable=no-name-in-module
+from pytest import raises # pylint: disable=no-name-in-module
 
 from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
 from multiconf.envs import EnvFactory

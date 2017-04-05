@@ -3,16 +3,14 @@
 
 from __future__ import print_function
 
-import sys
-
 # pylint: disable=E0611
 from pytest import raises
 
+from multiconf import mc_config, ConfigItem, ConfigException
+from multiconf.envs import EnvFactory
+
 from .utils.utils import api_error, config_error, next_line_num
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigApiException, ConfigException
-from multiconf.decorators import nested_repeatables
-from multiconf.envs import EnvFactory
 
 ef1_prod = EnvFactory()
 prod1 = ef1_prod.Env('prod')

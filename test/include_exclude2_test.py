@@ -4,13 +4,13 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, next_line_num, lines_in, file_line
-from .utils.compare_json import compare_json
-
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
 from multiconf.decorators import required, named_as
-
 from multiconf.envs import EnvFactory
+
+from .utils.utils import config_error, next_line_num, file_line
+from .utils.compare_json import compare_json
+
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)

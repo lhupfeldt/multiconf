@@ -2,10 +2,10 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 
-from multiconf import mc_config, caller_file_line
+from multiconf import mc_config
 from multiconf.envs import EnvFactory
 
-from utils.tstclasses import BuilderWithAA
+from .utils.tstclasses import BuilderWithAA
 
 
 ef = EnvFactory()

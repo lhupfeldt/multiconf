@@ -3,12 +3,7 @@
 
 from __future__ import print_function
 
-from collections import OrderedDict
-# pylint: disable=E0611
-from pytest import fail
-
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, MC_REQUIRED
-# from multiconf import ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
 from multiconf.decorators import nested_repeatables, named_as, required
 from multiconf.envs import EnvFactory
 

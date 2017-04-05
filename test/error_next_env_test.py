@@ -7,14 +7,14 @@ import os.path
 
 from pytest import raises
 
-from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
+from multiconf import mc_config, ConfigException, MC_REQUIRED
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, next_line_num, replace_ids, lines_in, start_file_line, file_line
+from .utils.utils import next_line_num, lines_in, start_file_line, file_line
 from .utils.messages import already_printed_msg
 from .utils.messages import config_error_mc_required_expected
-from .utils.messages import config_error_mc_todo_current_env_expected
 from .utils.tstclasses import ItemWithAA
+
 
 _here = os.path.dirname(__file__)
 

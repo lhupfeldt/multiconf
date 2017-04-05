@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from multiconf import mc_config, ConfigItem, MC_REQUIRED
+from multiconf import mc_config, MC_REQUIRED
 from multiconf.envs import EnvFactory
 
 from .utils.tstclasses import ItemWithAA

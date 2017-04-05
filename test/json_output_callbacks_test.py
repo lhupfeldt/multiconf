@@ -3,8 +3,6 @@
 
 from collections import OrderedDict
 
-from pytest import raises
-
 from multiconf import mc_config, ConfigItem, MC_REQUIRED
 from multiconf.decorators import named_as
 from multiconf.envs import EnvFactory

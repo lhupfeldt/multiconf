@@ -6,10 +6,10 @@ from __future__ import print_function
 from pytest import raises
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException
-from multiconf.decorators import nested_repeatables, named_as, required
+from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from utils.utils import replace_ids, py3_local
+from .utils.utils import replace_ids, py3_local
 from .utils.tstclasses import ItemWithAA
 
 

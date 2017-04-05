@@ -3,11 +3,11 @@
 
 from multiconf import mc_config, ConfigItem
 from multiconf.decorators import named_as, nested_repeatables
+from multiconf.envs import EnvFactory
 
 from .utils.utils import config_error, replace_ids
 from .utils.tstclasses import ItemWithName
 
-from multiconf.envs import EnvFactory
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)

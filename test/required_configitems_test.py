@@ -4,10 +4,10 @@
 from pytest import raises
 
 from multiconf import mc_config, ConfigItem, ConfigException, ConfigDefinitionException
-from multiconf.decorators import required, named_as, nested_repeatables
+from multiconf.decorators import required
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, config_warning, replace_ids, next_line_num, line_num, total_msg, py3_local
+from .utils.utils import config_error, config_warning, next_line_num, line_num, total_msg, py3_local
 from .utils.messages import exception_previous_object_expected_stderr
 
 

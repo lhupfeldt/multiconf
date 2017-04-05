@@ -3,15 +3,9 @@
 
 from __future__ import print_function
 
-from collections import OrderedDict
-# pylint: disable=E0611
-from pytest import fail
-
 from multiconf import mc_config, ConfigItem
 from multiconf.envs import EnvFactory
 from multiconf.decorators import named_as
-
-#from .utils.tstclasses import RootWithAA, RootWithAABB, ItemWithAA, ItemWithAABB
 
 
 def test():

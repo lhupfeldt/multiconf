@@ -3,7 +3,7 @@
 
 import abc
 
-from multiconf import ConfigItem, RepeatableConfigItem
+from multiconf import RepeatableConfigItem
 from multiconf.decorators import nested_repeatables, named_as
 
 

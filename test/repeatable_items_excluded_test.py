@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from pytest import raises
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem
+from multiconf import mc_config
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 

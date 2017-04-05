@@ -6,10 +6,8 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
-from multiconf import mc_config, ConfigBuilder, MC_REQUIRED
+from multiconf import mc_config, ConfigBuilder
 from multiconf.envs import EnvFactory
-
-from test.utils.tstclasses import ItemWithAA
 
 
 ef2_pp_prod = EnvFactory()

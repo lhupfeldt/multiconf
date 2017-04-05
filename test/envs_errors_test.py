@@ -4,8 +4,9 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, next_line_num
 from multiconf.envs import EnvFactory, EnvException
+
+from .utils.utils import config_error, next_line_num
 
 
 def ce(line_num, *lines):

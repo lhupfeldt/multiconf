@@ -1,14 +1,12 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
-from multiconf.decorators import nested_repeatables, named_as, required
+from pytest import raises
+
+from multiconf import mc_config, ConfigItem, ConfigBuilder
 from multiconf.envs import EnvFactory
 
-from .utils.check_containment import check_containment
 from .utils.tstclasses import ItemWithAA
-
-from pytest import raises
 
 
 ef_pprd_prod = EnvFactory()
