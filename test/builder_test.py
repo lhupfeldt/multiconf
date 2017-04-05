@@ -572,12 +572,12 @@ def test_configbuilder_repeated_what_built():
     xfail("TODO: Implement 'what_built'?")
     xb1 = builders['xb1']
     assert len(xb1.what_built()) == 2
-    assert isinstance(xb1.what_built(), OrderedDict) == True
+    assert isinstance(xb1.what_built(), OrderedDict)
     assert xb1.what_built()['q'] == 2
 
     xb2 = builders['xb2']
     assert len(xb2.what_built()) == 2
-    assert isinstance(xb2.what_built(), OrderedDict) == True
+    assert isinstance(xb2.what_built(), OrderedDict)
     assert xb2.what_built()['xses']['server3'].something == 1
     assert xb2.what_built()['q'] == 3
     check_containment(cr)

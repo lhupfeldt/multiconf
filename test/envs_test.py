@@ -127,7 +127,7 @@ def test_as_key():
     for env in valid_envs.envs + valid_envs.groups:
         envs[env] = True
     for env in valid_envs.envs + valid_envs.groups:
-        assert envs[env] == True
+        assert envs[env]
 
 
 def test_env_from_name():
