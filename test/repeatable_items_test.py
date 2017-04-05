@@ -177,8 +177,7 @@ def test_repeatable_items_get():
     cr = ef.config(prod)
 
     assert cr.Y.Xs.get('aa')
-
-    assert cr.Y.Xs.get('cc') == None
+    assert cr.Y.Xs.get('cc') is None
 
 
 def test_repeatable_items_equal():

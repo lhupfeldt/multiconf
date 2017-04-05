@@ -45,7 +45,7 @@ def test_contained_in_root_conf():
             assert conf.root_conf == root
             assert conf.root_conf.ConfigItem == conf
             assert conf.contained_in == conf.root_conf
-            assert conf.contained_in.contained_in == None
+            assert conf.contained_in.contained_in is None
 
             with ConfigItem() as c1:
                 assert c1.root_conf == root

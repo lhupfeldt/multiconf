@@ -32,12 +32,12 @@ def test_attribute_none_args_partial_set_in_init_overridden_in_mc_init():
         Requires()
 
     cr = ef1_prod_pp.config(prod1)
-    assert cr.Requires.a == None  # Note: I pre v6 this would be 7
+    assert cr.Requires.a is None  # Note: I pre v6 this would be 7
     assert cr.Requires.b == 2
 
     cr = ef1_prod_pp.config(pp1)
     assert cr.Requires.a == 7 # Value for pp was not set in __init__ so it will get the value from mc_init 
-    assert cr.Requires.b == None  # Note: I pre v6 this would be 7
+    assert cr.Requires.b is None  # Note: I pre v6 this would be 7
 
 
 def test_attribute_none_args_partial_set_in_init_not_completed(capsys):

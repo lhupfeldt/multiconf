@@ -110,7 +110,7 @@ def test_find_attribute_attribute_name():
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].x.find_attribute('bb') == 'b1'
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].x.find_attribute('q') == 'q0'
     assert cr.x.recursive_items['bb'].x.find_attribute(name='aa') == 117
-    assert cr.x.recursive_items['bb'].x.contained_in.find_attribute(name='aa') == None
+    assert cr.x.recursive_items['bb'].x.contained_in.find_attribute(name='aa') is None
     assert cr.x.recursive_items['bb'].x.find_attribute(name='yy') == 999
 
     # Find Item, not attribute, on parent

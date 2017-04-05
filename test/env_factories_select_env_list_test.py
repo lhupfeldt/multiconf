@@ -32,10 +32,10 @@ def test_env_directly_in_list(capsys):
 
 
 def test_env_not_in_list(capsys):
-    assert ef.select_env_list(dev3, [dev1, g_dev12], [g_dev12, dev2]) == None
-    assert ef.select_env_list(dev3, [dev1, g_dev12], []) == None
-    assert ef.select_env_list(dev3, [], [g_dev12, dev2]) == None
-    assert ef.select_env_list(dev3, [], []) == None
+    assert ef.select_env_list(dev3, [dev1, g_dev12], [g_dev12, dev2]) is None
+    assert ef.select_env_list(dev3, [dev1, g_dev12], []) is None
+    assert ef.select_env_list(dev3, [], [g_dev12, dev2]) is None
+    assert ef.select_env_list(dev3, [], []) is None
 
     sout, serr = capsys.readouterr()
     assert sout == ""
