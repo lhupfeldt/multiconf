@@ -242,6 +242,8 @@ class _ConfigBase(object):
 
     def _mc_call_validate_recursively(self, env):
         """Call the user defined 'mc_validate' methods on all items"""
+        if not self._mc_exists_in_given_env(env):
+            return
 
         self._mc_where = Where.NOWHERE
         self.mc_validate()
@@ -252,8 +254,7 @@ class _ConfigBase(object):
         self._mc_where = Where.FROZEN
 
         for child_item in self._mc_items.values():
-            if child_item._mc_exists_in_given_env(env):
-                child_item._mc_call_validate_recursively(env)
+            child_item._mc_call_validate_recursively(env)
 
     def _mc_call_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items"""
@@ -1002,6 +1003,8 @@ class _ConfigRoot(_ConfigBase):
         self._mc_items = OrderedDict()
         self._mc_contained_in = None
         self._mc_root = self
+        self._mc_excluded = 0
+        self._mc_handled_env_bits = 0
         self._mc_num_warnings = 0
         self._mc_config_result = {}
         self._mc_config_loaded = False
@@ -1081,6 +1084,7 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
             try:
                 with cr:
                     res = conf_func(cr)
+                cr._mc_handled_env_bits |= env.mask
                 cr._mc_call_validate_recursively(env)
             except ConfigException as ex:
                 if not error_next_env or ex.is_fatal:
