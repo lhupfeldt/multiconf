@@ -1,8 +1,9 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import sys, re
-from pytest import fail  # pylint: disable=no-name-in-module
 
 
 def py3_local(extra_class_levels=''):
@@ -73,7 +74,7 @@ def file_line(error_file_name, error_line_num):
 
 
 def start_file_line(error_file_name, error_line_num):
-    """Helper for 'assert_lines_in'.
+    """Helper for 'assert lines_in'.
 
     Return string with file/line info formatted like in error messages and prefixed with '^' for start-of-line.
     """
@@ -81,10 +82,10 @@ def start_file_line(error_file_name, error_line_num):
     return '^' + file_line(error_file_name, error_line_num)
 
 
-def assert_lines_in(text, *expected_lines):
-    """Assert that `*expected_lines` occur in order in the lines of `text`.
+def lines_in(text, *expected_lines):
+    """Test that `*expected_lines` occur in order in the lines of `text`.
 
-    Args:
+    Arguments:
         text (str): The text to find *expected_lines in
         *expected_lines (str, RegexObject (hasattr `match`) or sequence): For each `expected_line` in expected_lines:
             If an expected_line is a tuple or a list, any item in the sequence is handled as an individual
@@ -94,6 +95,8 @@ def assert_lines_in(text, *expected_lines):
             If `expected_line` has a match method it is called and must return True for a line in `text`.
             Otherwise, if the `expected_line` starts with '^', a line in `text` must start with `expected_line[1:]`
             Otherwise `expected line` must simply occur in a line in `text`
+
+    Return (bool): True if lines found in order, else False
     """
 
     def _check_match(expected, line):
@@ -117,12 +120,15 @@ def assert_lines_in(text, *expected_lines):
             matched = '\n\nNo lines matched.' + " (Empty text)" if not text else ''
 
         if hasattr(expected, 'match'):
-            fail(matched + "\n\nThe regex:\n\n" + repr(expected.pattern) + "\n\n    --- NOT MATCHED or OUT OF ORDER in ---\n\n" + text)
+            print(matched, "\n\nThe regex:\n\n", expected.pattern, "\n\n    --- NOT MATCHED or OUT OF ORDER in ---\n\n", text, file=sys.stderr)
+            return False
 
         if expected.startswith('^'):
-            fail(matched + "\n\nThe text:\n\n" + repr(expected[1:]) + "\n\n    --- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in ---\n\n" + text)
+            print(matched, "\n\nThe text:\n\n", expected[1:], "\n\n    --- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in ---\n\n", text, file=sys.stderr)
+            return False
 
-        fail(matched + "\n\nThe text:\n\n" + repr(expected) + "\n\n    --- NOT FOUND OR OUT OF ORDER IN ---\n\n" + text)
+        print(matched, "\n\nThe text:\n\n", expected, "\n\n    --- NOT FOUND OR OUT OF ORDER IN ---\n\n", text, file=sys.stderr)
+        return False
 
     max_index = len(expected_lines)
     index = 0
@@ -143,15 +149,15 @@ def assert_lines_in(text, *expected_lines):
         if _check_match(expected, line):
             index += 1
             if index == max_index:
-                return
+                return True
             matched_lines.append(line)
 
     if isinstance(expected, (tuple, list)):
         for expected in new_expected:
             # TODO: only reports first element
-            _report_failure(expected)
+            return _report_failure(expected)
 
-    _report_failure(expected)
+    return _report_failure(expected)
 
 
 # Handle variable ids and source file line numbers in json/repr output

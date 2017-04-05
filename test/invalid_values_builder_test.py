@@ -9,7 +9,7 @@ from pytest import raises, mark  # pylint: disable=no-name-in-module
 from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
 from multiconf.envs import EnvFactory
 
-from .utils.utils import line_num, replace_ids, assert_lines_in, start_file_line
+from .utils.utils import line_num, replace_ids, lines_in, start_file_line
 from .utils.messages import already_printed_msg
 from .utils.messages import config_error_mc_required_expected
 
@@ -48,7 +48,7 @@ def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
                 errorline[0] = line_num()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='aa', env=pp1),

@@ -11,7 +11,7 @@ from pytest import raises, mark, xfail  # pylint: disable=no-name-in-module
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, config_warning, next_line_num, replace_ids, assert_lines_in, start_file_line, file_line, py3_tc
+from .utils.utils import config_error, config_warning, next_line_num, replace_ids, lines_in, start_file_line, file_line, py3_tc
 from .utils.messages import already_printed_msg
 from .utils.messages import config_error_mc_required_expected
 from .utils.messages import mc_required_expected
@@ -96,7 +96,7 @@ def test_attribute_mc_required_mc_force_env(capsys):
 
     # ef1_prod_pp.config(prod1)
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='aa', env=pp1),
@@ -175,7 +175,7 @@ def test_attribute_mc_required_different_types(capsys):
     _sout, serr = capsys.readouterr()
 
     fl = start_file_line(__file__, errorline[0])
-    assert_lines_in(
+    assert lines_in(
         serr,
         ("{fl}, dev <{tc} 'int'>".format(f=fl, tc=py3_tc), "{fl}, prod <{tc} 'str'>".format(f=fl, tc=py3_tc)),
         "^ConfigError: Found different value types for property 'aa' for different envs",
@@ -353,7 +353,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
             McRequiredInInitL1()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
@@ -370,7 +370,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
                 pass
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
@@ -387,7 +387,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
             McRequiredInInitL3()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
@@ -404,7 +404,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
                 pass
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
@@ -424,7 +424,7 @@ def test_attribute_mc_required_init_args_missing_previous_item(capsys):
             McRequiredInInitL3()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
         '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
@@ -560,7 +560,7 @@ def test_attribute_mc_required_mc_todo_different_types(capsys, allow_todo):
     _sout, serr = capsys.readouterr()
 
     fl = start_file_line(__file__, errorline[0])
-    assert_lines_in(
+    assert lines_in(
         serr,
         ("{fl}, dev <{tc} 'int'>".format(f=fl, tc=py3_tc), "{fl}, tst <{tc} 'str'>".format(f=fl, tc=py3_tc)),
         "^ConfigError: Found different value types for property 'aa' for different envs",
@@ -728,7 +728,7 @@ def test_attribute_mc_todo_override_allowed_other_envs(capsys, allow_todo):
             cr.setattr('aa', default=MC_TODO, mc_force=True)
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         "ConfigWarning: " + mc_todo_other_env_expected.format(attr='aa', env=pp1),
@@ -763,7 +763,7 @@ def test_attribute_setattr_mc_required_force_in_init(capsys):
             MyRoot()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='aa', env=pp1),
@@ -790,7 +790,7 @@ def test_multiple_attributes_mc_required_init_not_set(capsys):
                 ItemWithAAABBCC()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='aa', env=pp1),

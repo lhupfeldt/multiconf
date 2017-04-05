@@ -10,7 +10,7 @@ from pytest import raises
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, next_line_num, replace_ids, assert_lines_in, start_file_line, file_line
+from .utils.utils import config_error, next_line_num, replace_ids, lines_in, start_file_line, file_line
 from .utils.messages import already_printed_msg
 from .utils.messages import config_error_mc_required_expected
 from .utils.messages import config_error_mc_todo_current_env_expected
@@ -41,7 +41,7 @@ def test_attribute_mc_required_error_next_env(capsys):
 
     assert sout == ""
 
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='aa', env=dev),
@@ -72,7 +72,7 @@ def test_attribute_mc_required_mc_select_envs_error_next_env(capsys):
 
     assert sout == ""
 
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline_setattr[0]),
         config_error_mc_required_expected.format(attr='aa', env=dev),
@@ -113,7 +113,7 @@ def test_stacktrace_error_next_env(capsys):
 
     tb_msg = "Traceback (most recent call last):"
     repeated_msg = "ConfigException: Repeated non repeatable conf item: 'ItemWithAA': <class 'test.utils.tstclasses.ItemWithAA'>"
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline_setattr[0]),
         config_error_mc_required_expected.format(attr='aa', env=dev),

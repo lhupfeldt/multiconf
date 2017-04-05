@@ -10,7 +10,7 @@ from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException, Con
 from multiconf.decorators import nested_repeatables
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, line_num, next_line_num, assert_lines_in, py3_local, start_file_line, file_line
+from .utils.utils import config_error, line_num, next_line_num, lines_in, py3_local, start_file_line, file_line
 from .utils.messages import exception_previous_object_expected_stderr
 from .utils.messages import mc_required_expected
 from .utils.tstclasses import BuilderWithAA
@@ -116,7 +116,7 @@ def test_build_override_underscore_mc_error(capsys):
 def test_setattr_no_envs(capsys):
     def check(errorline):
         _sout, serr = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             serr,
             start_file_line(__file__, errorline),
             "^ConfigError: No Env or EnvGroup names specified.",
@@ -155,7 +155,7 @@ def test_setattr_no_envs_set_unknown(capsys):
     def check(errorline):
         _sout, serr = capsys.readouterr()
         print("serr:", serr)
-        assert_lines_in(
+        assert lines_in(
             serr,
             start_file_line(__file__, errorline),
             "^ConfigError: No Env or EnvGroup names specified.",

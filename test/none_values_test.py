@@ -8,7 +8,7 @@ from multiconf import mc_config, ConfigItem, ConfigException
 from multiconf.envs import EnvFactory
 
 from utils.messages import config_error_no_value_expected, config_error_never_received_value_expected
-from utils.utils import next_line_num, start_file_line, assert_lines_in
+from utils.utils import next_line_num, start_file_line, lines_in
 
 
 ef1_prod_pp = EnvFactory()
@@ -64,7 +64,7 @@ def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
         # Unresolved partial assignments from __init__
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline_exit[0]),
         config_error_never_received_value_expected.format(env=pp1),

@@ -6,7 +6,7 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from .utils.utils import config_error, next_line_num, replace_ids, assert_lines_in, py3_local, total_msg, start_file_line, file_line
+from .utils.utils import config_error, next_line_num, replace_ids, lines_in, py3_local, total_msg, start_file_line, file_line
 from .utils.messages import already_printed_msg, exception_previous_object_expected_stderr
 from .utils.messages import mc_required_expected, config_error_mc_required_expected
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
@@ -723,7 +723,7 @@ def test_attribute_mc_required_args_partial_set_in_init_unfinished(capsys):
                 Requires()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline_exit_check[0]),
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
@@ -739,7 +739,7 @@ def test_setattr_no_envs(capsys):
 
     def check(errorline):
         _sout, serr = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             serr,
             start_file_line(__file__, errorline),
             "^ConfigError: No Env or EnvGroup names specified.",
@@ -794,7 +794,7 @@ def test_setattr_no_envs_set_unknown(capsys):
 
     def check(errorline):
         _sout, serr = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             serr,
             start_file_line(__file__, errorline),
             "^ConfigError: No Env or EnvGroup names specified.",
@@ -862,7 +862,7 @@ def test_init_line_num(capsys):
                 init_overidden1()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='a', env=prod2),
@@ -880,7 +880,7 @@ def test_init_line_num(capsys):
                 intermediate()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='a', env=prod2),
@@ -900,7 +900,7 @@ def test_init_line_num(capsys):
                 init_overidden2()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='a', env=prod2),

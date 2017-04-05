@@ -11,7 +11,7 @@ from multiconf.envs import EnvFactory
 
 from .utils.messages import setattr_not_defined_in_init_expected, config_error_mc_required_expected
 from .utils.tstclasses import ItemWithAA
-from .utils.utils import config_error, next_line_num, replace_ids, assert_lines_in, start_file_line
+from .utils.utils import config_error, next_line_num, replace_ids, lines_in, start_file_line
 
 
 ef = EnvFactory()
@@ -146,7 +146,7 @@ def test_mc_required_attribute_missing_after_mc_validate(capsys):
 
     _sout, serr = capsys.readouterr()
     print(serr)
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='mnop', env=pp),

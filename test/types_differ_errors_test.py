@@ -6,7 +6,7 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from .utils.utils import next_line_num, replace_ids, assert_lines_in
+from .utils.utils import next_line_num, replace_ids, lines_in
 from .utils.messages import already_printed_msg
 from .utils.tstclasses import ItemWithAA
 
@@ -51,7 +51,7 @@ def test_attribute_defined_with_different_types_root(capsys):
 
     _sout, serr = capsys.readouterr()
     fl = start_file_line(__file__, errorline[0])
-    assert_lines_in(
+    assert lines_in(
         serr,
         (fl + ", prod <%(type_or_class)s 'int'>", fl + ", pp <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'aa' for different envs",
@@ -70,7 +70,7 @@ def test_attribute_defined_with_different_types_root_default(capsys):
 
     _sout, serr = capsys.readouterr()
     fl = start_file_line(__file__, errorline[0])
-    assert_lines_in(
+    assert lines_in(
         serr,
         (fl + ", prod <%(type_or_class)s 'int'>", fl + ", default <%(type_or_class)s 'str'>"),
         "^ConfigError: Found different value types for property 'aa' for different envs",
@@ -131,7 +131,7 @@ def test_attribute_defined_with_different_types_init(capsys):
         fle = start_file_line(__file__, errorline)
         fli = start_file_line(__file__, initline)
 
-        assert_lines_in(
+        assert lines_in(
             __file__, errorline, serr,
             fle + ", default <%(type_or_class)s 'int'>",
             fli + ", default <%(type_or_class)s 'str'>",

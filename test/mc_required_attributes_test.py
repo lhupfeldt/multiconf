@@ -6,7 +6,7 @@ from pytest import raises
 from multiconf import mc_config, ConfigItem, MC_REQUIRED, ConfigException
 from multiconf.envs import EnvFactory
 
-from .utils.utils import next_line_num, line_num, assert_lines_in, start_file_line, py3_local
+from .utils.utils import next_line_num, line_num, lines_in, start_file_line, py3_local
 from .utils.messages import config_error_mc_required_expected
 
 
@@ -75,7 +75,7 @@ def test_required_attributes_inherited_missing(capsys):
                 errorline_exit[0] = line_num()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline1[0]),
         config_error_mc_required_expected.format(attr='anattr', env=pp),
@@ -112,7 +112,7 @@ def test_multiple_required_attributes_missing_for_configitem(capsys):
                     errorline_exit[0] = line_num()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline1[0]),
         config_error_mc_required_expected.format(attr='efgh', env=pp),

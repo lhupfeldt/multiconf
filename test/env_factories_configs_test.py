@@ -12,7 +12,7 @@ from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
 from multiconf.envs import EnvFactory
 
 from .utils.messages import already_printed_msg, config_error_mc_required_expected
-from .utils.utils import next_line_num, assert_lines_in, start_file_line, replace_ids
+from .utils.utils import next_line_num, lines_in, start_file_line, replace_ids
 
 
 def _names(groups):
@@ -95,7 +95,7 @@ def test_env_factories_ef1_errors(capsys):
                 it.setattr('aa', dev1=1, dev2=2, g_prod=4)
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: No such Env or EnvGroup: 'g_prod'",
@@ -110,7 +110,7 @@ def test_env_factories_ef1_errors(capsys):
                 it.setattr('aa', dev1=1, dev2=2, dev3=3, pp=4, prod=5)
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
+    assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: No such Env or EnvGroup: 'dev3'",

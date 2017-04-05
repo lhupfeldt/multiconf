@@ -11,7 +11,7 @@ from multiconf.decorators import named_as, nested_repeatables, required
 from multiconf.config_errors import caller_file_line
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, next_line_num, assert_lines_in
+from .utils.utils import config_error, next_line_num, lines_in
 from .utils.messages import mc_required_expected
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA

@@ -9,7 +9,7 @@ from pytest import raises
 
 from multiconf.envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException
 
-from .utils.utils import next_line_num, assert_lines_in, replace_ids
+from .utils.utils import next_line_num, lines_in, replace_ids
 
 
 def _names(groups):
