@@ -11,6 +11,8 @@ from multiconf.decorators import nested_repeatables
 from multiconf.envs import EnvFactory
 
 from .utils.utils import replace_ids, config_error, next_line_num
+from .utils.messages import setattr_not_defined_in_init_expected
+
 
 ef1_prod = EnvFactory()
 prod1 = ef1_prod.Env('prod')
@@ -69,8 +71,6 @@ def test_setunknown_strict_ok():
     assert rsi.z == 'yes'
 
 
-_setattr_strict_bad_expected = """All attributes must be defined in __init__ or set with 'mc_set_unknown'. Attempting to set attribute '{}' which does not exist."""
-
 def test_setattr_strict_bad(capsys):
     errorline = [None]
 
@@ -82,7 +82,7 @@ def test_setattr_strict_bad(capsys):
                 sp.c = 1
 
     _sout, serr = capsys.readouterr()
-    assert replace_ids(serr) == ce(errorline[0], _setattr_strict_bad_expected.format('c'))
+    assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('c'))
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
@@ -92,7 +92,7 @@ def test_setattr_strict_bad(capsys):
                 sp.setattr('c', default=1)
 
     _sout, serr = capsys.readouterr()
-    assert replace_ids(serr) == ce(errorline[0], _setattr_strict_bad_expected.format('c'))
+    assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('c'))
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
@@ -103,7 +103,7 @@ def test_setattr_strict_bad(capsys):
                     si.z = 1
 
     _sout, serr = capsys.readouterr()
-    assert replace_ids(serr) == ce(errorline[0], _setattr_strict_bad_expected.format('z'))
+    assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('z'))
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
@@ -114,7 +114,7 @@ def test_setattr_strict_bad(capsys):
                     si.setattr('z', prod=1, default=2)
 
     _sout, serr = capsys.readouterr()
-    assert replace_ids(serr) == ce(errorline[0], _setattr_strict_bad_expected.format('z'))
+    assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('z'))
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
@@ -125,7 +125,7 @@ def test_setattr_strict_bad(capsys):
                     rsi.z = 1
 
     _sout, serr = capsys.readouterr()
-    assert replace_ids(serr) == ce(errorline[0], _setattr_strict_bad_expected.format('z'))
+    assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('z'))
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
@@ -136,7 +136,7 @@ def test_setattr_strict_bad(capsys):
                     rsi.setattr('z', prod=1, default=2)
 
     _sout, serr = capsys.readouterr()
-    assert replace_ids(serr) == ce(errorline[0], _setattr_strict_bad_expected.format('z'))
+    assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('z'))
 
 
 _setunknown_strict_bad_expected = """Attempting to use 'mc_set_unknown' to set attribute '{}' which already exists."""

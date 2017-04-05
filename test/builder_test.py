@@ -288,9 +288,13 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
             self.number = number
             self.init_parent = self.contained_in
             self.mc_init_parent = MC_REQUIRED
+            self.mc_validate_parent = MC_REQUIRED
 
         def mc_init(self):
             self.mc_init_parent = self.contained_in
+
+        def mc_validate(self):
+            self.mc_validate_parent = self.contained_in
 
         def mc_post_validate(self):
             mc_post_validate_parent[0] = self.contained_in
@@ -317,6 +321,7 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
     assert cr.x.number == 7
     assert cr.x.init_parent == cr
     assert cr.x.mc_init_parent == cr
+    assert cr.x.mc_validate_parent == cr
     assert mc_post_validate_parent[0] == cr
     check_containment(cr)
 

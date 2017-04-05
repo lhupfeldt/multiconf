@@ -88,6 +88,17 @@ class _ConfigBase(object):
             return
         self._mc_print_error(msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
+    def _mc_print_no_proper_value_error_msg(self, mc_error_info_up_level):
+        msg = "The following attribues defined earlier never received a proper value for {env}:".format(env=self.env)
+        if mc_error_info_up_level is not None:
+            mc_caller_file_name, mc_caller_line_num = find_user_file_line(up_level_start=mc_error_info_up_level + 1)
+            print(_line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num), file=sys.stderr)
+        print(_error_msg(msg), file=sys.stderr)
+
+        for attr_name, info in self._mc_attributes_to_check.items():
+            value, where_from, value_file_name, value_line_num = info  # TODO, 'use where'_from in error message
+            self._mc_print_value_error_msg(attr_name, value, value_file_name, value_line_num)
+
     @classmethod
     def named_as(cls):
         """Return the named_as property set by the @named_as decorator"""
@@ -141,21 +152,31 @@ class _ConfigBase(object):
         May be used for e.g. setting default values based on other properties or cross validation of different properties
         """
 
-        pass
+    def mc_validate(self):
+        """This is a user defined callback method.
+
+        This method is called once for each item for each env after other initialization has been and all items are created.
+        May be used for e.g. setting default values based on other properties or cross validation of different properties.
+        It is preferable to use mc_init when possible as mc_init generally results in more precise error messages, and ensures that an
+        item is fully defined when the 'with' statement is exited.
+        """
 
     def mc_post_validate(self):
         """This is a user defined callback method.
 
-        This method is called once for each item after other initialization has been done for all envs, so cross env checking and cross object/attribute
-        checking is possible. Since it is called once, and not per env, there is no current env and regular attribute access is not possible, instead the
-        ite.getattr(name, env) method must be used to get attribute values for different envs. This makes it possible to checks like the following:
+        This method is called once for each item after other initialization has been done for all envs, so cross env checking and cross
+        object/attribute checking is possible. Since it is called once, and not per env, there is no current env and regular attribute
+        access is not possible, instead the item.getattr(name, env) method must be used to get attribute values for different envs.
+
+        This makes it possible to checks like the following:
 
         assert item.getattr('mem_size', pprd) == item.getattr('mem_size', prod) <= item.getattr('mem_size', tst1)
 
+        Note that careful consideration should be taken when using env names explicitly (as above) when implementing a configuration
+        object model, since this will force all configurations to define those envs.
+
         Note that no modifications can be done in this method!
         """
-
-        pass
 
     def __bool__(self):
         return not (self._mc_root._mc_env.mask & self._mc_excluded)
@@ -170,6 +191,7 @@ class _ConfigBase(object):
         return self._mc_handled_env_bits & env_mask
 
     def _mc_exists_in_env(self):
+        """Note: This always returns True when the onfig is not fully loaded"""
         cr = self._mc_root
         if not cr._mc_config_loaded:
             return True
@@ -195,16 +217,8 @@ class _ConfigBase(object):
         # Call user 'mc_init' callback
         self.mc_init()
 
-        if self._mc_attributes_to_check:
-            msg = "The following attribues defined earlier never received a proper value for {env}:".format(env=self.env)
-            if mc_error_info_up_level is not None:
-                mc_caller_file_name, mc_caller_line_num = find_user_file_line(up_level_start=mc_error_info_up_level)
-                print(_line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num), file=sys.stderr)
-            print(_error_msg(msg), file=sys.stderr)
-
-            for attr_name, info in self._mc_attributes_to_check.items():
-                value, where_from, value_file_name, value_line_num = info  # TODO, 'use where'_from in error message
-                self._mc_print_value_error_msg(attr_name, value, value_file_name, value_line_num)
+        if self._mc_attributes_to_check and self.mc_validate.__code__ is _ConfigBase.mc_validate.__code__:
+            self._mc_print_no_proper_value_error_msg(mc_error_info_up_level)
 
         if isinstance(self, _ConfigBuilder):
             self._mc_builder_freeze()
@@ -226,8 +240,24 @@ class _ConfigBase(object):
             self._mc_raise_errors()
         self._mc_where = Where.FROZEN
 
+    def _mc_call_validate_recursively(self, env):
+        """Call the user defined 'mc_validate' methods on all items"""
+
+        self._mc_where = Where.NOWHERE
+        self.mc_validate()
+        if self._mc_attributes_to_check:
+            self._mc_print_no_proper_value_error_msg(None)
+        if self._mc_num_errors:
+            self._mc_raise_errors()
+        self._mc_where = Where.FROZEN
+
+        for child_item in self._mc_items.values():
+            if child_item._mc_exists_in_given_env(env):
+                child_item._mc_call_validate_recursively(env)
+
     def _mc_call_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items"""
+
         self._mc_where = Where.NOWHERE
         self.mc_post_validate()
         self._mc_where = Where.FROZEN
@@ -1051,6 +1081,7 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
             try:
                 with cr:
                     res = conf_func(cr)
+                cr._mc_call_validate_recursively(env)
             except ConfigException as ex:
                 if not error_next_env or ex.is_fatal:
                     raise

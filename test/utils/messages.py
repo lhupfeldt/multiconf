@@ -17,6 +17,8 @@ not_repeatable_in_parent_msg = "'{repeatable_cls_key}': {repeatable_cls} is defi
 
 config_error_never_received_value_expected = """^ConfigError: The following attribues defined earlier never received a proper value for {env}:"""
 
+setattr_not_defined_in_init_expected = """All attributes must be defined in __init__ or set with 'mc_set_unknown'. Attempting to set attribute '{}' which does not exist."""
+
 no_value_expected = """Attribute: '{attr}' did not receive a value for env {env}"""
 config_error_no_value_expected = "^ConfigError: " + no_value_expected
 
