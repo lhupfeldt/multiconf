@@ -18,11 +18,11 @@ from .utils.messages import mc_required_expected
 from .utils.messages import mc_todo_current_env_expected, mc_todo_other_env_expected
 from .utils.messages import config_error_mc_todo_current_env_expected
 from .utils.tstclasses import ItemWithAA
+from .utils.invalid_values_classes import  McRequiredInInitL1, McRequiredInInitL3
 
-from .invalid_values_classes import  McRequiredInInitL1, McRequiredInInitL3
 
+_utils = os.path.join(os.path.dirname(__file__), 'utils')
 
-_here = os.path.dirname(__file__)
 
 ef1_prod_pp = EnvFactory()
 pp1 = ef1_prod_pp.Env('pp')
@@ -357,7 +357,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
-        '^File "{}/invalid_values_classes.py", line 8'.format(_here),
+        '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_required_init_arg_missing_with_expected_ex.format('McRequiredInInitL1')
@@ -374,7 +374,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
-        '^File "{}/invalid_values_classes.py", line 8'.format(_here),
+        '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_required_init_arg_missing_with_expected_ex.format('McRequiredInInitL1')
@@ -391,7 +391,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
-        '^File "{}/invalid_values_classes.py", line 8'.format(_here),
+        '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_required_init_arg_missing_with_expected_ex.format('McRequiredInInitL3')
@@ -408,7 +408,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
         serr,
         start_file_line(__file__, errorline[0]),
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
-        '^File "{}/invalid_values_classes.py", line 8'.format(_here),
+        '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_required_init_arg_missing_with_expected_ex.format('McRequiredInInitL3')
@@ -427,7 +427,7 @@ def test_attribute_mc_required_init_args_missing_previous_item(capsys):
     assert_lines_in(
         serr,
         "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
-        '^File "{}/invalid_values_classes.py", line 8'.format(_here),
+        '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_required_init_arg_missing_with_expected_ex.format('McRequiredInInitL1')
