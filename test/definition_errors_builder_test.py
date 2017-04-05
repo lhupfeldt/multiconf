@@ -4,16 +4,15 @@
 from __future__ import print_function
 
 # pylint: disable=E0611
-from pytest import raises, xfail
+from pytest import raises
 
-from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException, MC_REQUIRED
-from multiconf.decorators import nested_repeatables, required
+from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException, ConfigDefinitionException
+from multiconf.decorators import nested_repeatables
 from multiconf.envs import EnvFactory
 
 from .utils.utils import config_error, line_num, next_line_num, assert_lines_in, py3_local, start_file_line, file_line
-from .utils.messages import already_printed_msg, exception_previous_object_expected_stderr
-from .utils.messages import config_error_mc_required_expected
-from .utils.messages import config_error_no_value_expected, mc_required_expected
+from .utils.messages import exception_previous_object_expected_stderr
+from .utils.messages import mc_required_expected
 from .utils.tstclasses import BuilderWithAA
 
 
