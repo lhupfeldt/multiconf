@@ -9,7 +9,7 @@ import itertools
 import json
 
 from .bits import int_to_bin_str
-from .config_errors import ConfigException
+from .config_errors import ConfigException, _line_msg
 
 
 class EnvException(Exception):
@@ -80,10 +80,11 @@ class BaseEnv(object):
 
 
 class Env(BaseEnv):
-    def __init__(self, name, factory):
+    def __init__(self, name, factory, allow_todo):
         super(Env, self).__init__(name=name, factory=factory, mask=0)
         self.envs = [self]
         self.lookup_order = None
+        self.allow_todo = allow_todo
 
 
 class EnvGroup(BaseEnv, Container):
@@ -152,7 +153,7 @@ class EnvFactory(object):
         self._index = 1  # bit zero reserved to be set for all groups, so that a Group mask will never be equal to an env mask
         self._mc_frozen = False
 
-    def Env(self, name):
+    def Env(self, name, allow_todo=False):
         """ Declare a new Env """
         if self._mc_frozen:
             raise EnvException(self.__class__.__name__ + " is already in use. No more envs may be added.")
@@ -161,7 +162,7 @@ class EnvFactory(object):
         if name in self.envs:
             raise EnvException("Name " + repr(name) + " is already used by env: " + repr(self.envs[name]))
         Env.validate(name)
-        new_env = Env(name, factory=self)
+        new_env = Env(name, factory=self, allow_todo=allow_todo)
         self.envs[name] = new_env
         return new_env
 
@@ -325,10 +326,10 @@ class EnvFactory(object):
                 raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
             raise  # Should not happen
 
-        if not allow_todo and cr._mc_todo_msgs:
-            for msg in cr._mc_todo_msgs:
-                # print(msg, file=sys.stderr) TODO
-                pass
+        if not allow_todo and cr._mc_todo_msgs[env]:
+            for msg, fname, line in cr._mc_todo_msgs[env]:
+                print(_line_msg(file_name=fname, line_num=line), file=sys.stderr)
+                print(msg, file=sys.stderr)
             raise ConfigException("Trying to get invalid configuration containing MC_TODO")
 
         return cr

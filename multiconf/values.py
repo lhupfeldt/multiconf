@@ -34,3 +34,9 @@ class McInvalidValue(Enum):
 MC_NO_VALUE = McInvalidValue.MC_NO_VALUE
 MC_REQUIRED = McInvalidValue.MC_REQUIRED
 MC_TODO = McInvalidValue.MC_TODO
+
+
+class McTodoHandling(Enum):
+    SILENT = 0
+    WARNING = 1
+    ERROR = 2

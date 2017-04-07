@@ -25,10 +25,6 @@ config_error_no_value_expected = "^ConfigError: " + no_value_expected
 mc_required_expected = """Attribute: '{attr}' MC_REQUIRED did not receive a value for env {env}"""
 config_error_mc_required_expected = "^ConfigError: " + mc_required_expected
 
-mc_todo_current_env_expected = """Attribute: '{attr}' MC_TODO did not receive a value for env {env}"""
-config_error_mc_todo_current_env_expected = "^ConfigError: " + mc_todo_current_env_expected
-config_warning_mc_todo_current_env_expected = "^ConfigWarning: " + mc_todo_current_env_expected
-
-mc_todo_other_env_expected = """Attribute: '{attr}' MC_TODO did not receive a value for env {env}"""
-config_error_mc_todo_other_env_expected = "^ConfigError: " + mc_todo_other_env_expected
-config_warning_mc_todo_other_env_expected = "^ConfigWarning: " + mc_todo_other_env_expected
+mc_todo_expected = """Attribute: '{attr}' MC_TODO did not receive a value for env {env}{allowed}"""
+config_error_mc_todo_expected = "^ConfigError: " + mc_todo_expected
+config_warning_mc_todo_expected = "^ConfigWarning: " + mc_todo_expected

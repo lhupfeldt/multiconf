@@ -8,7 +8,7 @@ from collections import OrderedDict
 import json
 
 from .envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV
-from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED
+from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, Where
 
 major_version = sys.version_info[0]
@@ -82,10 +82,15 @@ class _ConfigBase(object):
 
         value_msg = ' ' + repr(value) if value != MC_NO_VALUE else ''
         msg = "Attribute: '{attr}'{value_msg} did not receive a value for env {env}".format(attr=attr_name, value_msg=value_msg, env=current_env)
-        cr._mc_todo_msgs.append((msg, mc_caller_file_name, mc_caller_line_num))
-        if value == MC_TODO and cr._mc_allow_todo:
-            self._mc_print_warning(msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
-            return
+        if value == MC_TODO:
+            cr._mc_todo_msgs[current_env].append((msg, mc_caller_file_name, mc_caller_line_num))
+            todo_handling =  cr._mc_todo_handling_allowed if current_env.allow_todo else cr._mc_todo_handling_other
+            if todo_handling is McTodoHandling.SILENT:
+                return
+            if todo_handling is McTodoHandling.WARNING:
+                self._mc_print_warning(msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
+                return
+
         self._mc_print_error(msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_print_no_proper_value_error_msg(self, mc_error_info_up_level):
@@ -96,7 +101,8 @@ class _ConfigBase(object):
         print(_error_msg(msg), file=sys.stderr)
 
         for attr_name, info in self._mc_attributes_to_check.items():
-            value, where_from, value_file_name, value_line_num = info  # TODO, 'use where'_from in error message
+            where_from, value_file_name, value_line_num = info  # TODO, 'use where'_from in error message
+            value = getattr(self, attr_name)
             self._mc_print_value_error_msg(attr_name, value, value_file_name, value_line_num)
 
     @classmethod
@@ -435,8 +441,12 @@ class _ConfigBase(object):
             mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
             if self._mc_attributes_to_check is None:
                 self._mc_attributes_to_check = OrderedDict()
-            self._mc_attributes_to_check[attr_name] = (value, self._mc_where, mc_caller_file_name, mc_caller_line_num)
+            self._mc_attributes_to_check[attr_name] = (self._mc_where, mc_caller_file_name, mc_caller_line_num)
             return
+
+        # We will report the error now, so pop from check list
+        if self._mc_attributes_to_check:
+            self._mc_attributes_to_check.pop(attr_name, None)
 
         mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
         self._mc_print_value_error_msg(attr_name, value, mc_caller_file_name, mc_caller_line_num)
@@ -988,16 +998,17 @@ class _ItemParentProxy(object):
 
 
 class _ConfigRoot(_ConfigBase):
-    def __init__(self, env_factory, mc_allow_todo, mc_json_filter, mc_json_fallback):
+    def __init__(self, env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback):
         self._mc_env_factory = env_factory
-        self._mc_allow_todo = mc_allow_todo
+        self._mc_todo_handling_other = mc_todo_handling_other
+        self._mc_todo_handling_allowed = mc_todo_handling_allowed
         self._mc_json_filter = mc_json_filter
         self._mc_json_fallback = mc_json_fallback
 
         self._mc_where = Where.IN_INIT
         self._mc_num_errors = 0
 
-        self._mc_todo_msgs = []
+        self._mc_todo_msgs = OrderedDict([(env, []) for env in env_factory.envs.values()])
         self._mc_attributes = OrderedDict()
         self._mc_attributes_to_check = None
         self._mc_items = OrderedDict()
@@ -1040,7 +1051,10 @@ class _RootEnvProxy(object):
         return repr(self._mc_root)
 
 
-def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_filter=None, mc_json_fallback=None):
+def mc_config(
+        env_factory, error_next_env=False,
+        mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=McTodoHandling.WARNING,
+        mc_json_filter=None, mc_json_fallback=None):
     """Instantiate ConfigItem hierarchy for all Envs defined in 'env_factory'.
 
     Arguments:
@@ -1048,7 +1062,12 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
         error_next_env (bool): If this is False, then no more envs will be instantiated after errors are found in an env.
             If True, then instantiation is attempted for all envs, but an exception is raised at the end in any envs could not
             be instantiated.
-        mc_allow_todo (bool): TODO
+
+        mc_todo_handling_other (McTodoHandling): This specifies how to handl attributes set to MC_TODO for envs with 'allow_todo' False.
+            The default is McTodoHandling.ERROR, causing an error message to be printed and the configuration to be considered invalid.
+        mc_todo_handling_allowed (McTodoHandling): This specifies how to handle attributes set to MC_TODO for envs with 'allow_todo' True.
+            The default is McTodoHandling.WARNING, causing a warning message to be printed but the configuration to be considered valid.
+
         mc_json_filter (function()): 
         mc_json_fallback (function()): 
     """
@@ -1063,10 +1082,18 @@ def mc_config(env_factory, error_next_env=False, mc_allow_todo=False, mc_json_fi
     else:
         raise ConfigException("The specified 'env_factory' is empty. It must have at least one Env.")
 
+    if not isinstance(mc_todo_handling_other, McTodoHandling):
+        msg = "'mc_todo_handling_other' arg must be instance of {th_typ!r}; found type {got_typ!r}: {val!r}"
+        raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=mc_todo_handling_other.__class__.__name__, val=mc_todo_handling_other))
+
+    if not isinstance(mc_todo_handling_allowed, McTodoHandling):
+        msg = "'mc_todo_handling_allowed' arg must be instance of {th_typ!r}; found type {got_typ!r}: {val!r}"
+        raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=mc_todo_handling_allowed.__class__.__name__, val=mc_todo_handling_allowed))
+
     def deco(conf_func):
         env_factory.calc_env_group_order()
         # Create root object
-        cr = _ConfigRoot(env_factory, mc_allow_todo, mc_json_filter, mc_json_fallback)
+        cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback)
         cr._mc_check_unknown = True
 
         # Make sure _mc_setattr is the real one if decorator is used multiple times
