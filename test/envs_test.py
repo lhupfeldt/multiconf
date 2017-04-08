@@ -164,7 +164,7 @@ def test_env_factory_in_use(capsys):
     with raises(EnvException) as exinfo:
         myef = EnvFactory()
         mydev1 = myef.Env('dev1')
-        myef.calc_env_group_order()
+        myef._mc_calc_env_group_order()
         myef.EnvGroup('g_dev12', mydev1)
 
     sout, serr = capsys.readouterr()
@@ -175,7 +175,7 @@ def test_env_factory_in_use(capsys):
     with raises(EnvException) as exinfo:
         myef = EnvFactory()
         mydev1 = myef.Env('dev1')
-        myef.calc_env_group_order()
+        myef._mc_calc_env_group_order()
         myef.Env('dev2')
 
     _sout, serr = capsys.readouterr()
@@ -272,7 +272,7 @@ def test_repeated_nested_group_member_reversed():
 def test_no_groups(capsys):
     myef = EnvFactory()
     mydev1 = myef.Env('dev1')
-    myef.calc_env_group_order()
+    myef._mc_calc_env_group_order()
 
 
 test_json_json = """{

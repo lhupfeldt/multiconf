@@ -17,7 +17,7 @@ g_dev23 = ef.EnvGroup('g_dev23', dev2, dev3)
 g_dev13 = ef.EnvGroup('g_dev13', dev1, dev3)
 g_dev12_3 = ef.EnvGroup('g_dev12_3', g_dev12, dev3)
 
-ef.calc_env_group_order()
+ef._mc_calc_env_group_order()
 
 
 def test_env_directly_in_list(capsys):

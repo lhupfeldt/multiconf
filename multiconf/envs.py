@@ -205,7 +205,7 @@ class EnvFactory(object):
 
         raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(name))
 
-    def calc_env_group_order(self):
+    def _mc_calc_env_group_order(self):
         """
         Must be called after all user defined envs and groups are defined.
 

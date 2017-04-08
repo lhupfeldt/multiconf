@@ -21,7 +21,7 @@ def _lookup_order(env):
     return act
 
 
-def test_calc_env_group_order():
+def test_mc_calc_env_group_order():
     ef = EnvFactory()
 
     d0 = ef.Env('d0')
@@ -56,7 +56,7 @@ def test_calc_env_group_order():
     prod = ef.Env('prod')
     g_prod = ef.EnvGroup('g_prod', pp, prod)
 
-    ef.calc_env_group_order()
+    ef._mc_calc_env_group_order()
 
     for env_name, env in ef.envs.items():
         print()
@@ -178,7 +178,7 @@ def test_resolve_env_group_value():
     prod = ef.Env('prod')
     g_prod = ef.EnvGroup('g_prod', pp, prod)
 
-    ef.calc_env_group_order()
+    ef._mc_calc_env_group_order()
 
     assert ef.resolve_env_group_value(d0, dict(d0=1)) == (1, d0)
     assert ef.resolve_env_group_value(d0, dict(d0=1, d1a=17)) == (1, d0)
@@ -255,7 +255,7 @@ def test_resolve_env_group_value_missing():
     prod = ef.Env('prod')
     g_prod = ef.EnvGroup('g_prod', pp, prod)
 
-    ef.calc_env_group_order()
+    ef._mc_calc_env_group_order()
 
     with raises(MissingValueEnvException) as exinfo:
         ef.resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))
@@ -303,7 +303,7 @@ def test_resolve_env_group_value_ambiguous():
     prod = ef.Env('prod')
     g_prod = ef.EnvGroup('g_prod', pp, prod)
 
-    ef.calc_env_group_order()
+    ef._mc_calc_env_group_order()
 
     with raises(AmbiguousEnvException) as exinfo:
         ef.resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))

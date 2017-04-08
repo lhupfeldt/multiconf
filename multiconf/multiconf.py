@@ -1091,7 +1091,7 @@ def mc_config(
         raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=mc_todo_handling_allowed.__class__.__name__, val=mc_todo_handling_allowed))
 
     def deco(conf_func):
-        env_factory.calc_env_group_order()
+        env_factory._mc_calc_env_group_order()
         # Create root object
         cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback)
         cr._mc_check_unknown = True
