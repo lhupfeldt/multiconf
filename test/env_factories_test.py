@@ -143,7 +143,7 @@ def test_mc_calc_env_group_order():
     ]
 
 
-def test_resolve_env_group_value():
+def test_mc_resolve_env_group_value():
     ef = EnvFactory()
 
     d0 = ef.Env('d0')
@@ -180,47 +180,47 @@ def test_resolve_env_group_value():
 
     ef._mc_calc_env_group_order()
 
-    assert ef.resolve_env_group_value(d0, dict(d0=1)) == (1, d0)
-    assert ef.resolve_env_group_value(d0, dict(d0=1, d1a=17)) == (1, d0)
+    assert ef._mc_resolve_env_group_value(d0, dict(d0=1)) == (1, d0)
+    assert ef._mc_resolve_env_group_value(d0, dict(d0=1, d1a=17)) == (1, d0)
 
-    assert ef.resolve_env_group_value(d1a, dict(d0=1, d1a=17)) == (17, d1a)
+    assert ef._mc_resolve_env_group_value(d1a, dict(d0=1, d1a=17)) == (17, d1a)
     # TODO: check from_eg
-    assert ef.resolve_env_group_value(d1a, dict(d0=1, d1a=17, g_d1ab_d2a=3))[0] == 17
-    assert ef.resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=17))[0] == 17
-    assert ef.resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3))[0] == 17
-    assert ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=17))[0] == 17
-    assert ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3))[0] == 3
-    assert ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3))[0] == 3
-    assert ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3, default=7))[0] == 3
-    assert ef.resolve_env_group_value(d1a, dict(default=7))[0] == 7
+    assert ef._mc_resolve_env_group_value(d1a, dict(d0=1, d1a=17, g_d1ab_d2a=3))[0] == 17
+    assert ef._mc_resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=17))[0] == 17
+    assert ef._mc_resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3))[0] == 17
+    assert ef._mc_resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=17))[0] == 17
+    assert ef._mc_resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3))[0] == 3
+    assert ef._mc_resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3))[0] == 3
+    assert ef._mc_resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3, default=7))[0] == 3
+    assert ef._mc_resolve_env_group_value(d1a, dict(default=7))[0] == 7
 
-    assert ef.resolve_env_group_value(prod, dict(d0=1, prod=18))[0] == 18
-    assert ef.resolve_env_group_value(prod, dict(d0=1, d1a=17, prod=18))[0] == 18
-    assert ef.resolve_env_group_value(prod, dict(d0=1, d1a=17, g_prod=19, prod=18))[0] == 18
-    assert ef.resolve_env_group_value(prod, dict(d0=1, d1a=17, g_d1ab_d2a=3, g_prod=19, prod=18))[0] == 18
-    assert ef.resolve_env_group_value(prod, dict(g_prod=19, prod=18, d0=1, g_d1ab_d2a=17))[0] == 18
-    assert ef.resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_prod=19, prod=18))[0] == 18
-    assert ef.resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_prod=19))[0] == 19
-    assert ef.resolve_env_group_value(prod, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=17, default=18))[0] == 18
+    assert ef._mc_resolve_env_group_value(prod, dict(d0=1, prod=18))[0] == 18
+    assert ef._mc_resolve_env_group_value(prod, dict(d0=1, d1a=17, prod=18))[0] == 18
+    assert ef._mc_resolve_env_group_value(prod, dict(d0=1, d1a=17, g_prod=19, prod=18))[0] == 18
+    assert ef._mc_resolve_env_group_value(prod, dict(d0=1, d1a=17, g_d1ab_d2a=3, g_prod=19, prod=18))[0] == 18
+    assert ef._mc_resolve_env_group_value(prod, dict(g_prod=19, prod=18, d0=1, g_d1ab_d2a=17))[0] == 18
+    assert ef._mc_resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_prod=19, prod=18))[0] == 18
+    assert ef._mc_resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_prod=19))[0] == 19
+    assert ef._mc_resolve_env_group_value(prod, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=17, default=18))[0] == 18
 
-    assert ef.resolve_env_group_value(d1a, dict(d0=1, prod=18, g_d13_overlap1=20))[0] == 20
-    assert ef.resolve_env_group_value(d1a, dict(d0=1, d1a=17, prod=18, g_d13_overlap1=20))[0] == 17
-    assert ef.resolve_env_group_value(d1a, dict(g_d13_overlap1=20, d0=1, g_prod=19, prod=18))[0] == 20
-    assert ef.resolve_env_group_value(d1a, dict(d0=1, g_d13_overlap1=20, g_prod=19, prod=18))[0] == 20
-    assert ef.resolve_env_group_value(d1a, dict(g_prod=19, prod=18, d0=1, g_d13_overlap1=20))[0] == 20
-    assert ef.resolve_env_group_value(d1a, dict(d0=1, g_prod=19, prod=18, g_d13_overlap1=20))[0] == 20
+    assert ef._mc_resolve_env_group_value(d1a, dict(d0=1, prod=18, g_d13_overlap1=20))[0] == 20
+    assert ef._mc_resolve_env_group_value(d1a, dict(d0=1, d1a=17, prod=18, g_d13_overlap1=20))[0] == 17
+    assert ef._mc_resolve_env_group_value(d1a, dict(g_d13_overlap1=20, d0=1, g_prod=19, prod=18))[0] == 20
+    assert ef._mc_resolve_env_group_value(d1a, dict(d0=1, g_d13_overlap1=20, g_prod=19, prod=18))[0] == 20
+    assert ef._mc_resolve_env_group_value(d1a, dict(g_prod=19, prod=18, d0=1, g_d13_overlap1=20))[0] == 20
+    assert ef._mc_resolve_env_group_value(d1a, dict(d0=1, g_prod=19, prod=18, g_d13_overlap1=20))[0] == 20
 
-    assert ef.resolve_env_group_value(d3b, dict(d0=1, prod=18, g_d13_overlap1=20, g_d13_overlap2=21))[0] == 21
-    assert ef.resolve_env_group_value(d3b, dict(d0=1, d1a=17, prod=18, g_d13_overlap1=20, g_d13_overlap2=21))[0] == 21
-    assert ef.resolve_env_group_value(d3b, dict(g_d13_overlap2=21, g_d13_overlap1=20, d0=1, d1a=17, g_prod=19, prod=18))[0] == 21
-    assert ef.resolve_env_group_value(d3b, dict(d0=1, g_d13_overlap2=21, g_d13_overlap1=20, d1a=17, g_d1ab_d2a=3, g_prod=19, prod=18))[0] == 21
-    assert ef.resolve_env_group_value(d3b, dict(g_prod=19, prod=18, d0=1, g_d13_overlap2=21, g_d1ab_d2a=17, g_d13_overlap1=20))[0] == 21
-    assert ef.resolve_env_group_value(d3b, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_prod=19, prod=18, g_d13_overlap1=20, g_d13_overlap2=21))[0] == 21
-    assert ef.resolve_env_group_value(d3b, dict(d0=1, g_d1ab_d2a=17, g_d13_overlap1=20, g_d1ab_d2a_d1cd2c=3, g_prod=19, g_d13_overlap2=21))[0] == 21
-    assert ef.resolve_env_group_value(d3b, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=17, g_d13_overlap1=20, default=18, g_d13_overlap2=21))[0] == 21
+    assert ef._mc_resolve_env_group_value(d3b, dict(d0=1, prod=18, g_d13_overlap1=20, g_d13_overlap2=21))[0] == 21
+    assert ef._mc_resolve_env_group_value(d3b, dict(d0=1, d1a=17, prod=18, g_d13_overlap1=20, g_d13_overlap2=21))[0] == 21
+    assert ef._mc_resolve_env_group_value(d3b, dict(g_d13_overlap2=21, g_d13_overlap1=20, d0=1, d1a=17, g_prod=19, prod=18))[0] == 21
+    assert ef._mc_resolve_env_group_value(d3b, dict(d0=1, g_d13_overlap2=21, g_d13_overlap1=20, d1a=17, g_d1ab_d2a=3, g_prod=19, prod=18))[0] == 21
+    assert ef._mc_resolve_env_group_value(d3b, dict(g_prod=19, prod=18, d0=1, g_d13_overlap2=21, g_d1ab_d2a=17, g_d13_overlap1=20))[0] == 21
+    assert ef._mc_resolve_env_group_value(d3b, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_prod=19, prod=18, g_d13_overlap1=20, g_d13_overlap2=21))[0] == 21
+    assert ef._mc_resolve_env_group_value(d3b, dict(d0=1, g_d1ab_d2a=17, g_d13_overlap1=20, g_d1ab_d2a_d1cd2c=3, g_prod=19, g_d13_overlap2=21))[0] == 21
+    assert ef._mc_resolve_env_group_value(d3b, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=17, g_d13_overlap1=20, default=18, g_d13_overlap2=21))[0] == 21
 
 
-def test_resolve_env_group_value_missing():
+def test_mc_resolve_env_group_value_missing():
     ef = EnvFactory()
 
     d0 = ef.Env('d0')
@@ -258,17 +258,17 @@ def test_resolve_env_group_value_missing():
     ef._mc_calc_env_group_order()
 
     with raises(MissingValueEnvException) as exinfo:
-        ef.resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))
+        ef._mc_resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))
     assert str(exinfo.value) == "No value for: Env('prod')"
 
     with raises(MissingValueEnvException) as exinfo:
-        ef.resolve_env_group_value(pp, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_d1b_d2ab=9))
+        ef._mc_resolve_env_group_value(pp, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_d1b_d2ab=9))
 
     with raises(MissingValueEnvException) as exinfo:
-        ef.resolve_env_group_value(prod, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=1, g_d1_overlap1=1, g_d1_overlap2=1, g_d13_overlap1=1, g_d13_overlap3=1, pp=9))
+        ef._mc_resolve_env_group_value(prod, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=1, g_d1_overlap1=1, g_d1_overlap2=1, g_d13_overlap1=1, g_d13_overlap3=1, pp=9))
 
 
-def test_resolve_env_group_value_ambiguous():
+def test_mc_resolve_env_group_value_ambiguous():
     ef = EnvFactory()
 
     d0 = ef.Env('d0')
@@ -306,14 +306,14 @@ def test_resolve_env_group_value_ambiguous():
     ef._mc_calc_env_group_order()
 
     with raises(AmbiguousEnvException) as exinfo:
-        ef.resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))
+        ef._mc_resolve_env_group_value(d1a, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))
     assert str(exinfo.value) == "Ambiguous values for: Env('d1a')"
     assert exinfo.value.ambiguous == [g_d1ab_d2a, g_d13_overlap1]
 
     with raises(AmbiguousEnvException) as exinfo:
-        ef.resolve_env_group_value(d2a, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_d1b_d2ab=9))
+        ef._mc_resolve_env_group_value(d2a, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_d1b_d2ab=9))
     assert exinfo.value.ambiguous == [g_d1ab_d2a, g_d1b_d2ab]
 
     with raises(AmbiguousEnvException) as exinfo:
-        ef.resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=1, g_d1_overlap1=1, g_d1_overlap2=1, g_d13_overlap1=1, g_d13_overlap3=1, pp=9))
+        ef._mc_resolve_env_group_value(d1a, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=1, g_d1_overlap1=1, g_d1_overlap2=1, g_d13_overlap1=1, g_d13_overlap3=1, pp=9))
     assert exinfo.value.ambiguous == [g_d1ab_d2a, g_d1_overlap1, g_d1_overlap2, g_d13_overlap1, g_d13_overlap3]

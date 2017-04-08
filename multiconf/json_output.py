@@ -59,18 +59,10 @@ class ConfigItemEncoder(object):
                  multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs):
         """Encoder for json.
 
+        Check the `multiconf.json` and `multiconf.mc_build` methods for public arguments passed on to this.
+
         Arguments:
-            filter_callable func(obj, key, value): User defined function for filtering
-            - filter_callable is called for each key/value pair of attributes on each ConfigItem obj.
-            - It must return a tuple of (key, value). If key is False, the key/value pair is removed from the json output
-
-            fallback_callable func(obj): User defined function for handling objects not otherwise encoded.
-            - fallback_callable is called for objects that are not handled by the builtin encoder.
-            - It must return a tupple (object, handled). If handled is True, the object must be encodable by the standard json encoder.
-
-            compact (bool): Set compact to true if dumping for debug, false for machine readable output.
-            sort_attributes (bool): Sort sttributes by name,
-            property_methods (bool): call @property methods and insert values in output, including a comment that the value is calculated.
+            multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type (type): Passed as arguments as a workarond for cyclic imports.
         """
 
         self.user_filter_callable = filter_callable

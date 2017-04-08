@@ -57,6 +57,7 @@ def _add_super_list_deco_values(cls, attr_names, deco_attr_name):
 
 
 def named_as(insert_as_name):
+    """Determine the name used to insert item in parent"""
     def deco(cls):
         _not_config_builder(cls, 'named_as')
         _check_valid_identifier(insert_as_name)
@@ -67,6 +68,7 @@ def named_as(insert_as_name):
 
 
 def nested_repeatables(*attr_names):
+    """Specify which nested (child) items will be repeatable."""
     def deco(cls):
         _not_config_builder(cls, 'nested_repeatables')
         cls._mc_deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
@@ -81,6 +83,7 @@ def nested_repeatables(*attr_names):
 
 
 def required(*attr_names):
+    """Specify nested (child) items that must be defined."""
     def deco(cls):
         cls._mc_deco_required = _add_super_list_deco_values(cls, attr_names, 'required')
         return cls

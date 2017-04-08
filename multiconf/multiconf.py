@@ -111,6 +111,19 @@ class _ConfigBase(object):
         return cls._mc_deco_named_as or cls.__name__
 
     def json(self, compact=False, sort_attributes=False, property_methods=True, builders=False, skipkeys=True, warn_nesting=None, show_all_envs=False):
+        """Create json representation of configuration.
+
+        The mc_json_filter and mc_json_fallback arguments to `mc_config` also influence the output.
+
+        Arguments:
+            compact (bool): Set compact to true if dumping for easier human readable output, false for machine readable output.
+            sort_attributes (bool): Sort sttributes by name. Sort dir() entries by name.
+            property_methods (bool): call @property methods and insert values in output, including a comment that the value is calculated.
+            builders (bool): Include ConfigBuilder items in json.
+            skipkeys (bool: Passed to json.dumps.
+            show_all_envs (bool): Display attribute values for all envs in a single dump. Without this only the values for the current env is displayed.
+        """
+
         """See json_output.ConfigItemEncoder for parameters"""
         filter_callable = self._mc_root._mc_json_filter
         fallback_callable = self._mc_root._mc_json_fallback
@@ -511,7 +524,7 @@ class _ConfigBase(object):
 
         current_env = cr._mc_env
         try:
-            value, eg = env_factory.resolve_env_group_value(current_env, env_values)
+            value, eg = env_factory._mc_resolve_env_group_value(current_env, env_values)
             self._mc_setattr(current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level + 1)
             return
         except MissingValueEnvException:
@@ -685,7 +698,7 @@ class _ConfigItemBase(_ConfigBase):
     def _mc_select_envs(self, include, exclude):
         """Calculate whether to include or exclude item in env."""
         try:
-            selected = self._mc_root._mc_env_factory.select_env_list(self.env, exclude or [], include or [])
+            selected = self._mc_root._mc_env_factory._mc_select_env_list(self.env, exclude or [], include or [])
         except AmbiguousEnvException as ex:
             msg = "{env} is specified in both include and exclude, with no single most specific group or direct env:"
             msg += "\n - from exclude: {egx}"
@@ -740,6 +753,8 @@ class _ConfigItemBase(_ConfigBase):
 
 
 class ConfigItem(_ConfigItemBase):
+    """Base class for config items."""
+
     def __new__(cls, *init_args, **init_kwargs):
         # cls._mc_debug_hierarchy('ConfigItem.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
@@ -797,6 +812,14 @@ class ConfigItem(_ConfigItemBase):
 
 
 class RepeatableConfigItem(_ConfigItemBase):
+    """Base class for config items which may be repeated.
+
+    RepeatableConfigItems will be stored in an OrderedDict using the key 'mc_key'.
+
+    Args:
+        mc_key (hashable): The key used to lookup the config item.
+    """
+
     def __new__(cls, mc_key, *init_args, **init_kwargs):
         # cls._mc_debug_hierarchy('RepeatableConfigItem.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
@@ -857,6 +880,8 @@ class RepeatableConfigItem(_ConfigItemBase):
 
 
 class _ConfigBuilder(_ConfigItemBase):
+    """Base class for 'builder' items which can create (a collection of) other items."""
+
     def __new__(cls, mc_key='default-builder', *init_args, **init_kwargs):
         # cls._mc_debug_hierarchy('_ConfigBuilder.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
@@ -1068,8 +1093,13 @@ def mc_config(
         mc_todo_handling_allowed (McTodoHandling): This specifies how to handle attributes set to MC_TODO for envs with 'allow_todo' True.
             The default is McTodoHandling.WARNING, causing a warning message to be printed but the configuration to be considered valid.
 
-        mc_json_filter (function()): 
-        mc_json_fallback (function()): 
+        mc_json_filter (func(obj, key, value)): User defined function for filtering objects in json output.
+            - filter_callable is called for each key/value pair of attributes on each ConfigItem obj.
+            - It must return a tuple of (key, value). If key is False, the key/value pair is removed from the json output
+
+        mc_json_fallback (func(obj)): User defined function for handling objects not otherwise encoded in json output.
+            - fallback_callable is called for objects that are not handled by the builtin encoder.
+            - It must return a tupple (object, handled). If handled is True, the object must be encodable by the standard json encoder.
     """
 
     if not isinstance(env_factory, EnvFactory):

@@ -250,7 +250,7 @@ class EnvFactory(object):
 
         self.eg_none = self._EnvGroup('_mc_eg_none', members=[])
 
-    def resolve_env_group_value(self, env, env_values):
+    def _mc_resolve_env_group_value(self, env, env_values):
         try:
             return env_values[env.name], env
         except KeyError:
@@ -265,14 +265,15 @@ class EnvFactory(object):
                     return env_values[gg.name], gg
         raise MissingValueEnvException("No value for: " + str(env))
 
-    def select_env_list(self, env, eg_list1, eg_list2):
+    def _mc_select_env_list(self, env, eg_list1, eg_list2):
         """Resolve in which lists env is most speficic, if in any.
 
-        Returns 1, 2 or None:
+        Returns (int or None): 1, 2 or None:
             1 if list1 has the most specific group or direct env.
             2 if list2
             None if env or group is in neither of the lists.
-        Raises AmbiguousEnvException if neither list is more specific.
+
+        Raises: AmbiguousEnvException if neither list is more specific.
         """
 
         eg1 = None
@@ -303,7 +304,7 @@ class EnvFactory(object):
 
 
     def config(self, env, allow_todo=False):
-        """Configuration for specific env.
+        """Retreive the configuration for the specified env.
 
         NOTE, There can only be one current config!
         It is possible to call 'config' multiple times, but storing references
@@ -311,9 +312,9 @@ class EnvFactory(object):
         will return the value from the last env.
 
         Arguments:
-            result (list): The return value from the decorated 'user-config' method will be appended to 'result'.
+            allow_todo (bool): If true, then retreiving a configuration for an env which contains `MC_TODO` values will not raise an error.
 
-        Return: Reference to the config with the current env set to env.
+        Return (Root ConfigItem proxy): Reference to the config with the current env set to env.
         """
 
         try:

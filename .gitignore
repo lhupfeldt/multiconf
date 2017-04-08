@@ -16,3 +16,6 @@ dist
 build
 test/perf/*.profile
 test/perf/times.txt
+
+# Sphinx
+doc/_build/*
