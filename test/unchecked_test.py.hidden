@@ -4,15 +4,14 @@
 # pylint: disable=E0611
 from pytest import raises, xfail
 
+from multiconf import mc_config, ConfigItem, ConfigException, MC_TODO, MC_REQUIRED
+from multiconf.decorators import required, unchecked
+from multiconf.envs import EnvFactory
+
 from .utils.utils import config_error, lineno, replace_ids, assert_lines_in, assert_lines_in
 from .utils.messages import already_printed_msg, mc_required_other_env_expected
 from .utils.messages import config_error_mc_todo_current_env_expected, config_error_mc_todo_other_env_expected
 from .utils.messages import config_error_mc_required_current_env_expected, config_error_mc_required_other_env_expected
-
-from .. import ConfigRoot, ConfigItem, ConfigException, MC_TODO, MC_REQUIRED
-from ..decorators import required, unchecked
-
-from ..envs import EnvFactory
 
 
 def ce(line_num, *lines):
@@ -64,22 +63,28 @@ class anotheritem(ConfigItem):
 
 
 def test_required_items_missing_unchecked_for_configroot():
-    @required('anitem, anotheritem')
+    @required('anitem', 'anotheritem')
     @unchecked()
-    class root(ConfigRoot):
+    class root(ConfigItem):
         def mc_init(self):
             anitem()
 
-    with root(prod, ef) as cr:
-        anitem()
-        anotheritem()
+    @mc_config(ef)
+    def _(_):
+        with root(prod, ef) as cr:
+            anitem()
+            anotheritem()
 
+    cr = ef.config(prod).root
     assert cr.anitem.xx == 1
     assert cr.anotheritem.xx == 2
 
-    with root(pp, ef) as cr:
-        anitem()
+    @mc_config(ef)
+    def _(_):
+        with root() as cr:
+            anitem()
 
+    cr = ef.config(pp).root
     assert cr.anitem.xx == 1
     with raises(AttributeError) as exinfo:
         print(cr.anotheritem.xx)
@@ -89,26 +94,26 @@ def test_required_items_missing_unchecked_for_configroot():
 
 def test_mc_required_missing_unchecked_for_configroot():
     @unchecked()
-    class root(ConfigRoot):
-        def __init__(self, selected_env, env_factory):
-            super(root, self).__init__(selected_env, env_factory)
+    class root(ConfigItem):
+        def __init__(self):
+            super(root, self).__init__()
             self.anattr = MC_REQUIRED
             self.anotherattr = MC_REQUIRED
 
         def mc_init(self):
             self.setattr('anattr', prod=2, g_dev=2)
 
-    with root(prod, ef) as cr:
-        cr.setattr('anattr', pp=1, g_dev=1)
-        cr.setattr('anotherattr', prod=2)
+    @mc_config(ef)
+    def _(_):
+        with root() as cr:
+            cr.setattr('anattr', pp=1, g_dev=1)
+            cr.setattr('anotherattr', prod=2)
 
+    cr = ef.config(prod).root
     assert cr.anattr == 2
     assert cr.anotherattr == 2
 
-    with root(pp, ef) as cr:
-        cr.setattr('anattr', pp=1, g_dev=1)
-        cr.setattr('anotherattr', prod=2)
-
+    cr = ef.config(pp).root
     assert cr.anattr == 1
     with raises(Exception) as exinfo:
         print(cr.anotherattr)
@@ -117,40 +122,36 @@ def test_mc_required_missing_unchecked_for_configroot():
 
 
 def test_required_missing_unchecked_for_configitem():
-    with ConfigRoot(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with uitem() as it:
             it.setattr('anattr', pp=1, g_dev=1)
             it.setattr('anotherattr', prod=2)
 
+    cr = ef.config(prod)
     assert cr.uitem.anattr == 2
     assert cr.uitem.anotherattr == 2
 
-    with ConfigRoot(dev1, ef) as cr:
-        with uitem() as it:
-            it.setattr('anattr', pp=1, g_dev=1)
-            it.setattr('anotherattr', prod=2)
-
+    cr = ef.config(dev1)
     assert cr.uitem.anattr == 1
     with raises(Exception) as exinfo:
-        print(it.anotherattr)
+        print(cr.uitem.anotherattr)
 
     assert "Attribute 'anotherattr' MC_REQUIRED is undefined for current env Env('dev1')" in str(exinfo.value)
 
 
 def test_required_missing_unchecked_base_for_configitem():
-    with ConfigRoot(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with item() as it:
             it.setattr('anattr', pp=1, g_dev=1)
             it.setattr('anotherattr', prod=2, pp=1, g_dev=0)
 
+    cr = ef.config(prod)
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 2
 
-    with ConfigRoot(dev1, ef) as cr:
-        with item() as it:
-            it.setattr('anattr', pp=1, g_dev=1)
-            it.setattr('anotherattr', prod=2, pp=1, g_dev=0)
-
+    cr = ef.config(dev1)
     assert cr.item.anattr == 1
     assert cr.item.anotherattr == 0
 
