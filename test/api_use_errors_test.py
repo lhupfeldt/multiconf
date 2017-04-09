@@ -112,4 +112,3 @@ def test_getattr_repr_error():
                 _ = x.a
 
     assert "X'> has no attribute 'a'" in str(exinfo.value)
-    assert "X'> has no attribute 'a'" in str(exinfo.value)
