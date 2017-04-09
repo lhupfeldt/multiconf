@@ -11,6 +11,7 @@ from multiconf.config_errors import ConfigAttributeError
 from multiconf.envs import EnvFactory
 
 from .utils.utils import config_error, replace_ids
+from .utils.tstclasses import ItemWithAA
 
 
 ef1_prod = EnvFactory()
@@ -64,6 +65,32 @@ def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_
         print(cr.b)
 
     assert replace_ids(str(exinfo.value), named_as=False) == _t2_expected_repr
+
+
+_access_undefined_attribute_json_single_level_expected_repr = """{
+    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 17,
+    "ConfigItem": "<class 'multiconf.multiconf.ConfigItem'>"
+}, object of type: <class 'test.utils.tstclasses.ItemWithAA'> has no attribute 'b'"""
+
+def test_access_undefined_attribute_json_single_level():
+    @mc_config(ef1_prod)
+    def _(_):
+        with ItemWithAA(17):
+            with ConfigItem():
+                ConfigItem()
+
+    cr = ef1_prod.config(prod).ItemWithAA
+
+    with raises(AttributeError) as exinfo:
+        print(cr.b)
+
+    print(exinfo.value)
+    assert replace_ids(str(exinfo.value), named_as=False) == _access_undefined_attribute_json_single_level_expected_repr
 
 
 # TODO

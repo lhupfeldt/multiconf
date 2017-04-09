@@ -12,6 +12,8 @@ from .values import McInvalidValue
 from .config_errors import InvalidUsageException, ConfigExcludedAttributeError
 from .bases import get_bases
 from .attribute import Where
+from .repeatable import RepeatableDict
+
 
 major_version = sys.version_info[0]
 if major_version > 2:
@@ -56,7 +58,7 @@ class ConfigItemEncoder(object):
     recursion_check.warn_nesting = _warn_json_nesting
 
     def __init__(self, filter_callable, fallback_callable, compact, sort_attributes, property_methods, builders, warn_nesting,
-                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs):
+                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs, depth=None):
         """Encoder for json.
 
         Check the `multiconf.json` and `multiconf.mc_build` methods for public arguments passed on to this.
@@ -81,6 +83,10 @@ class ConfigItemEncoder(object):
         self.num_errors = 0
         self.num_invalid_usages = 0
         self.show_all_envs = show_all_envs
+
+        self.depth = depth
+        self.start_depth = None
+        self.current_depth = None
 
         if warn_nesting != None:
             self.recursion_check.warn_nesting = warn_nesting
@@ -296,7 +302,7 @@ class ConfigItemEncoder(object):
             for meta_key, val in property_inf:
                 dd[attr_key + meta_key] = val
             return
-        
+
         env_values = OrderedDict()
         prev_key_property_inf = None
         multiple_values = False
@@ -336,6 +342,21 @@ class ConfigItemEncoder(object):
             self.seen[ref_id(obj)] = obj
 
             if isinstance(obj, self.multiconf_base_type):
+                if self.depth is not None:
+                    if self.start_depth is None:
+                        self.start_depth = 0
+                        contained_in = obj
+                        while contained_in is not None:
+                            self.start_depth += 1
+                            contained_in = contained_in.contained_in
+
+                    self.current_depth = 0
+                    contained_in = obj
+                    while contained_in is not None:
+                        self.current_depth += 1
+                        contained_in = contained_in.contained_in
+                    self.current_depth = self.current_depth - self.start_depth + 1
+
                 # Handle ConfigItems", type(obj)
                 dd = self._mc_class_dict(obj)
                 if not self.start_obj:
@@ -378,6 +399,18 @@ class ConfigItemEncoder(object):
                 for key, item in obj._mc_items.items():
                     if not self.builders and isinstance(item, self.multiconf_builder_type):
                         continue
+
+                    if self.current_depth is not None:
+                        if self.current_depth >= self.depth:
+                            dd[key] = self._identification_msg_str(item)
+                            continue
+
+                        if self.current_depth == self.depth -1 and isinstance(item, RepeatableDict):
+                            shallow_item = OrderedDict()
+                            for child_key, child_item in item.items():
+                                shallow_item[child_key] = self._identification_msg_str(child_item)
+                            dd[key] = shallow_item
+                            continue
 
                     if not item and isinstance(item, self.multiconf_base_type):
                         if self.compact:
@@ -422,15 +455,21 @@ class ConfigItemEncoder(object):
                 return repr(obj)
 
             # If obj defines json_equivalent, then return the result of that
-            if hasattr(obj, 'json_equivalent'):
+            try:
                 return obj.json_equivalent()
+            except AttributeError:
+                pass
+            except Exception as ex:
+                self.num_errors += 1
+                traceback.print_exception(*sys.exc_info())
+                return "__json_error__ calling 'json_equivalent': " + repr(ex)
 
             try:
                 iterable = iter(obj)
             except TypeError:
                 pass
             else:
-                # print("# Handle iterable objects", type(obj))
+                print("# Handle iterable objects", type(obj))
                 return list(iterable)
 
             if self.user_fallback_callable:

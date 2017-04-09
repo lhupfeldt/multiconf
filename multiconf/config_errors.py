@@ -44,9 +44,10 @@ class ConfigAttributeError(AttributeError):
         if self.mc_object._mc_attributes.get(repeatable_attr_name):
             error_message += ", but found attribute " + repr(repeatable_attr_name)
         try:
-            return error_message % dict(item_repr_and_type=repr(self.mc_object) + ", object of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
+            rep = self.mc_object.json(compact=True, property_methods=True, builders=False, depth=1) + ", object"
         except:  # pylint: disable=bare-except
-            return error_message % dict(item_repr_and_type="Object of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
+            rep = "Object"
+        return error_message % dict(item_repr_and_type=rep + " of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
 
     def __str__(self):
         return self.message

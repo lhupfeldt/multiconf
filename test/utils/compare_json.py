@@ -19,10 +19,10 @@ from .check_containment import check_containment
 def _compare_json(
         item, expected_json, replace_builders, dump_builders, sort_attributes,
         test_decode, test_containment, test_excluded, test_compact,
-        expect_num_errors, show_all_envs):
+        expect_num_errors, show_all_envs, depth):
     try:
-        compact_json = item.json(compact=True, builders=dump_builders, sort_attributes=sort_attributes, show_all_envs=show_all_envs)
-        full_json = item.json(builders=dump_builders, sort_attributes=sort_attributes, show_all_envs=show_all_envs)
+        compact_json = item.json(compact=True, builders=dump_builders, sort_attributes=sort_attributes, show_all_envs=show_all_envs, depth=depth)
+        full_json = item.json(builders=dump_builders, sort_attributes=sort_attributes, show_all_envs=show_all_envs, depth=depth)
         if replace_builders:
             if test_compact:
                 compact_json_replaced = replace_ids_builder(compact_json)
@@ -94,16 +94,18 @@ def _compare_json(
 
 def compare_json(item, expected_json, replace_builders=False, dump_builders=True, sort_attributes=True,
                  test_decode=False, test_containment=True, test_excluded=False, test_compact=True,
-                 expect_num_errors=0, expected_all_envs_json=None, expect_all_envs_num_errors=None):
+                 expect_num_errors=0, expected_all_envs_json=None, expect_all_envs_num_errors=None, depth=None):
     res2 = True
     res = _compare_json(
         item, expected_json, replace_builders, dump_builders, sort_attributes,
-        test_decode, test_containment, test_excluded, test_compact, expect_num_errors, show_all_envs=False)
+        test_decode, test_containment, test_excluded, test_compact,
+        expect_num_errors, show_all_envs=False, depth=depth)
 
     if expected_all_envs_json:
         expect_num_errors = expect_all_envs_num_errors or expect_num_errors
         res2 = _compare_json(
             item, expected_all_envs_json, replace_builders, dump_builders, sort_attributes,
-            test_decode, test_containment=False, test_excluded=test_excluded, test_compact=False, expect_num_errors=expect_num_errors, show_all_envs=True)
+            test_decode, test_containment=False, test_excluded=test_excluded, test_compact=False,
+            expect_num_errors=expect_num_errors, show_all_envs=True, depth=depth)
 
     return res and res2

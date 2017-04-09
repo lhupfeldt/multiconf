@@ -110,7 +110,7 @@ class _ConfigBase(object):
         """Return the named_as property set by the @named_as decorator"""
         return cls._mc_deco_named_as or cls.__name__
 
-    def json(self, compact=False, sort_attributes=False, property_methods=True, builders=False, skipkeys=True, warn_nesting=None, show_all_envs=False):
+    def json(self, compact=False, sort_attributes=False, property_methods=True, builders=False, skipkeys=True, warn_nesting=None, show_all_envs=False, depth=None):
         """Create json representation of configuration.
 
         The mc_json_filter and mc_json_fallback arguments to `mc_config` also influence the output.
@@ -122,18 +122,19 @@ class _ConfigBase(object):
             builders (bool): Include ConfigBuilder items in json.
             skipkeys (bool: Passed to json.dumps.
             show_all_envs (bool): Display attribute values for all envs in a single dump. Without this only the values for the current env is displayed.
+            depth (int): The number of levels of child objects to dump. None means all.
         """
 
-        """See json_output.ConfigItemEncoder for parameters"""
         filter_callable = self._mc_root._mc_json_filter
         fallback_callable = self._mc_root._mc_json_fallback
-        encoder = ConfigItemEncoder(filter_callable=filter_callable, fallback_callable=fallback_callable,
-                                    compact=compact, sort_attributes=sort_attributes, property_methods=property_methods,
-                                    builders=builders, warn_nesting=warn_nesting,
-                                    multiconf_base_type=_ConfigBase, multiconf_builder_type=_ConfigBuilder,
-                                    multiconf_property_wrapper_type=_McPropertyWrapper,
-                                    show_all_envs=show_all_envs)
-
+        encoder = ConfigItemEncoder(
+            filter_callable=filter_callable, fallback_callable=fallback_callable,
+            compact=compact, sort_attributes=sort_attributes, property_methods=property_methods,
+            builders=builders, warn_nesting=warn_nesting,
+            multiconf_base_type=_ConfigBase, multiconf_builder_type=_ConfigBuilder,
+            multiconf_property_wrapper_type=_McPropertyWrapper,
+            show_all_envs=show_all_envs,
+            depth=depth)
         try:
             # TODO: Thread safety
             orig_env = self._mc_root._mc_env
@@ -153,7 +154,7 @@ class _ConfigBase(object):
     def __repr__(self):
         if self:
             # Don't call property methods in repr?, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
-            return self.json(compact=True, property_methods=True, builders=True)
+            return self.json(compact=True, property_methods=True, builders=True, depth=None)
         return self._mc_excl_repr()
 
     def num_json_errors(self):

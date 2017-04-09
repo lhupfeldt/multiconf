@@ -7,7 +7,7 @@ from multiconf import mc_config, ConfigItem, MC_REQUIRED
 from multiconf.decorators import named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import py3_local
+from .utils.utils import py3_local, lines_in, file_line, next_line_num
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
@@ -50,7 +50,7 @@ def test_json_dump_user_defined_attribute_filter():
             super(Nested, self).__init__()
             self.b = b
             self.hide_me1 = hide_me1
-            
+
         @property
         def hide_me2(self):
             return "FAIL"
@@ -112,7 +112,7 @@ def test_json_dump_user_defined_attribute_filter_exception(capsys):
             super(Nested, self).__init__()
             self.b = b
             self.hide_me1 = hide_me1
-            
+
         @property
         def hide_me2(self):
             return "FAIL"
@@ -273,3 +273,53 @@ def test_json_equivalent():
 
     cr = ef.config(prod).ItemWithAA
     assert compare_json(cr, _json_equivalent_expected_json)
+
+
+_json_equivalent_bad_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 0,
+    "handled_non_item": "__json_error__ calling 'json_equivalent': Exception('bad json_equivalent',)",
+    "someitem": {
+        "__class__": "Item",
+        "__id__": 0000,
+        "a": 7
+    }
+}"""
+
+def test_json_equivalent_bad(capsys):
+    errorline = [None]
+
+    class NonItemWithEquiv(object):
+        def json_equivalent(self):
+            errorline[0] = next_line_num()
+            raise Exception("bad json_equivalent")
+
+    @named_as('someitem')
+    class Item(ConfigItem):
+        def __init__(self):
+            super(Item, self).__init__()
+            self.a = 7
+
+    @mc_config(ef)
+    def config(root):
+        with ItemWithAA() as cr:
+            cr.aa = 0
+            cr.setattr('handled_non_item', mc_set_unknown=True, default=NonItemWithEquiv())
+            Item()
+
+    cr = ef.config(prod).ItemWithAA
+    assert compare_json(cr, _json_equivalent_bad_expected_json, expect_num_errors=1)
+
+    _sout, serr = capsys.readouterr()
+
+    assert lines_in(
+        serr,
+        "Traceback (most recent call last):",
+        file_line(__file__, errorline[0]),
+        "Exception: bad json_equivalent",
+    )

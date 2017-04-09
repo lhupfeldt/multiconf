@@ -4,6 +4,7 @@
 import sys
 from collections import OrderedDict
 import pytest
+from pytest import raises
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageException, ConfigException, MC_REQUIRED
 
@@ -757,7 +758,8 @@ def test_json_dump_property_method_calls_json(capsys):
 
     cr = ef.config(prod).ItemWithAA
     assert compare_json(cr, _json_dump_property_method_calls_json_expected_json, expect_num_errors=1)
-    _sout, serr = capsys.readouterr()
+    sout, serr = capsys.readouterr()
+    assert not sout
     print('-----')
     print(replace_ids(serr))
     print('-----')
@@ -782,7 +784,8 @@ def test_json_dump_property_method_calls_json_no_warn(capsys):
 
     cr = ef.config(prod).ItemWithAA
     cr.json(warn_nesting=False)
-    _sout, serr = capsys.readouterr()
+    sout, serr = capsys.readouterr()
+    assert not sout
     assert "Warning: Nested json calls" not in serr
 
 
@@ -804,7 +807,7 @@ _json_dump_non_conf_item_not_json_serializable_expected_json = """{
     }
 }"""
 
-def test_json_dump_non_conf_item_not_json_serializable():
+def test_json_dump_non_conf_item_not_json_serializable(capsys):
     class Key():
         def __repr__(self):
             return "<Key object>"
@@ -815,6 +818,11 @@ def test_json_dump_non_conf_item_not_json_serializable():
             SimpleItem(b={Key(): 2})
 
     cr = ef.config(prod).ItemWithAA
+
+    sout, serr = capsys.readouterr()
+    assert not sout
+    assert not serr
+
     assert compare_json(cr, _json_dump_non_conf_item_not_json_serializable_expected_json)
 
 
@@ -1673,3 +1681,192 @@ def test_envgroup_ref():
 
     cr = ef.config(prod)
     assert compare_json(cr, _envgroup_ref_expected_json)
+
+
+def test_exception_generating_json():
+    class BadException(Exception):
+        def __repr__(self):
+            raise Exception("BadException bad __repr__")
+
+    class X(object):
+        def json_equivalent(self):
+            raise BadException()
+
+    class Xx(ConfigItem):
+        def mc_init(self):
+            self.setattr('egref', default=X(), mc_set_unknown=True)
+
+    @mc_config(ef)
+    def _(root):
+        Xx()
+
+    cr = ef.config(prod)
+
+    with raises(AttributeError) as exinfo:
+        cr.Xx.zzz
+
+    assert str(exinfo.value) == "Object of type: <class 'test.json_output_test.%(py3_local)sXx'> has no attribute 'zzz'" % dict(py3_local=py3_local())
+
+
+_json_dump_depth_expected_json_d1 = """{
+    "__class__": "root",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 0,
+    "someitems": "<class 'multiconf.repeatable.RepeatableDict'>",
+    "ItemWithAA": "<class 'test.utils.tstclasses.ItemWithAA'>"
+}"""
+
+_json_dump_depth_expected_json_d2 = """{
+    "__class__": "root",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 0,
+    "someitems": {
+        "a-level1": "<class 'test.json_output_test.NestedRepeatable'>, id: 'a-level1'",
+        "b-level1": "<class 'test.json_output_test.NestedRepeatable'>, id: 'b-level1'"
+    },
+    "ItemWithAA": {
+        "__class__": "ItemWithAA",
+        "__id__": 0000,
+        "aa": 1
+    }
+}"""
+
+_json_dump_depth_expected_json_d3 = """{
+    "__class__": "root",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 0,
+    "someitems": {
+        "a-level1": {
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id": "a-level1",
+            "someitems": {}
+        },
+        "b-level1": {
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id": "b-level1",
+            "someitems": {
+                "a-level2": "<class 'test.json_output_test.NestedRepeatable'>, id: 'a-level2'",
+                "b-level2": "<class 'test.json_output_test.NestedRepeatable'>, id: 'b-level2'"
+            },
+            "ItemWithAA": {
+                "__class__": "ItemWithAA",
+                "__id__": 0000,
+                "aa": 2
+            }
+        }
+    },
+    "ItemWithAA": {
+        "__class__": "ItemWithAA",
+        "__id__": 0000,
+        "aa": 1
+    }
+}"""
+
+_json_dump_depth_expected_json_full = """{
+    "__class__": "root",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 0,
+    "someitems": {
+        "a-level1": {
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id": "a-level1",
+            "someitems": {}
+        },
+        "b-level1": {
+            "__class__": "NestedRepeatable",
+            "__id__": 0000,
+            "id": "b-level1",
+            "someitems": {
+                "a-level2": {
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "id": "a-level2",
+                    "someitems": {}
+                },
+                "b-level2": {
+                    "__class__": "NestedRepeatable",
+                    "__id__": 0000,
+                    "id": "b-level2",
+                    "someitems": {
+                        "b-level3": {
+                            "__class__": "NestedRepeatable",
+                            "__id__": 0000,
+                            "id": "b-level3",
+                            "a": 1,
+                            "someitems": {
+                                "c-level3": {
+                                    "__class__": "NestedRepeatable",
+                                    "__id__": 0000,
+                                    "id": "c-level3",
+                                    "something": 1,
+                                    "someitems": {}
+                                }
+                            }
+                        }
+                    },
+                    "ItemWithAA": {
+                        "__class__": "ItemWithAA",
+                        "__id__": 0000,
+                        "aa": 3
+                    }
+                }
+            },
+            "ItemWithAA": {
+                "__class__": "ItemWithAA",
+                "__id__": 0000,
+                "aa": 2
+            }
+        }
+    },
+    "ItemWithAA": {
+        "__class__": "ItemWithAA",
+        "__id__": 0000,
+        "aa": 1
+    }
+}"""
+
+def test_json_dump_depth(capsys):
+    @mc_config(ef)
+    def _(rt):
+        with root(aa=0):
+            ItemWithAA(1)
+            NestedRepeatable(mc_key='a-level1')
+            with NestedRepeatable(mc_key='b-level1') as ci:
+                ItemWithAA(2)
+                NestedRepeatable(mc_key='a-level2')
+                with NestedRepeatable(mc_key='b-level2') as ci:
+                    ItemWithAA(3)
+                    with NestedRepeatable(mc_key='b-level3', a=7) as ci:
+                        ci.setattr('a', prod=1, pp=2)
+                        NestedRepeatable(mc_key='c-level3', something=1)
+
+    cr = ef.config(prod).root
+
+    sout, serr = capsys.readouterr()
+    assert not sout
+    assert not serr
+
+    assert compare_json(cr, _json_dump_depth_expected_json_d1, sort_attributes=False, depth=0)
+    assert compare_json(cr, _json_dump_depth_expected_json_d1, sort_attributes=False, depth=1)
+    assert compare_json(cr, _json_dump_depth_expected_json_d2, sort_attributes=False, depth=2)
+    assert compare_json(cr, _json_dump_depth_expected_json_d3, sort_attributes=False, depth=3)
+    assert compare_json(cr, _json_dump_depth_expected_json_full, sort_attributes=False)
