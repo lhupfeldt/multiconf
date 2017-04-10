@@ -72,15 +72,15 @@ class RepeatableDict(object):
     def __repr__(self):
         return repr(OrderedDict(((key, val) for (key, val) in self._items.items() if val._mc_exists_in_env())))
 
-    def _mc_call_validate_recursively(self, env):
+    def _mc_call_mc_validate_recursively(self, env):
         """Call the user defined 'mc_validate' methods on all items"""
 
         for _, item in self._items.items():
             if item._mc_exists_in_given_env(env):
-                item._mc_call_validate_recursively(env)
+                item._mc_call_mc_validate_recursively(env)
 
-    def _mc_call_post_validate_recursively(self):
+    def _mc_call_mc_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items, including excluded items as there is no current env."""
 
         for _, item in self._items.items():
-            item._mc_call_post_validate_recursively()
+            item._mc_call_mc_post_validate_recursively()
