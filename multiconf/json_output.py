@@ -25,10 +25,6 @@ _static_value = ' #static'
 _dynamic_value = ' #dynamic'
 
 
-class NestedJsonCallError(Exception):
-    pass
-
-
 def _class_tuple(obj, obj_info=""):
     return ('__class__', obj.__class__.__name__ + obj_info)
 
@@ -325,14 +321,15 @@ class ConfigItemEncoder(object):
             dd[attr_key + meta_key] = val
 
     def __call__(self, obj):
+        property_methods_orig = self.property_methods
         if ConfigItemEncoder.recursion_check.in_default:
             in_default = ConfigItemEncoder.recursion_check.in_default
             ConfigItemEncoder.recursion_check.in_default = None
+            self.property_methods = False
             if self.recursion_check.warn_nesting:
-                print("Warning: Nested json calls:", file=sys.stderr)
+                print("Warning: Nested json calls, disabling @property method value dump:", file=sys.stderr)
                 print("outer object type:", type(in_default), file=sys.stderr)
                 print("inner object type:", repr(type(obj)) + ", inner obj:", obj.json(compact=True, property_methods=False), file=sys.stderr)
-            raise NestedJsonCallError("Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?")
 
         try:
             ConfigItemEncoder.recursion_check.in_default = obj
@@ -490,5 +487,6 @@ class ConfigItemEncoder(object):
             return "__json_error__ # don't know how to handle obj of type: " + repr(type(obj))
 
         finally:
+            self.property_methods = property_methods_orig
             ConfigItemEncoder.recursion_check.in_default = None
 

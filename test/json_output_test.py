@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import sys
 from collections import OrderedDict
 import pytest
@@ -730,11 +732,12 @@ _json_dump_property_method_calls_json_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "other_conf_item #json_error trying to handle property method": "NestedJsonCallError('Nested json calls detected. Maybe a @property method calls json or repr (implicitly)?',)"
+        "other_conf_item": 7,
+        "other_conf_item #calculated": true
     }
 }"""
 
-_json_dump_property_method_calls_json_expected_stderr = """Warning: Nested json calls:
+_json_dump_property_method_calls_json_expected_stderr = """Warning: Nested json calls, disabling @property method value dump:
 outer object type: <class 'test.json_output_test.%(py3_local)sNested'>
 inner object type: <class 'test.json_output_test.%(py3_local)sNested'>, inner obj: {
     "__class__": "Nested #as: 'xxxx', id: 0000",
@@ -750,6 +753,7 @@ def test_json_dump_property_method_calls_json(capsys):
         @property
         def other_conf_item(self):
             self.json()
+            return 7
 
     @mc_config(ef)
     def _(rt):
@@ -757,15 +761,14 @@ def test_json_dump_property_method_calls_json(capsys):
             Nested()
 
     cr = ef.config(prod).ItemWithAA
-    assert compare_json(cr, _json_dump_property_method_calls_json_expected_json, expect_num_errors=1)
+    assert compare_json(cr, _json_dump_property_method_calls_json_expected_json)
     sout, serr = capsys.readouterr()
     assert not sout
-    print('-----')
+    print('-- expected in stderr ---')
+    print(_json_dump_property_method_calls_json_expected_stderr % dict(py3_local=py3_local()))
+    print('--- got stderr ---')
     print(replace_ids(serr))
     print('-----')
-    print(_json_dump_property_method_calls_json_expected_stderr % dict(py3_local=py3_local()))
-    print('-----')
-    assert "Nested json calls detected" in serr
     assert _json_dump_property_method_calls_json_expected_stderr % dict(py3_local=py3_local()) in replace_ids(serr)
 
 
