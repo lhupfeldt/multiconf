@@ -125,8 +125,10 @@ class _ConfigBase(object):
             depth (int): The number of levels of child objects to dump. None means all.
         """
 
-        filter_callable = self._mc_root._mc_json_filter
-        fallback_callable = self._mc_root._mc_json_fallback
+        cr = self._mc_root
+
+        filter_callable = cr._mc_json_filter
+        fallback_callable = cr._mc_json_fallback
         encoder = ConfigItemEncoder(
             filter_callable=filter_callable, fallback_callable=fallback_callable,
             compact=compact, sort_attributes=sort_attributes, property_methods=property_methods,
@@ -137,16 +139,16 @@ class _ConfigBase(object):
             depth=depth)
         try:
             # TODO: Thread safety
-            orig_env = self._mc_root._mc_env
+            orig_env = cr._mc_env
             if show_all_envs:
-                self._mc_root._mc_env = NO_ENV
+                cr._mc_env = NO_ENV
 
             # python3 doesn't need  separators=(',', ': ')
             json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
-            self._mc_root._mc_json_errors = encoder.num_errors
+            cr._mc_json_errors = encoder.num_errors
             return json_str
         finally:
-            self._mc_root._mc_env = orig_env
+            cr._mc_env = orig_env
 
     def _mc_excl_repr(self):
         return "Excluded: " + repr(type(self))
