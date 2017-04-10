@@ -19,10 +19,11 @@ major_version = sys.version_info[0]
 if major_version > 2:
     long = int
 
-_warn_json_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
 _calculated_value = ' #calculated'
 _static_value = ' #static'
 _dynamic_value = ' #dynamic'
+
+_mc_filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'mc_config_result', 'num_invalid_property_usage')
 
 
 def _class_tuple(obj, obj_info=""):
@@ -48,13 +49,21 @@ def ref_id(obj):
         return id(obj)
 
 
+def _mc_identification_msg_str(objval):
+    """Generate a string which may help to identify an item which is not itself being dumped"""
+    name_msg = _attr_ref_msg(objval, 'name')
+    id_msg = _attr_ref_msg(objval, 'id')
+    additionl_ref_info_msg = ''.join([', ' + msg for msg in (id_msg, name_msg) if msg])
+    cls_msg = repr(type(objval)) if objval else repr(objval)
+    return cls_msg + additionl_ref_info_msg
+
+
 class ConfigItemEncoder(object):
     recursion_check = threading.local()
     recursion_check.in_default = None
-    recursion_check.warn_nesting = _warn_json_nesting
 
     def __init__(self, filter_callable, fallback_callable, compact, sort_attributes, property_methods, builders, warn_nesting,
-                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs, depth=None):
+                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs, depth):
         """Encoder for json.
 
         Check the `multiconf.json` and `multiconf.mc_build` methods for public arguments passed on to this.
@@ -73,7 +82,6 @@ class ConfigItemEncoder(object):
         self.multiconf_builder_type = multiconf_builder_type
         self.multiconf_property_wrapper_type = multiconf_property_wrapper_type
 
-        self.filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'mc_config_result')
         self.seen = {}
         self.start_obj = None
         self.num_errors = 0
@@ -85,7 +93,9 @@ class ConfigItemEncoder(object):
         self.current_depth = None
 
         if warn_nesting != None:
-            self.recursion_check.warn_nesting = warn_nesting
+            ConfigItemEncoder.recursion_check.warn_nesting = warn_nesting
+        else:
+            ConfigItemEncoder.recursion_check.warn_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
 
     if major_version < 3:
         def _class_dict(self, obj):
@@ -100,20 +110,11 @@ class ConfigItemEncoder(object):
             return OrderedDict((_class_tuple(obj, msg),))
         return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', ref_id(obj))))
 
-    def _identification_msg_str(self, objval):
-        """Generate a string which may identify an item which is not itself being dumped"""
-        mc_key_msg = _attr_ref_msg(objval, 'mc_key')
-        name_msg = _attr_ref_msg(objval, 'name')
-        id_msg = _attr_ref_msg(objval, 'id')
-        additionl_ref_info_msg = ''.join([', ' + msg for msg in (id_msg, name_msg, mc_key_msg) if msg])
-        cls_msg = repr(type(objval)) if objval else repr(objval)
-        return cls_msg + additionl_ref_info_msg
-
     def _excl_and_builder_str(self, objval):
         excl = ' excluded' if not objval else ''
         if isinstance(objval, self.multiconf_builder_type):
             bldr = ' builder'
-            id_msg = (", id: " + repr(ref_id(objval))) if self.builders else (" " + self._identification_msg_str(objval))
+            id_msg = (", id: " + repr(ref_id(objval))) if self.builders else (" " + _mc_identification_msg_str(objval))
         else:
             bldr = ''
             id_msg = ", id: " + repr(ref_id(objval))
@@ -155,7 +156,7 @@ class ConfigItemEncoder(object):
 
             # We found a reference to an item which is outside of the currently dumped hierarchy
             # Showing ref_id(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
-            return "#outside-ref: " + self._identification_msg_str(child_obj)
+            return "#outside-ref: " + _mc_identification_msg_str(child_obj)
 
         return child_obj
 
@@ -215,7 +216,7 @@ class ConfigItemEncoder(object):
         return key, [('', new_val)] + attr_inf
 
     def _handle_one_dir_entry_one_env(self, obj, key, _val, env, attributes_overriding_property, _dir_entries):
-        if key.startswith('_') or key in self.filter_out_keys or key in obj._mc_items:
+        if key.startswith('_') or key in _mc_filter_out_keys or key in obj._mc_items:
             return key, ()
 
         overridden_property = ''
@@ -326,6 +327,7 @@ class ConfigItemEncoder(object):
             in_default = ConfigItemEncoder.recursion_check.in_default
             ConfigItemEncoder.recursion_check.in_default = None
             self.property_methods = False
+
             if self.recursion_check.warn_nesting:
                 print("Warning: Nested json calls, disabling @property method value dump:", file=sys.stderr)
                 print("outer object type:", type(in_default), file=sys.stderr)
@@ -399,13 +401,13 @@ class ConfigItemEncoder(object):
 
                     if self.current_depth is not None:
                         if self.current_depth >= self.depth:
-                            dd[key] = self._identification_msg_str(item)
+                            dd[key] = _mc_identification_msg_str(item)
                             continue
 
                         if self.current_depth == self.depth -1 and isinstance(item, RepeatableDict):
                             shallow_item = OrderedDict()
                             for child_key, child_item in item.items():
-                                shallow_item[child_key] = self._identification_msg_str(child_item)
+                                shallow_item[child_key] = _mc_identification_msg_str(child_item)
                             dd[key] = shallow_item
                             continue
 
@@ -489,4 +491,3 @@ class ConfigItemEncoder(object):
         finally:
             self.property_methods = property_methods_orig
             ConfigItemEncoder.recursion_check.in_default = None
-

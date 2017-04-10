@@ -79,6 +79,13 @@ class RepeatableDict(object):
             if item._mc_exists_in_given_env(env):
                 item._mc_call_mc_validate_recursively(env)
 
+    def _mc_validate_properties_recursively(self, env):
+        """Call '_mc_validate_properties_recursively' methods on all items"""
+
+        for _, item in self._items.items():
+            if item._mc_exists_in_given_env(env):
+                item._mc_validate_properties_recursively(env)
+
     def _mc_call_mc_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items, including excluded items as there is no current env."""
 

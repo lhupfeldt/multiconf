@@ -239,7 +239,7 @@ def test_attribute_overrides_failing_property_method():
             errorline[0] = next_line_num()
             raise Exception("bad property method")
 
-    @mc_config(ef)
+    @mc_config(ef, validate_properties=False)
     def _0(_):
         with Nested() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
@@ -247,7 +247,7 @@ def test_attribute_overrides_failing_property_method():
     cr = ef.config(prod)
     assert cr.someitem.m == 7
 
-    @mc_config(ef)
+    @mc_config(ef, validate_properties=False)
     def _1(_):
         with Nested() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)

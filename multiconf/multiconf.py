@@ -18,9 +18,9 @@ else:
     from .property_wrapper_py3 import _McPropertyWrapper
 
 from .repeatable import RepeatableDict
-from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigException, ConfigApiException
+from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigException, ConfigApiException, InvalidUsageException
 from .config_errors import caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg, not_repeatable_in_parent_msg, repeatable_in_parent_msg
-from .json_output import ConfigItemEncoder
+from .json_output import ConfigItemEncoder, _mc_filter_out_keys, _mc_identification_msg_str
 from .bases import get_bases
 
 
@@ -275,6 +275,48 @@ class _ConfigBase(object):
 
         for child_item in self._mc_items.values():
             child_item._mc_call_mc_validate_recursively(env)
+
+    def _mc_validate_properties_recursively(self, env):
+        """Validate that @property methods can be called without error"""
+        if not self._mc_exists_in_given_env(env):
+            return
+
+        cr = self._mc_root
+
+        try:
+            dir_entries = dir(self)
+        except Exception as ex:
+            dir_entries = ()
+            cr._mc_num_property_errors += 1
+            print(_error_msg("Calling dir() failed while validating @properties for {env}.".format(env=env)), file=sys.stderr)
+            traceback.print_exception(*sys.exc_info())
+
+        for key in dir_entries:
+            if key.startswith('_') or key in _mc_filter_out_keys or key in self._mc_items:
+                continue
+
+            try:
+                val = getattr(self, key)
+            except InvalidUsageException:
+                cr._mc_num_invalid_property_usage += 1
+                # print(_error_msg("InvalidUsageException trying to validate @property '{prop_name}' in {env}.".format(prop_name=key, env=env)), file=sys.stderr)
+                # traceback.print_exception(*sys.exc_info())
+            except Exception as ex:
+                cr._mc_num_property_errors += 1
+                print(_error_msg("Exception validating @property '{prop_name}' on item {item} in {env}.".format(
+                    prop_name=key, item=_mc_identification_msg_str(self), env=env)), file=sys.stderr)
+                traceback.print_exception(*sys.exc_info())
+
+        for child_item in self._mc_items.values():
+            child_item._mc_validate_properties_recursively(env)
+
+    @property
+    def num_invalid_property_usage(self):
+        """Returns number of 'InvalidUsageException' s encountered when validating @property methods
+        Returns 0 if 'mc_config' was called with validate_properties=False.
+        """
+
+        return self._mc_root._mc_num_invalid_property_usage
 
     def _mc_call_mc_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items"""
@@ -1045,6 +1087,8 @@ class _ConfigRoot(_ConfigBase):
         self._mc_num_warnings = 0
         self._mc_config_result = {}
         self._mc_config_loaded = False
+        self._mc_num_property_errors = 0
+        self._mc_num_invalid_property_usage = 0
 
     @property
     def mc_config_result(self):
@@ -1078,7 +1122,7 @@ class _RootEnvProxy(object):
 
 
 def mc_config(
-        env_factory, error_next_env=False,
+        env_factory, error_next_env=False, validate_properties=True,
         mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=McTodoHandling.WARNING,
         mc_json_filter=None, mc_json_fallback=None):
     """Instantiate ConfigItem hierarchy for all Envs defined in 'env_factory'.
@@ -1144,6 +1188,10 @@ def mc_config(
                     res = conf_func(cr)
                 cr._mc_handled_env_bits |= env.mask
                 cr._mc_call_mc_validate_recursively(env)
+                if validate_properties:
+                    cr._mc_validate_properties_recursively(env)
+                    if cr._mc_num_property_errors:
+                        raise ConfigException("Error validating @property methods for {}".format(env))
             except ConfigException as ex:
                 if not error_next_env or ex.is_fatal:
                     raise

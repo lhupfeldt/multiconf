@@ -30,3 +30,5 @@ None is not a special value any more! !!! In earlier versions of multiconf None 
 The argument name for 'find_attribute...' was changed from 'attribute_name' to 'name' as the method finds not only attributes, but also child items.
 
 The semantics of mc_build (previously build) has changed. Attributes set on the builder will no longer be set on the items created in mc_build. The rationale being that this was surprising, and actually unnecessary, especially with the 'strict' model of only setting attributes already defined in __init__. Simply ensure that all attributes are set inside the mc_build method.
+
+Multiconf will now validate (i.e. tchack that the do not raise en exception) @property methods for all envs by default. This is much faster than calling 'json'. This can be disabled so that you need not do this on every config load.

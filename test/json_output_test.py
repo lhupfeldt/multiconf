@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys
+import sys, os
 from collections import OrderedDict
 import pytest
 from pytest import raises
@@ -508,7 +508,7 @@ def test_json_dump_property_method_raises_InvalidUsageException():
         def m(self):
             raise InvalidUsageException("No m now")
 
-    @mc_config(ef)
+    @mc_config(ef, validate_properties=False)
     def _(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -556,7 +556,7 @@ def test_json_dump_property_method_raises_exception():
         def m(self):
             raise Exception("Something is wrong")
 
-    @mc_config(ef)
+    @mc_config(ef, validate_properties=False)
     def _(rt):
         with ItemWithAA() as it:
             it.setattr('aa', default=1, prod=0)
@@ -615,7 +615,7 @@ def test_json_dump_property_method_raises_exception_in_pp():
                 raise Exception("Something is wrong")
             return self.aa + 7
 
-    @mc_config(ef)
+    @mc_config(ef, validate_properties=False)
     def _(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
@@ -636,7 +636,7 @@ def test_json_dump_property_method_raises_ConfigException():
         def m(self):
             raise ConfigException("Something is wrong")
 
-    @mc_config(ef)
+    @mc_config(ef, validate_properties=False)
     def _(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -761,15 +761,16 @@ def test_json_dump_property_method_calls_json(capsys):
             Nested()
 
     cr = ef.config(prod).ItemWithAA
-    assert compare_json(cr, _json_dump_property_method_calls_json_expected_json)
-    sout, serr = capsys.readouterr()
-    assert not sout
-    print('-- expected in stderr ---')
-    print(_json_dump_property_method_calls_json_expected_stderr % dict(py3_local=py3_local()))
-    print('--- got stderr ---')
-    print(replace_ids(serr))
-    print('-----')
-    assert _json_dump_property_method_calls_json_expected_stderr % dict(py3_local=py3_local()) in replace_ids(serr)
+    warn_nesting = os.environ.get('MULTICONF_WARN_JSON_NESTING', "false")
+    os.environ['MULTICONF_WARN_JSON_NESTING'] = "true"
+    try:
+        assert compare_json(cr, _json_dump_property_method_calls_json_expected_json, warn_nesting=True)
+        sout, serr = capsys.readouterr()
+        assert not sout
+        exp = _json_dump_property_method_calls_json_expected_stderr % dict(py3_local=py3_local())
+        assert exp in replace_ids(serr)
+    finally:
+        os.environ['MULTICONF_WARN_JSON_NESTING'] = warn_nesting
 
 
 def test_json_dump_property_method_calls_json_no_warn(capsys):
@@ -1032,7 +1033,7 @@ def test_json_dump_dir_error(capsys):
         def c(self):
             return "will-not-show"
 
-    @mc_config(ef)
+    @mc_config(ef, validate_properties=False)
     def _(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:

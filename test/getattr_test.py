@@ -118,7 +118,7 @@ def test_getattr_overwritten_property_error():
         def myprop(self):
             raise Exception("Error in myprop")
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, validate_properties=False)
     def _(_):
         with root() as rt:
             rt.setattr('xx', pp=15, prod=16)
