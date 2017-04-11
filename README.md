@@ -55,6 +55,6 @@ This executes the test suite and the demo
 
 Requirements
 =====================
-Multiconf: Python 2.7.3
+Multiconf: Python 2.7.3+, Python 3.5+
 Test Suite: pytest, pytest-cov, demjson (optional)
  - pip install -U pytest pytest-cov demjson
