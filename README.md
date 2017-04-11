@@ -1,4 +1,6 @@
 [![Build Status](https://api.travis-ci.org/lhupfeldt/multiconf.svg?branch=master)](https://travis-ci.org/lhupfeldt/multiconf)
+[![Doc](https://readthedocs.org/projects/multiconf/badge/?version=next)](https://multiconf.readthedocs.org/en/next)
+
 What
 ====
 
