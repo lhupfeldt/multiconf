@@ -1,5 +1,6 @@
 *~
 *.pyc
+__pycache__
 .cache
 .coverage
 *.egg
@@ -11,3 +12,10 @@ coverage_rc.tenjin.cache
 *.class
 .eggs
 dist
+.tox
+build
+test/perf/*.profile
+test/perf/times.txt
+
+# Sphinx
+doc/_build/*

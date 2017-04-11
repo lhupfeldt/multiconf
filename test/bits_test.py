@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from ..bits import int_to_bin_str
+from multiconf.bits import int_to_bin_str
 
 
 def test_int_to_bin_str():

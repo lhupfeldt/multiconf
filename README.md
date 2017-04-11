@@ -1,4 +1,6 @@
 [![Build Status](https://api.travis-ci.org/lhupfeldt/multiconf.svg?branch=master)](https://travis-ci.org/lhupfeldt/multiconf)
+[![Doc](https://readthedocs.org/projects/multiconf/badge/?version=master)](https://multiconf.readthedocs.org/en/master)
+
 What
 ====
 
@@ -55,6 +57,6 @@ This executes the test suite and the demo
 
 Requirements
 =====================
-Multiconf: Python 2.7.3
+Multiconf: Python 2.7.3+, Python 3.5+
 Test Suite: pytest, pytest-cov, demjson (optional)
  - pip install -U pytest pytest-cov demjson

@@ -4,13 +4,13 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno, assert_lines_in
+from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
+from multiconf.decorators import required, named_as
+from multiconf.envs import EnvFactory
+
+from .utils.utils import config_error, next_line_num, file_line
 from .utils.compare_json import compare_json
 
-from .. import ConfigRoot, ConfigItem, ConfigException, MC_REQUIRED
-from ..decorators import required, named_as
-
-from ..envs import EnvFactory
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -32,9 +32,9 @@ g_ppr = ef.EnvGroup('g_ppr', pp, prod)
 
 
 class item(ConfigItem):
-    def __init__(self, mc_include=None, mc_exclude=None):
+    def __init__(self, anattr=MC_REQUIRED, mc_include=None, mc_exclude=None):
         super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
-        self.anattr = MC_REQUIRED
+        self.anattr = anattr
         self.anotherattr = None
         self.b = None
 
@@ -50,42 +50,44 @@ class decorated_item(ConfigItem):
 
 
 _include_exclude_for_configitem_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "_ConfigRoot",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "item": false,
-    "item #Excluded: <class 'multiconf.test.include_exclude2_test.item'>": true
+    "item #Excluded: <class 'test.include_exclude2_test.item'>": true
 }"""
 
 
 def test_exclude_include_overlapping_groups_excluded_resolved_with_mc_required():
-    def conf(env):
+    @mc_config(ef)
+    def conf(_):
         """Covers exclude resolve branch"""
-        with ConfigRoot(env, ef) as cr:
-            with item(mc_include=[g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34, dev3]) as it:
-                it.setattr('anattr', pp=1, g_dev12_3=2)
-                it.setattr('b', pp=1, dev2=0)
-                it.setattr('anotherattr', default=111, dev5=7)
-        return cr
+        with item(mc_include=[g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34, dev3]) as it:
+            it.setattr('anattr', pp=1, g_dev12_3=2)
+            it.setattr('b', pp=1, dev2=0)
+            it.setattr('anotherattr', default=111, dev5=7)
 
-    cr = conf(prod)
+    cr = ef.config(prod)
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
-    assert not cr.item
+    cr = ef.config(dev1)
+    assert cr.item
 
-    cr = conf(dev2)
+    cr = ef.config(dev2)
     assert cr.item
     assert cr.item.b == 0
 
-    cr = conf(dev3)
+    cr = ef.config(dev3)
     assert not cr.item
 
-    cr = conf(pp)
+    cr = ef.config(dev4)
+    assert not cr.item
+
+    cr = ef.config(pp)
     assert cr.item
     assert cr.item.anattr == 1
     assert cr.item.b == 1
@@ -93,14 +95,14 @@ def test_exclude_include_overlapping_groups_excluded_resolved_with_mc_required()
 
 
 _include_exclude_for_configitem_required_decorator_expected_json = """{
-    "__class__": "ConfigRoot",
+    "__class__": "_ConfigRoot",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
         "name": "prod"
     },
     "item": false,
-    "item #Excluded: <class 'multiconf.test.include_exclude2_test.decorated_item'>": true
+    "item #Excluded: <class 'test.include_exclude2_test.decorated_item'>": true
 }"""
 
 
@@ -108,178 +110,238 @@ def test_exclude_include_overlapping_groups_excluded_resolved_with_required_deco
     class anitem(ConfigItem):
         xx = 222
 
-    def conf(env):
+    @mc_config(ef)
+    def conf(_):
         """Covers exclude resolve branch"""
-        with ConfigRoot(env, ef) as cr:
-            with decorated_item(mc_include=[g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34, dev3]) as it:
-                anitem()
-                it.setattr('anotherattr', default=111, dev5=7)
-        return cr
+        with decorated_item(mc_include=[g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34, dev3]) as it:
+            anitem()
+            it.setattr('anotherattr', default=111, dev5=7)
 
-    cr = conf(prod)
+    cr = ef.config(prod)
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_required_decorator_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_required_decorator_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
-    assert not cr.item
-
-    cr = conf(dev2)
+    cr = ef.config(dev1)
     assert cr.item
 
-    cr = conf(dev3)
+    cr = ef.config(dev2)
+    assert cr.item
+
+    cr = ef.config(dev3)
     assert not cr.item
 
-    cr = conf(pp)
+    cr = ef.config(dev4)
+    assert not cr.item
+
+    cr = ef.config(pp)
     assert cr.item.xx == 3
     assert cr.item.anitem.xx == 222
     assert cr.item.anotherattr == 111
 
 
 def test_exclude_include_overlapping_groups_included_resolved():
-    def conf(env):
+    @mc_config(ef)
+    def conf(_):
         """Covers include resolve branch"""
-        with ConfigRoot(env, ef) as cr:
-            with item(mc_include=[dev3, g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34]) as it:
-                it.setattr('anattr', pp=1, g_dev12_3=2, dev5=117, g_ppr=4)
-        return cr
+        with item(mc_include=[dev3, g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34]) as it:
+            it.setattr('anattr', pp=1, g_dev12_3=2, dev5=117, g_ppr=4)
 
-    cr = conf(prod)
+    cr = ef.config(prod)
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
-    assert not cr.item
-
-    cr = conf(dev2)
+    cr = ef.config(dev1)
     assert cr.item
 
-    cr = conf(dev3)
+    cr = ef.config(dev2)
     assert cr.item
 
-    cr = conf(dev4)
+    cr = ef.config(dev3)
+    assert cr.item
+
+    cr = ef.config(dev4)
     assert not cr.item
 
-    cr = conf(pp)
+    cr = ef.config(pp)
     assert cr.item
     assert cr.item.anattr == 1
 
 
-exclude_include_overlapping_groups_excluded_unresolved = """
-File "%(file)s", line %(line)d
-ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:
-    from: EnvGroup('g_dev12_3') {
-     EnvGroup('g_dev12') {
-       Env('dev1'),
-       Env('dev2')
-  },
-     Env('dev3')
+_exclude_include_overlapping_groups_excluded_unresolved_expected_ex1 = """
+ConfigException: Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev2_34') {
+   Env('dev2'),
+   EnvGroup('g_dev23') {
+      Env('dev3'),
+      Env('dev4')
+   }
 }
-    from: EnvGroup('g_dev2_34') {
-     Env('dev2'),
-     EnvGroup('g_dev23') {
-       Env('dev3'),
-       Env('dev4')
-  }
+ - from include: EnvGroup('g_dev12_3') {
+   EnvGroup('g_dev12') {
+      Env('dev1'),
+      Env('dev2')
+   },
+   Env('dev3')
 }
-File "%(file)s", line %(line)d
-ConfigError: Env 'dev3' is specified in both include and exclude, with no single most specific group or direct env:
-    from: EnvGroup('g_dev23') {
-     Env('dev3'),
-     Env('dev4')
+Error in config for Env('dev2') above.
+
+""".lstrip()
+
+_exclude_include_overlapping_groups_excluded_unresolved_expected_ex2 = """
+ConfigException: Env('dev3') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev23') {
+   Env('dev3'),
+   Env('dev4')
 }
-    from: EnvGroup('g_dev12_3') {
-     EnvGroup('g_dev12') {
-       Env('dev1'),
-       Env('dev2')
-  },
-     Env('dev3')
+ - from include: EnvGroup('g_dev12_3') {
+   EnvGroup('g_dev12') {
+      Env('dev1'),
+      Env('dev2')
+   },
+   Env('dev3')
 }
-    from: EnvGroup('g_dev2_34') {
-     Env('dev2'),
-     EnvGroup('g_dev23') {
-       Env('dev3'),
-       Env('dev4')
-  }
+Error in config for Env('dev3') above.
+
+""".lstrip()
+
+def test_exclude_include_overlapping_groups_excluded_unresolved_init(capsys):
+    errorline = [None]
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef, error_next_env=True)
+        def _(_):
+            errorline[0] = next_line_num()
+            item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
+
+    _sout, serr = capsys.readouterr()
+    assert _exclude_include_overlapping_groups_excluded_unresolved_expected_ex1 in serr
+    assert serr.endswith(_exclude_include_overlapping_groups_excluded_unresolved_expected_ex2)
+
+
+_exclude_include_overlapping_groups_excluded_unresolved_init_reversed_ex = """
+Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev12_3') {
+   EnvGroup('g_dev12') {
+      Env('dev1'),
+      Env('dev2')
+   },
+   Env('dev3')
+}
+ - from include: EnvGroup('g_dev2_34') {
+   Env('dev2'),
+   EnvGroup('g_dev23') {
+      Env('dev3'),
+      Env('dev4')
+   }
+}""".strip()
+
+def test_exclude_include_overlapping_groups_excluded_unresolved_init_reversed():
+    errorline = [None]
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef)
+        def _(_):
+            errorline[0] = next_line_num()
+            item(anattr=1, mc_include=[g_dev34, g_dev2_34], mc_exclude=[g_dev12_3, pp])
+
+    assert _exclude_include_overlapping_groups_excluded_unresolved_init_reversed_ex in str(exinfo.value)
+
+
+_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_expected = """
+ConfigError: Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev2_34') {
+   Env('dev2'),
+   EnvGroup('g_dev23') {
+      Env('dev3'),
+      Env('dev4')
+   }
+}
+ - from include: EnvGroup('g_dev12_3') {
+   EnvGroup('g_dev12') {
+      Env('dev1'),
+      Env('dev2')
+   },
+   Env('dev3')
 }
 """.strip()
 
-def test_exclude_include_overlapping_groups_excluded_unresolved(capsys):
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, ef):
-            errorline = lineno() + 1
-            item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
-
-    print(str(exinfo.value))
-    assert "There were 2 errors when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    print(serr)
-    expected = exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline)
-    print('---------------------')
-    print(expected)
-    assert expected in serr
-
-
-def test_exclude_include_overlapping_groups_excluded_unresolved_reversed(capsys):
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, ef):
-            errorline = lineno() + 1
-            item(mc_include=[g_dev34, g_dev2_34], mc_exclude=[g_dev12_3, pp])
-
-    assert "There were 2 errors when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
-
-
 def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs(capsys):
+    errorline = [None]
+
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, ef):
-            with item() as it:
-                errorline = lineno() + 1
+        @mc_config(ef)
+        def _(_):
+            with item(anattr=1) as it:
+                errorline[0] = next_line_num()
                 it.mc_select_envs(include=[g_dev12_3, pp], exclude=[g_dev34, g_dev2_34])
 
-    assert "There were 2 errors when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
-    assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
-
-
-def test_exclude_include_overlapping_groups_excluded_unresolved_reversed_mc_select_envs(capsys):
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, ef):
-            with item() as it:
-                errorline = lineno() + 1
-                it.mc_select_envs(include=[g_dev34, g_dev2_34], exclude=[g_dev12_3, pp])
-                raise Exception()
-
-    assert "There were 2 errors when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    assert exclude_include_overlapping_groups_excluded_unresolved % dict(file=__file__, line=errorline) in serr
-
-
-def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolved(capsys):
-    with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, ef):
-            item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3])
-
+    assert serr.startswith(file_line(__file__, errorline[0]))
+    assert _exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_expected in serr
     assert "There was 1 error when defining item" in str(exinfo.value)
+
+
+_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_reversed_expected = """
+ConfigError: Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: EnvGroup('g_dev12_3') {
+   EnvGroup('g_dev12') {
+      Env('dev1'),
+      Env('dev2')
+   },
+   Env('dev3')
+}
+ - from include: EnvGroup('g_dev2_34') {
+   Env('dev2'),
+   EnvGroup('g_dev23') {
+      Env('dev3'),
+      Env('dev4')
+   }
+}
+""".strip()
+
+def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_reversed(capsys):
+    errorline = [None]
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef)
+        def _(_):
+            with item(anattr=1) as it:
+                errorline[0] = next_line_num()
+                it.mc_select_envs(include=[g_dev34, g_dev2_34], exclude=[g_dev12_3, pp])
+
     _sout, serr = capsys.readouterr()
-    expected = "ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:"
-    assert expected in serr
+    assert serr.startswith(file_line(__file__, errorline[0]))
+    assert _exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_reversed_expected in serr
+
+
+def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolved():
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef)
+        def _(_):
+            item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3])
+
+    expected = "Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:"
+    assert expected in str(exinfo.value)
 
 
 def test_exclude_include_overlapping_groups_dev3_dev2_finally_resolved():
-    with ConfigRoot(prod, ef):
-        item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3, dev2])
+    @mc_config(ef)
+    def _(_):
+        with item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3, dev2]) as it:
+            it.setattr('anattr', g_dev12_3=123, pp=1)
 
 
 def test_exclude_include_error_before_exclude(capsys):
+    errorline = [None]
+
     with raises(ConfigException) as exinfo:
-        with ConfigRoot(prod, ef):
+        @mc_config(ef)
+        def _(_):
             with item() as it:
-                errorline = lineno() + 1
+                errorline[0] = next_line_num()
                 it.setattr('_a', 7)
                 it.mc_select_envs(exclude=[prod])
-                raise Exception()
 
     _sout, serr = capsys.readouterr()
-    msg = "Trying to set attribute '_a' on a config item. Atributes starting with '_' can not be set using item.setattr. Use assignment instead."
-    assert ce(errorline, msg) == serr
+    msg = "Trying to set attribute '_a' on a config item. Atributes starting with '_' cannot be set using item.setattr. Use assignment instead."
+    assert ce(errorline[0], msg) == serr

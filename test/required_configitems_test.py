@@ -3,13 +3,13 @@
 
 from pytest import raises
 
-from .utils.utils import config_error, config_warning, replace_ids, lineno, total_msg, py3_local
+from multiconf import mc_config, ConfigItem, ConfigException, ConfigDefinitionException
+from multiconf.decorators import required
+from multiconf.envs import EnvFactory
+
+from .utils.utils import config_error, config_warning, next_line_num, line_num, total_msg, py3_local
 from .utils.messages import exception_previous_object_expected_stderr
 
-from .. import ConfigRoot, ConfigItem, ConfigException, ConfigDefinitionException
-from ..decorators import required, named_as, nested_repeatables
-
-from ..envs import EnvFactory
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -38,69 +38,47 @@ class someotheritem2(_BaseItem): pass
 class efgh(_BaseItem): pass
 
 
-def test_required_items_for_configroot_as_str():
-    @required('anitem, anotheritem')
-    class root(ConfigRoot):
-        pass
-
-    with root(prod, ef) as cr:
-        anitem(1)
-        anotheritem(2)
-    assert cr.anitem.val == 1
-    assert cr.anotheritem.val == 2
-
-
 def test_required_items_for_configroot_as_args():
     @required('anitem', 'anotheritem')
-    class root(ConfigRoot):
+    class root(ConfigItem):
         pass
 
-    with root(prod, ef) as cr:
-        anitem(1)
-        anotheritem(2)
+    @mc_config(ef)
+    def _(_):
+        with root():
+            anitem(1)
+            anotheritem(2)
+
+    cr = ef.config(prod).root            
     assert cr.anitem.val == 1
     assert cr.anotheritem.val == 2
-
-
-def test_required_items_for_configitem_as_str():
-    class root(ConfigRoot):
-        pass
-
-    @required('aa, bb')
-    class item(ConfigItem):
-        pass
-
-    with root(prod, ef) as cr:
-        with item():
-            aa(1)
-            bb(2)
-
-    assert cr.item.aa.val == 1
-    assert cr.item.bb.val == 2
 
 
 def test_required_items_for_configitem_as_args():
-    class root(ConfigRoot):
+    class root(ConfigItem):
         pass
 
     @required('aa', 'bb')
     class item(ConfigItem):
         pass
 
-    with root(prod, ef) as cr:
-        with item():
-            aa(1)
-            bb(2)
+    @mc_config(ef)
+    def _(_):
+        with root():
+            with item():
+                aa(1)
+                bb(2)
 
+    cr = ef.config(prod).root
     assert cr.item.aa.val == 1
     assert cr.item.bb.val == 2
 
 
 def test_required_items_accept_override_of_default():
-    class root(ConfigRoot):
+    class root(ConfigItem):
         pass
 
-    @required('aa, bb')
+    @required('aa', 'bb')
     class item(ConfigItem):
         def __init__(self, a, b):
             super(item, self).__init__()
@@ -112,29 +90,34 @@ def test_required_items_accept_override_of_default():
             aa(self.a)
             bb(self.b)
 
-    with root(prod, ef) as cr:
+    @mc_config(ef)
+    def _(_):
         with item(a=1, b=1):
             bb(2)
 
+    cr = ef.config(prod)
     assert cr.item.aa.val == 1
     assert cr.item.bb.val == 2
 
 
 def test_required_items_inherited_ok(capsys):
-    @required('anitem, anotheritem')
-    class root(ConfigRoot):
+    @required('anitem', 'anotheritem')
+    class root(ConfigItem):
         pass
 
-    @required('someitem2, someotheritem2')
+    @required('someitem2', 'someotheritem2')
     class root2(root):
         pass
 
-    with root2(prod, ef) as cr:
-        anitem(1)
-        anotheritem(2)
-        someitem2(3)
-        someotheritem2(4)
+    @mc_config(ef)
+    def _(_):
+        with root2():
+            anitem(1)
+            anotheritem(2)
+            someitem2(3)
+            someotheritem2(4)
 
+    cr = ef.config(prod).root2
     assert cr.anitem.val == 1
     assert cr.anotheritem.val == 2
     assert cr.someitem2.val == 3
@@ -147,71 +130,92 @@ def test_required_items_inherited_ok(capsys):
 
 
 def test_required_items_missing_for_configroot(capsys):
+    errorline = [None]
+
     with raises(ConfigException) as exinfo:
-        @required('someitem1, someitem2')
-        class root(ConfigRoot):
+        @required('someitem1', 'someitem2')
+        class root(ConfigItem):
             pass
 
-        with root(prod, ef):
-            errorline = lineno()
+        @mc_config(ef)
+        def _(_):
+            with root():
+                errorline[0] = line_num()
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Missing '@required' items: ['someitem1', 'someitem2']")
+    assert serr == ce(errorline[0], "Missing '@required' items: ['someitem1', 'someitem2']")
     assert total_msg(1) in str(exinfo.value)
 
 
 def test_required_items_missing_for_configitem(capsys):
+    errorline = [None]
+
     with raises(ConfigException) as exinfo:
-        class root(ConfigRoot):
+        class root(ConfigItem):
             pass
 
-        @required('abcd, efgh, ijkl')
+        @required('abcd', 'efgh', 'ijkl')
         class item(ConfigItem):
             pass
 
-        with root(prod, ef):
-            with item() as ii:
-                errorline = lineno() + 1
-                efgh(7)
+        @mc_config(ef)
+        def _(_):
+            with root():
+                with item():
+                    errorline[0] = next_line_num()
+                    efgh(7)
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline, "Missing '@required' items: ['abcd', 'ijkl']")
+    assert serr == ce(errorline[0], "Missing '@required' items: ['abcd', 'ijkl']")
 
 
 def test_decorator_arg_not_a_valid_identifier_in_required_decorator():
     with raises(ConfigDefinitionException) as exinfo:
-        @required('a, a-b, b, 99')
-        class root(ConfigRoot):
+        @required('a', 'a-b', 'b', '99')
+        class root(ConfigItem):
             pass
 
-    assert str(exinfo.value) == "['a-b', '99'] are not valid identifiers"
+    assert str(exinfo.value) == "['a-b', '99'] are not valid identifiers."
+
+    with raises(ConfigDefinitionException) as exinfo:
+        @required('x, y')
+        class root(ConfigItem):
+            pass
+
+    assert str(exinfo.value) == "'x, y' is not a valid identifier."
 
 
 def test_error_freezing_previous_sibling_missing_required(capsys):
+    errorline = [None]
+
     @required('a')
     class inner(ConfigItem):
         pass
 
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, ef):
-            errorline = lineno() + 1
-            inner()
-            inner()
+        @mc_config(ef)
+        def _(_):
+            with ConfigItem():
+                errorline[0] = next_line_num()
+                inner()
+                ConfigItem()
 
     _sout, serr = capsys.readouterr()
-    assert serr.startswith(ce(errorline, "Missing '@required' items: ['a']"))
+    # TODO errorline
+    print(serr)
+    assert "Missing '@required' items: ['a']" in serr
     assert serr.endswith(exception_previous_object_expected_stderr % dict(
         module='required_configitems_test', py3_local=py3_local()))
     assert total_msg(1) in str(exinfo.value)
 
 
 def test_required_attributes_inherited_redefined(capsys):
-    @required('anitem, anotheritem')
-    class root(ConfigRoot):
+    @required('anitem', 'anotheritem')
+    class root(ConfigItem):
         pass
 
-    errorline = lineno() + 2
-    @required('anitem, someotheritem2')
+    errorline = line_num() + 2
+    @required('anitem', 'someotheritem2')
     class root2(root):
         pass
 

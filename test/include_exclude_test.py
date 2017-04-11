@@ -4,18 +4,18 @@
 from __future__ import print_function
 
 # pylint: disable=E0611
-from pytest import raises, xfail
+from pytest import fail, raises
 
-from .utils.utils import config_error, lineno, assert_lines_in
-from utils.messages import mc_required_current_env_expected, mc_required_other_env_expected
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, ConfigExcludedAttributeError, MC_REQUIRED
+from multiconf.decorators import named_as, nested_repeatables, required
+from multiconf.envs import EnvFactory
+
+from .utils.utils import config_error, next_line_num
+from .utils.messages import mc_required_expected
 from .utils.compare_json import compare_json
-from .utils.tstclasses import RootWithAA
+from .utils.tstclasses import ItemWithAA
 
-from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigException, MC_REQUIRED
-from ..decorators import named_as, nested_repeatables, required
-from ..config_errors import caller_file_line
-
-from ..envs import EnvFactory
+from .include_exclude_classes import McSelectOverrideItem, McSelectOverrideItem2
 
 
 def ce(line_num, serr, *lines):
@@ -35,6 +35,11 @@ prod = ef.Env('prod')
 g_ppr = ef.EnvGroup('g_ppr', pp, prod)
 
 
+exp_dev1_ambiguous = """Env('dev1') is specified in both include and exclude, with no single most specific group or direct env:
+ - from exclude: Env('dev1')
+ - from include: Env('dev1')"""
+
+
 class item(ConfigItem):
     def __init__(self, mc_include=None, mc_exclude=None):
         super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
@@ -52,13 +57,13 @@ class anotheritem(ConfigItem):
 
 
 @named_as('item')
-@required('anitem, anotheritem')
+@required('anitem', 'anotheritem')
 class decorated_item(ConfigItem):
     pass
 
 
 _include_exclude_for_configitem_expected_json = """{
-    "__class__": "RootWithAA",
+    "__class__": "ItemWithAA",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -66,62 +71,95 @@ _include_exclude_for_configitem_expected_json = """{
     },
     "aa": 1,
     "item": false,
-    "item #Excluded: <class 'multiconf.test.include_exclude_test.item'>": true
+    "item #Excluded: <class 'test.include_exclude_test.item'>": true
 }"""
 
-_include_exclude_for_decorated_configitem_expected_json = """{
-    "__class__": "RootWithAA",
+_include_exclude_for_configitem_all_envs_expected_json = """{
+    "__class__": "ItemWithAA",
     "__id__": 0000,
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
+    "env": "<class 'multiconf.envs.NO_ENV'>",
     "aa": 1,
-    "item": false,
-    "item #Excluded: <class 'multiconf.test.include_exclude_test.decorated_item'>": true
+    "item": {
+        "__class__": "item",
+        "__id__": 0000,
+        "#item does not exist in": "Env('dev2'), Env('dev3'), Env('prod')",
+        "anattr": {
+            "dev1": 2,
+            "dev2": 2,
+            "dev3": 2,
+            "pp": 1,
+            "prod": "MC_REQUIRED"
+        },
+        "anattr #multiconf attribute": true,
+        "anotherattr": {
+            "dev1": 1,
+            "dev2": "MC_REQUIRED",
+            "dev3": "MC_REQUIRED",
+            "pp": 2,
+            "prod": "MC_REQUIRED"
+        },
+        "anotherattr #multiconf attribute": true,
+        "b": null
+    }
 }"""
 
 def test_include_for_configitem_with_mc_required():
-    def conf(env):
-        with RootWithAA(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_include=[dev1, pp]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
                 it.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True,
+                        expected_all_envs_json=_include_exclude_for_configitem_all_envs_expected_json)
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithAA
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
 
 
+_include_exclude_for_decorated_configitem_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 1,
+    "item": false,
+    "item #Excluded: <class 'test.include_exclude_test.decorated_item'>": true
+}"""
+
 def test_include_for_configitem_with_required_decorator():
-    def conf(env):
-        with RootWithAA(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA() as cr:
             cr.aa = 1
             with decorated_item(mc_include=[dev1, pp]) as it:
                 anitem()
                 anotheritem()
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
-    compare_json(cr, _include_exclude_for_decorated_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_decorated_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithAA
     assert cr.item.anitem.xx == 1
     assert cr.item.anotheritem.xx == 2
 
 
 def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
-    def conf(env):
-        with RootWithAA(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_exclude=[dev2, prod]) as it:
                 it.mc_select_envs(exclude=[prod])  # Excluding again is ignored (to avoid extra checking)
@@ -129,73 +167,73 @@ def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
                 it.setattr('anotherattr', dev1=1, dev3=0, pp=2)
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithAA
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
 
 
 def test_include_missing_for_configitem(capsys):
-    def conf(env, errorline):
-        with RootWithAA(env, ef) as cr:
-            cr.aa = 1
-            with item(mc_include=[dev1, pp]) as it:
-                print("it:", id(it))
-                errorline.append(lineno() + 1)
-                it.setattr('anattr', g_dev12_3=2)
-                it.setattr('anotherattr', dev1=1, pp=2)
-        return cr
-
     errorline = []
+
     with raises(ConfigException) as exinfo:
-        conf(prod, errorline)
+        @mc_config(ef)
+        def _(rt):
+            with ItemWithAA() as cr:
+                cr.aa = 1
+                with item(mc_include=[dev1, pp]) as it:
+                    print("it:", id(it))
+                    errorline.append(next_line_num())
+                    it.setattr('anattr', g_dev12_3=2)
+                    it.setattr('anotherattr', dev1=1, pp=2)
 
     _sout, serr = capsys.readouterr()
-    ce(errorline[0], serr, mc_required_other_env_expected.format(attr='anattr', env=pp))
+    ce(errorline[0], serr, mc_required_expected.format(attr='anattr', env=pp))
     assert "There was 1 error when defining item" in str(exinfo.value)
 
 
 def test_exclude_for_configitem():
-    def conf(env):
-        with RootWithAA(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_exclude=[dev2, prod]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
                 it.setattr('anotherattr', dev1=1, dev3=0, pp=2)
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithAA
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
 
 
 class ritem(RepeatableConfigItem):
-    def __init__(self, name, mc_include=None, mc_exclude=None):
-        super(ritem, self).__init__(mc_key=name, mc_include=mc_include, mc_exclude=mc_exclude)
-        self.name = name
+    def __init__(self, mc_key, mc_include=None, mc_exclude=None):
+        super(ritem, self).__init__(mc_key=mc_key, mc_include=mc_include, mc_exclude=mc_exclude)
+        self.name = mc_key
         self.anattr = MC_REQUIRED
         self.anotherattr = MC_REQUIRED
 
 
 @named_as('ritems')
-@required('anitem, anotheritem')
+@required('anitem', 'anotheritem')
 class decorated_ritem(RepeatableConfigItem):
-    def __init__(self, name, mc_exclude=None, mc_include=None):
-        super(decorated_ritem, self).__init__(mc_key=name, mc_exclude=mc_exclude, mc_include=mc_include)
-        self.name = name
+    def __init__(self, mc_key, mc_exclude=None, mc_include=None):
+        super(decorated_ritem, self).__init__(mc_key=mc_key, mc_exclude=mc_exclude, mc_include=mc_include)
+        self.name = mc_key
 
 
 @nested_repeatables('ritems')
-class root(RootWithAA):
+class root(ItemWithAA):
     pass
 
 
@@ -211,65 +249,71 @@ _include_exclude_for_configitem_repeatable_expected_json = """{
 }"""
 
 def test_include_for_configitem_repeatable_with_mc_required():
-    def conf(env):
-        with root(env, ef) as cr:
-            cr.aa = 1
-            with ritem(name='a', mc_include=[dev1, pp]) as it:
+    @mc_config(ef)
+    def _(rt):
+        with root(aa=1):
+            with ritem('a', mc_include=[dev1, pp]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
                 it.setattr('anotherattr', dev1=1, pp=2)
-        return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).root
     assert cr.aa == 1
     assert cr.ritems == {}
-    compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
+    for key, val in cr.ritems.items():
+        fail("There should not be any items")
+    for key in cr.ritems:
+        fail("There should not be any keys")
+    for val in cr.ritems.values():
+        fail("There should not be any values")
+    assert compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).root
     assert cr.ritems['a'].anattr == 2
     assert cr.ritems['a'].anotherattr == 1
 
 
 def test_include_for_configitem_repeatable_with_required_decorater():
-    def conf(env):
-        with root(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with root() as cr:
             cr.aa = 1
-            with decorated_ritem(name='a', mc_include=[dev1, pp]) as it:
+            with decorated_ritem('a', mc_include=[dev1, pp]) as it:
                 anitem()
                 anotheritem()
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).root
     assert cr.aa == 1
     assert cr.ritems == {}
-    compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).root
     assert cr.ritems['a'].anitem.xx == 1
     assert cr.ritems['a'].anotheritem.xx == 2
 
 
 def test_exclude_for_configitem_repeatable():
-    def conf(env):
-        with root(env, ef) as cr:
-            cr.aa = 1
-            with ritem(name='a', mc_exclude=[dev2, prod]) as it:
+    @mc_config(ef)
+    def _(rt):
+        with root(aa=1):
+            with ritem('a', mc_exclude=[dev2, prod]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
                 it.setattr('anotherattr', dev1=1, dev3=0, pp=2)
-        return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).root
     assert cr.aa == 1
     assert cr.ritems == {}
-    compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).root
     assert cr.ritems['a'].anattr == 2
     assert cr.ritems['a'].anotherattr == 1
 
 
 def test_exclude_for_nested_configitem():
-    def conf(env):
-        with RootWithAA(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
                 it1.setattr('anattr', pp=1, g_dev12_3=2)
@@ -279,21 +323,21 @@ def test_exclude_for_nested_configitem():
                     it2.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithAA
     assert cr.item.item.anattr == 2
     assert cr.item.item.anotherattr == 1
 
 
 def test_exclude_for_repeatable_nested_configitem():
-    def conf(env):
-        with root(env, ef) as cr:
-            cr.aa = 1
-            with ritem(name='a', mc_exclude=[dev2, dev3, prod]) as rit:
+    @mc_config(ef)
+    def _(rt):
+        with root(aa=1):
+            with ritem('a', mc_exclude=[dev2, dev3, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, pp=2)
                 with item() as it1:
@@ -303,23 +347,21 @@ def test_exclude_for_repeatable_nested_configitem():
                         it2.setattr('anattr', pp=1, g_dev12_3=2)
                         it2.setattr('anotherattr', dev1=1, pp=2)
 
-            with ritem(name='b', mc_exclude=[dev1, dev3]) as rit:
+            with ritem('b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
                 with item() as it1:
                     it1.setattr('anattr', prod=33, pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
 
-            with ritem(name='c', mc_exclude=[dev2, prod]) as rit:
+            with ritem('c', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev3=0, pp=2)
                 with item() as it1:
                     it1.setattr('anattr', pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, dev3=0, pp=2)
 
-        return cr
-
-    cr = conf(prod)
+    cr = ef.config(prod).root
     assert cr.aa == 1
     assert 'a' not in cr.ritems
     assert 'b' in cr.ritems
@@ -328,7 +370,7 @@ def test_exclude_for_repeatable_nested_configitem():
     assert 'c' not in cr.ritems
     assert len(cr.ritems) == 1
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).root
     assert cr.aa == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -340,10 +382,11 @@ def test_exclude_for_repeatable_nested_configitem():
 
 
 def test_exclude_for_repeatable_nested_excludes_configitem():
-    def conf(env):
-        with root(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with root() as cr:
             cr.aa = 1
-            with ritem(name='a', mc_exclude=[dev2, prod]) as rit:
+            with ritem('a', mc_exclude=[dev2, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev3=0, pp=2)
                 with item(mc_exclude=[pp, dev3]) as it1:
@@ -353,7 +396,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
                         it2.setattr('anattr', pp=1, g_dev12_3=2)
                         it2.setattr('anotherattr', dev1=1, pp=2)
 
-            with ritem(name='b', mc_exclude=[dev1, dev3]) as rit:
+            with ritem('b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
                 rit.setattr('anotherattr', dev1=1, dev2=3, pp=2, prod=44)
                 with item(mc_exclude=[pp]) as it1:
@@ -362,7 +405,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
 
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).root
     assert cr.aa == 1
     assert len(cr.ritems) == 1
 
@@ -371,7 +414,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['b'].anattr == 31
     assert cr.ritems['b'].item.anattr == 33
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).root
     assert cr.aa == 1
     assert len(cr.ritems) == 1
 
@@ -380,7 +423,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['a'].item.item.anattr == 2
     assert 'b' not in cr.ritems
 
-    cr = conf(pp)
+    cr = ef.config(pp).root
     assert cr.aa == 1
     assert len(cr.ritems) == 2
 
@@ -391,7 +434,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['b'].anattr == 1
     assert not cr.ritems['b'].item
 
-    cr = conf(dev2)
+    cr = ef.config(dev2).root
     assert cr.aa == 1
     assert len(cr.ritems) == 1
 
@@ -404,7 +447,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['b'].item.anattr == 2
     assert cr.ritems['b'].item.anotherattr == 1
 
-    cr = conf(dev3)
+    cr = ef.config(dev3).root
     assert cr.aa == 1
     assert len(cr.ritems) == 1
 
@@ -417,41 +460,12 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
         _ = cr.ritems['b']
 
 
-def test_child_includes_excluded_init(capsys):
-    with raises(ConfigException) as exinfo:
-        with root(prod, ef):
-            with ritem(name='a', mc_exclude=[g_dev12_3, prod]):
-                errorline = lineno() + 1
-                with item(mc_include=[dev2, prod]) as it1:
-                    it1.x = 7
-
-    assert "There were 2 errors when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    print(serr)
-    assert_lines_in(
-        __file__, errorline, serr,
-        "^%(lnum)s",
-        "^ConfigError: Env 'dev2' is excluded at an outer level",
-        "^%(lnum)s",
-        "^ConfigError: Env 'prod' is excluded at an outer level"
-    )
-
-
-def test_child_includes_excluded_mc_select_envs():
-    with root(prod, ef, aa=1) as cr:
-        with ritem(name='a', mc_exclude=[g_dev12_3, prod]):
-            with item() as it1:
-                it1.mc_select_envs(include=[dev2, prod])  # TODO This is ignored because it is already determined in __init__ that object if excluded
-                it1.x = 7
-
-    xfail("TODO: Ideally should give same error as 'test_child_includes_excluded_init'")
-
-
 def test_exclude_include_overlapping_for_configitem(capsys):
     """Test that most specifig group/env wins"""
 
-    def conf(env):
-        with RootWithAA(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev12]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
@@ -459,27 +473,27 @@ def test_exclude_include_overlapping_for_configitem(capsys):
                 it.setattr('anotherattr', default=111)
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
-    assert cr.aa == 1
-    assert not cr.item
-
-    cr = conf(dev2)
+    cr = ef.config(dev1).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
 
-    cr = conf(dev3)
+    cr = ef.config(dev2).ItemWithAA
+    assert cr.aa == 1
+    assert not cr.item
+
+    cr = ef.config(dev3).ItemWithAA
     assert cr.aa == 1
     assert cr.item
     assert cr.item.anattr == 2
     assert cr.item.b == 0
     assert cr.item.anotherattr == 111
 
-    cr = conf(pp)
+    cr = ef.config(pp).ItemWithAA
     assert cr.aa == 1
     assert cr.item
     assert cr.item.anattr == 1
@@ -489,55 +503,63 @@ def test_exclude_include_overlapping_for_configitem(capsys):
 
 def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
     """Test include/exclude ambiguity for direct env specification. See include_exclude2_test.py for groups."""
+    errorline = [None]
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        with RootWithAA(prod, ef):
-            errorline = lineno() + 1
-            item(mc_exclude=[dev1], mc_include=[dev1, pp])
+        @mc_config(ef)
+        def _(rt):
+            with ItemWithAA(aa=0):
+                errorline[0] = next_line_num()
+                item(mc_exclude=[dev1], mc_include=[dev1, pp])
 
-    assert "There was 1 error when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    ce(errorline, serr, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+    sout, _serr = capsys.readouterr()
+    assert sout == ""
+
+    assert exp_dev1_ambiguous in str(exinfo.value)
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        with RootWithAA(prod, ef):
-            errorline = lineno() + 1
-            item(mc_exclude=[pp, dev1], mc_include=[dev1])
+        @mc_config(ef)
+        def _(rt):
+            with ItemWithAA(aa=0):
+                errorline[0] = next_line_num()
+                item(mc_exclude=[pp, dev1], mc_include=[dev1])
 
-    assert "There was 1 error when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    ce(errorline, serr, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+    assert exp_dev1_ambiguous in str(exinfo.value)
 
 
 def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init(capsys):
-    """Test include/exclude ambiguity and already exclude double error"""
-    with raises(ConfigException) as exinfo:
-        with root(prod, ef):
-            with ritem(name='a', mc_exclude=[g_dev12_3, prod]):
-                errorline = lineno() + 1
-                with item(mc_exclude=[dev2], mc_include=[dev2, prod]) as it1:
-                    it1.x = 7
+    """Test include/exclude ambiguity with repeatable item
 
-    assert "There were 3 errors when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    print(serr)
-    assert_lines_in(
-        __file__, errorline, serr,
-        "^ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:",
-        "^%(lnum)s",
-        "^ConfigError: Env 'dev2' is excluded at an outer level",
-        "^%(lnum)s",
-        "^ConfigError: Env 'prod' is excluded at an outer level"
-    )
+    Including an env which was excluded on a parent, on a child, is ignored - no mc checks are done on excluded objects or children.
+    """
+
+    errorline = [None]
+    exp = "Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:"
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef)
+        def _(rt):
+            with root(aa=1):
+                with ritem('a', mc_exclude=[prod]) as ri:
+                    ri.anattr = 1
+                    ri.anotherattr = 2
+                    errorline[0] = next_line_num()
+                    item(mc_exclude=[dev2], mc_include=[dev2, prod])
+
+    sout, _serr = capsys.readouterr()
+    assert sout == ""
+
+    assert exp in str(exinfo.value)
 
 
 def test_exclude_include_overlapping_resolved_with_include_for_configitem():
     """Test that most specifig group/env wins"""
 
-    def conf(env):
-        with RootWithAA(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_include=[g_dev12, pp, dev2], mc_exclude=[g_dev23]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
@@ -545,21 +567,21 @@ def test_exclude_include_overlapping_resolved_with_include_for_configitem():
                 it.setattr('anotherattr', default=111)
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithAA
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
-    assert not cr.item
+    cr = ef.config(dev1).ItemWithAA
+    assert cr.item
 
-    cr = conf(dev2)
+    cr = ef.config(dev2).ItemWithAA
     assert cr.item
     assert cr.item.b == 0
 
-    cr = conf(dev3)
+    cr = ef.config(dev3).ItemWithAA
     assert not cr.item
 
-    cr = conf(pp)
+    cr = ef.config(pp).ItemWithAA
     assert cr.item
     assert cr.item.anattr == 1
     assert cr.item.b == 1
@@ -569,8 +591,9 @@ def test_exclude_include_overlapping_resolved_with_include_for_configitem():
 def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
     """Test that most specifig group/env wins"""
 
-    def conf(env):
-        with RootWithAA(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_include=[g_dev12, pp], mc_exclude=[dev2, g_dev23]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
@@ -578,20 +601,20 @@ def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
                 it.setattr('anotherattr', default=111)
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithAA
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
-    assert not cr.item
+    cr = ef.config(dev1).ItemWithAA
+    assert cr.item
 
-    cr = conf(dev2)
-    assert not cr.item
-
-    cr = conf(dev3)
+    cr = ef.config(dev2).ItemWithAA
     assert not cr.item
 
-    cr = conf(pp)
+    cr = ef.config(dev3).ItemWithAA
+    assert not cr.item
+
+    cr = ef.config(pp).ItemWithAA
     assert cr.item
     assert cr.item.anattr == 1
     assert cr.item.b == 1
@@ -599,8 +622,9 @@ def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
 
 
 def test_exclude_include_disjunct_for_configitem():
-    def conf(env):
-        with RootWithAA(env, ef) as cr:
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA() as cr:
             cr.aa = 1
             # Allowed but unnecessary 'mc_exclude'
             with item(mc_include=[g_dev12_3], mc_exclude=[prod]) as it:
@@ -609,70 +633,130 @@ def test_exclude_include_disjunct_for_configitem():
                 it.setattr('anotherattr', default=111)
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
-    compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
+    assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithAA
     assert cr.aa == 1
     assert cr.item
     assert cr.item.anattr == 2
     assert cr.item.b == 3
     assert cr.item.anotherattr == 111
 
-    cr = conf(dev2)
+    cr = ef.config(dev2).ItemWithAA
     assert cr.item
     assert cr.item.anattr == 2
     assert cr.item.b == 17
     assert cr.item.anotherattr == 111
 
-    cr = conf(dev3)
+    cr = ef.config(dev3).ItemWithAA
     assert cr.item
     assert cr.item.anattr == 2
     assert cr.item.b == 0
     assert cr.item.anotherattr == 111
 
-    cr = conf(pp)
+    cr = ef.config(pp).ItemWithAA
     assert not cr.item
 
 
 def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_envs(capsys):
     """Test error is shown correctly if mc_select_envs id overridden"""
-    class Item(ConfigItem):
-        def mc_select_envs(self, include=None, exclude=None):
-            mc_caller_file_name, mc_caller_line_num = caller_file_line()
-            super(Item, self).mc_select_envs(include, exclude, mc_caller_file_name, mc_caller_line_num)
+    errorline = [None]
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        with RootWithAA(prod, ef):
-            with Item() as it:
-                errorline = lineno() + 1
-                it.mc_select_envs(exclude=[dev1], include=[dev1, pp])
+        @mc_config(ef)
+        def _(rt):
+            with ItemWithAA():
+                with McSelectOverrideItem() as it:
+                    errorline[0] = next_line_num()
+                    it.mc_select_envs(exclude=[dev1], include=[dev1, pp])
 
-    print("errorline:", errorline)
     assert "There was 1 error when defining item" in str(exinfo.value)
     _sout, serr = capsys.readouterr()
-    ce(errorline, serr, "Env 'dev1' is specified in both include and exclude, with no single most specific group or direct env:\n    from: Env('dev1')")
+    print(serr)
+
+    ce(errorline[0], serr, exp_dev1_ambiguous)
+
+    with raises(ConfigException) as exinfo:
+        # No most specific
+        @mc_config(ef)
+        def _(rt):
+            with ItemWithAA():
+                with McSelectOverrideItem2() as it:
+                    errorline[0] = next_line_num()
+                    it.mc_select_envs(exclude=[dev1], include=[dev1, pp])
+
+    assert "There was 1 error when defining item" in str(exinfo.value)
+    _sout, serr = capsys.readouterr()
+    print(serr)
+
+    ce(errorline[0], serr, exp_dev1_ambiguous)
 
 
-def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init_overridden_file_line(capsys):
-    """Test include/exclude ambiguity and already exclude double error giving correct file:line when __init__ is overridden"""
+def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init_overridden_file_line():
+    """Test include/exclude ambiguity and with overriden __init__ alled from within another __init__
+    Not very interresting as there is no resolution of file:line in this scenario, but it that is later implemented, then this would ab important test.
+    """
+
     class iitem(ConfigItem):
         def __init__(self, mc_include, mc_exclude):
             super(iitem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
     with raises(ConfigException) as exinfo:
-        with root(prod, ef):
-            errorline = lineno() + 1
-            iitem(mc_exclude=[dev2], mc_include=[dev2, prod])
+        class X():
+            def __init__(self):
+                iitem(mc_exclude=[dev2], mc_include=[dev2, prod])
 
-    assert "There was 1 error when defining item" in str(exinfo.value)
-    _sout, serr = capsys.readouterr()
-    print(serr)
-    assert_lines_in(
-        __file__, errorline, serr,
-        "^%(lnum)s",
-        "^ConfigError: Env 'dev2' is specified in both include and exclude, with no single most specific group or direct env:",
-    )
+        @mc_config(ef)
+        def _(rt):
+            with root(aa=1):
+                X()
+
+    exp = "Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:"
+    assert exp in str(exinfo.value)
+
+
+def test_exclude__getattr__():
+    @mc_config(ef)
+    def conf(_):
+        with ConfigItem() as cr:
+            with item(mc_exclude=[dev2]) as it:
+                it.anattr = 1
+                it.anotherattr = 2
+
+    cr = ef.config(prod).ConfigItem
+    assert cr.item
+    assert cr.item.anattr
+
+    cr = ef.config(dev2).ConfigItem
+    assert not cr.item
+    with raises(ConfigExcludedAttributeError) as exinfo:
+        _ = cr.item.anattr
+    exp = "Accessing attribute 'anattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_test.item'>"
+    assert exp in str(exinfo.value)
+
+
+def test_exclude_getattr():
+    @mc_config(ef)
+    def conf(_):
+        with ConfigItem() as cr:
+            with item(mc_exclude=[dev2]) as it:
+                it.anattr = 1
+                it.anotherattr = 2
+
+    cr = ef.config(prod).ConfigItem
+    assert cr.item
+    with raises(ConfigExcludedAttributeError) as exinfo:
+        _ = cr.item.getattr('anattr', dev2)
+    exp = "Accessing attribute 'anattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_test.item'>"
+    assert exp in str(exinfo.value)
+
+    cr = ef.config(dev2).ConfigItem
+    assert not cr.item
+    with raises(ConfigExcludedAttributeError) as exinfo:
+        _ = cr.item.getattr('anattr', dev2)
+    exp = "Accessing attribute 'anattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_test.item'>"
+    assert exp in str(exinfo.value)

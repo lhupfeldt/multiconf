@@ -4,11 +4,11 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, lineno, replace_ids
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigApiException
+from multiconf.decorators import nested_repeatables, named_as
+from multiconf.envs import EnvFactory
 
-from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder, ConfigApiException
-from ..decorators import nested_repeatables, named_as
-from ..envs import EnvFactory
+from .utils.utils import config_error, next_line_num, replace_ids
 
 
 def ce(line_num, *lines):
@@ -20,15 +20,17 @@ prod = ef.Env('prod')
 
 
 def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_scope(capsys):
+    errorline = [None]
+
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
             super(YBuilder, self).__init__()
             self.start = start
             self.number = self.contained_in.aaa
 
-        def build(self):
+        def mc_build(self):
             for num in range(self.start, self.start + self.number):
-                with Ys(name='server%d' % num, server_num=num) as c:
+                with Y('server%d' % num, server_num=num) as c:
                     c.setattr('something', prod=1, pp=2)
 
     @nested_repeatables('ys')
@@ -36,66 +38,29 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
         aaa = 2
 
     @named_as('ys')
-    class Ys(RepeatableConfigItem):
-        def __init__(self, **kwarg):
-            super(Ys, self).__init__(**kwarg)
+    @nested_repeatables('y_children')
+    class Y(RepeatableConfigItem):
+        def __init__(self, mc_key, server_num):
+            super(Y, self).__init__(mc_key=mc_key)
+            self.server_num = server_num
+            self.something = None
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
-        def __init__(self, a):
-            super(YChild, self).__init__(mc_key=None)
+        def __init__(self, mc_key, a):
+            super(YChild, self).__init__(mc_key=mc_key)
             self.a = a
 
     with raises(ConfigApiException) as exinfo:
-        with ConfigRoot(prod, ef):
+        @mc_config(ef)
+        def _(_):
             with ItemWithYs():
                 with YBuilder() as yb1:
-                    yb1.b = 27
-                    with YChild(a=10) as y1:
-                        errorline = lineno() + 1
+                    with YChild(mc_key=None, a=10) as y1:
+                        errorline[0] = next_line_num()
                         _item = y1.contained_in
 
     _sout, serr = capsys.readouterr()
-    # assert serr == ce(errorline, '')
-    assert replace_ids(str(exinfo.value), False) == "Use of 'contained_in' in not allowed in object while under a ConfigBuilder"
-
-
-def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_detached_item(capsys):
-    class YBuilder(ConfigBuilder):
-        def __init__(self, start=1):
-            super(YBuilder, self).__init__()
-            self.start = start
-            self.number = self.contained_in.aaa
-
-        def build(self):
-            for num in range(self.start, self.start + self.number):
-                with Ys(name='server%d' % num, server_num=num) as c:
-                    c.setattr('something', prod=1, pp=2)
-
-    @nested_repeatables('ys')
-    class ItemWithYs(ConfigItem):
-        aaa = 2
-
-    @named_as('ys')
-    class Ys(RepeatableConfigItem):
-        def __init__(self, **kwarg):
-            super(Ys, self).__init__(**kwarg)
-
-    @named_as('y_children')
-    class YChild(RepeatableConfigItem):
-        def __init__(self, a):
-            super(YChild, self).__init__(mc_key=None)
-            self.a = a
-
-    with raises(ConfigApiException) as exinfo:
-        with ConfigRoot(prod, ef):
-            with ItemWithYs():
-                with YBuilder() as yb1:
-                    yb1.b = 27
-                    with YChild(a=10) as y1:
-                        errorline = lineno() + 1
-                        _item = y1.contained_in
-
-    _sout, serr = capsys.readouterr()
-    # assert serr == ce(errorline, '')
-    assert replace_ids(str(exinfo.value), False) == "Use of 'contained_in' in not allowed in object while under a ConfigBuilder"
+    exp = "Use of 'contained_in' in not allowed in object while under the 'with statement of a ConfigBuilder. The final containment is still unknown."
+    assert serr == ce(errorline[0], exp)
+    assert replace_ids(str(exinfo.value), False) == exp

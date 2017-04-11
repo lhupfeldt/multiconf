@@ -3,12 +3,11 @@
 
 from __future__ import print_function
 
-from .. import ConfigRoot, ConfigItem, RepeatableConfigItem, ConfigBuilder
-from ..decorators import named_as, nested_repeatables
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder
+from multiconf.decorators import named_as, nested_repeatables
+from multiconf.envs import EnvFactory
 
-from ..envs import EnvFactory
-
-from .utils.tstclasses import RootWithName
+from .utils.tstclasses import ItemWithName
 
 
 ef = EnvFactory()
@@ -25,9 +24,10 @@ class HasRepeatables(ConfigItem):
 
 @named_as('reps')
 class RepeatableItem(RepeatableConfigItem):
-    def __init__(self, name, mc_exclude=None):
-        super(RepeatableItem, self).__init__(mc_key=name, mc_exclude=mc_exclude)
-        self.name = name
+    def __init__(self, mc_key, mc_exclude=None):
+        super(RepeatableItem, self).__init__(mc_key=mc_key, mc_exclude=mc_exclude)
+        self.name = mc_key
+        self.aa = None
 
 
 class BB(ConfigBuilder):
@@ -35,32 +35,33 @@ class BB(ConfigBuilder):
         super(BB, self).__init__()
         self.aa = aa
 
-    def build(self):
-        RepeatableItem(name=self.aa)
+    def mc_build(self):
+        with RepeatableItem(self.aa) as ri:
+            ri.aa = self.aa  # Note that pre v6 this assignment would have happened automatically
 
 
 def test_exclude_with_builder():
-    def conf(env):
-        with RootWithName(env, ef, name='x') as cr:
+    @mc_config(ef)
+    def _(_):
+        with ItemWithName(name='x') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
                 with BB('bbb'):
                     pass
                 _x = it.reps['bbb']
 
-        return cr
-
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithName
     assert not cr.HasRepeatables
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithName
     assert cr.HasRepeatables.reps
     assert cr.HasRepeatables.reps['bbb']
     assert cr.HasRepeatables.reps['bbb'].aa == 'bbb'
 
 
 def test_exclude_no_builder():
-    def conf(env):
-        with RootWithName(env, ef, name='esb') as cr:
+    @mc_config(ef)
+    def _(_):
+        with ItemWithName(name='esb') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
                 with RepeatableItem('bbb'):
                     pass
@@ -68,18 +69,19 @@ def test_exclude_no_builder():
 
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithName
     assert not cr.HasRepeatables
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithName
     assert cr.HasRepeatables.reps
     assert cr.HasRepeatables.reps['bbb']
     assert cr.HasRepeatables.reps['bbb'].name == 'bbb'
 
 
 def test_exclude_with_builder_repeated():
-    def conf(env):
-        with RootWithName(env, ef, name='x') as cr:
+    @mc_config(ef)
+    def _(_):
+        with ItemWithName(name='x') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
                 BB('aaa')
                 BB('bbb')
@@ -88,10 +90,10 @@ def test_exclude_with_builder_repeated():
                 _x = it.reps['bbb']
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithName
     assert not cr.HasRepeatables
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithName
     assert cr.HasRepeatables.reps
     assert cr.HasRepeatables.reps['bbb']
     assert cr.HasRepeatables.reps['bbb'].aa == 'bbb'
@@ -101,34 +103,44 @@ class ExclInBuild1(ConfigBuilder):
     def __init__(self):
         super(ExclInBuild1, self).__init__()
 
-    def build(self):
-        RepeatableItem(name='aaa', mc_exclude=[prod])
-        RepeatableItem(name='bbb')
+    def mc_build(self):
+        RepeatableItem('aaa', mc_exclude=[prod])
+        RepeatableItem('bbb')
 
 
 class ExclInBuild2(ConfigBuilder):
     def __init__(self):
         super(ExclInBuild2, self).__init__()
 
-    def build(self):
-        RepeatableItem(name='ccc', mc_exclude=None)
-        with RepeatableItem(name='ddd') as ddd:
+    def mc_build(self):
+        RepeatableItem('ccc', mc_exclude=None)
+        with RepeatableItem('ddd') as ddd:
             ddd.mc_select_envs(exclude=[prod])
         self.mc_select_envs(exclude=[prod])
-        RepeatableItem(name='bbb', mc_exclude=None)
+        RepeatableItem('eee', mc_exclude=None)
 
 
 def test_exclude_in_build():
-    def conf(env):
-        with RootWithName(env, ef, name='x') as cr:
+    @mc_config(ef)
+    def _(_):
+        with ItemWithName(name='x') as cr:
             with HasRepeatables(name='r1', mc_exclude=None) as it:
                 ExclInBuild1()
                 ExclInBuild2()
-                print(it)
                 _x = it.reps['bbb']
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(dev1).ItemWithName
+    assert cr.HasRepeatables.reps['aaa']
+    assert cr.HasRepeatables.reps['bbb']
+    assert cr.HasRepeatables.reps['bbb'].name == 'bbb'
+    assert cr.HasRepeatables.reps['ccc']
+    assert cr.HasRepeatables.reps['ddd']
+    assert cr.HasRepeatables.reps['eee']
+    assert len(cr.HasRepeatables.reps) == 5
+
+    cr = ef.config(prod).ItemWithName
+    print(cr.HasRepeatables.reps)
     assert cr.HasRepeatables.reps['bbb']
     assert cr.HasRepeatables.reps['bbb'].name == 'bbb'
     assert cr.HasRepeatables.reps['ccc']
@@ -141,19 +153,20 @@ def test_mc_select_envs_with_builder():
         def __init__(self, name):
             super(HasRepeatables2, self).__init__()
             self.name = name
-    
-    def conf(env):
-        with RootWithName(env, ef, name='x') as cr:
+
+    @mc_config(ef)
+    def _(_):
+        with ItemWithName(name='x') as cr:
             with HasRepeatables2(name='r1') as it:
                 with BB('bbb') as bbb:
                     bbb.mc_select_envs(exclude=[prod])
 
         return cr
 
-    cr = conf(prod)
+    cr = ef.config(prod).ItemWithName
     assert not cr.HasRepeatables2.reps
 
-    cr = conf(dev1)
+    cr = ef.config(dev1).ItemWithName
     assert cr.HasRepeatables2.reps
     assert cr.HasRepeatables2.reps['bbb']
     assert cr.HasRepeatables2.reps['bbb'].aa == 'bbb'

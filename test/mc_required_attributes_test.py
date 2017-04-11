@@ -1,20 +1,13 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-# pylint: disable=E0611
 from pytest import raises
 
-from .utils.utils import config_error, replace_ids, lineno, total_msg, assert_lines_in, file_line, py3_local
-from .utils.messages import mc_required_current_env_expected, mc_required_other_env_expected, exception_previous_object_expected_stderr
-from .utils.messages import config_error_mc_required_current_env_expected, config_error_mc_required_other_env_expected
+from multiconf import mc_config, ConfigItem, MC_REQUIRED, ConfigException
+from multiconf.envs import EnvFactory
 
-
-from .. import ConfigRoot, ConfigItem, MC_REQUIRED, ConfigException
-
-from ..envs import EnvFactory
-
-def ce(line_num, *lines):
-    return config_error(__file__, line_num, *lines)
+from .utils.utils import next_line_num, line_num, lines_in, start_file_line, py3_local
+from .utils.messages import config_error_mc_required_expected
 
 
 ef = EnvFactory()
@@ -22,35 +15,28 @@ pp = ef.Env('pp')
 prod = ef.Env('prod')
 
 
-_g_expected = """{
-    "__class__": "root #as: 'project', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "name": "abc"
-}"""
-
-
-
 def test_required_attributes_inherited_ok():
-    class root(ConfigRoot):
-        def __init__(self, selected_env, env_factory):
-            super(root, self).__init__(selected_env=selected_env, env_factory=env_factory)
+    class root(ConfigItem):
+        def __init__(self):
+            super(root, self).__init__()
             self.anattr = MC_REQUIRED
             self.anotherattr = MC_REQUIRED
 
     class root2(root):
-        def __init__(self, selected_env, env_factory):
-            super(root2, self).__init__(selected_env=selected_env, env_factory=env_factory)
+        def __init__(self):
+            super(root2, self).__init__()
             self.someattr2 = MC_REQUIRED
             self.someotherattr2 = MC_REQUIRED
 
-    with root2(prod, ef) as cr:
-        cr.anattr = 1
-        cr.anotherattr = 2
-        cr.someattr2 = 3
-        cr.someotherattr2 = 4
+    @mc_config(ef)
+    def _(_):
+        with root2() as cr:
+            cr.anattr = 1
+            cr.anotherattr = 2
+            cr.someattr2 = 3
+            cr.someotherattr2 = 4
+
+    cr = ef.config(prod).root2
 
     assert cr.anattr == 1
     assert cr.anotherattr == 2
@@ -59,71 +45,78 @@ def test_required_attributes_inherited_ok():
 
 
 def test_required_attributes_inherited_missing(capsys):
-    class root(ConfigRoot):
-        def __init__(self, selected_env, env_factory):
-            super(root, self).__init__(selected_env=selected_env, env_factory=env_factory)
+    errorline1 = [None]
+    errorline2 = [None]
+    errorline3 = [None]
+    errorline_exit = [None]
+
+    class root(ConfigItem):
+        def __init__(self):
+            super(root, self).__init__()
             self.anattr = MC_REQUIRED
             self.anotherattr = MC_REQUIRED
 
     class root2(root):
-        def __init__(self, selected_env, env_factory):
-            super(root2, self).__init__(selected_env=selected_env, env_factory=env_factory)
+        def __init__(self):
+            super(root2, self).__init__()
             self.someattr2  = MC_REQUIRED
             self.someotherattr2 = MC_REQUIRED
 
     with raises(ConfigException) as exinfo:
-        with root2(prod, ef) as cr:
-            errorline1 = lineno() + 1
-            cr.setattr('anattr', prod=1)
-            errorline2 = lineno() + 1
-            cr.setattr('someattr2', prod=3)
-            errorline3 = lineno() + 1
-            cr.setattr('someotherattr2', pp=4)
-            errorline_exit = lineno()
+        @mc_config(ef, error_next_env=True)
+        def _(_):
+            with root2() as cr:
+                errorline1[0] = next_line_num()
+                cr.setattr('anattr', prod=1)
+                errorline2[0] = next_line_num()
+                cr.setattr('someattr2', prod=3)
+                errorline3[0] = next_line_num()
+                cr.setattr('someotherattr2', pp=4)
+                errorline_exit[0] = line_num()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
-        __file__, None, serr,
-        file_line(errorline1),
-        config_error_mc_required_other_env_expected.format(attr='anattr', env=pp),
-        file_line(errorline2),
-        config_error_mc_required_other_env_expected.format(attr='someattr2', env=pp),
-        file_line(errorline3),
-        config_error_mc_required_current_env_expected.format(attr='someotherattr2', env=prod),
-        file_line(errorline_exit),
-        config_error_mc_required_other_env_expected.format(attr='anotherattr', env=pp),
-        config_error_mc_required_current_env_expected.format(attr='anotherattr', env=prod),
+    assert lines_in(
+        serr,
+        start_file_line(__file__, errorline1[0]),
+        config_error_mc_required_expected.format(attr='anattr', env=pp),
+        start_file_line(__file__, errorline2[0]),
+        config_error_mc_required_expected.format(attr='someattr2', env=pp),
+        start_file_line(__file__, errorline3[0]),
+        config_error_mc_required_expected.format(attr='someotherattr2', env=prod),
+        # 'anotherattr' will not be verified because it might get a value in mc_init
+        # which is not called when there are errors in 'with' block
     )
 
 
 def test_multiple_required_attributes_missing_for_configitem(capsys):
+    errorline1 = [None]
+    errorline_exit = [None]
+
+    class root(ConfigItem):
+        pass
+
+    class item(ConfigItem):
+        def __init__(self):
+            super(item, self).__init__()
+            self.abcd = MC_REQUIRED
+            self.efgh = MC_REQUIRED
+            self.ijkl = MC_REQUIRED
+
     with raises(ConfigException) as exinfo:
-        class root(ConfigRoot):
-            pass
-
-        class item(ConfigItem):
-            def __init__(self):
-                super(item, self).__init__()
-                self.abcd = MC_REQUIRED
-                self.efgh = MC_REQUIRED
-                self.ijkl = MC_REQUIRED
-
-        with root(prod, ef):
-            with item() as ii:
-                errorline1 = lineno() + 1
-                ii.setattr('efgh', prod=7)
-                errorline_exit = lineno()
+        @mc_config(ef)
+        def _(_):
+            with root():
+                with item() as ii:
+                    errorline1[0] = next_line_num()
+                    ii.setattr('efgh', prod=7)
+                    errorline_exit[0] = line_num()
 
     _sout, serr = capsys.readouterr()
-    assert_lines_in(
-        __file__, None, serr,
-        file_line(errorline1),
-        config_error_mc_required_other_env_expected.format(attr='efgh', env=pp),
-        file_line(errorline_exit),
-        config_error_mc_required_other_env_expected.format(attr='abcd', env=pp),
-        config_error_mc_required_current_env_expected.format(attr='abcd', env=prod),
-        config_error_mc_required_other_env_expected.format(attr='ijkl', env=pp),
-        config_error_mc_required_current_env_expected.format(attr='ijkl', env=prod),
+    assert lines_in(
+        serr,
+        start_file_line(__file__, errorline1[0]),
+        config_error_mc_required_expected.format(attr='efgh', env=pp),
+        # remaining will not be checked
     )
 
 
@@ -134,21 +127,12 @@ def test_error_freezing_previous_sibling__validation(capsys):
             self.a = MC_REQUIRED
 
     with raises(Exception) as exinfo:
-        with ConfigRoot(prod, ef):
-            errorline1 = lineno() + 1
-            inner()
-            errorline2 = lineno() + 1
-            inner()
+        @mc_config(ef)
+        def _(_):
+            with ConfigItem():
+                inner()
+                inner()
 
-    _sout, serr = capsys.readouterr()
-    print(serr)
-    assert_lines_in(
-        __file__, None, serr,
-        file_line(errorline1),
-        config_error_mc_required_other_env_expected.format(attr='a', env=pp),
-        config_error_mc_required_current_env_expected.format(attr='a', env=prod),
-    )
-
-    assert serr.endswith(exception_previous_object_expected_stderr % dict(
-        module='mc_required_attributes_test', py3_local=py3_local()))
-    assert total_msg(2) in str(exinfo.value)
+    # This error is generated before the MC_REQUIRED check, ok as long as we get en error
+    exp = "Repeated non repeatable conf item: 'inner': <class 'test.mc_required_attributes_test.{}inner'>"
+    assert str(exinfo.value) == exp.format(py3_local())

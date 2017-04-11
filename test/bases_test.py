@@ -1,4 +1,4 @@
-from ..bases import get_bases
+from multiconf.bases import get_bases
 
 
 def test_bases():
