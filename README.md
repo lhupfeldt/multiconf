@@ -1,5 +1,5 @@
 [![Build Status](https://api.travis-ci.org/lhupfeldt/multiconf.svg?branch=master)](https://travis-ci.org/lhupfeldt/multiconf)
-[![Doc](https://readthedocs.org/projects/multiconf/badge/?version=stable)](https://multiconf.readthedocs.org/en/master)
+[![Documentation Status](https://readthedocs.org/projects/multiconf/badge/?version=stable)](http://multiconf.readthedocs.io/en/stable/?badge=stable)
 
 What
 ====
