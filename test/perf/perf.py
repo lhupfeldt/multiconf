@@ -94,10 +94,10 @@ second_range = 100
 third_range = 100
 
 
-def config():
+def config(validate_properties=True):
     global hp
 
-    @mc_config(ef)
+    @mc_config(ef, validate_properties=validate_properties)
     def _(_):
         with root() as cr:
             for ii in range(0, first_range):
@@ -180,7 +180,8 @@ def cli(time, profile, heap_check):
 
         with open(tfile, 'w') as ff:
             _test("envs", ff, "envs_setup()", setup="from __main__ import envs_setup", repeat=10, number=20000)
-            _test("load", ff, "config()", setup="from __main__ import config", repeat=10, number=10)
+            _test("load - no @props", ff, "config(validate_properties=False)", setup="from __main__ import config", repeat=10, number=10)
+            _test("load - @props", ff, "config(validate_properties=True)", setup="from __main__ import config", repeat=10, number=10)
             _test("use", ff, "use()", setup="from __main__ import use", repeat=10, number=300)
 
     if sys.version_info.major < 3 and heap_check:
