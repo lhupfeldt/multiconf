@@ -52,8 +52,8 @@ The valide environments are those specified at the top of demo/config.py
 
 Running the test suite:
 =====================
-Execute: ./test/test.py
-This executes the test suite and the demo
+Execute: make, py.test or tox
+Running 'make' will execute the test suite, the demo and build the documentation.
 
 Requirements
 =====================
