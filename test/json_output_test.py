@@ -19,6 +19,9 @@ from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
 
+major_version = sys.version_info[0]
+
+
 ef = EnvFactory()
 pp = ef.Env('pp')
 prod = ef.Env('prod')
@@ -998,13 +1001,15 @@ def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
 _json_dump_dir_error_expected_stderr = """Error in json generation:
 Traceback (most recent call last):
   File "fake_multiconf_dir/json_output.py", line 999, in __call__
-    dir_entries = dir(obj)
+    dir_entries = obj._mc_dir_entries()
+  File "fake_multiconf_dir/multiconf.py", line 999, in _mc_dir_entries
+    %(py23_statement)s
   %(file_line)s, in __dir__
     raise Exception('Error in dir()')
 Exception: Error in dir()
 """
 
-_json_dump_dir_error_expected = """{
+_json_dump_dir_error_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
     "env": {
@@ -1043,8 +1048,10 @@ def test_json_dump_dir_error(capsys):
     cr.json()
     _sout, serr = capsys.readouterr()
     # pylint: disable=W0212
-    assert replace_multiconf_file_line_msg(serr) == _json_dump_dir_error_expected_stderr % dict(file_line=file_line(__file__, cr.someitem._errorline))
-    assert compare_json(cr, _json_dump_dir_error_expected, expect_num_errors=1)
+    assert replace_multiconf_file_line_msg(serr) == _json_dump_dir_error_expected_stderr % dict(
+        file_line=file_line(__file__, cr.someitem._errorline),
+        py23_statement='return dir(self)' if major_version < 3 else 'dir_set = set(dir(self))')
+    assert compare_json(cr, _json_dump_dir_error_expected_json, expect_num_errors=1)
 
 
 if sys.version_info[0] < 3:

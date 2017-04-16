@@ -369,10 +369,10 @@ class ConfigItemEncoder(object):
                     if not_in_envs:
                         dd["#item does not exist in"] = ', '.join(not_in_envs)
 
-                dir_entries = ()
                 try:
-                    dir_entries = dir(obj)
+                    dir_entries = obj._mc_dir_entries()
                 except Exception as ex:
+                    dir_entries = ()
                     self.num_errors += 1
                     print("Error in json generation:", file=sys.stderr)
                     traceback.print_exception(*sys.exc_info())

@@ -206,6 +206,20 @@ class _ConfigBase(object):
     # Python2 compatibility
     __nonzero__ = __bool__
 
+    if major_version < 3:
+        def _mc_dir_entries(self):
+            return dir(self)
+
+    if major_version >= 3:  # This should have been an else, but that makes it difficult to do the coverage
+        def _mc_dir_entries(self):
+            dir_set = set(dir(self))
+            mc_attr_keys_set = set(self._mc_attributes.keys())
+            return dir_set.difference(mc_attr_keys_set.difference(object.__dir__(self)))
+            # return [key for key in dir(self) if key not in self._mc_attributes.keys() or key in object.__dir__(self)]
+
+        def __dir__(self):
+            return object.__dir__(self) + list(self._mc_attributes.keys())
+
     def _mc_exists_in_given_env(self, env):
         env_mask = env.mask
         if env_mask & self._mc_excluded:

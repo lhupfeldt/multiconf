@@ -178,3 +178,16 @@ def test_validate_properties_dir_error(capsys):
     assert replace_multiconf_file_line_msg(serr) == _validate_properties_dir_error_expected_stderr % (
         dict(file_line=file_line(__file__, errorline[0])))
     assert str(exinfo.value) == "Error validating @property methods for Env('pp')"
+
+
+def test_mc_validate_has_method():
+    class item(ConfigItem):
+        def hello(self):
+            raise Exception("Error in hello")
+
+        def hi(self, there):
+            raise Exception("Error in hello " + there)
+
+    @mc_config(ef)
+    def _(_):
+        item()
