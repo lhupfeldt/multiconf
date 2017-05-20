@@ -43,7 +43,7 @@ if __name__ == "__main__":
         author=PROJECT_AUTHORS,
         author_email=PROJECT_EMAILS,
         packages=['multiconf'],
-        package_dir={'multiconf': '.'},
+        package_dir={'multiconf': 'multiconf'},
         zip_safe=True,
         include_package_data=False,
         install_requires=[] + py_version_requires,
