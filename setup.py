@@ -11,7 +11,7 @@ PROJECT_AUTHORS = u"Lars Hupfeldt Nielsen"
 PROJECT_EMAILS = 'lhn@hupfeldtit.dk'
 PROJECT_URL = "https://github.com/lhupfeldt/multiconf"
 SHORT_DESCRIPTION = 'Python API providing a set of classes as basis for configuration objects with multiple values per attribute.'
-LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.md")).read()
+LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.rst")).read()
 
 
 class Test(TestCommand):
