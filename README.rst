@@ -1,4 +1,4 @@
-|Build Status| |Documentation Status| |PyPi Package|
+|Build Status| |Documentation Status| |PyPi Package| |Coverage|
 
 What
 ====
@@ -98,4 +98,6 @@ demjson (optional) - pip install -U pytest pytest-cov demjson
 .. |Documentation Status| image:: https://readthedocs.org/projects/multiconf/badge/?version=stable
    :target: https://multiconf.readthedocs.org/en/stable/
 .. |PyPi Package| image:: https://badge.fury.io/py/multiconf.svg
-    :target: https://badge.fury.io/py/multiconf
+   :target: https://badge.fury.io/py/multiconf
+.. |Coverage| image:: https://coveralls.io/repos/github/lhupfeldt/multiconf/badge.svg?branch=master
+   :target: https://coveralls.io/github/lhupfeldt/multiconf?branch=master

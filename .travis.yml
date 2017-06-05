@@ -9,3 +9,6 @@ os:
   - linux
 install:
   - pip install tox-travis
+  - pip install coveralls
+after_success:
+  - coveralls --rcfile="./test/.coverage_rc_$TRAVIS_PYTHON_VERSION"

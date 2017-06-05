@@ -19,7 +19,8 @@ def main(args):
 
     engine = tenjin.Engine()
     major_version = sys.version_info[0]
-    cov_rc_file_name = jp(here, '.coverage_rc_' +  str(major_version))
+    # Note: This naming is duplicated in .travis.yml
+    cov_rc_file_name = jp(here, '.coverage_rc_' +  str(os.environ.get('TRAVIS_PYTHON_VERSION', major_version)))
     with open(cov_rc_file_name, 'w') as cov_rc_file:
         cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(major_version=major_version)))
 
