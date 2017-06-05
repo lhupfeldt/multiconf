@@ -1,4 +1,4 @@
-|Build Status| |Documentation Status|
+|Build Status| |Documentation Status| |PyPi Package|
 
 What
 ====
@@ -97,3 +97,5 @@ demjson (optional) - pip install -U pytest pytest-cov demjson
    :target: https://travis-ci.org/lhupfeldt/multiconf
 .. |Documentation Status| image:: https://readthedocs.org/projects/multiconf/badge/?version=stable
    :target: https://multiconf.readthedocs.org/en/stable/
+.. |PyPi Package| image:: https://badge.fury.io/py/multiconf.svg
+    :target: https://badge.fury.io/py/multiconf
