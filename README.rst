@@ -1,4 +1,4 @@
-|Build Status| |Documentation Status| |PyPi Package| |Coverage|
+|Build Status| |Coverage| |Documentation Status| |PyPi Package|
 
 What
 ====
