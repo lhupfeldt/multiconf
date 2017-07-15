@@ -31,7 +31,7 @@ class Test(TestCommand):
 
 major_version = sys.version_info[0]
 if major_version < 3:
-    py_version_requires = ['enum34']
+    py_version_requires = ['enum34>=1.1']
 else:
     py_version_requires = []
 
