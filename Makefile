@@ -4,7 +4,7 @@ all: quick doc tox
 
 .PHONY: quick
 quick:
-	py.test
+	python3 -m pytest
 
 .PHONY: doc
 doc:
