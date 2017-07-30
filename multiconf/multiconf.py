@@ -121,7 +121,7 @@ class _ConfigBase(object):
             sort_attributes (bool): Sort sttributes by name. Sort dir() entries by name.
             property_methods (bool): call @property methods and insert values in output, including a comment that the value is calculated.
             builders (bool): Include ConfigBuilder items in json.
-            skipkeys (bool: Passed to json.dumps.
+            skipkeys (bool): Passed to json.dumps.
             show_all_envs (bool): Display attribute values for all envs in a single dump. Without this only the values for the current env is displayed.
             depth (int): The number of levels of child objects to dump. None means all.
         """
@@ -191,9 +191,9 @@ class _ConfigBase(object):
         object/attribute checking is possible. Since it is called once, and not per env, there is no current env and regular attribute
         access is not possible, instead the item.getattr(name, env) method must be used to get attribute values for different envs.
 
-        This makes it possible to checks like the following:
+        This makes it possible to implement checks like the following::
 
-        assert item.getattr('mem_size', pprd) == item.getattr('mem_size', prod) <= item.getattr('mem_size', tst1)
+            assert item.getattr('mem_size', pprd) == item.getattr('mem_size', prod) <= item.getattr('mem_size', tst1)
 
         Note that careful consideration should be taken when using env names explicitly (as above) when implementing a configuration
         object model, since this will force all configurations to define those envs.
