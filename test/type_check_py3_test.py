@@ -3,35 +3,17 @@
 
 from __future__ import print_function
 
-import sys
-
 # pylint: disable=E0611
 import pytest
 from pytest import raises
 
-from .utils.utils import next_line_num, replace_ids, lines_in, start_file_line
-from .utils.messages import already_printed_msg
-from .utils.tstclasses import ItemWithAA
-
 from multiconf import mc_config, ConfigException, MC_REQUIRED
 from multiconf.envs import EnvFactory
 
-
-_major_version = sys.version_info[0]
-_minor_version = sys.version_info[1]
-_patch_version = sys.version_info[2]
-
-_min_major_version = 3
-_min_minor_version = 6
-_min_patch_version = 1
-_skip_version_reason = "Type checking only supported from Python {}.{}".format(_min_major_version, _min_minor_version)
-
-
-def _vcheck():
-    """Return True if version requirement is satisfied."""
-    return _major_version > _min_major_version or (
-        _major_version == _min_major_version and _minor_version >= _min_minor_version) or (
-            _major_version == _min_major_version and _minor_version == _min_minor_version and _patch_version >= _min_patch_version)
+from .utils.utils import next_line_num, replace_ids, lines_in, start_file_line
+from .utils.messages import already_printed_msg
+from .utils.tstclasses import ItemWithAA
+from .type_check import vcheck, skip_version_reason_unsupported
 
 
 ef_pp_prod = EnvFactory()
@@ -59,7 +41,7 @@ class ItemWithStrAA(ItemWithAA):
         super(ItemWithStrAA, self).__init__(aa=aa)
 
 
-@pytest.mark.skipif(not _vcheck(), reason=_skip_version_reason)
+@pytest.mark.skipif(not vcheck(), reason=skip_version_reason_unsupported)
 def test_attribute_defined_with_correct_types(capsys):
     @mc_config(ef_pp_prod)
     def _(_):
@@ -73,7 +55,7 @@ def test_attribute_defined_with_correct_types(capsys):
     assert not serr
 
 
-@pytest.mark.skipif(not _vcheck(), reason=_skip_version_reason)
+@pytest.mark.skipif(not vcheck(), reason=skip_version_reason_unsupported)
 def test_attribute_defined_with_wrong_type(capsys):
     errorline = [None]
 
@@ -93,7 +75,7 @@ def test_attribute_defined_with_wrong_type(capsys):
     assert replace_ids(str(exinfo.value), False) == _single_error_on_item_expected_ex.format('ItemWithIntAA', 'pp', '"hello"')
 
 
-@pytest.mark.skipif(not _vcheck(), reason=_skip_version_reason)
+@pytest.mark.skipif(not vcheck(), reason=skip_version_reason_unsupported)
 def test_attribute_defined_with_wrong_type_explicit_typecheck_enable(capsys):
     errorline = [None]
 
@@ -113,7 +95,7 @@ def test_attribute_defined_with_wrong_type_explicit_typecheck_enable(capsys):
     assert replace_ids(str(exinfo.value), False) == _single_error_on_item_expected_ex.format('ItemWithIntAA', 'pp', '"hello"')
 
 
-@pytest.mark.skipif(not _vcheck(), reason=_skip_version_reason)
+@pytest.mark.skipif(not vcheck(), reason=skip_version_reason_unsupported)
 def test_attribute_defined_with_wrong_type_typecheck_disable(capsys):
     @mc_config(ef_pp_prod, do_type_check=False)
     def _(_):
@@ -127,7 +109,7 @@ def test_attribute_defined_with_wrong_type_typecheck_disable(capsys):
     assert not serr
 
 
-@pytest.mark.skipif(not _vcheck(), reason=_skip_version_reason)
+@pytest.mark.skipif(not vcheck(), reason=skip_version_reason_unsupported)
 def test_attribute_defined_with_wrong_type_default(capsys):
     errorline = [None]
 
@@ -147,7 +129,7 @@ def test_attribute_defined_with_wrong_type_default(capsys):
     assert replace_ids(str(exinfo.value), False) == _single_error_on_item_expected_ex.format('ItemWithIntAA', 'pp', '"hello"')
 
 
-@pytest.mark.skipif(not _vcheck(), reason=_skip_version_reason)
+@pytest.mark.skipif(not vcheck(), reason=skip_version_reason_unsupported)
 def test_attribute_defined_with_wrong_type_init_none(capsys):
     errorline = [None]
 
