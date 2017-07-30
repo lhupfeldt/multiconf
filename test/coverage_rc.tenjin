@@ -17,14 +17,18 @@ exclude_lines =
     def _mc_debug\(
     def _mc_debug_hierarchy\(
     long = int
+
     <?py if major_version == 2: ?>
     _py3 import
     long = int
     if major_version >= 3:
+    type_msg
+    if typing_vcheck\(\):
     <?py else: ?>
     _py2 import
     if major_version < 3:
     if major_version < 3 and isinstance\(obj, types.InstanceType\):
+    ConfigException\(typecheck.unsup_version_msg\)
     <?py #endif ?>
 
 
@@ -35,8 +39,10 @@ partial_branches =
     <?py if major_version < 3: ?>
     if major_version < 3:
     if major_version < 3 and isinstance\(obj, types.InstanceType\):
+    if not allow_type_check:
     <?py else: ?>
     if major_version >= 3:
+    if typing_vcheck\(\):
     <?py #endif ?>
 
     # We always have base classes, so these loops will alvays be entered

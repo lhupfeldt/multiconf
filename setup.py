@@ -33,7 +33,7 @@ major_version = sys.version_info[0]
 if major_version < 3:
     py_version_requires = ['enum34>=1.1']
 else:
-    py_version_requires = []
+    py_version_requires = ['typing-inspect>=0.1.1']
 
 
 if __name__ == "__main__":

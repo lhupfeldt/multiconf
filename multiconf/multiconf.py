@@ -13,7 +13,7 @@ from .attribute import _McAttribute, Where
 
 major_version = sys.version_info[0]
 if major_version < 3:
-    from .property_wrapper_py2 import _McPropertyWrapper
+    from .property_wrapper_py2 import _McPropertyWrapper  # pylint: disable=import-error
 else:
     from .property_wrapper_py3 import _McPropertyWrapper
 
@@ -22,6 +22,7 @@ from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, C
 from .config_errors import caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg, not_repeatable_in_parent_msg, repeatable_in_parent_msg
 from .json_output import ConfigItemEncoder, _mc_filter_out_keys, _mc_identification_msg_str
 from .bases import get_bases
+from . import typecheck
 
 
 class _McExcludedException(Exception):
@@ -497,9 +498,16 @@ class _ConfigBase(object):
             value = old_value
 
         if value != MC_NO_VALUE:
+            # We have a value for the env which is more specific than any previous value
             env_attr.set(current_env, value, self._mc_where, from_eg)
 
         if value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
+            if self._mc_root._mc_do_type_check:
+                type_msg = typecheck.type_check(self, attr_name, value)
+                if type_msg:
+                    self._mc_print_error_caller(type_msg, mc_error_info_up_level)
+                    return
+
             if self._mc_attributes_to_check:
                 self._mc_attributes_to_check.pop(attr_name, None)
             return
@@ -1082,12 +1090,13 @@ class _ItemParentProxy(object):
 
 
 class _ConfigRoot(_ConfigBase):
-    def __init__(self, env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback):
+    def __init__(self, env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, mc_do_type_check):
         self._mc_env_factory = env_factory
         self._mc_todo_handling_other = mc_todo_handling_other
         self._mc_todo_handling_allowed = mc_todo_handling_allowed
         self._mc_json_filter = mc_json_filter
         self._mc_json_fallback = mc_json_fallback
+        self._mc_do_type_check = mc_do_type_check
 
         self._mc_where = Where.IN_INIT
         self._mc_num_errors = 0
@@ -1140,7 +1149,7 @@ class _RootEnvProxy(object):
 def mc_config(
         env_factory, error_next_env=False, validate_properties=True,
         mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=McTodoHandling.WARNING,
-        mc_json_filter=None, mc_json_fallback=None):
+        mc_json_filter=None, mc_json_fallback=None, do_type_check=None):
     """Instantiate ConfigItem hierarchy for all Envs defined in 'env_factory'.
 
     Arguments:
@@ -1161,6 +1170,19 @@ def mc_config(
         mc_json_fallback (func(obj)): User defined function for handling objects not otherwise encoded in json output.
             - fallback_callable is called for objects that are not handled by the builtin encoder.
             - It must return a tupple (object, handled). If handled is True, the object must be encodable by the standard json encoder.
+
+        do_type_check (bool): Do type checking of attributes based on typing annotations. Default is True for Pythonn 3.6.1+. Attempting
+            to enable this for earlier Python versions will raise an exception.
+
+            Type checking of attributes is done based on typing information from the __init__ signature. If an attribute exists with the same
+            name as an __init__ argument with typing information, then the attribute must conform to that type. E.g.::
+
+                class X(ConfigItem):
+                    def __init__(self, a:int = MC_REQUIRED):
+                        super(X).__init__()
+                        self.a = a
+
+            It will be checked that x.a is instance of int.
     """
 
     if not isinstance(env_factory, EnvFactory):
@@ -1181,10 +1203,17 @@ def mc_config(
         msg = "'mc_todo_handling_allowed' arg must be instance of {th_typ!r}; found type {got_typ!r}: {val!r}"
         raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=mc_todo_handling_allowed.__class__.__name__, val=mc_todo_handling_allowed))
 
+    allow_type_check = major_version >= 3 and typecheck.typing_vcheck()
+    if do_type_check:
+        if not allow_type_check:
+            raise ConfigException(typecheck.unsup_version_msg)
+    else:
+        do_type_check = do_type_check is None and allow_type_check
+
     def deco(conf_func):
         env_factory._mc_calc_env_group_order()
         # Create root object
-        cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback)
+        cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, do_type_check)
         cr._mc_check_unknown = True
 
         # Make sure _mc_setattr is the real one if decorator is used multiple times
