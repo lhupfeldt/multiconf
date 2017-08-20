@@ -944,6 +944,12 @@ class _ConfigItem(_ConfigBase):
     __nonzero__ = __bool__
 
 
+class AbstractConfigItem(_ConfigItem):
+    """This may be used as the base of classes which will be basis for both Repeatable and non-repeatable ConfigItem."""
+    def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
+        super(AbstractConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+
+
 class ConfigItem(_ConfigItem):
     def __init__(self, mc_include=None, mc_exclude=None):
         super(ConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)

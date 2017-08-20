@@ -4,7 +4,7 @@
 import sys
 
 # pylint: disable=unused-import
-from .multiconf import ConfigRoot, ConfigItem, RepeatableConfigItem
+from .multiconf import ConfigRoot, ConfigItem, RepeatableConfigItem, AbstractConfigItem
 
 major_version = sys.version_info[0]
 if major_version < 3:
