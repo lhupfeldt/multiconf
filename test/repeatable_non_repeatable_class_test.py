@@ -32,23 +32,30 @@ class anitem(ConfigItem):
     xx = 1
 
 
+class ConfigItemMiWrapper(ConfigItem):
+    def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
+        super(ConfigItemMiWrapper, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+
+
 @required('anitem')
 @nested_repeatables('children')
 class MyItemBase(AbstractConfigItem):
-    def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
+    def __init__(self, xx, mc_key=None, mc_include=None, mc_exclude=None):
         super(MyItemBase, self).__init__(mc_key=mc_key, mc_include=mc_include, mc_exclude=mc_exclude)
+        self.xx = xx
         self.aa = MC_REQUIRED
 
 
 @named_as('myitem')
-class MyItem(ConfigItem, MyItemBase):
+class MyItem(MyItemBase, ConfigItemMiWrapper):
     def __init__(self, mc_key=None):
-        super(MyItem, self).__init__()
+        super(MyItem, self).__init__(xx=1)
+
 
 @named_as('myitems')
-class MyItems(RepeatableConfigItem, MyItemBase):
-    def __init__(self, mc_key=None):
-        super(MyItems, self).__init__(mc_key=mc_key)
+class MyItems(MyItemBase, RepeatableConfigItem):
+    def __init__(self, mc_key, xx):
+        super(MyItems, self).__init__(mc_key=mc_key, xx=xx)
 
 
 @nested_repeatables('myitems')
@@ -61,17 +68,17 @@ class myroot(ConfigRoot):
             mc_allow_todo=mc_allow_todo, mc_allow_current_env_todo=mc_allow_current_env_todo)
 
 
-def test_iteritems_item_attributes():
+def test_abstract_config_item_multiple_inheritance_():
     with myroot(prod, ef_pp_prod) as cr:
         with MyItem() as ci:
             ci.aa = 1
             anitem()
 
-        with MyItems('a') as ci:
+        with MyItems('a', xx=2) as ci:
             ci.aa = 1
             anitem()
 
-        with MyItems('b') as ci:
+        with MyItems('b', xx=3) as ci:
             ci.aa = 2
             anitem()
 
