@@ -946,7 +946,21 @@ class _ConfigItem(_ConfigBase):
     __nonzero__ = __bool__
 
 
-class ConfigItem(_ConfigItem):
+class AbstractConfigItem(_ConfigItem):
+    """This may be used as the base of classes which will be basis for both Repeatable and non-repeatable ConfigItem.
+
+    Note: This is an Abstract class even though it it not Abstract in the Python sense, because of the complexity of maintaining Python 2 and 3
+          compatibility with abstract classes.
+
+    Inheriting from this class makes it possible to use the decorators on a your base class and then later in the hierarchy split into Repeatable and
+    non repeatable.
+    """
+
+    def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
+        super(AbstractConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+
+
+class ConfigItem(AbstractConfigItem):
     def __init__(self, mc_include=None, mc_exclude=None):
         super(ConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         contained_in = self._mc_contained_in
@@ -977,7 +991,7 @@ class ConfigItem(_ConfigItem):
         attributes[my_key] = Excluded(self)
 
 
-class RepeatableConfigItem(_ConfigItem):
+class RepeatableConfigItem(AbstractConfigItem):
     def __init__(self, mc_key, mc_include=None, mc_exclude=None):
         super(RepeatableConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         contained_in = self._mc_contained_in
