@@ -175,6 +175,29 @@ def test_attribute_overrides_property_method_failing():
     assert "Attribute 'm' is defined as muticonf attribute and as property method, but value is undefined for env Env('prod') and method call failed" in str(exinfo.value)
 
 
+def test_attribute_overrides_property_method_raising_attribute_error():
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def m(self):
+            """This raises AttributeError, a common scenario when calling a @property during config load"""
+            return self.i_dont_have_this_attribute
+
+    with ConfigRoot(prod, ef) as cr:
+        with Nested() as nn:
+            nn.setattr('m!', prod=7)
+    assert cr.someitem.m == 7
+
+    with ConfigRoot(prod, ef):
+        with Nested() as nn:
+            nn.setattr('m!', pp=7)
+
+    with raises(AttributeError) as exinfo:
+        print(nn.m)
+
+    assert "Attribute 'm' is defined as muticonf attribute and as property method, but value is undefined for env Env('prod') and method call failed" in str(exinfo.value)
+
+
 def test_attribute_overrides_property_method_builder():
     @named_as('n1')
     class Nested1(ConfigItem):

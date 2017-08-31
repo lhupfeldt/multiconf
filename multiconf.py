@@ -425,31 +425,25 @@ class _ConfigBase(object):
                 _mc_print_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_check_override_common(self, item, name, attribute):
-        try:
-            object.__getattribute__(item, name)
-        except AttributeError:
-            if not attribute.override_method:
-                return False
-            err_msg = "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists."
-            raise ConfigException(err_msg % dict(name=name))
-        except:
-            # Error in property implemetation
-            pass
-
-        if attribute.override_method:
-            # This is expensive so do the quick __getattribute__ above first and only do this when necessary, i.e. we found an attribute
-            for cls in get_bases(object.__getattribute__(item, '__class__')):
-                try:
-                    real_attr = object.__getattribute__(cls, name)
+        for cls in get_bases(object.__getattribute__(item, '__class__')):
+            try:
+                real_attr = object.__getattribute__(cls, name)
+                if attribute.override_method:
                     if isinstance(real_attr, property):
                         return True
 
                     err_msg = "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property."
                     raise ConfigException(err_msg % dict(name=name, value=real_attr))
-                except AttributeError:
-                    pass
 
-        raise ConfigException("The attribute '%(name)s' (not ending in '!') clashes with a property or method" % dict(name=name))
+                raise ConfigException("The attribute '%(name)s' (not ending in '!') clashes with a property or method" % dict(name=name))
+            except AttributeError:
+                pass
+
+        if not attribute.override_method:
+            return False
+
+        err_msg = "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists."
+        raise ConfigException(err_msg % dict(name=name))
 
     def setattr(self, name, mc_caller_file_name=None, mc_caller_line_num=None, **kwargs):
         if not mc_caller_file_name or not mc_caller_line_num or not '.py' in mc_caller_file_name:  # TODO remove when switching to Python3
