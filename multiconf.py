@@ -15,7 +15,6 @@ from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
 from .config_errors import _api_error_msg, caller_file_line, find_user_file_line, find_init_call_file_line, _line_msg
 from .config_errors import _error_msg, _error_type_msg, _warning_type_msg, _mc_print_messages
-from .bases import get_bases
 
 
 from .json_output import ConfigItemEncoder
@@ -425,19 +424,18 @@ class _ConfigBase(object):
                 _mc_print_messages(messages, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
     def _mc_check_override_common(self, item, name, attribute):
-        for cls in get_bases(object.__getattribute__(item, '__class__')):
-            try:
-                real_attr = object.__getattribute__(cls, name)
-                if attribute.override_method:
-                    if isinstance(real_attr, property):
-                        return True
+        try:
+            real_attr = getattr(item.__class__, name)
+            if attribute.override_method:
+                if isinstance(real_attr, property):
+                    return True
 
-                    err_msg = "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property."
-                    raise ConfigException(err_msg % dict(name=name, value=real_attr))
+                err_msg = "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property."
+                raise ConfigException(err_msg % dict(name=name, value=real_attr))
 
-                raise ConfigException("The attribute '%(name)s' (not ending in '!') clashes with a property or method" % dict(name=name))
-            except AttributeError:
-                pass
+            raise ConfigException("The attribute '%(name)s' (not ending in '!') clashes with a property or method" % dict(name=name))
+        except AttributeError:
+            pass
 
         if not attribute.override_method:
             return False
