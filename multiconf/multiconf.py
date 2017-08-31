@@ -819,7 +819,21 @@ class _ConfigItemBase(_ConfigBase):
         raise ConfigException(msg)
 
 
-class ConfigItem(_ConfigItemBase):
+class AbstractConfigItem(_ConfigItemBase):
+    """This may be used as the base of classes which will be basis for both Repeatable and non-repeatable ConfigItem.
+
+    Note: This is an Abstract class even though it it not Abstract in the Python sense, because of the complexity of maintaining Python 2 and 3
+          compatibility with abstract classes.
+
+    Inheriting from this class makes it possible to use the decorators on a your base class and then later in the hierarchy split into Repeatable and
+    non repeatable.
+    """
+
+    def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
+        super(AbstractConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+
+
+class ConfigItem(AbstractConfigItem):
     """Base class for config items."""
 
     def __new__(cls, *init_args, **init_kwargs):
@@ -877,8 +891,11 @@ class ConfigItem(_ConfigItemBase):
             self._mc_handled_env_bits = self._mc_root._mc_env.mask
             return self
 
+    def __init__(self, mc_include=None, mc_exclude=None):
+        super(ConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
-class RepeatableConfigItem(_ConfigItemBase):
+
+class RepeatableConfigItem(AbstractConfigItem):
     """Base class for config items which may be repeated.
 
     RepeatableConfigItems will be stored in an OrderedDict using the key 'mc_key'.
@@ -935,10 +952,6 @@ class RepeatableConfigItem(_ConfigItemBase):
             # Insert self in repeatable
             repeatable[mc_key] = self
             return self
-
-    def __init__(self, mc_key, mc_include=None, mc_exclude=None):
-        # Overridden to accept 'mc_key'
-        super(RepeatableConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
     @classmethod
     def named_as(cls):
