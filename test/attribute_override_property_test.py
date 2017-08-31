@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import re
+import sys, re
 
 # pylint: disable=E0611
 from pytest import raises, xfail
@@ -12,6 +12,9 @@ from ..decorators import named_as, strict_setattr
 from ..envs import EnvFactory
 
 from .utils.utils import py3_local, config_error, lineno
+
+
+major_version = sys.version_info[0]
 
 
 def ce(line_num, *lines):
@@ -107,9 +110,14 @@ def test_attribute_overrides_property_method_is_regular_method(capsys):
                 nn.setattr('m!', default=7)
 
     _sout, serr = capsys.readouterr()
-    msg = re.sub(r"m at [^>]*>", "m at 1234>", str(serr))
-    expected = "m! specifies overriding a property method, but attribute 'm' with value '<function %(py3_local)sm at 1234>' is not a property." % \
-               dict(py3_local=py3_local('Nested.'))
+    if major_version >= 3:
+        expected = "m! specifies overriding a property method, but attribute 'm' with value '<function %(py3_local)sNested.m at 1234>' is not a property." % \
+                   dict(py3_local=py3_local())
+        msg = re.sub(r"m at [^>]*>", "m at 1234>", str(serr))
+    else:
+        expected = "m! specifies overriding a property method, but attribute 'm' with value '<unbound method Nested.m>' is not a property."
+        msg = str(serr)
+
     assert msg == ce(errorline, expected)
 
 
@@ -159,6 +167,29 @@ def test_attribute_overrides_property_method_failing():
         @property
         def m(self):
             raise Exception("bad property method")
+
+    with ConfigRoot(prod, ef) as cr:
+        with Nested() as nn:
+            nn.setattr('m!', prod=7)
+    assert cr.someitem.m == 7
+
+    with ConfigRoot(prod, ef):
+        with Nested() as nn:
+            nn.setattr('m!', pp=7)
+
+    with raises(AttributeError) as exinfo:
+        print(nn.m)
+
+    assert "Attribute 'm' is defined as muticonf attribute and as property method, but value is undefined for env Env('prod') and method call failed" in str(exinfo.value)
+
+
+def test_attribute_overrides_property_method_raising_attribute_error():
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def m(self):
+            """This raises AttributeError, a common scenario when calling a @property during config load"""
+            return self.i_dont_have_this_attribute
 
     with ConfigRoot(prod, ef) as cr:
         with Nested() as nn:

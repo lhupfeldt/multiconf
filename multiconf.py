@@ -15,7 +15,6 @@ from .excluded import Excluded
 from .config_errors import ConfigBaseException, ConfigException, ConfigApiException, ConfigAttributeError
 from .config_errors import caller_file_line, find_user_file_line, find_init_call_file_line, _line_msg
 from .config_errors import _error_msg, _warning_msg, _api_error_msg
-from .bases import get_bases
 from .json_output import ConfigItemEncoder
 
 _debug_exc = str(os.environ.get('MULTICONF_DEBUG_EXCEPTIONS')).lower() == 'true'
@@ -420,7 +419,7 @@ class _ConfigBase(object):
             raise ConfigException("Atempting to use '?' postfix to set attribute " + repr(name) + "  which exists on item: " + repr(self))
 
         try:
-            object.__getattribute__(item, name)
+            real_attr = getattr(item.__class__, name)
         except AttributeError:
             if attribute.override_method:
                 err_msg = "%(name)s! specifies overriding a property method, but no property named '%(name)s' exists."
@@ -432,23 +431,16 @@ class _ConfigBase(object):
                     "All attributes must be defined in __init__ or set with the '?' postfix. " +
                     "Atempting to set attribute " + repr(name) + " which does not exist on item: " + repr(self))
 
-            return
-        except:
-            # Error in property implemetation
-            pass
+            return False
+
+        # The attribute exists, now check if this is good or bad
 
         if attribute.override_method:
-            # This is expensive so do the quick __getattribute__ above first and only do this when necessary, i.e. we found an attribute
-            for cls in get_bases(object.__getattribute__(item, '__class__')):
-                try:
-                    real_attr = object.__getattribute__(cls, name)
-                    if isinstance(real_attr, property):
-                        return
+            if isinstance(real_attr, property):
+                return True
 
-                    err_msg = "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property."
-                    raise ConfigException(err_msg % dict(name=name, value=real_attr))
-                except AttributeError:
-                    pass
+            err_msg = "%(name)s! specifies overriding a property method, but attribute '%(name)s' with value '%(value)s' is not a property."
+            raise ConfigException(err_msg % dict(name=name, value=real_attr))
 
         raise ConfigException("The attribute '%(name)s' (not ending in '!') clashes with a property or method" % dict(name=name))
 
