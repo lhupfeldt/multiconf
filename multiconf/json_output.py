@@ -468,7 +468,7 @@ class ConfigItemEncoder(object):
             except TypeError:
                 pass
             else:
-                print("# Handle iterable objects", type(obj))
+                # print("Handle iterable objects", type(obj))
                 return list(iterable)
 
             if self.user_fallback_callable:
