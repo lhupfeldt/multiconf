@@ -92,6 +92,26 @@ def test_access_undefined_attribute_json_single_level():
     assert replace_ids(str(exinfo.value), named_as=False) == _access_undefined_attribute_json_single_level_expected_repr
 
 
+_access_undefined_private_attribute_expected_repr = """{
+    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    }
+}, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute '_b'."""
+
+def test_access_undefined_private_attribute():
+    @mc_config(ef1_prod)
+    def _(_):
+        ConfigItem()
+
+    cr = ef1_prod.config(prod).ConfigItem
+    with raises(AttributeError) as exinfo:
+        print(cr._b)
+
+    assert replace_ids(str(exinfo.value), named_as=False) == _access_undefined_private_attribute_expected_repr
+
+
 # TODO
 #def test_error_in_property_method_implementation(self):
 #    class root(ConfigItem):

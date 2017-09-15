@@ -604,7 +604,7 @@ class _ConfigBase(object):
                 del _ConfigBase.__getattr__
 
                 if attr_name.startswith('_'):
-                    raise AttributeError(attr_name)
+                    raise ConfigAttributeError(self, attr_name, msg=None)
 
                 if self._mc_root._mc_env is not NO_ENV or attr_name not in self._mc_attributes:
                     if not self:
