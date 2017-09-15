@@ -32,10 +32,11 @@ class ConfigApiException(ConfigBaseException):
 
 
 class ConfigAttributeError(AttributeError):
-    def __init__(self, mc_object, attr_name):
+    def __init__(self, mc_object, attr_name, msg):
         super(ConfigAttributeError, self).__init__("")
         self.mc_object = mc_object
         self.attr_name = attr_name
+        self.msg = msg
 
     @property
     def message(self):
@@ -43,6 +44,9 @@ class ConfigAttributeError(AttributeError):
         repeatable_attr_name = self.attr_name + 's'
         if self.mc_object._mc_attributes.get(repeatable_attr_name):
             error_message += ", but found attribute " + repr(repeatable_attr_name)
+        error_message += '.'
+        if self.msg:
+            error_message += ' ' + self.msg
         try:
             rep = self.mc_object.json(compact=True, property_methods=True, builders=False, depth=1) + ", object"
         except:  # pylint: disable=bare-except
@@ -55,7 +59,7 @@ class ConfigAttributeError(AttributeError):
 
 class ConfigExcludedAttributeError(ConfigAttributeError):
     def __init__(self, mc_object, attr_name, env):
-        super(ConfigExcludedAttributeError, self).__init__(mc_object, attr_name)
+        super(ConfigExcludedAttributeError, self).__init__(mc_object, attr_name, None)
         self.env = env
         self.excluded = True
         try:

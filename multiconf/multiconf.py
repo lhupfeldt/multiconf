@@ -10,19 +10,17 @@ import json
 from .envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, Where
-
-major_version = sys.version_info[0]
-if major_version < 3:
-    from .property_wrapper_py2 import _McPropertyWrapper  # pylint: disable=import-error
-else:
-    from .property_wrapper_py3 import _McPropertyWrapper
-
+from .property_wrapper import _McPropertyWrapper, _McPropertyWrapperException
 from .repeatable import RepeatableDict
 from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigException, ConfigApiException, InvalidUsageException
+from .config_errors import failed_property_call_msg
 from .config_errors import caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg, not_repeatable_in_parent_msg, repeatable_in_parent_msg
 from .json_output import ConfigItemEncoder, _mc_filter_out_keys, _mc_identification_msg_str
 from .bases import get_bases
 from . import typecheck
+
+
+major_version = sys.version_info[0]
 
 
 class _McExcludedException(Exception):
@@ -384,31 +382,13 @@ class _ConfigBase(object):
         """Common code for assignment and item.setattr"""
 
         try:
-            real_attr = None
-            try:
-                real_attr = object.__getattribute__(self, attr_name)
-            except AttributeError:
-                raise
-            except Exception as ex:
-                pass
+            prop = getattr(self.__class__, attr_name)
 
-            if attr_name in self._mc_items:
-                if isinstance(real_attr, RepeatableDict):
+            if not isinstance(prop, _McPropertyWrapper):
+                if isinstance(prop, RepeatableDict):
                     msg = "'{name}' is already defined as a nested-repeatable and may not be replaced with an attribute.".format(name=attr_name)
-                else:
-                    msg = "'{name}' {typ} is already defined and may not be replaced with an attribute.".format(name=attr_name, typ=type(real_attr))
-                self._mc_print_error_caller(msg, mc_error_info_up_level)
-                return
-
-            for cls in get_bases(object.__getattribute__(self, '__class__')):
-                try:
-                    prop = object.__getattribute__(cls, attr_name)
-                except AttributeError:
-                    prop = None
-                    continue
-
-                if isinstance(prop, _McPropertyWrapper):
-                    break
+                    self._mc_print_error_caller(msg, mc_error_info_up_level)
+                    return
 
                 if not mc_overwrite_property:
                     base_msg = "The attribute '{name}' clashes with a @property or method".format(name=attr_name)
@@ -418,16 +398,21 @@ class _ConfigBase(object):
                     self._mc_print_error_caller(msg, mc_error_info_up_level)
                     return
 
-                if isinstance(prop, property):
-                    setattr(cls, attr_name, _McPropertyWrapper(attr_name, prop))
-                    break
+                if not isinstance(prop, property):
+                    msg = "'mc_overwrite_property' specified but existing attribute '{name}' with value '{value}' is not a @property.".format(
+                        name=attr_name, value=prop)
+                    self._mc_print_error_caller(msg, mc_error_info_up_level)
+                    return
 
-                msg = "'mc_overwrite_property' specified but existing attribute '{name}' with value '{value}' is not a @property.".format(
-                    name=attr_name, value=prop)
+                setattr(self.__class__, attr_name, _McPropertyWrapper(attr_name, prop))
+
+        except AttributeError as ex:
+            if attr_name in self._mc_items:
+                item = self._mc_items[attr_name]
+                msg = "'{name}' {typ} is already defined and may not be replaced with an attribute.".format(name=attr_name, typ=type(item))
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
                 return
 
-        except AttributeError:
             if mc_overwrite_property:
                 msg = "'mc_overwrite_property' is True but no property named '{name}' exists.".format(name=attr_name)
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
@@ -614,14 +599,32 @@ class _ConfigBase(object):
             attr.where_from = Where.FROZEN
             return attr.env_values[self._mc_root._mc_env]
         except KeyError:
-            if self._mc_root._mc_env is not NO_ENV or attr_name not in self._mc_attributes:
-                if not self:
-                    raise ConfigExcludedAttributeError(self, attr_name, self._mc_root._mc_env)
-                raise ConfigAttributeError(self, attr_name)
+            try:
+                my_getattr = _ConfigBase.__getattr__
+                del _ConfigBase.__getattr__
 
-            msg = "Trying to access attribute '{}'. "
-            msg += "Item.attribute access is not allowed in 'mc_post_validate' as there is no current env, use: item.getattr(attr_name, env)"
-            raise ConfigApiException(msg.format(attr_name))
+                if attr_name.startswith('_'):
+                    raise AttributeError(attr_name)
+
+                if self._mc_root._mc_env is not NO_ENV or attr_name not in self._mc_attributes:
+                    if not self:
+                        raise ConfigExcludedAttributeError(self, attr_name, self._mc_root._mc_env)
+
+                    # This is necessary in order to generate the original exception which was raised by a property (wrapper) call which failed
+                    try:
+                        getattr(self, attr_name)
+                    except _McPropertyWrapperException as ex:
+                        ex = ex.cause
+                        msg = failed_property_call_msg.format(attr=attr_name, env=self._mc_root._mc_env, ex_type=type(ex).__name__, ex=ex)
+                    except Exception:
+                        msg = None
+                    raise ConfigAttributeError(self, attr_name, msg=msg)
+
+                msg = "Trying to access attribute '{}'. "
+                msg += "Item.attribute access is not allowed in 'mc_post_validate' as there is no current env, use: item.getattr(attr_name, env)"
+                raise ConfigApiException(msg.format(attr_name))
+            finally:
+                _ConfigBase.__getattr__ = my_getattr
 
     def getattr(self, attr_name, env):
         """Get an attribute value for any env."""
@@ -633,7 +636,7 @@ class _ConfigBase(object):
             attr.where_from = Where.FROZEN
             return attr.env_values[env]
         except KeyError:
-            prop = object.__getattribute__(self.__class__, attr_name)
+            prop = getattr(self.__class__, attr_name)
             try:
                 # TODO: Thread safety
                 orig_env = self._mc_root._mc_env

@@ -28,7 +28,7 @@ _access_undefined_attribute_expected_repr = """{
         "__class__": "Env",
         "name": "prod"
     }
-}, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute 'b'"""
+}, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute 'b'."""
 
 def test_access_undefined_attribute():
     @mc_config(ef1_prod)
@@ -36,7 +36,6 @@ def test_access_undefined_attribute():
         ConfigItem()
 
     cr = ef1_prod.config(prod).ConfigItem
-
     with raises(AttributeError) as exinfo:
         print(cr.b)
 
@@ -50,7 +49,7 @@ _t2_expected_repr = """{
         "name": "prod"
     },
     "bs": 4
-}, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute 'b', but found attribute 'bs'"""
+}, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute 'b', but found attribute 'bs'."""
 
 def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s():
     @mc_config(ef1_prod)
@@ -75,7 +74,7 @@ _access_undefined_attribute_json_single_level_expected_repr = """{
     },
     "aa": 17,
     "ConfigItem": "<class 'multiconf.multiconf.ConfigItem'>"
-}, object of type: <class 'test.utils.tstclasses.ItemWithAA'> has no attribute 'b'"""
+}, object of type: <class 'test.utils.tstclasses.ItemWithAA'> has no attribute 'b'."""
 
 def test_access_undefined_attribute_json_single_level():
     @mc_config(ef1_prod)

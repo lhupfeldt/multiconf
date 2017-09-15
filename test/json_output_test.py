@@ -1716,7 +1716,7 @@ def test_exception_generating_json():
     with raises(AttributeError) as exinfo:
         cr.Xx.zzz
 
-    assert str(exinfo.value) == "Object of type: <class 'test.json_output_test.%(py3_local)sXx'> has no attribute 'zzz'" % dict(py3_local=py3_local())
+    assert str(exinfo.value) == "Object of type: <class 'test.json_output_test.%(py3_local)sXx'> has no attribute 'zzz'." % dict(py3_local=py3_local())
 
 
 _json_dump_depth_expected_json_d1 = """{
