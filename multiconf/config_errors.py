@@ -74,6 +74,7 @@ class ConfigExcludedAttributeError(ConfigAttributeError):
 
 
 def caller_file_line(up_level=2):
+    """Return the file and line of the caller of the function calliing this function (depending on up_level)"""
     frame = sys._getframe(up_level)
     return frame.f_globals['__file__'], frame.f_lineno
 
