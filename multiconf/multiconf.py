@@ -741,8 +741,20 @@ class _ConfigBase(object):
         raise ConfigException("Searching from: " + repr(type(self)) + msg)
 
 
-class _ConfigItemBase(_ConfigBase):
-    def __init__(self, mc_include=None, mc_exclude=None):
+class AbstractConfigItem(_ConfigBase):
+    """This may be used as the base of classes which will be basis for both Repeatable and non-repeatable ConfigItem.
+
+    Note: This is an Abstract class even though it it not Abstract in the Python sense, because of the complexity of maintaining Python 2 and 3
+          compatibility with abstract classes.
+
+    Inheriting from this class makes it possible to use the decorators on a your base class and then later in the hierarchy split into Repeatable and
+    non repeatable.
+    """
+
+    def __new__(cls, mc_key=None, *init_args, **init_kwargs):
+        return super(AbstractConfigItem, cls).__new__(cls)
+
+    def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
         previous_item = self.__class__._mc_last_item
         if previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN and previous_item is not self:
             try:
@@ -820,23 +832,6 @@ class _ConfigItemBase(_ConfigBase):
         msg = not_repeatable_in_parent_msg.format(
             repeatable_cls_key=repeatable_class_key, repeatable_cls=repeatable_cls_or_dict, ci_named_as=self.named_as(), ci_cls=type(self))
         raise ConfigException(msg)
-
-
-class AbstractConfigItem(_ConfigItemBase):
-    """This may be used as the base of classes which will be basis for both Repeatable and non-repeatable ConfigItem.
-
-    Note: This is an Abstract class even though it it not Abstract in the Python sense, because of the complexity of maintaining Python 2 and 3
-          compatibility with abstract classes.
-
-    Inheriting from this class makes it possible to use the decorators on a your base class and then later in the hierarchy split into Repeatable and
-    non repeatable.
-    """
-
-    def __new__(cls, mc_key=None, *init_args, **init_kwargs):
-        return super(AbstractConfigItem, cls).__new__(cls)
-
-    def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
-        super(AbstractConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
 
 class ConfigItem(AbstractConfigItem):
@@ -965,7 +960,7 @@ class RepeatableConfigItem(AbstractConfigItem):
         return cls._mc_deco_named_as or (cls.__name__ + 's')
 
 
-class _ConfigBuilder(_ConfigItemBase):
+class _ConfigBuilder(AbstractConfigItem):
     """Base class for 'builder' items which can create (a collection of) other items."""
 
     def __new__(cls, mc_key='default-builder', *init_args, **init_kwargs):
