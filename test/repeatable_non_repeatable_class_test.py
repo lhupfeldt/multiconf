@@ -52,12 +52,21 @@ class MyItems(MyItemBase, RepeatableConfigItem):
         super(MyItems, self).__init__(mc_key=mc_key, xx=xx)
 
 
+@named_as('myitems')
+class MyItemsSingle(MyItems):
+    def __new__(cls, *args, **kwargs):
+        return super(MyItemsSingle, cls).__new__(cls, mc_key='predefined')
+
+    def __init__(self, xx):
+        super(MyItemsSingle, self).__init__(mc_key='predefined', xx=xx)
+
+
 @nested_repeatables('myitems')
 class myroot(ConfigItem):
     pass
 
 
-def test_abstract_config_item_multiple_inheritance_():
+def test_abstract_config_item_multiple_inheritance_explicit_mc_key():
     @mc_config(ef_pp_prod)
     def _(_):
         with myroot():
@@ -78,3 +87,26 @@ def test_abstract_config_item_multiple_inheritance_():
     assert cr.myitem.aa == 1
     assert cr.myitems['a'].aa == 1
     assert cr.myitems['b'].aa == 2
+
+
+def test_abstract_config_item_multiple_inheritance_cls_mc_key():
+    @mc_config(ef_pp_prod)
+    def _(_):
+        with myroot():
+            with MyItem() as ci:
+                ci.aa = 1
+                anitem()
+
+            with MyItems('a', xx=2) as ci:
+                ci.aa = 1
+                anitem()
+
+            with MyItemsSingle(xx=3) as ci:
+                ci.aa = 2
+                anitem()
+
+    cr = ef_pp_prod.config(prod).myroot
+
+    assert cr.myitem.aa == 1
+    assert cr.myitems['a'].aa == 1
+    assert cr.myitems['predefined'].aa == 2

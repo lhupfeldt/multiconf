@@ -832,6 +832,9 @@ class AbstractConfigItem(_ConfigItemBase):
     non repeatable.
     """
 
+    def __new__(cls, mc_key=None, *init_args, **init_kwargs):
+        return super(AbstractConfigItem, cls).__new__(cls)
+
     def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
         super(AbstractConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
