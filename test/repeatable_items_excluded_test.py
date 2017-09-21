@@ -10,6 +10,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
+from .utils.utils import py3_local
 
 
 ef = EnvFactory()
@@ -63,8 +64,10 @@ def test_repeatable_items_mc_select_envs_excluded():
     assert cr.children['second'].aa == 2
     assert cr.children['third'].aa == 3
     assert cr.children['fourth'].aa == 4
-    with raises(KeyError):
+    with raises(KeyError) as exinfo:
         cr.children['fifth']
+
+    assert "'fifth'. 'Excluded: <class 'test.repeatable_items_excluded_test.rchild'>' for Env('prod')." in str(exinfo.value)
 
     cr = ef.config(pp).nc_aa_root
 
@@ -95,3 +98,55 @@ def test_repeatable_items_skipped_in_envs():
 
     cr = ef.config(pp).nc_aa_root
     assert len(cr.children) == 2
+
+
+def test_repeatable_items_mc_select_envs_excluded_key_error_property_exception():
+    @named_as('children')
+    class badchild(RepeatableItemWithAA):
+        @property
+        def xxx(self):
+            raise Exception('bad')
+
+    @mc_config(ef, validate_properties=False)
+    def config(root):
+        with nc_aa_root(1) as cr:
+            with badchild("first") as ci:
+                ci.mc_select_envs(exclude=[prod])
+                ci.setattr('aa', pp=1)
+
+    cr = ef.config(prod).nc_aa_root
+
+    assert len(cr.children) == 0
+
+    with raises(KeyError) as exinfo:
+        cr.children['first']
+
+    ex_msg = str(exinfo.value)
+    exp = "'first'. 'Excluded: <class 'test.repeatable_items_excluded_test.%(py3_local)sbadchild'>' for Env('prod')." % dict(py3_local=py3_local())
+    assert exp in ex_msg
+
+
+def test_repeatable_items_mc_select_envs_excluded_key_error_property_attributeerror():
+    @named_as('children')
+    class badchild(RepeatableItemWithAA):
+        @property
+        def xxx(self):
+            self.no_such_property
+
+    @mc_config(ef, validate_properties=False)
+    def config(root):
+        with nc_aa_root(1) as cr:
+            with badchild("first") as ci:
+                ci.mc_select_envs(exclude=[prod])
+                ci.setattr('aa', pp=1)
+
+    cr = ef.config(prod).nc_aa_root
+
+    assert len(cr.children) == 0
+
+    with raises(KeyError) as exinfo:
+        cr.children['first']
+
+    ex_msg = str(exinfo.value)
+    exp = "'first'. 'Excluded: <class 'test.repeatable_items_excluded_test.%(py3_local)sbadchild'>' for Env('prod')." % dict(py3_local=py3_local())
+    assert exp in ex_msg

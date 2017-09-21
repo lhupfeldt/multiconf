@@ -5,6 +5,8 @@ from __future__ import print_function
 
 from collections import OrderedDict
 
+from .config_errors import ConfigExcludedKeyError
+
 
 class RepeatableDict(object):
     """Dictionary dedicated for holding RepeatableConfigItem"""
@@ -21,7 +23,7 @@ class RepeatableDict(object):
         val = self._items[key]
         if val._mc_exists_in_env():
             return val
-        raise KeyError(key)
+        raise ConfigExcludedKeyError(val, key)
 
     def __contains__(self, key):
         val = self._items.get(key)

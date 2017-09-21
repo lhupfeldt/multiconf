@@ -73,6 +73,21 @@ class ConfigExcludedAttributeError(ConfigAttributeError):
         return error_message.format(attr_name=self.attr_name, env=self.env, item_excl_repr=self.mc_object._mc_excl_repr())
 
 
+class ConfigExcludedKeyError(KeyError):
+    def __init__(self, mc_object, key_name):
+        super(ConfigExcludedKeyError, self).__init__(key_name)
+        self.mc_object = mc_object
+        self.key_name = key_name
+
+    @property
+    def message(self):
+        error_message = "'{key_name}'. '{item_excl_repr}' for {env}."
+        return error_message.format(key_name=self.key_name, item_excl_repr=self.mc_object._mc_excl_repr(), env=self.mc_object.env)
+
+    def __str__(self):
+        return self.message
+
+
 def caller_file_line(up_level=2):
     """Return the file and line of the caller of the function calliing this function (depending on up_level)"""
     frame = sys._getframe(up_level)
