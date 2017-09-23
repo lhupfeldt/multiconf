@@ -755,7 +755,7 @@ class AbstractConfigItem(_ConfigBase):
         return super(AbstractConfigItem, cls).__new__(cls)
 
     def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
-        previous_item = self.__class__._mc_last_item
+        previous_item = _ConfigBase._mc_last_item
         if previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN and previous_item is not self:
             try:
                 previous_item._mc_freeze(mc_error_info_up_level=None)
