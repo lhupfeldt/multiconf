@@ -9,7 +9,7 @@ import keyword
 
 from .config_errors import ConfigDefinitionException, _line_msg, _error_msg, _warning_msg
 from .repeatable import RepeatableDict
-from . import ConfigBuilder
+from . import ConfigBuilder, RepeatableConfigItem
 
 
 def _isidentifier(name):
@@ -24,6 +24,16 @@ def _not_config_builder(cls, decorator_name):
         msg = "Decorator '@" + decorator_name + "' is not allowed on instance of " + ConfigBuilder.__name__ + "."
         print(_error_msg(msg), file=sys.stderr)
         raise ConfigDefinitionException(msg)
+
+
+def _repeatable_config_item(cls, decorator_name):
+    if issubclass(cls, RepeatableConfigItem):
+        return
+
+    print(_line_msg(up_level=2), file=sys.stderr)
+    msg = "Decorator '@" + decorator_name + "' is only allowed on instance of " + RepeatableConfigItem.__name__ + "."
+    print(_error_msg(msg), file=sys.stderr)
+    raise ConfigDefinitionException(msg)
 
 
 def _check_valid_identifier(name):
@@ -59,7 +69,7 @@ def _add_super_list_deco_values(cls, attr_names, deco_attr_name):
 def named_as(insert_as_name):
     """Determine the name used to insert item in parent"""
     def deco(cls):
-        _not_config_builder(cls, 'named_as')
+        _not_config_builder(cls, named_as.__name__)
         _check_valid_identifier(insert_as_name)
         cls._mc_deco_named_as = insert_as_name
         return cls
@@ -70,7 +80,7 @@ def named_as(insert_as_name):
 def nested_repeatables(*attr_names):
     """Specify which nested (child) items will be repeatable."""
     def deco(cls):
-        _not_config_builder(cls, 'nested_repeatables')
+        _not_config_builder(cls, nested_repeatables.__name__)
         cls._mc_deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
 
         # Make descriptor work, an instance of the descriptor class mut be assigened at the class level
@@ -87,5 +97,54 @@ def required(*attr_names):
     def deco(cls):
         cls._mc_deco_required = _add_super_list_deco_values(cls, attr_names, 'required')
         return cls
+
+    return deco
+
+
+def repeatable_key(**name_value):
+    """Set name and default value for the mc_key repeatable item __init__ argument.
+
+    Arguments:
+        **name_value (dict[name, val]): There must be exactly one name/value pair.
+            E.g.:
+
+            Use 'name' argument as the mc_key.::
+
+                @named_as('xses')
+                @repeatable_key(name=None)
+                class X1(RepeatableConfigItem):
+                    def __init__(name, ...)
+            
+
+            Only a single item of the following class can be created in the 'xses' repeatable.
+            Use 'name' argument as the mc_key for the parent class, use value 'xxx' as the mc_key.::
+
+                @repeatable_key(name='xxx')
+                class X2(X1):
+                    def __init__(...)  # No 'name' argument
+                        super(X2, self)._init__(name=None, ...)
+
+            Only a single item of the following class can be created in the 'ys' repeatable.
+            Use value 'nicekey' as the mc_key.::
+
+                @named_as('ys')
+                @repeatable_key(mc_key='nicekey')
+                class X2(X1):
+                    def __init__(...)  # No 'mc_key' argument
+                        super(X2, self)._init__(...)
+
+    """
+
+    def deco(cls):
+        _repeatable_config_item(cls, repeatable_key.__name__)
+        for key, value in name_value.items():
+            cls._mc_key_name = key
+            cls._mc_key_value = value
+            return cls
+
+        print(_line_msg(up_level=1), file=sys.stderr)
+        msg = "Decorator '@" + repeatable_key.__name__ + "' takes exactly one key-value pair."
+        print(_error_msg(msg), file=sys.stderr)
+        raise ConfigDefinitionException(msg)
 
     return deco

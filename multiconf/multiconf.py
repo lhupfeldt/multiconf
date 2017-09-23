@@ -905,7 +905,10 @@ class RepeatableConfigItem(AbstractConfigItem):
         mc_key (hashable): The key used to lookup the config item.
     """
 
-    def __new__(cls, mc_key, *init_args, **init_kwargs):
+    _mc_key_name = None
+    _mc_key_value = None
+
+    def __new__(cls, mc_key=None, *init_args, **init_kwargs):
         # cls._mc_debug_hierarchy('RepeatableConfigItem.__new__')
         _mc_contained_in = cls._mc_hierarchy[-1]
 
@@ -915,6 +918,7 @@ class RepeatableConfigItem(AbstractConfigItem):
             contained_in = contained_in._mc_contained_in
 
         repeatable = contained_in._mc_get_repeatable(cls.named_as(), cls)
+        mc_key = init_kwargs.get(cls._mc_key_name) or cls._mc_key_value or mc_key
 
         try:
             self = repeatable[mc_key]
