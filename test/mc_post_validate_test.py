@@ -48,7 +48,8 @@ def test_setattr_not_allowed_in_mc_post_validate():
             with root():
                 pass
 
-    exp = "Trying to set attribute 'y'. Setting attributes is not allowed after configuration is loaded (in order to enforce derived value validity)."
+    exp = "Trying to set attribute 'y'. Setting attributes is not allowed after configuration is loaded or while doing json dump (print) "
+    exp += "(in order to enforce derived value validity)."
     assert str(exinfo.value) == exp
 
 

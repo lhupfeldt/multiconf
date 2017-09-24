@@ -136,6 +136,10 @@ class _ConfigBase(object):
             multiconf_property_wrapper_type=_McPropertyWrapper,
             show_all_envs=show_all_envs,
             depth=depth)
+
+        cr._mc_in_json = True
+        _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
+
         try:
             # TODO: Thread safety
             orig_env = cr._mc_env
@@ -147,6 +151,9 @@ class _ConfigBase(object):
             cr._mc_json_errors = encoder.num_errors
             return json_str
         finally:
+            _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
+            cr._mc_in_json = False
+
             cr._mc_env = orig_env
 
     def _mc_excl_repr(self):
@@ -518,7 +525,7 @@ class _ConfigBase(object):
 
     def _mc_setattr_disabled(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
         """Common code for assignment and item.setattr to disable attribute modification after config is loaded"""
-        msg = "Trying to set attribute '{}'. Setting attributes is not allowed after configuration is loaded (in order to enforce derived value validity)."
+        msg = "Trying to set attribute '{}'. Setting attributes is not allowed after configuration is loaded or while doing json dump (print) (in order to enforce derived value validity)."
         raise ConfigApiException(msg.format(attr_name))
 
     _mc_setattr_real = _mc_setattr  # Keep a reference to the real _mc_setattr
@@ -591,13 +598,15 @@ class _ConfigBase(object):
 
     def __getattr__(self, attr_name):
         # Only called if self.<attr_name> is not found
-        if not self and self._mc_root._mc_config_loaded:
-            raise ConfigExcludedAttributeError(self, attr_name, self._mc_root._mc_env)
+        cr = self._mc_root
+        if not self and cr._mc_config_loaded:
+            raise ConfigExcludedAttributeError(self, attr_name, cr._mc_env)
 
         try:
             attr = self._mc_attributes[attr_name]
-            attr.where_from = Where.FROZEN
-            return attr.env_values[self._mc_root._mc_env]
+            if not cr._mc_in_json:
+                attr.where_from = Where.FROZEN
+            return attr.env_values[cr._mc_env]
         except KeyError:
             try:
                 my_getattr = _ConfigBase.__getattr__
@@ -606,16 +615,16 @@ class _ConfigBase(object):
                 if attr_name.startswith('_'):
                     raise ConfigAttributeError(self, attr_name, msg=None)
 
-                if self._mc_root._mc_env is not NO_ENV or attr_name not in self._mc_attributes:
+                if cr._mc_env is not NO_ENV or attr_name not in self._mc_attributes:
                     if not self:
-                        raise ConfigExcludedAttributeError(self, attr_name, self._mc_root._mc_env)
+                        raise ConfigExcludedAttributeError(self, attr_name, cr._mc_env)
 
                     # This is necessary in order to generate the original exception which was raised by a property (wrapper) call which failed
                     try:
                         getattr(self, attr_name)
                     except _McPropertyWrapperException as ex:
                         ex = ex.cause
-                        msg = failed_property_call_msg.format(attr=attr_name, env=self._mc_root._mc_env, ex_type=type(ex).__name__, ex=ex)
+                        msg = failed_property_call_msg.format(attr=attr_name, env=cr._mc_env, ex_type=type(ex).__name__, ex=ex)
                     except Exception:
                         msg = None
                     raise ConfigAttributeError(self, attr_name, msg=msg)
@@ -628,24 +637,26 @@ class _ConfigBase(object):
 
     def getattr(self, attr_name, env):
         """Get an attribute value for any env."""
-        if env.mask & self._mc_excluded and self._mc_root._mc_config_loaded:
+        cr = self._mc_root
+        if env.mask & self._mc_excluded and cr._mc_config_loaded:
             raise ConfigExcludedAttributeError(self, attr_name, env)
 
         try:
             attr = self._mc_attributes[attr_name]
-            attr.where_from = Where.FROZEN
+            if not cr._mc_in_json:
+                attr.where_from = Where.FROZEN
             return attr.env_values[env]
         except KeyError:
             prop = getattr(self.__class__, attr_name)
             try:
                 # TODO: Thread safety
-                orig_env = self._mc_root._mc_env
-                self._mc_root._mc_env = env
+                orig_env = cr._mc_env
+                cr._mc_env = env
                 if isinstance(prop, _McPropertyWrapper):
                     return prop.prop.__get__(self, type(self))
                 return getattr(self, attr_name)
             finally:
-                self._mc_root._mc_env = orig_env
+                cr._mc_env = orig_env
 
     def items(self):
         for key, item in self._mc_items.items():
@@ -1132,6 +1143,7 @@ class _ConfigRoot(_ConfigBase):
         self._mc_config_loaded = False
         self._mc_num_property_errors = 0
         self._mc_num_invalid_property_usage = 0
+        self._mc_in_json = False
 
     @property
     def mc_config_result(self):
