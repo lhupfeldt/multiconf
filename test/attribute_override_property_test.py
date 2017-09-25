@@ -6,9 +6,9 @@ import sys, re, traceback
 # pylint: disable=E0611
 from pytest import raises
 
-from multiconf import mc_config, ConfigItem, ConfigException
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException
 
-from multiconf.decorators import named_as
+from multiconf.decorators import named_as, nested_repeatables
 from multiconf.envs import EnvFactory
 
 from .utils.utils import py3_local, config_error, next_line_num
@@ -29,7 +29,7 @@ ef2_prod = EnvFactory()
 prod2 = ef2_prod.Env('prod')
 
 
-def test_attribute_overrides_property_method_ok():
+def test_attribute_overrides_property_method_config_item_ok():
     @named_as('someitem')
     class Nested(ConfigItem):
         @property
@@ -59,6 +59,52 @@ def test_attribute_overrides_property_method_ok():
 
     cr = ef.config(prod)
     assert cr.someitem.m == 1
+
+
+def test_attribute_overrides_property_method_repeatable_config_item_ok():
+    @named_as('someitems')
+    class Rep(RepeatableConfigItem):
+        @property
+        def m(self):
+            return 1
+
+    @named_as('root')
+    @nested_repeatables('someitems')
+    class Root(ConfigItem):
+        pass
+
+    @mc_config(ef)
+    def _0(_):
+        with Root():
+            with Rep('r1') as rr:
+                rr.setattr('m', default=7, mc_overwrite_property=True)
+            Rep('r2')
+
+    cr = ef.config(prod).root
+    assert cr.someitems['r1'].m == 7
+    assert cr.someitems['r2'].m == 1
+
+    @mc_config(ef)
+    def _1(_):
+        with Root():
+            with Rep('r1') as rr:
+                rr.setattr('m', prod=7, mc_overwrite_property=True)
+            Rep('r2')
+
+    cr = ef.config(prod).root
+    assert cr.someitems['r1'].m == 7
+    assert cr.someitems['r2'].m == 1
+
+    @mc_config(ef)
+    def _2(_):
+        with Root():
+            with Rep('r1') as rr:
+                rr.setattr('m', pp=7, mc_overwrite_property=True)
+            Rep('r2')
+
+    cr = ef.config(prod).root
+    assert cr.someitems['r1'].m == 1
+    assert cr.someitems['r2'].m == 1
 
 
 def test_attribute_overrides_property_inherited_method():
@@ -325,3 +371,4 @@ def test_attribute_overrides_property_method_raising_attribute_error():
     assert "Attribute 'm' is defined as a multiconf attribute and as a @property method" in ex_msg
     assert "value is undefined for Env('prod') and @property method call failed" in ex_msg
     assert "AttributeError: 'Nested' object has no attribute 'i_dont_have_this_attribute'" in ex_msg
+    
