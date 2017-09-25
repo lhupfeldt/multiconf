@@ -109,10 +109,10 @@ def test_json_no_freeze_no_setattr():
                 print(ci)
 
     cr = ef.config(prod).root
-    assert cr.someitems['a'].aa == 7
+    assert cr.someitems['a'].aa == 17  # 5 migration - v6 would be 7
 
     cr = ef.config(pp).root
-    assert cr.someitems['a'].aa == 7
+    assert cr.someitems['a'].aa == 17  # 5 migration - v6 would be 7
 
 
 def test_json_no_freeze_no_setattr_mc_required():

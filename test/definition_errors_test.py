@@ -693,8 +693,8 @@ _attribute_mc_required_args_partial_set_in_init_unfinished_expected_ex = """Ther
         "name": "pp"
     },
     "a #no value for Env('pp')": true,
-    "b": 17
-}""" + already_printed_msg
+    "b": 7
+}""" + already_printed_msg  # 5 migration - v6 b is 17
 
 
 def test_attribute_mc_required_args_partial_set_in_init_unfinished(capsys):

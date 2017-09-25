@@ -448,10 +448,25 @@ class _ConfigBase(object):
                     return
 
                 if not mc_force:
+                    if env_attr.where_from == Where.FROZEN:
+                        msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
+                        msg += "Setting attributes is not allowed after value has been used (in order to enforce derived value validity)."
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)
+                        return
+
+                    if self._mc_where == Where.FROZEN:
+                        msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
+                        msg += "Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)  # Note: This always raises en exception
+
                     if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
                         # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
-                        if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
-                            return
+                        # or previous value was set in __init__ and the env is at least as specific
+                        if from_eg not in env_attr.from_eg:
+                            if env_attr.where_from != Where.IN_INIT:
+                                return
+                            if from_eg != env_attr.from_eg:
+                                return
 
                     if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
                         # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
@@ -469,17 +484,6 @@ class _ConfigBase(object):
                         msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
                         self._mc_print_error_caller(msg, mc_error_info_up_level)
                         return
-
-                    if env_attr.where_from == Where.FROZEN:
-                        msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
-                        msg += "Setting attributes is not allowed after value has been used (in order to enforce derived value validity)."
-                        self._mc_print_error_caller(msg, mc_error_info_up_level)
-                        return
-
-                    if self._mc_where == Where.FROZEN:
-                        msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
-                        msg += "Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
-                        self._mc_print_error_caller(msg, mc_error_info_up_level)  # Note: This always raises en exception
 
             except KeyError:
                 old_value = MC_NO_VALUE
@@ -1264,6 +1268,7 @@ def mc_config(
                 cr._mc_handled_env_bits |= env.mask
                 cr._mc_call_mc_validate_recursively(env)
                 if validate_properties:
+                    _mc_debug("\n==== Validating @properties", env, "====")
                     cr._mc_validate_properties_recursively(env)
                     if cr._mc_num_property_errors:
                         raise ConfigException("Error validating @property methods for {}".format(env))

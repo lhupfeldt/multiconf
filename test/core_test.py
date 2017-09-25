@@ -380,7 +380,7 @@ def test_mc_init_simple_items():
 
     cr = ef2_pp_prod.config(prod2).ConfigItem
     assert cr.X.aa == 2
-    assert cr.X.bb is None  # v6 change: None is no longer overridable
+    assert cr.X.bb == 1  # 5 migration - v6 change: None is no longer overridable!
     assert cr.X.KwargsItem.aa == 2
     assert cr.X.KwargsItem.bb == 1 # v6 change: 'bb' exist because of object merge
 
@@ -390,7 +390,7 @@ def test_mc_init_simple_items():
 
     cr = ef2_pp_prod.config(prod2)
     assert cr.X.aa == 1
-    assert cr.X.bb is None  # v6 change: None is no longer overridable
+    assert cr.X.bb == 1  # 5 migration - v6 change: None is no longer overridable
     assert cr.X.KwargsItem.aa == 1
     assert cr.X.KwargsItem.bb == 1
 
@@ -473,17 +473,17 @@ def test_nested_mc_init_simple_items():
 
     cr = ef2_pp_prod.config(prod2)
     assert cr.X1.aa == 1
-    assert cr.X1.bb is None  # v6 change: None is no longer overridable
+    assert cr.X1.bb == 11  # 5 migration - v6 change: None is no longer overridable
     assert cr.X1.KwargsItem.aa == 1
     assert cr.X1.KwargsItem.bb == 11  # v6 change: 'bb' exist because of object merge
 
     assert cr.X1.X2.aa == 2
-    assert cr.X1.X2.bb is None  # v6 change: None is no longer overridable
+    assert cr.X1.X2.bb == 12  # 5 migration - v6 change: None is no longer overridable
     assert cr.X1.X2.KwargsItem.aa == 2
     assert cr.X1.X2.KwargsItem.bb == 12  # v6 change: 'bb' exist because of object merge
 
     assert cr.X1.X2.X3.aa == 3
-    assert cr.X1.X2.X3.bb is None  # v6 change: None is no longer overridable
+    assert cr.X1.X2.X3.bb == 13  # 5 migration - v6 change: None is no longer overridable
     assert cr.X1.X2.X3.KwargsItem.aa == 3
     assert cr.X1.X2.X3.KwargsItem.bb == 13  # v6 change: 'bb' exist because of object merge
 
@@ -498,7 +498,7 @@ def test_nested_mc_init_simple_items():
 
     cr = ef2_pp_prod.config(prod2)
     assert cr.X1.aa == 1
-    assert cr.X1.bb is None  # v6 change: None is no longer overridable
+    assert cr.X1.bb == 11  # 5 migration - v6 change: None is no longer overridable
     assert cr.X1.KwargsItem.aa == 11
     assert cr.X1.KwargsItem.bb == 11
 
@@ -508,7 +508,7 @@ def test_nested_mc_init_simple_items():
     assert cr.X1.X2.KwargsItem.bb == 12
 
     assert cr.X1.X2.X3.aa == 13
-    assert cr.X1.X2.X3.bb is None  # v6 change: None is no longer overridable
+    assert cr.X1.X2.X3.bb == 13  # 5 migration - v6 change: None is no longer overridable
     assert cr.X1.X2.X3.KwargsItem.aa == 13
     assert cr.X1.X2.X3.KwargsItem.bb == 13
 
@@ -654,7 +654,7 @@ def test_attribute_args_partial_set_in_init_overridden_or_finished_in_mc_init():
 
     cr = ef2_pp_prod.config(pp2)
     assert cr.Requires.aa == 7
-    assert cr.Requires.bb == 17  # Pre v6 this would be 7!
+    assert cr.Requires.bb == 7  # 5 migration - Pre v6 this would be 7!
 
     @mc_config(ef2_pp_prod)
     def _(_):
