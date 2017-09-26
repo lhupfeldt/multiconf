@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from pytest import raises
 
-from multiconf import mc_config
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
@@ -16,7 +16,7 @@ from .utils.utils import py3_local
 ef = EnvFactory()
 pp = ef.Env('pp')
 prod = ef.Env('prod')
-ef.EnvGroup('g_prod_like', prod, pp)
+g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
 
 
 @nested_repeatables('children')
@@ -150,3 +150,41 @@ def test_repeatable_items_mc_select_envs_excluded_key_error_property_attributeer
     ex_msg = str(exinfo.value)
     exp = "'first'. 'Excluded: <class 'test.repeatable_items_excluded_test.%(py3_local)sbadchild'>' for Env('prod')." % dict(py3_local=py3_local())
     assert exp in ex_msg
+
+
+def test_repeatable_items_bool():
+    @named_as('Xs')
+    class X(RepeatableConfigItem):
+        pass
+
+    @named_as('Ys')
+    class Y(RepeatableConfigItem):
+        pass
+
+    @nested_repeatables('Xs', 'Ys', 'Zs')
+    class HasRepeatables(ConfigItem):
+        pass
+
+    @mc_config(ef)
+    def config(_):
+        with HasRepeatables() as y:
+            with X(mc_key='aa') as xx:
+                xx.mc_select_envs(exclude=[g_prod_like])
+            with X(mc_key='bb') as xx:
+                xx.mc_select_envs(exclude=[pp])
+            with X(mc_key='cc') as xx:
+                xx.mc_select_envs(exclude=[g_prod_like])
+
+            Y(mc_key='aa')
+            Y(mc_key='bb')
+            Y(mc_key='cc')
+
+    rep = ef.config(prod).HasRepeatables
+    assert rep.Xs
+    assert rep.Ys
+    assert not rep.Zs
+
+    rep = ef.config(pp).HasRepeatables
+    assert not rep.Xs
+    assert rep.Ys
+    assert not rep.Zs
