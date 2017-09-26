@@ -14,9 +14,10 @@ from .utils.utils import config_error, replace_ids
 from .utils.tstclasses import ItemWithAA
 
 
-ef1_prod = EnvFactory()
+ef = EnvFactory()
 
-prod = ef1_prod.Env('prod')
+pprd = ef.Env('pprd')
+prod = ef.Env('prod')
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -31,11 +32,11 @@ _access_undefined_attribute_expected_repr = """{
 }, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute 'b'."""
 
 def test_access_undefined_attribute():
-    @mc_config(ef1_prod)
+    @mc_config(ef)
     def _(_):
         ConfigItem()
 
-    cr = ef1_prod.config(prod).ConfigItem
+    cr = ef.config(prod).ConfigItem
     with raises(AttributeError) as exinfo:
         print(cr.b)
 
@@ -52,12 +53,12 @@ _t2_expected_repr = """{
 }, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute 'b', but found attribute 'bs'."""
 
 def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s():
-    @mc_config(ef1_prod)
+    @mc_config(ef)
     def _(_):
         with ConfigItem() as cr:
-            cr.setattr('bs', prod=4, mc_set_unknown=True)
+            cr.setattr('bs', pprd=1, prod=4, mc_set_unknown=True)
 
-    cr = ef1_prod.config(prod).ConfigItem
+    cr = ef.config(prod).ConfigItem
 
     # ConfigAttributeError is instance of AttributeError
     with raises(ConfigAttributeError) as exinfo:
@@ -77,13 +78,13 @@ _access_undefined_attribute_json_single_level_expected_repr = """{
 }, object of type: <class 'test.utils.tstclasses.ItemWithAA'> has no attribute 'b'."""
 
 def test_access_undefined_attribute_json_single_level():
-    @mc_config(ef1_prod)
+    @mc_config(ef)
     def _(_):
         with ItemWithAA(17):
             with ConfigItem():
                 ConfigItem()
 
-    cr = ef1_prod.config(prod).ItemWithAA
+    cr = ef.config(prod).ItemWithAA
 
     with raises(AttributeError) as exinfo:
         print(cr.b)
@@ -101,11 +102,11 @@ _access_undefined_private_attribute_expected_repr = """{
 }, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute '_b'."""
 
 def test_access_undefined_private_attribute():
-    @mc_config(ef1_prod)
+    @mc_config(ef)
     def _(_):
         ConfigItem()
 
-    cr = ef1_prod.config(prod).ConfigItem
+    cr = ef.config(prod).ConfigItem
     with raises(AttributeError) as exinfo:
         print(cr._b)
 
@@ -125,7 +126,7 @@ def test_access_undefined_private_attribute():
 #            a = {1:""}
 #            return a[1].nosuchprop
 #
-#    with root(prod, ef1_prod) as cr:
+#    with root(prod, ef) as cr:
 #        X()
 #
 #    with raises(ConfigException) as exinfo:

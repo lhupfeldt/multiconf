@@ -265,6 +265,11 @@ class _ConfigBase(object):
         if isinstance(self, _ConfigBuilder):
             self._mc_builder_freeze()
 
+        # New items may have been created in mc_init
+        previous_item = _ConfigBase._mc_last_item
+        if previous_item != self and previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
+            previous_item._mc_freeze(mc_error_info_up_level)
+
         if must_pop:
             self.__class__._mc_hierarchy.pop()
 

@@ -5,6 +5,7 @@ from multiconf import mc_config, ConfigItem
 from multiconf.envs import EnvFactory
 
 ef = EnvFactory()
+pprd = ef.Env('pprd')
 prod = ef.Env('prod')
 
 

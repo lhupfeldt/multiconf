@@ -10,9 +10,6 @@ from multiconf import ConfigItem
 from multiconf.decorators import named_as, nested_repeatables, ConfigDefinitionException
 from multiconf.envs import EnvFactory
 
-ef1_prod = EnvFactory()
-prod1 = ef1_prod.Env('prod')
-
 
 def test_decorator_arg_is_keyword_in_nested_repeatables_decorator():
     with raises(ConfigDefinitionException) as exinfo:
