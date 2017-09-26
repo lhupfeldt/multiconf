@@ -7,6 +7,8 @@ from multiconf import mc_config, ConfigItem, MC_REQUIRED
 
 from multiconf.envs import EnvFactory
 
+from utils.tstclasses import ItemWithAA, ItemWithAABB
+
 ef = EnvFactory()
 
 dev1 = ef.Env('dev1')
@@ -87,3 +89,68 @@ def test_more_specific_group_in_with_overrides_mc_init():
             it.setattr('aa', g_dev=1, tst=111, g_prod=17)
     it = ef.config(dev1).item2
     assert it.aa == 1
+
+
+def test_children_in_mc_init_frozen():
+    class X1(ItemWithAA):
+        def __init__(self, aa):
+            super(X1, self).__init__(aa=aa)
+            self.bb = MC_REQUIRED
+
+        def mc_init(self):
+            print("X1.mc_init")
+            super(X1, self).mc_init()
+            self.aa = 1
+            self.bb = 30
+
+    class X2(ItemWithAA):
+        def mc_init(self):
+            print("X2.mc_init")
+            super(X2, self).mc_init()
+            self.aa = 1
+            X1(aa=1)
+
+    @mc_config(ef)
+    def _0(_):
+        with ConfigItem():
+            X2(17)
+        print('after')
+
+    cr = ef.config(prod).ConfigItem.X2
+    assert cr.aa == 17
+    assert cr.X1.aa == 1
+    assert cr.X1.bb == 30
+
+
+def test_children_in_mc_init_only_frozen_once():
+    class X1(ItemWithAABB):
+        def __init__(self, aa, bb=None):
+            super(X1, self).__init__(aa=aa, bb=bb)
+            self.cc = MC_REQUIRED
+
+        def mc_init(self):
+            print("X1.mc_init")
+            super(X1, self).mc_init()
+            self.aa = 1
+            self.bb = 1
+            # Access self.aa here, it should be settable again during next env initialization
+            self.cc = self.aa + 1
+
+    class X2(ItemWithAABB):
+        def mc_init(self):
+            print("X2.mc_init")
+            super(X2, self).mc_init()
+            self.aa = 1
+            self.bb = 1
+            X1(aa=1, bb=1)
+
+    @mc_config(ef)
+    def _0(_):
+        X2(17)
+
+    cr = ef.config(prod).X2
+    assert cr.aa == 17
+    assert cr.bb == None
+    assert cr.X1.aa == 1
+    assert cr.X1.bb == 1
+    assert cr.X1.cc == 2
