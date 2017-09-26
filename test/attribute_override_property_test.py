@@ -25,9 +25,6 @@ ef = EnvFactory()
 pp = ef.Env('pp')
 prod = ef.Env('prod')
 
-ef2_prod = EnvFactory()
-prod2 = ef2_prod.Env('prod')
-
 
 def test_attribute_overrides_property_method_config_item_ok():
     @named_as('someitem')

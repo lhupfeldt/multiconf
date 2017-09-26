@@ -12,9 +12,6 @@ from multiconf.envs import EnvFactory
 from .utils.utils import api_error, config_error, next_line_num
 
 
-ef1_prod = EnvFactory()
-prod1 = ef1_prod.Env('prod')
-
 ef2_prod_pp = EnvFactory()
 pp2 = ef2_prod_pp.Env('pp')
 prod2 = ef2_prod_pp.Env('prod')

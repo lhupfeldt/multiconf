@@ -9,6 +9,7 @@ from .utils.tstclasses import ItemWithName
 
 
 ef = EnvFactory()
+pprd = ef.Env('pprd')
 prod = ef.Env('prod')
 
 

@@ -12,8 +12,9 @@ from multiconf.envs import EnvFactory
 from .utils.utils import api_error, config_error, next_line_num
 
 
-ef1_prod = EnvFactory()
-prod1 = ef1_prod.Env('prod')
+ef = EnvFactory()
+pprd = ef.Env('pprd')
+prod = ef.Env('prod')
 
 
 def capie(line_num, *lines):
@@ -32,7 +33,7 @@ def test_setattr_to_attribute_underscore_attribute_builder(capsys):
             pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef)
         def _(_):
             with CB() as ci:
                 errorline[0] = next_line_num()
