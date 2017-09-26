@@ -71,6 +71,16 @@ class RepeatableDict(object):
                 count += 1
         return count
 
+    def __bool__(self):
+        for _, val in self._items.items():
+            if val._mc_exists_in_env():
+                return True
+
+        return False
+
+    # Python2 compatibility
+    __nonzero__ = __bool__
+
     def __repr__(self):
         return repr(OrderedDict(((key, val) for (key, val) in self._items.items() if val._mc_exists_in_env())))
 
