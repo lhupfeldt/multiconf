@@ -88,6 +88,12 @@ class ConfigExcludedKeyError(KeyError):
         return self.message
 
 
+class InJsonAttributeError(Exception):
+    def __init__(self, ex):
+        super(InJsonAttributeError, self).__init__()
+        self.ex = ex
+
+
 def caller_file_line(up_level=2):
     """Return the file and line of the caller of the function calliing this function (depending on up_level)"""
     frame = sys._getframe(up_level)
