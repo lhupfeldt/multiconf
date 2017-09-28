@@ -9,7 +9,7 @@ import types
 
 from . import envs
 from .values import McInvalidValue
-from .config_errors import InvalidUsageException, ConfigExcludedAttributeError
+from .config_errors import InvalidUsageException, ConfigExcludedAttributeError, InJsonAttributeError
 from .bases import get_bases
 from .attribute import Where
 from .repeatable import RepeatableDict
@@ -36,9 +36,9 @@ def _attr_ref_msg(obj, attr_name):
     except ConfigExcludedAttributeError as ex:
         try:
             return attr_name + ": " + ex.value
-        except AttributeError:
+        except (AttributeError, InJsonAttributeError):
             return ''
-    except AttributeError:
+    except (AttributeError, InJsonAttributeError):
         return ''
 
 
@@ -172,7 +172,7 @@ class ConfigItemEncoder(object):
             try:
                 val = obj.getattr(key, env)
                 attr_inf = [(' #value for {env} provided by @property'.format(env=env), True)]
-            except AttributeError:
+            except (AttributeError, InJsonAttributeError):
                 val = McInvalidValue.MC_NO_VALUE
 
         if self.user_filter_callable:
@@ -183,6 +183,7 @@ class ConfigItemEncoder(object):
             except Exception as ex:
                 self.num_errors += 1
                 traceback.print_exception(*sys.exc_info())
+                ex = ex.ex if isinstance(ex, InJsonAttributeError) else ex
                 attr_inf.append((' #json_error calling filter', repr(ex)),)
 
         val = self._check_nesting(obj, val)
@@ -230,9 +231,10 @@ class ConfigItemEncoder(object):
         except InvalidUsageException as ex:
             self.num_invalid_usages += 1
             return key, [(overridden_property + ' #invalid usage context', repr(ex))]
-        except Exception as ex:
+        except (Exception, InJsonAttributeError) as ex:
             self.num_errors += 1
             traceback.print_exception(*sys.exc_info())
+            ex = ex.ex if isinstance(ex, InJsonAttributeError) else ex
             return key, [(overridden_property + ' #json_error trying to handle property method', repr(ex))]
         finally:
             obj._mc_root._mc_env = orig_env
@@ -249,6 +251,7 @@ class ConfigItemEncoder(object):
             except Exception as ex:
                 self.num_errors += 1
                 traceback.print_exception(*sys.exc_info())
+                ex = ex.ex if isinstance(ex, InJsonAttributeError) else ex
                 property_inf = [(' #json_error calling filter', repr(ex))]
 
         if type(val) == type:
@@ -268,7 +271,7 @@ class ConfigItemEncoder(object):
                 else:
                     calc_or_static = _static_value
                 break
-            except AttributeError:
+            except (AttributeError, InJsonAttributeError):
                 # This can happen for Builders
                 calc_or_static = _dynamic_value
 
@@ -376,6 +379,7 @@ class ConfigItemEncoder(object):
                     self.num_errors += 1
                     print("Error in json generation:", file=sys.stderr)
                     traceback.print_exception(*sys.exc_info())
+                    ex = ex.ex if isinstance(ex, InJsonAttributeError) else ex
                     dd['__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included'] = repr(ex)
 
                 # --- Handle attributes ---
@@ -456,11 +460,12 @@ class ConfigItemEncoder(object):
             # If obj defines json_equivalent, then return the result of that
             try:
                 return obj.json_equivalent()
-            except AttributeError:
+            except (AttributeError, InJsonAttributeError):
                 pass
             except Exception as ex:
                 self.num_errors += 1
                 traceback.print_exception(*sys.exc_info())
+                ex = ex.ex if isinstance(ex, InJsonAttributeError) else ex
                 return "__json_error__ calling 'json_equivalent': " + repr(ex)
 
             try:

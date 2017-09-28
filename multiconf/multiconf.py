@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, traceback
+import sys, os, traceback
 from collections import OrderedDict
 import json
 
@@ -12,7 +12,7 @@ from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, Where
 from .property_wrapper import _McPropertyWrapper, _McPropertyWrapperException
 from .repeatable import RepeatableDict
-from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigException, ConfigApiException, InvalidUsageException
+from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigException, ConfigApiException, InvalidUsageException, InJsonAttributeError
 from .config_errors import failed_property_call_msg
 from .config_errors import caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg, not_repeatable_in_parent_msg, repeatable_in_parent_msg
 from .json_output import ConfigItemEncoder, _mc_filter_out_keys, _mc_identification_msg_str
@@ -27,7 +27,7 @@ class _McExcludedException(Exception):
     pass
 
 
-_mc_debug_enabled = False
+_mc_debug_enabled = str(os.environ.get('MULTICONF_DEBUG')).lower() == 'true'
 def _mc_debug(*args):
     if _mc_debug_enabled:
         print(*args)
@@ -138,6 +138,8 @@ class _ConfigBase(object):
             depth=depth)
 
         cr._mc_in_json = True
+
+        # Disable attribute setting to avoid side effects from calling json if @property methods set mc attributes
         _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
 
         try:
@@ -637,6 +639,10 @@ class _ConfigBase(object):
                 msg = "Trying to access attribute '{}'. "
                 msg += "Item.attribute access is not allowed in 'mc_post_validate' as there is no current env, use: item.getattr(attr_name, env)"
                 raise ConfigApiException(msg.format(attr_name))
+            except Exception as ex:
+                if cr._mc_in_json:
+                    raise InJsonAttributeError(ex)
+                raise
             finally:
                 _ConfigBase.__getattr__ = my_getattr
 
@@ -1269,6 +1275,7 @@ def mc_config(
                 cr._mc_handled_env_bits |= env.mask
                 cr._mc_call_mc_validate_recursively(env)
                 if validate_properties:
+                    _mc_debug("\n==== Validating @properties", env, "====")
                     cr._mc_validate_properties_recursively(env)
                     if cr._mc_num_property_errors:
                         raise ConfigException("Error validating @property methods for {}".format(env))
@@ -1298,6 +1305,7 @@ def mc_config(
 
         # Call mc_post_validate
         cr._mc_env = NO_ENV
+        _mc_debug("\n==== Calling 'mc_post_validate' ====")
         cr._mc_call_mc_post_validate_recursively()
 
     return deco
