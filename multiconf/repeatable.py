@@ -52,6 +52,7 @@ class RepeatableDict(object):
             if val._mc_exists_in_env():
                 yield key, val
 
+    # Python2 compatibility
     iteritems = items
 
     def keys(self):
@@ -59,10 +60,16 @@ class RepeatableDict(object):
             if val._mc_exists_in_env():
                 yield key
 
+    # Python2 compatibility
+    iterkeys = keys
+
     def values(self):
         for _, val in self._items.items():
             if val._mc_exists_in_env():
                 yield val
+
+    # Python2 compatibility
+    itervalues = values
 
     def __len__(self):
         count = 0
