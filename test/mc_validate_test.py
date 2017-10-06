@@ -80,7 +80,7 @@ def test_mc_validate_assign_attribute_not_defined_in_init(capsys):
 def test_user_mc_validate_error():
     class item(ConfigItem):
         def mc_validate(self):
-            raise Exception("Error in item validate")
+            raise Exception("Error in item mc_validate")
 
     with raises(Exception) as exinfo:
         @mc_config(ef)
@@ -88,7 +88,7 @@ def test_user_mc_validate_error():
             with ConfigItem():
                 item()
 
-    assert str(exinfo.value) == "Error in item validate"
+    assert str(exinfo.value) == "Error in item mc_validate"
 
 
 def test_mc_required_attribute_resolved_after_mc_validate(capsys):

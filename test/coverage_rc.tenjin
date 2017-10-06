@@ -35,6 +35,7 @@ exclude_lines =
     if major_version < 3 and isinstance\(obj, types.InstanceType\):
     <?py #endif ?>
 
+    disable=bare-except
 
 partial_branches =
     # Have to re-enable the standard pragma

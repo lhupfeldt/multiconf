@@ -22,16 +22,19 @@ ef = EnvFactory()
 prod = ef.Env('prod')
 pp = ef.Env('pp')
 
-
-@named_as('r')
-class RepeatableChild(RepeatableConfigItem):
-    pass
-
-class UnexpectedRepeatableChildBuilder(ConfigBuilder):
-    def mc_build(self):
-        RepeatableChild(mc_key=None)
+class ItemWithAA(ConfigItem):
+    def __init__(self):
+        self.aa = None
 
 @mc_config(ef)
 def _(_):
-    with ConfigItem():
-        UnexpectedRepeatableChildBuilder()
+    with ItemWithAA() as cr:
+        print("here1")
+        cr.setattr('aa', default=None, prod=1, pp=2)
+        print("here2")
+
+    print("here3")
+print("here4")
+cr = ef.config(prod).ItemWithAA
+assert cr.aa == 1
+        

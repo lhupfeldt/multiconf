@@ -34,7 +34,6 @@ def test():
     @mc_config(ef)
     def config(root):
         with ConfigItem() as cr:
-            print("In config method - loading:", cr, cr.env)
             with X() as x:
                 # x.setattr('ttt', prod=17)
                 x.setattr('aa', pp=11, prod=22)

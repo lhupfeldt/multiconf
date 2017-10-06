@@ -40,11 +40,7 @@ class ConfigAttributeError(AttributeError):
 
     @property
     def message(self):
-        error_message = "%(item_repr_and_type)s has no attribute %(attr_name)s"
-        repeatable_attr_name = self.attr_name + 's'
-        if self.mc_object._mc_attributes.get(repeatable_attr_name):
-            error_message += ", but found attribute " + repr(repeatable_attr_name)
-        error_message += '.'
+        error_message = "%(item_repr_and_type)s has no attribute %(attr_name)s."
         if self.msg:
             error_message += ' ' + self.msg
         try:
@@ -61,11 +57,10 @@ class ConfigExcludedAttributeError(ConfigAttributeError):
     def __init__(self, mc_object, attr_name, env):
         super(ConfigExcludedAttributeError, self).__init__(mc_object, attr_name, None)
         self.env = env
-        self.excluded = True
         try:
             self.value = mc_object._mc_attributes[attr_name].env_values[env]
         except KeyError:
-            pass
+            self.value = None
 
     @property
     def message(self):
@@ -86,12 +81,6 @@ class ConfigExcludedKeyError(KeyError):
 
     def __str__(self):
         return self.message
-
-
-class InJsonAttributeError(Exception):
-    def __init__(self, ex):
-        super(InJsonAttributeError, self).__init__()
-        self.ex = ex
 
 
 def caller_file_line(up_level=2):

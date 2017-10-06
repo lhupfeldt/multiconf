@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from collections import OrderedDict
 # pylint: disable=E0611
-from pytest import fail
+from pytest import fail, xfail
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, MC_REQUIRED
 from multiconf.decorators import nested_repeatables, named_as, required
@@ -324,6 +324,14 @@ def test_hasattr():
     assert hasattr(ii, 'bb')
     assert hasattr(ii, 'cc')
     assert not hasattr(ii, 'dd')
+
+    try:
+        print(ii.dd)
+    except AttributeError as ex:
+        # Coverage
+        print(ex)
+
+    xfail('TODO: test ex msg')
 
 
 def test_assigning_to_attribute_root():

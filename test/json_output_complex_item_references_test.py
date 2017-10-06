@@ -303,7 +303,7 @@ def test_json_dump_attr_tuple_ref_item():
     assert ref2.r1mmnn == 4
 
 
-_json_dump_ref_outside_exluded_item_expected_json = """{
+_json_dump_ref_outside_exluded_item1_expected_json = """{
     "__class__": "Ref1",
     "__id__": 0000,
     "env": {
@@ -313,7 +313,7 @@ _json_dump_ref_outside_exluded_item_expected_json = """{
     "aa": "#outside-ref: Excluded: <class 'test.utils.tstclasses.ItemWithName'>, name: Tootsi"
 }"""
 
-def test_json_dump_ref_outside_exluded_item():
+def test_json_dump_ref_outside_exluded_item1():
     class Ref1(ItemWithAA):
         pass
 
@@ -326,4 +326,58 @@ def test_json_dump_ref_outside_exluded_item():
 
     cr = ef.config(prod)
     ref1 = cr.Ref1
-    assert compare_json(ref1, _json_dump_ref_outside_exluded_item_expected_json)
+    assert compare_json(ref1, _json_dump_ref_outside_exluded_item1_expected_json)
+
+
+_json_dump_ref_outside_exluded_item_partially_set_name_attribute_mc_required_expected_json = """{
+    "__class__": "Ref1",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": "#outside-ref: Excluded: <class 'test.utils.tstclasses.ItemWithName'>"
+}"""
+
+def test_json_dump_ref_outside_exluded_item_partially_set_name_attribute_mc_required():
+    class Ref1(ItemWithAA):
+        pass
+
+    @mc_config(ef)
+    def _(_):
+        with ItemWithName() as it:
+            it.mc_select_envs(exclude=[prod])
+            it.setattr('name', pprd='Tootsi')
+        with Ref1() as ref1:
+            ref1.aa = it
+
+    cr = ef.config(prod)
+    ref1 = cr.Ref1
+    assert compare_json(ref1, _json_dump_ref_outside_exluded_item_partially_set_name_attribute_mc_required_expected_json)
+
+
+_json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_existing_expected_json = """{
+    "__class__": "Ref1",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": "#outside-ref: Excluded: <class 'multiconf.multiconf.ConfigItem'>"
+}"""
+
+def test_json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_existing():
+    class Ref1(ItemWithAA):
+        pass
+
+    @mc_config(ef)
+    def _(_):
+        with ConfigItem() as it:
+            it.mc_select_envs(exclude=[prod])
+            it.setattr('name', pprd='Tootsi', mc_set_unknown=True)
+        with Ref1() as ref1:
+            ref1.aa = it
+
+    cr = ef.config(prod)
+    ref1 = cr.Ref1
+    assert compare_json(ref1, _json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_existing_expected_json)
