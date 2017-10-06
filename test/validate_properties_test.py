@@ -143,41 +143,28 @@ def test_validate_properties_property_method_on_repeatable_raises_exception(caps
     assert str(exinfo.value) == "Error validating @property methods for Env('pp')"
 
 
-_validate_properties_dir_error_expected_stderr = """
-ConfigError: Calling dir() failed while validating @properties for Env('pp').
-Traceback (most recent call last):
-  File "fake_multiconf_dir/multiconf.py", line 999, in _mc_validate_properties_recursively
-    dir_entries = dir(self)
-  %(file_line)s, in __dir__
-    raise Exception('Error in dir()')
-Exception: Error in dir()
-""".lstrip()
-
 def test_validate_properties_dir_error(capsys):
+    """multiconf does not depend on dir(obj), but only on dir(cls)"""
     errorline = [None]
 
     @named_as('someitem')
     class Nested(ItemWithAA):
-
         def __dir__(self):
             errorline[0] = next_line_num()
             raise Exception('Error in dir()')
 
         @property
         def c(self):
-            return "will-not-show"
+            return "show-me"
 
-    with raises(ConfigException) as exinfo:
-        @mc_config(ef)
-        def _(rt):
-            with ItemWithAA(aa=0):
-                with Nested() as nn:
-                    nn.aa = 2
+    @mc_config(ef)
+    def _(rt):
+        with ItemWithAA(aa=0):
+            with Nested() as nn:
+                nn.aa = 2
 
-    _sout, serr = capsys.readouterr()
-    assert replace_multiconf_file_line_msg(serr) == _validate_properties_dir_error_expected_stderr % (
-        dict(file_line=file_line(__file__, errorline[0])))
-    assert str(exinfo.value) == "Error validating @property methods for Env('pp')"
+    nn = ef.config(pp).ItemWithAA.someitem
+    assert nn.c == "show-me"
 
 
 def test_mc_validate_has_method():

@@ -4,14 +4,14 @@
 import sys, re, traceback
 
 # pylint: disable=E0611
-from pytest import raises
+from pytest import raises, xfail
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException
 
 from multiconf.decorators import named_as, nested_repeatables
 from multiconf.envs import EnvFactory
 
-from .utils.utils import py3_local, config_error, next_line_num
+from .utils.utils import py3_local, config_error, next_line_num, replace_ids
 
 
 major_version = sys.version_info[0]
@@ -265,22 +265,56 @@ def test_assigment_replace_mc_property_wrapper_not_allowed(capsys):
 
     with raises(Exception) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def _2(_):
             with Nested() as nn:
                 nn.setattr('mm', prod=3, mc_overwrite_property=True)
                 errorline[0] = next_line_num()
                 nn.mm = 7
 
     _sout, serr = capsys.readouterr()
+    exp = "The attribute 'mm' clashes with a @property or method. Use item.setattr with mc_overwrite_property=True if overwrite intended."
+    assert serr == ce(errorline[0], exp)
+    xfail("Not an ideal error message")
+
+
+def test_replace_mc_property_wrapper_not_allowed(capsys):
+    errorline = [None]
+
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def mm(self):
+            return 1
+
+    with raises(Exception) as exinfo:
+        @mc_config(ef)
+        def _2(_):
+            with Nested() as nn:
+                nn.setattr('mm', prod=3, mc_overwrite_property=True)
+                errorline[0] = next_line_num()
+                nn.setattr('mm', prod=7, mc_overwrite_property=True)
+
+    _sout, serr = capsys.readouterr()
     exp = "The attribute 'mm' is already fully defined."
     assert serr == ce(errorline[0], exp)
 
+
+_attribute_overrides_failing_property_method_exp = """{
+    "__class__": "NestedBadM #as: 'someitem', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "m #no value for Env('prod')": true,
+    "m #json_error trying to handle property method": "ConfigAttributeError('',)"
+}, object of type: <class 'test.attribute_override_property_test.%(py3_local)sNestedBadM'> has no attribute 'm'.
+""".strip()
 
 def test_attribute_overrides_failing_property_method():
     errorline = [None]
 
     @named_as('someitem')
-    class Nested(ConfigItem):
+    class NestedBadM(ConfigItem):
         @property
         def m(self):
             errorline[0] = next_line_num()
@@ -288,7 +322,7 @@ def test_attribute_overrides_failing_property_method():
 
     @mc_config(ef, validate_properties=False)
     def _0(_):
-        with Nested() as nn:
+        with NestedBadM() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
 
     cr = ef.config(prod)
@@ -296,7 +330,7 @@ def test_attribute_overrides_failing_property_method():
 
     @mc_config(ef, validate_properties=False)
     def _1(_):
-        with Nested() as nn:
+        with NestedBadM() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
 
     cr = ef.config(prod)
@@ -328,12 +362,15 @@ def test_attribute_overrides_failing_property_method():
         # assert line == origin_line_exp
         pass
 
-    exp = "Object of type: <class 'test.attribute_override_property_test.%(py3_local)sNested'> has no attribute 'm'." % dict(py3_local=py3_local())
+    exp = _attribute_overrides_failing_property_method_exp % dict(py3_local=py3_local())
     exp += " Attribute 'm' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception: bad property method"
-    print(exp)
-    ex = str(exinfo.value)
-    print(ex)
-    assert exp in ex
+
+    print('exp:', exp)
+    got = replace_ids(str(exinfo.value), named_as=False)
+    print('got:', got)
+    assert exp in got
+
+    xfail("TODO: improve message, improve json")
 
 
 def test_attribute_overrides_property_method_raising_attribute_error():
@@ -369,3 +406,25 @@ def test_attribute_overrides_property_method_raising_attribute_error():
     assert "value is undefined for Env('prod') and @property method call failed" in ex_msg
     assert "AttributeError: 'Nested' object has no attribute 'i_dont_have_this_attribute'" in ex_msg
     
+
+def test_attribute_overrides_property_method_using_mc_set_unknown_repeated_env(capsys):
+    errorline = [None]
+
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def m(self):
+            return 2
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef)
+        def _(_):
+            with Nested() as nn:
+                errorline[0] = next_line_num()
+                nn.setattr('m', pp=7, mc_overwrite_property=True)
+                nn.setattr('m', pp=17, mc_set_unknown=True)
+
+    sout, serr = capsys.readouterr()
+    exp = "Attempting to use 'mc_set_unknown' to overwrite a an existing @property 'm'."
+    assert exp in serr
+    assert not sout

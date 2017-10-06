@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys, os
 from collections import OrderedDict
 import pytest
-from pytest import raises
+from pytest import raises, xfail
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageException, ConfigException, MC_REQUIRED
 
@@ -998,17 +998,6 @@ def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
     assert compare_json(n2, _uplevel_ref_expected_json_output, test_containment=False)
 
 
-_json_dump_dir_error_expected_stderr = """Error in json generation:
-Traceback (most recent call last):
-  File "fake_multiconf_dir/json_output.py", line 999, in __call__
-    dir_entries = obj._mc_dir_entries()
-  File "fake_multiconf_dir/multiconf.py", line 999, in _mc_dir_entries
-    %(py23_statement)s
-  %(file_line)s, in __dir__
-    raise Exception('Error in dir()')
-Exception: Error in dir()
-"""
-
 _json_dump_dir_error_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
@@ -1020,8 +1009,9 @@ _json_dump_dir_error_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "__json_error__ # trying to list property methods, failed call to dir(), @properties will not be included": "Exception('Error in dir()',)",
-        "aa": 2
+        "aa": 2,
+        "c": "will-show",
+        "c #calculated": true
     }
 }"""
 
@@ -1030,13 +1020,14 @@ def test_json_dump_dir_error(capsys):
     class Nested(ItemWithAA):
         _errorline = 0
 
+        # multiconf does not rely on dir(instance), only dir(cls)
         def __dir__(self):
             self._errorline = next_line_num()
             raise Exception('Error in dir()')
 
         @property
         def c(self):
-            return "will-not-show"
+            return "will-show"
 
     @mc_config(ef, validate_properties=False)
     def _(rt):
@@ -1046,12 +1037,9 @@ def test_json_dump_dir_error(capsys):
 
     cr = ef.config(prod).ItemWithAA
     cr.json()
-    _sout, serr = capsys.readouterr()
-    # pylint: disable=W0212
-    assert replace_multiconf_file_line_msg(serr) == _json_dump_dir_error_expected_stderr % dict(
-        file_line=file_line(__file__, cr.someitem._errorline),
-        py23_statement='return dir(self)' if major_version < 3 else 'dir_set = set(dir(self))')
-    assert compare_json(cr, _json_dump_dir_error_expected_json, expect_num_errors=1)
+    sout, serr = capsys.readouterr()
+    assert serr == sout == ''
+    assert compare_json(cr, _json_dump_dir_error_expected_json)
 
 
 if sys.version_info[0] < 3:
@@ -1713,10 +1701,13 @@ def test_exception_generating_json():
 
     cr = ef.config(prod)
 
+    # Accessing a completey undefind attribute does not invoke multiconf exception, so the bad __repr__ is no called
     with raises(AttributeError) as exinfo:
-        cr.Xx.zzz
+        cr.Xx.xxx
 
-    assert str(exinfo.value) == "Object of type: <class 'test.json_output_test.%(py3_local)sXx'> has no attribute 'zzz'." % dict(py3_local=py3_local())
+    assert str(exinfo.value) == "'Xx' object has no attribute 'xxx'"
+
+    xfail('TODO: provoke bad __repr__')
 
 
 _json_dump_depth_expected_json_d1 = """{
@@ -1881,3 +1872,41 @@ def test_json_dump_depth(capsys):
     assert compare_json(cr, _json_dump_depth_expected_json_d2, sort_attributes=False, depth=2)
     assert compare_json(cr, _json_dump_depth_expected_json_d3, sort_attributes=False, depth=3)
     assert compare_json(cr, _json_dump_depth_expected_json_full, sort_attributes=False)
+
+
+_json_dump_during_load_json0_exp = """{
+    "__class__": "root, not-frozen",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "pp"
+    },
+    "aa": 0,
+    "someitems": {}
+}"""
+
+_json_dump_during_load_json1_exp = """{
+    "__class__": "NestedRepeatable, not-frozen",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "pp"
+    },
+    "id": "b-level1",
+    "someitems": {}
+}"""
+
+def test_json_dump_during_load():
+    jsons = []
+    @mc_config(ef)
+    def _(rt):
+        with root(aa=0) as cr:
+            jsons.append(cr.json())
+            NestedRepeatable(mc_key='a-level1')
+            with NestedRepeatable(mc_key='b-level1') as ci:
+                jsons.append(ci.json())
+                NestedRepeatable(mc_key='a-level2')
+
+    cr = ef.config(prod).root
+    assert replace_ids(jsons[0]) == _json_dump_during_load_json0_exp
+    assert replace_ids(jsons[1]) == _json_dump_during_load_json1_exp

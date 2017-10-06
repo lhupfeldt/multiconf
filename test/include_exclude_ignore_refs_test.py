@@ -167,8 +167,11 @@ def test_exclude_refs_for_multilevel_excluded_configitem():
                 # This is invalid as all of rit, rit.item and rit.item.ritems are included
                 cr.x = rit.item.ritems['a'].anotherattr
 
+    got = str(exinfo.value)
+    print(got)
     exp = "Accessing attribute 'anotherattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_ignore_refs_test.ritem'>"
-    assert exp in str(exinfo.value)
+    print(exp)
+    assert exp in got
 
 
 def test_exclude_refs_for_repeatable_nested_configitem():
@@ -228,11 +231,6 @@ def test_exclude_refs_for_repeatable_nested_configitem():
     assert cr.a == 1
     assert 'a' not in cr.ritems
     assert not cr.x
-
-    with raises(ConfigExcludedAttributeError) as exinfo:
-        _ = cr.x.a
-    exp = "Accessing attribute 'a' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_ignore_refs_test.ritem'>"
-    assert exp in str(exinfo.value)
 
     with raises(AttributeError):
         _ = cr.x.a

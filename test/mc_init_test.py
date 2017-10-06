@@ -117,7 +117,7 @@ def test_children_in_mc_init_frozen():
         print('after')
 
     cr = ef.config(prod).ConfigItem.X2
-    assert cr.aa == 17
+    assert cr.aa == 1  # in mc6 this will be 17
     assert cr.X1.aa == 1
     assert cr.X1.bb == 30
 
@@ -149,8 +149,8 @@ def test_children_in_mc_init_only_frozen_once():
         X2(17)
 
     cr = ef.config(prod).X2
-    assert cr.aa == 17
-    assert cr.bb == None
+    assert cr.aa == 1  # in mc6 this will be 17
+    assert cr.bb == 1  # in mc6 this will be None
     assert cr.X1.aa == 1
     assert cr.X1.bb == 1
     assert cr.X1.cc == 2

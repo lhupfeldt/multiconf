@@ -3,6 +3,9 @@
 
 from enum import Enum
 
+from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigApiException
+from .envs import NO_ENV
+
 
 class Where(Enum):
     NOWHERE = 0
@@ -27,3 +30,40 @@ class _McAttribute(object):
         self.env_values[env] = value
         self.where_from = where_from
         self.from_eg = from_eg
+
+
+class _McAttributeAccessor(object):
+    __slots__ = ('attr_name', 'attr')
+
+    def __init__(self, attr_name):
+        self.attr_name = attr_name
+
+    def __get__(self, obj, objtype):
+        if not obj:
+            if obj is None:
+                return self
+
+            cr = obj._mc_root
+            current_env = cr._mc_env
+            if cr._mc_config_loaded:
+                raise ConfigExcludedAttributeError(obj, self.attr_name, current_env)
+
+        cr = obj._mc_root
+        current_env = cr._mc_env
+
+        try:
+            mc_attribute = obj._mc_attributes[self.attr_name]
+            if not cr._mc_in_json:
+                mc_attribute.where_from = Where.FROZEN
+            return mc_attribute.env_values[current_env]
+        except KeyError as ex:
+            # mc attribute does not exist for current instance or current env
+            if current_env is NO_ENV:
+                msg = "Trying to access attribute '{}'. "
+                msg += "Item.attribute access is not allowed in 'mc_post_validate' as there is no current env, use: item.getattr(attr_name, env)"
+                raise ConfigApiException(msg.format(self.attr_name))
+
+            if not obj:
+                raise ConfigExcludedAttributeError(obj, self.attr_name, current_env)
+
+            raise ConfigAttributeError(obj, self.attr_name, '')

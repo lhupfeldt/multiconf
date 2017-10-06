@@ -7,7 +7,6 @@ from __future__ import print_function
 from pytest import raises, xfail
 
 from multiconf import mc_config, ConfigItem
-from multiconf.config_errors import ConfigAttributeError
 from multiconf.envs import EnvFactory
 
 from .utils.utils import config_error, replace_ids
@@ -23,13 +22,7 @@ def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
 
-_access_undefined_attribute_expected_repr = """{
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    }
-}, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute 'b'."""
+_access_undefined_attribute_expected_repr = "'ConfigItem' object has no attribute 'b'"
 
 def test_access_undefined_attribute():
     @mc_config(ef)
@@ -43,14 +36,8 @@ def test_access_undefined_attribute():
     assert replace_ids(str(exinfo.value), named_as=False) == _access_undefined_attribute_expected_repr
 
 
-_t2_expected_repr = """{
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "bs": 4
-}, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute 'b', but found attribute 'bs'."""
+# We can't tell about the 'bs' attribute here because it is completely handled by Python now
+_t2_expected_repr = "'ConfigItem' object has no attribute 'b'"
 
 def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s():
     @mc_config(ef)
@@ -60,8 +47,7 @@ def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_
 
     cr = ef.config(prod).ConfigItem
 
-    # ConfigAttributeError is instance of AttributeError
-    with raises(ConfigAttributeError) as exinfo:
+    with raises(AttributeError) as exinfo:
         print(cr.b)
 
     assert replace_ids(str(exinfo.value), named_as=False) == _t2_expected_repr
@@ -95,13 +81,7 @@ def test_access_undefined_attribute_json_single_level():
     assert replace_ids(str(exinfo.value), named_as=False) == _access_undefined_attribute_json_single_level_expected_repr
 
 
-_access_undefined_private_attribute_expected_repr = """{
-    "__class__": "ConfigItem #as: 'ConfigItem', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    }
-}, object of type: <class 'multiconf.multiconf.ConfigItem'> has no attribute '_b'."""
+_access_undefined_private_attribute_expected_repr = "'ConfigItem' object has no attribute '_b'"
 
 def test_access_undefined_private_attribute():
     @mc_config(ef)

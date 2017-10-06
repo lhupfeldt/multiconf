@@ -2,9 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 
-class _McPropertyWrapperException(AttributeError):
-    def __init__(self, cause):
-        self.cause = cause
+from .config_errors import ConfigAttributeError, failed_property_call_msg
 
 
 class _McPropertyWrapper(object):
@@ -31,4 +29,5 @@ class _McPropertyWrapper(object):
         try:
             return self.prop.__get__(obj, objtype)
         except Exception as ex:
-            raise _McPropertyWrapperException(ex)
+            msg = failed_property_call_msg.format(attr=self.prop_name, env=current_env, ex_type=type(ex).__name__, ex=ex)
+            raise ConfigAttributeError(obj, self.prop_name, msg=msg)

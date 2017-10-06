@@ -337,7 +337,9 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
         '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
-    assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_required_init_arg_missing_with_expected_ex.format('McRequiredInInitL1')
+    exp = _attribute_mc_required_required_init_arg_missing_with_expected_ex.format('McRequiredInInitL1')
+    got = replace_ids(str(exinfo.value), False)
+    assert got == exp
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp)

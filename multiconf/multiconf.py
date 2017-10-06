@@ -9,14 +9,12 @@ import json
 
 from .envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
-from .attribute import _McAttribute, Where
-from .property_wrapper import _McPropertyWrapper, _McPropertyWrapperException
+from .attribute import _McAttribute, _McAttributeAccessor, Where
+from .property_wrapper import _McPropertyWrapper
 from .repeatable import RepeatableDict
-from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigException, ConfigApiException, InvalidUsageException, InJsonAttributeError
-from .config_errors import failed_property_call_msg
+from .config_errors import ConfigException, ConfigApiException, InvalidUsageException
 from .config_errors import caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg, not_repeatable_in_parent_msg, repeatable_in_parent_msg
 from .json_output import ConfigItemEncoder, _mc_filter_out_keys, _mc_identification_msg_str
-from .bases import get_bases
 from . import typecheck
 
 
@@ -214,19 +212,10 @@ class _ConfigBase(object):
     # Python2 compatibility
     __nonzero__ = __bool__
 
-    if major_version < 3:
-        def _mc_dir_entries(self):
-            return dir(self)
-
     if major_version >= 3:  # This should have been an else, but that makes it difficult to do the coverage
-        def _mc_dir_entries(self):
-            dir_set = set(dir(self))
-            mc_attr_keys_set = set(self._mc_attributes.keys())
-            return dir_set.difference(mc_attr_keys_set.difference(object.__dir__(self)))
-            # return [key for key in dir(self) if key not in self._mc_attributes.keys() or key in object.__dir__(self)]
-
         def __dir__(self):
-            return object.__dir__(self) + list(self._mc_attributes.keys())
+            return [name for name in object.__dir__(self)
+                    if not isinstance(getattr(self.__class__, name, None), _McAttributeAccessor) or name in self._mc_attributes]
 
     def _mc_exists_in_given_env(self, env):
         env_mask = env.mask
@@ -310,28 +299,18 @@ class _ConfigBase(object):
         if not self._mc_exists_in_given_env(env):
             return
 
-        cr = self._mc_root
-
-        try:
-            dir_entries = dir(self)
-        except Exception as ex:
-            dir_entries = ()
-            cr._mc_num_property_errors += 1
-            print(_error_msg("Calling dir() failed while validating @properties for {env}.".format(env=env)), file=sys.stderr)
-            traceback.print_exception(*sys.exc_info())
-
-        for key in dir_entries:
-            if key.startswith('_') or key in _mc_filter_out_keys or key in self._mc_items:
+        for key in self.__class__._mc_cls_dir_entries:
+            if key.startswith('_') or key in self._mc_attributes or key in self._mc_items or key in _mc_filter_out_keys:
                 continue
 
             try:
                 val = getattr(self, key)
             except InvalidUsageException:
-                cr._mc_num_invalid_property_usage += 1
+                self._mc_root._mc_num_invalid_property_usage += 1
                 # print(_error_msg("InvalidUsageException trying to validate @property '{prop_name}' in {env}.".format(prop_name=key, env=env)), file=sys.stderr)
                 # traceback.print_exception(*sys.exc_info())
             except Exception as ex:
-                cr._mc_num_property_errors += 1
+                self._mc_root._mc_num_property_errors += 1
                 print(_error_msg("Exception validating @property '{prop_name}' on item {item} in {env}.".format(
                     prop_name=key, item=_mc_identification_msg_str(self), env=env)), file=sys.stderr)
                 traceback.print_exception(*sys.exc_info())
@@ -392,111 +371,48 @@ class _ConfigBase(object):
             self.__class__._mc_hierarchy.pop()
             return True
 
-    def _mc_setattr(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
-        """Common code for assignment and item.setattr"""
+    def _mc_setattr_env_value(self, current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level):
+        # print("_mc_setattr_env_value:", current_env, attr_name, value, old_value)
+        if old_value != MC_NO_VALUE and not mc_force:
+            if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
+                # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
+                # or previous value was set in __init__ and the env is at least as specific
+                if from_eg not in env_attr.from_eg:
+                    if env_attr.where_from != Where.IN_INIT:
+                        return
+                    if from_eg != env_attr.from_eg:
+                        return
 
-        try:
-            prop = getattr(self.__class__, attr_name)
-
-            if not isinstance(prop, _McPropertyWrapper):
-                if isinstance(prop, RepeatableDict):
-                    msg = "'{name}' is already defined as a nested-repeatable and may not be replaced with an attribute.".format(name=attr_name)
-                    self._mc_print_error_caller(msg, mc_error_info_up_level)
+            if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
+                # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
+                if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
                     return
 
-                if not mc_overwrite_property:
-                    base_msg = "The attribute '{name}' clashes with a @property or method".format(name=attr_name)
-                    msg = base_msg + " and 'mc_overwrite_property' is False."
-                    if is_assign:
-                        msg = base_msg + ". Use item.setattr with mc_overwrite_property=True if overwrite intended."
-                    self._mc_print_error_caller(msg, mc_error_info_up_level)
-                    return
-
-                if not isinstance(prop, property):
-                    msg = "'mc_overwrite_property' specified but existing attribute '{name}' with value '{value}' is not a @property.".format(
-                        name=attr_name, value=prop)
-                    self._mc_print_error_caller(msg, mc_error_info_up_level)
-                    return
-
-                setattr(self.__class__, attr_name, _McPropertyWrapper(attr_name, prop))
-
-        except AttributeError as ex:
-            if attr_name in self._mc_items:
-                item = self._mc_items[attr_name]
-                msg = "'{name}' {typ} is already defined and may not be replaced with an attribute.".format(name=attr_name, typ=type(item))
+            if self._mc_where == Where.IN_RE_WITH and env_attr.where_from == Where.IN_RE_WITH:
+                # Trying to set the same attribute again in with block
+                msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
                 return
 
-            if mc_overwrite_property:
-                msg = "'mc_overwrite_property' is True but no property named '{name}' exists.".format(name=attr_name)
+            if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH:
+                # Trying to set the same attribute again in with block
+                msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
                 return
 
-            prop = None
-
-        env_attr = self._mc_attributes.get(attr_name)
-        if env_attr is None:
-            if self._mc_where not in (Where.IN_INIT, Where.IN_RE_INIT) and not mc_set_unknown and not prop:
-                msg = "All attributes must be defined in __init__ or set with 'mc_set_unknown'. " + \
-                      "Attempting to set attribute '{attr_name}' which does not exist.".format(attr_name=attr_name)
+            if env_attr.where_from == Where.FROZEN:
+                msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
+                msg += "Setting attributes is not allowed after value has been used (in order to enforce derived value validity)."
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
                 return
 
-            env_attr = _McAttribute()
-            self._mc_attributes[attr_name] = env_attr
-            old_value = MC_NO_VALUE
-        else:
-            try:
-                old_value = env_attr.env_values[current_env]
-
-                if mc_set_unknown:
-                    msg = "Attempting to use 'mc_set_unknown' to set attribute '{attr_name}' which already exists.".format(attr_name=attr_name)
-                    self._mc_print_error_caller(msg, mc_error_info_up_level)
-                    return
-
-                if not mc_force:
-                    if env_attr.where_from == Where.FROZEN:
-                        msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
-                        msg += "Setting attributes is not allowed after value has been used (in order to enforce derived value validity)."
-                        self._mc_print_error_caller(msg, mc_error_info_up_level)
-                        return
-
-                    if self._mc_where == Where.FROZEN:
-                        msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
-                        msg += "Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
-                        self._mc_print_error_caller(msg, mc_error_info_up_level)  # Note: This always raises en exception
-
-                    if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
-                        # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
-                        # or previous value was set in __init__ and the env is at least as specific
-                        if from_eg not in env_attr.from_eg:
-                            if env_attr.where_from != Where.IN_INIT:
-                                return
-                            if from_eg != env_attr.from_eg:
-                                return
-
-                    if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
-                        # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
-                        if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
-                            return
-
-                    if self._mc_where == Where.IN_RE_WITH and env_attr.where_from == Where.IN_RE_WITH:
-                        # Trying to set the same attribute again in with block
-                        msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
-                        self._mc_print_error_caller(msg, mc_error_info_up_level)
-                        return
-
-                    if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH:
-                        # Trying to set the same attribute again in with block
-                        msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
-                        self._mc_print_error_caller(msg, mc_error_info_up_level)
-                        return
-
-            except KeyError:
-                old_value = MC_NO_VALUE
+            if self._mc_where == Where.FROZEN:
+                msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
+                msg += "Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
+                self._mc_print_error_caller(msg, mc_error_info_up_level)  # Note: This always raises en exception
 
         if value == MC_NO_VALUE:
-            if old_value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED) or prop:
+            if old_value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
                 return
             value = old_value
 
@@ -533,6 +449,114 @@ class _ConfigBase(object):
 
         mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
         self._mc_print_value_error_msg(attr_name, value, mc_caller_file_name, mc_caller_line_num)
+
+    def _mc_check_no_existing_attr(self, attr_name, mc_overwrite_property, mc_set_unknown, mc_error_info_up_level):
+        if attr_name in self._mc_items:
+            # Non-Repeatable ConfigItems are not defined at the class level, only at instance level and in _mc_items
+            item = self._mc_items[attr_name]
+            msg = "'{name}' {typ} is already defined and may not be replaced with an attribute.".format(name=attr_name, typ=type(item))
+            self._mc_print_error_caller(msg, mc_error_info_up_level)
+            return True
+
+        if mc_overwrite_property:
+            msg = "'mc_overwrite_property' is True but no property named '{name}' exists.".format(name=attr_name)
+            self._mc_print_error_caller(msg, mc_error_info_up_level)
+            return True
+
+        if self._mc_where not in (Where.IN_INIT, Where.IN_RE_INIT) and not mc_set_unknown:
+            msg = "All attributes must be defined in __init__ or set with 'mc_set_unknown'. " + \
+                  "Attempting to set attribute '{attr_name}' which does not exist.".format(attr_name=attr_name)
+            self._mc_print_error_caller(msg, mc_error_info_up_level)
+            return True
+
+        return False
+
+    def _mc_setattr(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
+        """Common code for assignment and item.setattr"""
+
+        #print("_mc_setattr:", current_env, attr_name, value)
+        try:
+            cls_attr = getattr(self.__class__, attr_name)
+            # print("_mc_setattr, cls_attr:", type(cls_attr))
+        except AttributeError as ex:
+            #print("_mc_setattr, AttributeError:", ex)
+            if self._mc_check_no_existing_attr(attr_name, mc_overwrite_property, mc_set_unknown, mc_error_info_up_level+1):
+                return
+
+            # print("_mc_setattr creating new _McAttributeAccessor")
+            setattr(self.__class__, attr_name, _McAttributeAccessor(attr_name))
+            env_attr = _McAttribute()
+            self._mc_attributes[attr_name] = env_attr
+            self._mc_setattr_env_value(current_env, attr_name, env_attr, value, MC_NO_VALUE, from_eg, mc_force, mc_error_info_up_level + 1)
+        else:
+            if isinstance(cls_attr, _McAttributeAccessor):
+                # print("_mc_setattr found _McAttributeAccessor")
+                env_attr = self._mc_attributes.get(attr_name)
+                if env_attr is None:
+                    if self._mc_check_no_existing_attr(attr_name, mc_overwrite_property, mc_set_unknown, mc_error_info_up_level+1):
+                        return
+
+                    env_attr = _McAttribute()
+                    self._mc_attributes[attr_name] = env_attr
+                    old_value = MC_NO_VALUE
+                else:
+                    old_value = env_attr.env_values.get(current_env, MC_NO_VALUE)
+                    if mc_set_unknown and old_value != MC_NO_VALUE:
+                        msg = "Attempting to use 'mc_set_unknown' to set attribute '{attr_name}' which already exists.".format(attr_name=attr_name)
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)
+                        return
+                self._mc_setattr_env_value(current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level + 1)
+                return
+
+            if isinstance(cls_attr, _McPropertyWrapper):
+                #print("_mc_setattr found _McPropertyWrapper")
+                if value == MC_NO_VALUE:
+                    return
+
+                env_attr = self._mc_attributes.get(attr_name)
+                if env_attr is None:
+                    env_attr = _McAttribute()
+                    self._mc_attributes[attr_name] = env_attr
+                    old_value = MC_NO_VALUE
+                else:
+                    old_value = env_attr.env_values.get(current_env, MC_NO_VALUE)
+                    if mc_set_unknown and old_value != MC_NO_VALUE:
+                        msg = "Attempting to use 'mc_set_unknown' to overwrite a an existing @property '{attr_name}'.".format(attr_name=attr_name)
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)
+                        return
+                self._mc_setattr_env_value(current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level + 1)
+                return
+
+            if isinstance(cls_attr, RepeatableDict):
+                msg = "'{name}' is already defined as a nested-repeatable and may not be replaced with an attribute.".format(name=attr_name)
+                self._mc_print_error_caller(msg, mc_error_info_up_level)
+                return
+
+            if not mc_overwrite_property:
+                base_msg = "The attribute '{name}' clashes with a @property or method".format(name=attr_name)
+                msg = base_msg + " and 'mc_overwrite_property' is False."
+                if is_assign:
+                    msg = base_msg + ". Use item.setattr with mc_overwrite_property=True if overwrite intended."
+                self._mc_print_error_caller(msg, mc_error_info_up_level)
+                return
+
+            if not isinstance(cls_attr, property):
+                msg = "'mc_overwrite_property' specified but existing attribute '{name}' with value '{value}' is not a @property.".format(
+                    name=attr_name, value=cls_attr)
+                self._mc_print_error_caller(msg, mc_error_info_up_level)
+                return
+
+            # Now we know we had a @property at class level
+            if value == MC_NO_VALUE:
+                # No value was give for current env, so no need to do anything, we will fall back to the @property
+                return
+
+            # Replace property with a wrapper
+            setattr(self.__class__, attr_name, _McPropertyWrapper(attr_name, cls_attr))
+            env_attr = _McAttribute()
+            self._mc_attributes[attr_name] = env_attr
+            self._mc_setattr_env_value(current_env, attr_name, env_attr, value, MC_NO_VALUE, from_eg, mc_force, mc_error_info_up_level + 1)
+            return    
 
     def _mc_setattr_disabled(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
         """Common code for assignment and item.setattr to disable attribute modification after config is loaded"""
@@ -607,71 +631,16 @@ class _ConfigBase(object):
                 msg += "\nvalue: " + repr(value) + ", from: " + repr(eg)
             self._mc_print_error_caller(msg, mc_error_info_up_level)
 
-    def __getattr__(self, attr_name):
-        # Only called if self.<attr_name> is not found
-        cr = self._mc_root
-        if not self and cr._mc_config_loaded:
-            raise ConfigExcludedAttributeError(self, attr_name, cr._mc_env)
-
-        try:
-            attr = self._mc_attributes[attr_name]
-            if not cr._mc_in_json:
-                attr.where_from = Where.FROZEN
-            return attr.env_values[cr._mc_env]
-        except KeyError:
-            try:
-                my_getattr = _ConfigBase.__getattr__
-                del _ConfigBase.__getattr__
-
-                if attr_name.startswith('_'):
-                    raise ConfigAttributeError(self, attr_name, msg=None)
-
-                if cr._mc_env is not NO_ENV or attr_name not in self._mc_attributes:
-                    if not self:
-                        raise ConfigExcludedAttributeError(self, attr_name, cr._mc_env)
-
-                    # This is necessary in order to generate the original exception which was raised by a property (wrapper) call which failed
-                    try:
-                        getattr(self, attr_name)
-                    except _McPropertyWrapperException as ex:
-                        ex = ex.cause
-                        msg = failed_property_call_msg.format(attr=attr_name, env=cr._mc_env, ex_type=type(ex).__name__, ex=ex)
-                    except Exception:
-                        msg = None
-                    raise ConfigAttributeError(self, attr_name, msg=msg)
-
-                msg = "Trying to access attribute '{}'. "
-                msg += "Item.attribute access is not allowed in 'mc_post_validate' as there is no current env, use: item.getattr(attr_name, env)"
-                raise ConfigApiException(msg.format(attr_name))
-            except Exception as ex:
-                if cr._mc_in_json:
-                    raise InJsonAttributeError(ex)
-                raise
-            finally:
-                _ConfigBase.__getattr__ = my_getattr
-
     def getattr(self, attr_name, env):
         """Get an attribute value for any env."""
         cr = self._mc_root
-        if env.mask & self._mc_excluded and cr._mc_config_loaded:
-            raise ConfigExcludedAttributeError(self, attr_name, env)
-
         try:
-            attr = self._mc_attributes[attr_name]
-            if not cr._mc_in_json:
-                attr.where_from = Where.FROZEN
-            return attr.env_values[env]
-        except KeyError:
-            prop = getattr(self.__class__, attr_name)
-            try:
-                # TODO: Thread safety
-                orig_env = cr._mc_env
-                cr._mc_env = env
-                if isinstance(prop, _McPropertyWrapper):
-                    return prop.prop.__get__(self, type(self))
-                return getattr(self, attr_name)
-            finally:
-                cr._mc_env = orig_env
+            # TODO: Thread safety
+            orig_env = cr._mc_env
+            cr._mc_env = env
+            return getattr(self, attr_name)
+        finally:
+            cr._mc_env = orig_env
 
     def items(self):
         for key, item in self._mc_items.items():
@@ -778,6 +747,12 @@ class AbstractConfigItem(_ConfigBase):
     """
 
     def __new__(cls, mc_key=None, *init_args, **init_kwargs):
+        try:
+            object.__getattribute__(cls, '_mc_cls_dir_entries')
+        except AttributeError:
+            # Get dir list before attributes are added, but attributes may have been added to a base class, so filter those out
+            # Assume that dir(cls) will never fail
+            cls._mc_cls_dir_entries = [dd for dd in dir(cls) if not isinstance(getattr(cls, dd), _McAttributeAccessor)]
         return super(AbstractConfigItem, cls).__new__(cls)
 
     def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
@@ -1134,6 +1109,8 @@ class _ItemParentProxy(object):
 
 
 class _ConfigRoot(_ConfigBase):
+    _mc_cls_dir_entries = ()
+
     def __init__(self, env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, mc_do_type_check):
         self._mc_env_factory = env_factory
         self._mc_todo_handling_other = mc_todo_handling_other

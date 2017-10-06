@@ -108,4 +108,4 @@ def test_getattr_repr_error():
                 x = X()
                 _ = x.a
 
-    assert "X'> has no attribute 'a'" in str(exinfo.value)
+    assert "X' object has no attribute 'a'" in str(exinfo.value)
