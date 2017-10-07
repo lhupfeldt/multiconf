@@ -342,17 +342,10 @@ class _ConfigBase(object):
         # self.__class__._mc_debug_hierarchy('_ConfigBase.__enter__')
         return self
 
-    @staticmethod
-    def _update_mc_excluded_recursively(parent, mc_excluded_mask):
-        for child_item in parent._mc_items.values():
-            if isinstance(child_item, RepeatableDict):
-                for child_item in child_item.values():
-                    child_item._mc_excluded |= mc_excluded_mask
-                    _ConfigBase._update_mc_excluded_recursively(child_item, mc_excluded_mask)
-                return
-
-            child_item._mc_excluded |= mc_excluded_mask
-            _ConfigBase._update_mc_excluded_recursively(child_item, mc_excluded_mask)
+    def _update_mc_excluded_recursively(self, mc_excluded_mask):
+        self._mc_excluded |= mc_excluded_mask
+        for item in self._mc_items.values():
+            item._update_mc_excluded_recursively(mc_excluded_mask)
 
     def __exit__(self, exc_type, value, traceback):
         if not exc_type:
