@@ -367,12 +367,12 @@ class _ConfigBase(object):
     def _mc_setattr_env_value(self, current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level):
         # print("_mc_setattr_env_value:", current_env, attr_name, value, old_value)
         if old_value != MC_NO_VALUE and not mc_force:
-            if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
+            if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value != MC_REQUIRED:
                 # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
                 if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
                     return
 
-            if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
+            if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value != MC_REQUIRED:
                 # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
                 if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
                     return
