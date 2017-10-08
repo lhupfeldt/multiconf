@@ -342,17 +342,10 @@ class _ConfigBase(object):
         # self.__class__._mc_debug_hierarchy('_ConfigBase.__enter__')
         return self
 
-    @staticmethod
-    def _update_mc_excluded_recursively(parent, mc_excluded_mask):
-        for child_item in parent._mc_items.values():
-            if isinstance(child_item, RepeatableDict):
-                for child_item in child_item.values():
-                    child_item._mc_excluded |= mc_excluded_mask
-                    _ConfigBase._update_mc_excluded_recursively(child_item, mc_excluded_mask)
-                return
-
-            child_item._mc_excluded |= mc_excluded_mask
-            _ConfigBase._update_mc_excluded_recursively(child_item, mc_excluded_mask)
+    def _update_mc_excluded_recursively(self, mc_excluded_mask):
+        self._mc_excluded |= mc_excluded_mask
+        for item in self._mc_items.values():
+            item._update_mc_excluded_recursively(mc_excluded_mask)
 
     def __exit__(self, exc_type, value, traceback):
         if not exc_type:
@@ -374,7 +367,7 @@ class _ConfigBase(object):
     def _mc_setattr_env_value(self, current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level):
         # print("_mc_setattr_env_value:", current_env, attr_name, value, old_value)
         if old_value != MC_NO_VALUE and not mc_force:
-            if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
+            if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value != MC_REQUIRED:
                 # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
                 # or previous value was set in __init__ and the env is at least as specific
                 if from_eg not in env_attr.from_eg:
@@ -383,7 +376,7 @@ class _ConfigBase(object):
                     if from_eg != env_attr.from_eg:
                         return
 
-            if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value not in (MC_NO_VALUE, MC_REQUIRED):
+            if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value != MC_REQUIRED:
                 # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
                 if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
                     return
@@ -420,16 +413,16 @@ class _ConfigBase(object):
             # We have a value for the env which is more specific than any previous value
             env_attr.set(current_env, value, self._mc_where, from_eg)
 
-        if value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
-            if self._mc_root._mc_do_type_check:
-                type_msg = typecheck.type_check(self, attr_name, value)
-                if type_msg:
-                    self._mc_print_error_caller(type_msg, mc_error_info_up_level)
-                    return
+            if value not in (MC_TODO, MC_REQUIRED):
+                if self._mc_root._mc_do_type_check:
+                    type_msg = typecheck.type_check(self, attr_name, value)
+                    if type_msg:
+                        self._mc_print_error_caller(type_msg, mc_error_info_up_level)
+                        return
 
-            if self._mc_attributes_to_check:
-                self._mc_attributes_to_check.pop(attr_name, None)
-            return
+                if self._mc_attributes_to_check:
+                    self._mc_attributes_to_check.pop(attr_name, None)
+                return
 
         if self._mc_where == Where.IN_INIT or not self:
             if value == MC_NO_VALUE:
@@ -556,7 +549,7 @@ class _ConfigBase(object):
             env_attr = _McAttribute()
             self._mc_attributes[attr_name] = env_attr
             self._mc_setattr_env_value(current_env, attr_name, env_attr, value, MC_NO_VALUE, from_eg, mc_force, mc_error_info_up_level + 1)
-            return    
+            return
 
     def _mc_setattr_disabled(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
         """Common code for assignment and item.setattr to disable attribute modification after config is loaded"""
