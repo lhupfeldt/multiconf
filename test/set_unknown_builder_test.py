@@ -51,7 +51,7 @@ def test_setattr_strict_builder_ok():
     bsi = [None]
 
     @mc_config(ef2_prod_pp)
-    def _(_):
+    def config(_):
         with strict_project() as sp:
             sp.a = 1
             sp.setattr('b', default=2)
@@ -61,7 +61,7 @@ def test_setattr_strict_builder_ok():
                 bb.setattr('y', default='yes')
             bsi[0] = bb
 
-    sp = ef2_prod_pp.config(prod2).strict_project
+    sp = config(prod2).strict_project
     assert bsi[0].x == 1
     assert bsi[0].y == 'yes'
     assert sp.StrictItem.x == 1
@@ -71,7 +71,7 @@ def test_setunknown_strict_builder_ok():
     bsi = [None]
 
     @mc_config(ef2_prod_pp)
-    def _(_):
+    def config(_):
         with strict_project() as sp:
             sp.b = 1
             sp.setattr('c', default=2, mc_set_unknown=True)
@@ -81,7 +81,7 @@ def test_setunknown_strict_builder_ok():
                 bb.setattr('z', default='yes', mc_set_unknown=True)
             bsi[0] = bb
 
-    sp = ef2_prod_pp.config(prod2).strict_project
+    sp = config(prod2).strict_project
     assert bsi[0].x == 1
     assert bsi[0].z == 'yes'
     assert sp.StrictItem.x == 1

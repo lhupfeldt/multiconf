@@ -89,7 +89,7 @@ _include_exclude_for_configitem_expected_json = """{
 
 def test_exclude_refs_for_nested_configitem1():
     @mc_config(ef)
-    def conf(_):
+    def config(_):
         with root() as cr:
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
                 it1.setattr('anattr', pp=1, g_dev12_3=2)
@@ -99,12 +99,12 @@ def test_exclude_refs_for_nested_configitem1():
                     it2.setattr('anotherattr', dev1=1, pp=2)
             cr.y = it1.item
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
     assert not cr.y
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.item.item.anattr == 2
     assert cr.item.item.anotherattr == 1
     assert cr.y == cr.item.item
@@ -121,7 +121,7 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
                     it2.setattr('anattr', pp=1, g_dev12_3=2)
                     it2.setattr('anotherattr', dev1=1, pp=2)
 
-    cr = ef.config(prod).root
+    cr = conf(prod).root
 
     assert not cr.item
 
@@ -138,7 +138,7 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
     exp = "Accessing attribute 'anattr' for Env('prod') on an excluded config item: Excluded: <class 'test.include_exclude_ignore_refs_test.item'>"
     assert exp in str(exinfo.value)
 
-    cr = ef.config(dev1).root
+    cr = conf(dev1).root
     assert cr.item
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
@@ -150,7 +150,7 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
 def test_exclude_refs_for_multilevel_excluded_configitem():
     with raises(AttributeError) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with decorated_root() as cr:
                 with ritem(mc_key='a', mc_exclude=[dev2, prod]) as rit:
                     rit.setattr('anattr', pp=1, g_dev12_3=2)
@@ -176,7 +176,7 @@ def test_exclude_refs_for_multilevel_excluded_configitem():
 
 def test_exclude_refs_for_repeatable_nested_configitem():
     @mc_config(ef)
-    def conf(_):
+    def config(_):
         with decorated_root() as cr:
             cr.a = 1
             with ritem(mc_key='a', mc_exclude=[dev2, prod]) as rit:
@@ -208,14 +208,14 @@ def test_exclude_refs_for_repeatable_nested_configitem():
                     it1.setattr('anattr', prod=33, pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.a == 1
     assert 'a' not in cr.ritems
     assert 'b' in cr.ritems
     assert cr.ritems['b'].anattr == 31
     assert cr.ritems['b'].item.anattr == 33
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -227,7 +227,7 @@ def test_exclude_refs_for_repeatable_nested_configitem():
         _ = cr.ritems['a'].item.ritems['b']
     assert len(cr.ritems) == 1
 
-    cr = ef.config(dev2).root
+    cr = config(dev2).root
     assert cr.a == 1
     assert 'a' not in cr.ritems
     assert not cr.x
@@ -238,7 +238,7 @@ def test_exclude_refs_for_repeatable_nested_configitem():
     with raises(AttributeError):
         _ = cr.x.bbb
 
-    cr = ef.config(dev3).root
+    cr = config(dev3).root
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -249,7 +249,7 @@ def test_exclude_refs_for_repeatable_nested_configitem():
 
 def test_exclude_refs_for_repeatable_nested_configitem_required_items():
     @mc_config(ef)
-    def conf(_):
+    def config(_):
         with decorated_root() as cr:
             cr.a = 1
             with decorated_ritem(mc_key='a', mc_exclude=[dev2, prod]) as rit:
@@ -286,7 +286,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_required_items():
                     it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
 
     # TODO validate more of 'anitem'
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.a == 1
     assert 'a' not in cr.ritems
     assert 'b' in cr.ritems
@@ -294,7 +294,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_required_items():
     assert cr.ritems['b'].item.anattr == 33
     assert cr.ritems['b'].anitem.xx == 1
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -306,14 +306,14 @@ def test_exclude_refs_for_repeatable_nested_configitem_required_items():
         _ = cr.ritems['a'].item.ritems['b']
     assert len(cr.ritems) == 1
 
-    cr = ef.config(dev2).root
+    cr = config(dev2).root
     assert cr.a == 1
     assert 'a' not in cr.ritems
     assert not cr.x
     with raises(AttributeError):
         _ = cr.x.a
 
-    cr = ef.config(dev3).root
+    cr = config(dev3).root
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -324,7 +324,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_required_items():
 
 def test_exclude_refs_for_nested_configitem_before_exit_with_mc_required_refs():
     @mc_config(ef)
-    def conf(_):
+    def config(_):
         with root() as cr:
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
                 it1.setattr('anattr', pp=1, g_dev12_3=2)
@@ -340,7 +340,7 @@ def test_exclude_refs_for_nested_configitem_before_exit_with_mc_required_refs():
                 cr.y = it1.item
                 cr.z = it1.item.anattr
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     with raises(AttributeError):
         _ = cr.item.item.anattr
     with raises(AttributeError):
@@ -350,7 +350,7 @@ def test_exclude_refs_for_nested_configitem_before_exit_with_mc_required_refs():
     assert cr.y is None
     assert cr.z is None
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.item.item.anattr == 2
     assert cr.item.item.anotherattr == 1
     assert cr.x == cr.item.anattr
@@ -361,7 +361,7 @@ def test_exclude_refs_for_nested_configitem_before_exit_with_mc_required_refs():
 def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
     xfail('TODO')
     @mc_config(ef)
-    def conf(_):
+    def config(_):
         with decorated_root() as cr:
             cr.a = 1
             with ritem(mc_key='a', mc_exclude=[dev2, prod]) as rit:
@@ -393,14 +393,14 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
                     it1.setattr('anattr', prod=33, pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.a == 1
     assert 'a' not in cr.ritems
     assert 'b' in cr.ritems
     assert cr.ritems['b'].anattr == 31
     assert cr.ritems['b'].item.anattr == 33
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -412,7 +412,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
         _ = cr.ritems['a'].item.ritems['b']
     assert len(cr.ritems) == 1
 
-    cr = ef.config(dev2).root
+    cr = config(dev2).root
     assert cr.a == 1
     assert 'a' not in cr.ritems
     assert not cr.x
@@ -421,7 +421,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
     with raises(ConfigException):
         _ = cr.x['q']
 
-    cr = ef.config(dev3).root
+    cr = config(dev3).root
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -433,7 +433,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
 def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
     xfail('TODO')
     @mc_config(ef)
-    def conf(_):
+    def config(_):
         with decorated_root() as cr:
             cr.a = 1
             with ritem(mc_key='a') as rit:
@@ -469,14 +469,14 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
                     it1.setattr('anattr', prod=33, pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, dev2=1, pp=2, prod=43)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.a == 1
     assert 'a' not in cr.ritems
     assert 'b' in cr.ritems
     assert cr.ritems['b'].anattr == 31
     assert cr.ritems['b'].item.anattr == 33
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -488,7 +488,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
         _ = cr.ritems['a'].item.ritems['b']
     assert len(cr.ritems) == 1
 
-    cr = ef.config(dev2).root
+    cr = config(dev2).root
     assert cr.a == 1
     assert 'a' not in cr.ritems
     with raises(AttributeError):
@@ -498,7 +498,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
         _ = cr.x['q']
         # TODO text
 
-    cr = ef.config(dev3).root
+    cr = config(dev3).root
     assert cr.a == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems

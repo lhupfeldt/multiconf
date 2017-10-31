@@ -82,7 +82,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(_):
+        def config(_):
             with Root():
                 X('server1')
                 with XBuilder():
@@ -98,7 +98,7 @@ def test_configbuilder_without_build():
 
     with raises(Exception) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(_):
+        def config(_):
             ABuilder()
 
     assert str(exinfo.value) == "Can't instantiate abstract class ABuilder with abstract methods mc_build"
@@ -115,7 +115,7 @@ def test_unexpected_repeatable_child_builder():
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             with ConfigItem():
                 UnexpectedRepeatableChildBuilder()
 
@@ -159,7 +159,7 @@ def test_unexpected_repeatable_child_nested_builders_with():
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             with ItemWithoutARepeatable():
                 OuterBuilder()
 
@@ -192,7 +192,7 @@ def test_unexpected_repeatable_child_nested_builders_no_with():
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             with ItemWithoutARepeatable():
                 OuterBuilder()
 
@@ -221,7 +221,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(_):
+        def config(_):
             with Root():
                 XBuilder()
 
@@ -242,7 +242,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(_):
+        def config(_):
             with Root():
                 with XBuilder() as xb:
                     XChild('first_child', a=10)
@@ -274,7 +274,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             with ItemWithName() as root:
                 root.name = 'myp'
                 with OuterItem():
@@ -284,7 +284,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             with ItemWithName() as root:
                 root.name = 'myp'
                 MiddleBuilder('base2')
@@ -318,7 +318,7 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             with ItemWithYs():
                 with YBuilder() as yb1:
                     YChild(mc_key=None, a=10)
@@ -355,7 +355,7 @@ def test_configbuilder_repeated():
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(_):
+        def config(_):
             with Root():
                 XBuilder('aa')
                 XBuilder('aa')
@@ -378,7 +378,7 @@ def test_configbuilder_repeated_in_mc_init():
             XBuilder('aa')
 
     @mc_config(ef2_prod_pp)
-    def _(_):
+    def config(_):
         with Root():
             XBuilder('aa')
 
@@ -413,7 +413,7 @@ def test_assign_on_built_item_after_it_is_built(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(root):
+        def config(root):
             with YBuilder():
                 pass
 
@@ -456,7 +456,7 @@ def test_assign_and_assign_on_proxied_built_item_child_after_freeze(capsys):
     # Test assignment error
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _1(root):
+        def config1(root):
             with YBuilder():
                 ItemWithAA(17)
             errorline[0] = next_line_num()
@@ -470,7 +470,7 @@ def test_assign_and_assign_on_proxied_built_item_child_after_freeze(capsys):
     # Test setattr error
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _2(root):
+        def config2(root):
             with YBuilder():
                 ItemWithAA(17)
             errorline[0] = next_line_num()

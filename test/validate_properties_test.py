@@ -35,11 +35,11 @@ def test_validate_properties_property_method():
             return 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
-    cr = ef.config(prod)
+    cr = config(prod)
     assert cr.num_invalid_property_usage == 0
 
 
@@ -51,12 +51,12 @@ def test_validate_properties_property_attribute_method_override():
             return 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
                 nn.setattr("m", mc_overwrite_property=True, default=7)
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.someitem.m == 7
     assert cr.num_invalid_property_usage == 0
 
@@ -69,11 +69,11 @@ def test_validate_properties_property_method_raises_InvalidUsageException():
             raise InvalidUsageException("No m now")
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
-    cr = ef.config(prod)
+    cr = config(prod)
     assert cr.num_invalid_property_usage == 2
 
 
@@ -99,7 +99,7 @@ def test_validate_properties_property_method_raises_exception(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(rt):
+        def config(rt):
             with ItemWithAA() as it:
                 it.setattr('aa', default=1, prod=0)
                 Nested()
@@ -126,7 +126,7 @@ def test_validate_properties_property_method_on_repeatable_raises_exception(caps
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(rt):
+        def config(rt):
             with ItemWithAAAndSomeItems() as it:
                 it.setattr('aa', default=1, prod=0)
                 RNested('a')
@@ -158,12 +158,12 @@ def test_validate_properties_dir_error(capsys):
             return "show-me"
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
                 nn.aa = 2
 
-    nn = ef.config(pp).ItemWithAA.someitem
+    nn = config(pp).ItemWithAA.someitem
     assert nn.c == "show-me"
 
 
@@ -176,5 +176,5 @@ def test_mc_validate_has_method():
             raise Exception("Error in hello " + there)
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         item()

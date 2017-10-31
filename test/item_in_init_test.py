@@ -26,12 +26,12 @@ def test_item_in_init_goes_to_parent():
             self.cc = None
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ConfigItem():
             with ConfigItem():
                 Y()
 
-    it = ef.config(prod).ConfigItem.ConfigItem
+    it = config(prod).ConfigItem.ConfigItem
     assert it == parent[0]
 
     assert it.X.aa == 1

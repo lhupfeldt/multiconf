@@ -36,11 +36,11 @@ def test_mc_validate_assignment():
             self.aa = 7
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root():
             pass
 
-    rt = ef.config(prod).root
+    rt = config(prod).root
     assert rt.aa == 7
 
 
@@ -51,11 +51,11 @@ def test_mc_validate_mc_set_unknown():
             self.setattr('y', default=7, mc_set_unknown=True)
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root():
             pass
 
-    rt = ef.config(prod).root
+    rt = config(prod).root
     assert rt.y == 7
 
 
@@ -69,7 +69,7 @@ def test_mc_validate_assign_attribute_not_defined_in_init(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with ConfigItem():
                 item()
 
@@ -84,7 +84,7 @@ def test_user_mc_validate_error():
 
     with raises(Exception) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with ConfigItem():
                 item()
 
@@ -108,11 +108,11 @@ def test_mc_required_attribute_resolved_after_mc_validate(capsys):
             self.ijkl = 7
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with item() as ii:
             ii.setattr('efgh', default=7)
 
-    it = ef.config(prod).item
+    it = config(prod).item
     assert it.abcd == 7
     assert it.efgh == 7
     assert it.ijkl == 7
@@ -140,7 +140,7 @@ def test_mc_required_attribute_missing_after_mc_validate(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with item() as ii:
                 ii.setattr('efgh', default=7)
 

@@ -26,10 +26,10 @@ _access_undefined_attribute_expected_repr = "'ConfigItem' object has no attribut
 
 def test_access_undefined_attribute():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         ConfigItem()
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     with raises(AttributeError) as exinfo:
         print(cr.b)
 
@@ -41,11 +41,11 @@ _t2_expected_repr = "'ConfigItem' object has no attribute 'b'"
 
 def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ConfigItem() as cr:
             cr.setattr('bs', pprd=1, prod=4, mc_set_unknown=True)
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
 
     with raises(AttributeError) as exinfo:
         print(cr.b)
@@ -65,12 +65,12 @@ _access_undefined_attribute_json_single_level_expected_repr = """{
 
 def test_access_undefined_attribute_json_single_level():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ItemWithAA(17):
             with ConfigItem():
                 ConfigItem()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
 
     with raises(AttributeError) as exinfo:
         print(cr.b)
@@ -85,10 +85,10 @@ _access_undefined_private_attribute_expected_repr = "'ConfigItem' object has no 
 
 def test_access_undefined_private_attribute():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         ConfigItem()
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     with raises(AttributeError) as exinfo:
         print(cr._b)
 

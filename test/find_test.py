@@ -53,7 +53,7 @@ def test_find_contained_in_named_as():
         pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with root3() as cr:
             cr.aa = 0
             NestedRepeatable(mc_key=0)
@@ -69,7 +69,7 @@ def test_find_contained_in_named_as():
                             with Y() as ci:
                                 ci.setattr('aa', prod=3, pp=2)
 
-    cr = ef2_pp_prod.config(prod2).root3
+    cr = config(prod2).root3
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].y.find_contained_in(named_as='x').aa == 1
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].y.find_contained_in(named_as='root3').aa == 0
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].y.find_contained_in(named_as='recursive_items').aa == 2
@@ -87,7 +87,7 @@ def test_find_attribute_attribute_name():
         pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with root4(aa=-1) as cr:
             cr.setattr('q', default='q0', mc_set_unknown=True)
             NestedRepeatable(mc_key=0)
@@ -105,7 +105,7 @@ def test_find_attribute_attribute_name():
                             with X() as ci:
                                 ci.setattr('aa', prod=3, pp=23)
 
-    cr = ef2_pp_prod.config(prod2).root4
+    cr = config(prod2).root4
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].x.find_attribute('aa') == 3
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].x.find_attribute('bb') == 'b1'
     assert cr.x.recursive_items['bb'].x.recursive_items['dd'].x.find_attribute('q') == 'q0'
@@ -121,12 +121,12 @@ def test_find_contained_in_or_none():
     i1_exp = [None]
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with KwargsItem(aa=1) as i1:
             i1_exp[0] = i1
             KwargsItem(aa=2)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.KwargsItem.KwargsItem.find_contained_in_or_none('notthere') is None
     assert cr.KwargsItem.KwargsItem.find_contained_in_or_none('KwargsItem') == i1_exp[0]
 
@@ -135,13 +135,13 @@ def test_find_attribute_or_none():
     exp_item = [None]
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with KwargsItem(aa=1, my_attr=0) as i1:
             i1.my_attr = 7
             KwargsItem(aa=2)
             exp_item[0] = ConfigItem()
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.KwargsItem.KwargsItem.find_attribute_or_none('notthere') is None
     assert cr.KwargsItem.KwargsItem.find_attribute_or_none('my_attr') == 7
 
@@ -174,7 +174,7 @@ def test_find_contained_in_named_as_not_found():
         pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with root(aa=0):
             NestedRepeatable(mc_key=0)
             with X() as ci:
@@ -189,7 +189,7 @@ def test_find_contained_in_named_as_not_found():
                             with Y() as ci:
                                 ci.setattr('aa', prod=3)
 
-    cr = ef1_prod.config(prod1).root
+    cr = config(prod1).root
     with raises(ConfigException) as exinfo:
         cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
 
@@ -219,7 +219,7 @@ def test_find_attribute_with_attribute_name_not_found():
             self.q = None
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with root(aa=0) as cr:
             cr.q = 17
             NestedRepeatable(mc_key=1)
@@ -237,7 +237,7 @@ def test_find_attribute_with_attribute_name_not_found():
                             with X() as ci:
                                 ci.setattr('aa', prod=3)
 
-    cr = ef1_prod.config(prod1).root
+    cr = config(prod1).root
     with raises(ConfigException) as exinfo:
         assert cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e') == 3
 

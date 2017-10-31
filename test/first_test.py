@@ -73,8 +73,8 @@ def test():
         return aa, bb, paa, pbb, oaa, obb, opaa, opbb, yaa, ybb, ypaa, ypbb
 
 
-    prod_cfg = ef.config(prod)
-    pp_cfg = ef.config(pp)
+    prod_cfg = config(prod)
+    pp_cfg = config(pp)
 
     res = dump(prod_cfg, pp)
     assert res == (22, 17, 1, 2, 11, 17, 33, 2, 23, 18, 1, 2)

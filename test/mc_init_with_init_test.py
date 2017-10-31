@@ -41,40 +41,40 @@ def test_mc_init_ref_env_attr_and_override():
             self.setattr('cc', default=17, mc_force=True)
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ConfigItem():
             X()
             Y()
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert cr.X.aa == 2
     assert cr.Y.aa == 39
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ConfigItem():
             with X(aa=2) as x:
                 x.aa = 3
 
-    cr = ef.config(pp).ConfigItem
+    cr = config(pp).ConfigItem
     assert cr.X.aa == 4
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ConfigItem():
             with X(aa=2) as x:
                 x.setattr('aa', default=3, pp=5)
 
-    cr = ef.config(pp).ConfigItem
+    cr = config(pp).ConfigItem
     assert cr.X.aa == 6
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ConfigItem():
             with Y(aa=2) as y:
                 y.aa = 3
 
-    cr = ef.config(pp).ConfigItem
+    cr = config(pp).ConfigItem
     assert cr.Y.aa == 5
     assert cr.Y.bb == 2
     assert cr.Y.cc == 17

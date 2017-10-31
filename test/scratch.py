@@ -27,7 +27,7 @@ class ItemWithAA(ConfigItem):
         self.aa = None
 
 @mc_config(ef)
-def _(_):
+def config(_):
     with ItemWithAA() as cr:
         print("here1")
         cr.setattr('aa', default=None, prod=1, pp=2)
@@ -35,6 +35,6 @@ def _(_):
 
     print("here3")
 print("here4")
-cr = ef.config(prod).ItemWithAA
+cr = config(prod).ItemWithAA
 assert cr.aa == 1
         

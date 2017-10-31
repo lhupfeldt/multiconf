@@ -25,21 +25,21 @@ def test_init_inherited():
             self.setattr('version', prod=version)
 
     @mc_config(efac)
-    def _(_):
+    def config(_):
         with ConfigItem():
             X1(version=1)
             X2(version=1)
 
-    project = efac.config(prod).ConfigItem
+    project = config(prod).ConfigItem
     assert project.X1.version == 1
     assert project.X2.version == 1
 
     @mc_config(efac)
-    def _(_):
+    def config(_):
         with ConfigItem():
             X1(version=1)
             X2(version=1)
 
-    project = efac.config(pp).ConfigItem
+    project = config(pp).ConfigItem
     assert project.X1.version == 1
     assert project.X2.version is None

@@ -7,7 +7,7 @@ import sys, os, traceback
 from collections import OrderedDict
 import json
 
-from .envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV
+from .envs import EnvFactory, Env, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, _McAttributeAccessor, Where
 from .property_wrapper import _McPropertyWrapper
@@ -1264,7 +1264,7 @@ def mc_config(
 
             cr._mc_check_unknown = False
             cr._mc_config_result[env] = res
-            env_factory.root_proxies[env] = rp
+            env_factory.root_proxies[conf_func.__name__, env] = rp
 
         if error_envs:
             raise ConfigException("The following envs had errors {}".format(error_envs))
@@ -1277,5 +1277,39 @@ def mc_config(
         cr._mc_env = NO_ENV
         _mc_debug("\n==== Calling 'mc_post_validate' ====")
         cr._mc_call_mc_post_validate_recursively()
+
+        def config_wrapper(env, allow_todo=False):
+            """Retreive the configuration 'conf' for the specified env.
+
+            NOTE, There can only be one current config!
+            It is possible to call 'config' multiple times, but storing references
+            to items in the configuration, and accessing attributes at a later time,
+            will return the value from the last env.
+
+            Arguments:
+                allow_todo (bool): If true, then retreiving a configuration for an env which contains `MC_TODO` values will not raise an error.
+
+            Return (Root ConfigItem proxy): Reference to the config with the current env set to env.
+            """
+
+            try:
+                cr = env_factory.root_proxies[conf_func.__name__, env]
+            except KeyError:
+                if not isinstance(env, Env):
+                    msg = "{ef_cls}: env must be instance of {env_cls!r}; found type '{got_typ}': {val!r}"
+                    raise ConfigException(msg.format(ef_cls=env_factory.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
+                if env.factory != env_factory:
+                    raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
+                raise  # Should not happen
+
+            if not allow_todo and cr._mc_todo_msgs[env]:
+                for msg, fname, line in cr._mc_todo_msgs[env]:
+                    print(_line_msg(file_name=fname, line_num=line), file=sys.stderr)
+                    print(msg, file=sys.stderr)
+                raise ConfigException("Trying to get invalid configuration containing MC_TODO")
+
+            return cr
+
+        return config_wrapper
 
     return deco

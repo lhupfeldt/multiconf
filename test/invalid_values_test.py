@@ -71,7 +71,7 @@ def test_attribute_mc_required_mc_force_env(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa', default=MC_REQUIRED, mc_force=True)
 
-    # ef1_prod_pp.config(prod1)
+    # config(prod1)
     _sout, serr = capsys.readouterr()
     assert lines_in(
         serr,
@@ -90,7 +90,7 @@ def test_attribute_mc_required_default(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa', default=MC_REQUIRED, pp="hello")
 
-    # ef1_prod_pp.config(prod1)
+    # config(prod1)
     _sout, serr = capsys.readouterr()
     print(_sout)
     assert serr == ce(errorline[0], _attribute_mc_required_expected)
@@ -106,7 +106,7 @@ def test_attribute_mc_required_init(capsys):
                 errorline[0] = next_line_num()
                 ci.setattr('aa', pp="hello")
 
-    # ef1_prod_pp.config(prod1)
+    # config(prod1)
     _sout, serr = capsys.readouterr()
     print(serr)
     print("errorline[0]", errorline[0])
@@ -123,7 +123,7 @@ def test_attribute_mc_required(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa', prod="hi", pp=MC_REQUIRED)
 
-    # ef1_prod_pp.config(prod1)
+    # config(prod1)
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline[0], mc_required_expected.format(attr='aa', env=pp1))
     assert replace_ids(str(exinfo.value), False) == _mc_required_one_error_expected_ex % dict(env_name='pp')
@@ -148,7 +148,7 @@ def test_attribute_mc_required_different_types(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa', dev=1, prod="hi", pp=MC_REQUIRED)
 
-    # ef2_prod_pp_dev.config(prod2)
+    # config(prod2)
     _sout, serr = capsys.readouterr()
 
     fl = start_file_line(__file__, errorline[0])
@@ -169,7 +169,7 @@ def test_attribute_mc_required_default_all_overridden():
             # TODO: This should actually not be allowed, it does not make sense!
             cr.setattr('aa', default=MC_REQUIRED, pp="hello", prod="hi")
 
-    cr = ef1_prod_pp.config(prod1).ItemWithAA
+    cr = config(prod1).ItemWithAA
     assert cr.aa == "hi"
 
 
@@ -184,7 +184,7 @@ def test_attribute_mc_required_init_args_all_overridden():
         with ConfigItem() as cr:
             Requires(aa=3)
 
-    cr = ef1_prod_pp.config(prod1).ConfigItem
+    cr = config1(prod1).ConfigItem
     assert cr.Requires.aa == 3
 
     @mc_config(ef1_prod_pp)
@@ -193,7 +193,7 @@ def test_attribute_mc_required_init_args_all_overridden():
             with Requires() as rq:
                 rq.aa = 3
 
-    cr = ef1_prod_pp.config(prod1).ConfigItem
+    cr = config2(prod1).ConfigItem
     assert cr.Requires.aa == 3
 
 
@@ -210,7 +210,7 @@ def test_attribute_mc_required_args_all_overridden_in_mc_init():
     def config(root):
         Requires()
 
-    cr = ef1_prod_pp.config(prod1)
+    cr = config(prod1)
     assert cr.Requires.aa == 7
 
 
@@ -229,12 +229,12 @@ def test_attribute_mc_required_args_partial_set_in_init_overridden_in_mc_init():
     @mc_config(ef1_prod_pp)
     def config(root):
         Requires()
-    cr = ef1_prod_pp.config(prod1)
+    cr = config(prod1)
 
     assert cr.Requires.aa == 7
     assert cr.Requires.b == 2
 
-    cr = ef1_prod_pp.config(pp1)
+    cr = config(pp1)
     assert cr.Requires.aa == 7
     assert cr.Requires.b == 7
 
@@ -253,11 +253,11 @@ def test_attribute_mc_required_args_partial_set_in_init_overridden_in_with():
             rq.aa = 8
             rq.setattr('b', pp=8)
 
-    cr = ef1_prod_pp.config(prod1)
+    cr = config(prod1)
     assert cr.Requires.aa == 8
     assert cr.Requires.b == 2
 
-    cr = ef1_prod_pp.config(pp1)
+    cr = config(pp1)
     assert cr.Requires.aa == 8
     assert cr.Requires.b == 8
 
@@ -273,10 +273,10 @@ def test_attribute_mc_required_args_set_in_init_overridden_in_with():
         with Requires() as rq:
             rq.aa = 7
 
-    cr = ef1_prod_pp.config(prod1)
+    cr = config(prod1)
     assert cr.Requires.aa == 7
 
-    cr = ef1_prod_pp.config(pp1)
+    cr = config(pp1)
     assert cr.Requires.aa == 7
 
 
@@ -326,7 +326,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     with raises(ConfigException) as exinfo:
         errorline[0] = next_line_num()
         @mc_config(ef1_prod_pp)
-        def _(root):
+        def config(root):
             McRequiredInInitL1()
 
     _sout, serr = capsys.readouterr()
@@ -343,7 +343,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp)
-        def _0(root):
+        def config0(root):
             with McRequiredInInitL1():
                 errorline[0] = next_line_num()
                 pass
@@ -362,7 +362,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     with raises(ConfigException) as exinfo:
         errorline[0] = next_line_num()
         @mc_config(ef1_prod_pp)
-        def _1(root):
+        def config1(root):
             McRequiredInInitL3()
 
     _sout, serr = capsys.readouterr()
@@ -377,7 +377,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp)
-        def _2(root):
+        def config2(root):
             with McRequiredInInitL3():
                 errorline[0] = next_line_num()
                 pass
@@ -397,7 +397,7 @@ def test_attribute_mc_required_init_args_missing_previous_item(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp)
-        def _(root):
+        def config(root):
             errorline[0] = next_line_num()
             McRequiredInInitL1()
             McRequiredInInitL3()
@@ -422,15 +422,15 @@ def test_attribute_mc_required_init_assign_all_overridden():
     def config(root):
         Requires(aa=3)
 
-    cr = ef1_prod_pp.config(prod1)
+    cr = config(prod1)
     assert cr.Requires.aa == 3
 
     @mc_config(ef1_prod_pp)
-    def _(_):
+    def config(_):
         with Requires() as rq:
             rq.aa = 3
 
-    cr = ef1_prod_pp.config(prod1)
+    cr = config(prod1)
     assert cr.Requires.aa == 3
 
 
@@ -457,7 +457,7 @@ def test_attribute_setattr_mc_required_force_in_init(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp)
-        def _(_):
+        def config(_):
             MyRoot()
 
     _sout, serr = capsys.readouterr()
@@ -482,7 +482,7 @@ def test_multiple_attributes_mc_required_init_not_set(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp)
-        def _(_):
+        def config(_):
             with ConfigItem() as cr:
                 errorline[0] = next_line_num()
                 ItemWithAAABBCC()
@@ -518,7 +518,7 @@ def test_multiple_attributes_mc_required_env(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp)
-        def _(_):
+        def config(_):
             with MyRoot() as cr:
                 errorline[0] = next_line_num()
                 cr.setattr('aa', prod=MC_REQUIRED, pp="hello")

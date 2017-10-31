@@ -29,14 +29,14 @@ def test_required_attributes_inherited_ok():
             self.someotherattr2 = MC_REQUIRED
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root2() as cr:
             cr.anattr = 1
             cr.anotherattr = 2
             cr.someattr2 = 3
             cr.someotherattr2 = 4
 
-    cr = ef.config(prod).root2
+    cr = config(prod).root2
 
     assert cr.anattr == 1
     assert cr.anotherattr == 2
@@ -64,7 +64,7 @@ def test_required_attributes_inherited_missing(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef, error_next_env=True)
-        def _(_):
+        def config(_):
             with root2() as cr:
                 errorline1[0] = next_line_num()
                 cr.setattr('anattr', prod=1)
@@ -104,7 +104,7 @@ def test_multiple_required_attributes_missing_for_configitem(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with root():
                 with item() as ii:
                     errorline1[0] = next_line_num()
@@ -128,7 +128,7 @@ def test_error_freezing_previous_sibling__validation(capsys):
 
     with raises(Exception) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with ConfigItem():
                 inner()
                 inner()

@@ -61,13 +61,13 @@ def test_configbuilder_with_required_item_decorator():
         pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             with XBuilder(num_servers=4, aa=7) as xb:
                 xb.setattr('num_servers', pp=1)
                 BItem()
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert len(cr.xses) == 4
     assert cr.xses['server1'].aa == 1  # Note: pre v6 this would have been 7 because of the automatic copy
     assert cr.xses['server4'].aa == 1  # Note: pre v6 this would have been 7 because of the automatic copy
@@ -76,7 +76,7 @@ def test_configbuilder_with_required_item_decorator():
     assert cr.xses['server4'].server_num == 4
     assert cr.xses['server3'].b_item.xx == 6
 
-    cr = ef2_pp_prod.config(pp2).Root
+    cr = config(pp2).Root
     assert len(cr.xses) == 1
     assert cr.xses['server1'].aa == 2
     assert cr.xses['server1'].server_num == 1
@@ -110,14 +110,14 @@ def test_configbuilder_build_with_mc_required():
         pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             with XBuilder(a=1, something=7) as xb:
                 xb.setattr('num_servers', pp=2)
                 xb.setattr('b', prod=3, pp=4)
                 xb.setattr('none_is_not_used', default=None, mc_set_unknown=True)
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert len(cr.xses) == 4
     # assert cr.xses['server1'].a == 1  # Attributes set on builder are no longer automatically set on built items
     # assert cr.xses['server2'].b == 3
@@ -150,13 +150,13 @@ def test_configbuilder_override_with_required_item():
         pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             with XBuilder(4) as xb:
                 xb.setattr('num_servers', pp=2)
                 b()
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert len(cr.xses) == 4
     assert cr.xses['server1'].server_num == 1
     assert cr.xses['server2'].b.xx == 1
@@ -184,11 +184,11 @@ def test_configbuilder_build_at_root_freeze():
         pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             XBuilder(a=1)
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert len(cr.xses) == 4
     for ii in 1, 2, 3, 4:
         name = 'server' + repr(ii)
@@ -213,11 +213,11 @@ def test_configbuilder_access_to_contained_in_from_build():
         aaa = 7
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             YBuilder()
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert cr.y.number == 7
     check_containment(cr)
 
@@ -243,11 +243,11 @@ def test_configbuilder_access_to_contained_in_from___init__():
         aaa = 7
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             XBuilder()
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert cr.x.number == 7
     check_containment(cr)
 
@@ -268,12 +268,12 @@ def test_configbuilder_access_to_contained_in_from_with_block():
         aaa = 7
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             with XBuilder() as xb:
                 parent[0] = xb.contained_in
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert parent[0] == cr
     check_containment(cr)
 
@@ -313,11 +313,11 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
         aaa = 7
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             XBuilder()
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert cr.x.number == 7
     assert cr.x.init_parent == cr
     assert cr.x.mc_init_parent == cr
@@ -343,14 +343,14 @@ def test_configbuilder_nested_items():
         aaa = 2
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             with XBuilder() as xb:
                 xb.b = 27
                 XChild(mc_key=10)
                 XChild(mc_key=11)
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert len(cr.xses) == 2
     for server in 'server1', 'server2':
         index = 10
@@ -381,7 +381,7 @@ def test_configbuilder_nested_items_access_to_contained_in():
         aaa = 2
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             with XBuilder() as xb:
                 xb.b = 27
@@ -390,7 +390,7 @@ def test_configbuilder_nested_items_access_to_contained_in():
                         assert ci.contained_in == x1
                 XChild(mc_key=11)
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert len(cr.xses) == 2
     for server in 'server1', 'server2':
         index = 10
@@ -442,7 +442,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
             self.a = mc_key
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with ItemWithYs() as item:
             with YBuilder() as yb1:
                 yb1.b = 27
@@ -453,7 +453,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
                     yc20[0] = YChild(mc_key=20)
                     YChild(mc_key=21)
 
-    item = ef2_pp_prod.config(prod2).ItemWithYs
+    item = config(prod2).ItemWithYs
 
     assert len(item.ys) == 2
     total = 0
@@ -513,7 +513,7 @@ def test_configbuilder_repeated():
         aaa = 2
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root() as cr:
             with XBuilder() as xb1:
                 XChild(mc_key=10)
@@ -522,7 +522,7 @@ def test_configbuilder_repeated():
                 xb2.last = 3
                 XChild(mc_key=10)
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
 
     assert len(cr.xses) == 3
     total_children = 0
@@ -556,7 +556,7 @@ def test_configbuilder_repeated_what_built():
         aaa = 2
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root() as cr:
             with XBuilder() as xb1:
                 builders['xb1'] = xb1
@@ -567,7 +567,7 @@ def test_configbuilder_repeated_what_built():
                 xb2.last = 3
                 XChild(mc_key=10)
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
 
     xfail("TODO: Implement 'what_built'?")
     xb1 = builders['xb1']
@@ -600,13 +600,13 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder_w
             pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with builder() as wii:
             ii[0] = wii
             A()
             B()
 
-    cr = ef1_prod.config(prod1)
+    cr = config(prod1)
     ii = ii[0]
     assert ii.a.xx == 1
     assert ii.b.xx == 2
@@ -626,13 +626,13 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder_w
             pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with builder() as wii:
             ii[0] = wii
             wii.a = 1
             wii.setattr('b', prod=2)
 
-    cr = ef1_prod.config(prod1)
+    cr = config(prod1)
     ii = ii[0]
     assert ii.a == 1
     assert ii.b == 2
@@ -653,11 +653,11 @@ def test_configbuilder_child_with_nested_repeatables():
         pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root():
             XBuilder()
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert len(cr.xses) == 1
     for x in cr.xses.values():
         assert len(x.x_children) == 1
@@ -677,11 +677,11 @@ def test_configbuilder_child_with_declared_but_not_defined_nested_repeatables():
         pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Root() as cr:
             XBuilder()
 
-    cr = ef2_pp_prod.config(prod2).Root
+    cr = config(prod2).Root
     assert len(cr.xses) == 1
     for x in cr.xses.values():
         assert isinstance(x.x_children, OrderedDict)
@@ -721,14 +721,14 @@ def test_configbuilders_alternating_with_items():
         pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with ItemWithName() as cr:
             cr.name = 'myp'
             with OuterItem():
                 with MiddleBuilder('base'):
                     InnerBuilder()
 
-    cr = ef1_prod.config(prod1).ItemWithName
+    cr = config(prod1).ItemWithName
     cr.json(compact=True)
     check_containment(cr)
 
@@ -759,13 +759,13 @@ def test_configbuilders_alternating_with_items_repeatable_simple():
         pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with ItemWithName() as cr:
             cr.name = 'myp'
             with OuterItem():
                 OuterBuilder()
 
-    cr = ef1_prod.config(prod1).ItemWithName
+    cr = config(prod1).ItemWithName
     cr.json()
     check_containment(cr)
 
@@ -806,12 +806,12 @@ def test_configbuilders_alternating_with_items_repeatable_many():
         pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with OuterItem():
             with MiddleBuilder('base'):
                 InnerBuilder()
 
-    cr = ef1_prod.config(prod1)
+    cr = config(prod1)
     cr.json(compact=True)
     check_containment(cr)
 
@@ -858,11 +858,11 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel():
         pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with OuterItem():
             OuterBuilder()
 
-    cr = ef1_prod.config(prod1)
+    cr = config(prod1)
     cr.json(builders=True)
     check_containment(cr)
 
@@ -886,12 +886,12 @@ def test_item_parent_proxy_get_env():
         pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with OuterItem():
             with Builder():
                 ConfigItem()
 
-    cr = ef1_prod.config(prod1)
+    cr = config(prod1)
     assert cr.OuterItem.inners['innermost'].ConfigItem.env == prod1
 
 
@@ -912,11 +912,11 @@ def test_assign_underscore_on_proxied_built_item_child_after_freeze():
 
     # Test assignment '_xxx'ok
     @mc_config(ef1_prod)
-    def _(root):
+    def config(root):
         with YBuilder():
             ConfigItem()
 
         root.y.ConfigItem._aa = 1
 
-    cr = ef1_prod.config(prod1)
+    cr = config(prod1)
     assert cr.y.ConfigItem._aa == 1

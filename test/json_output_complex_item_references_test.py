@@ -151,14 +151,14 @@ def test_json_dump_attr_dict_ref_item():
             ref2 = Ref2()
         return ref1, ref2
 
-    cfg = ef.config(pprd)
+    cfg = config(pprd)
     ref1, ref2 = cfg.mc_config_result
     assert compare_json(cfg.ItemWithAA, _json_dump_pprd_attr_dict_ref_item_expected_json % dict(py3_local=py3_local()))
     assert ref1.mm == ref1
     assert ref1.nn == Ref0
     assert ref2.r1mmnn == 1114
 
-    cfg = ef.config(prod)
+    cfg = config(prod)
     ref1, ref2 = cfg.mc_config_result
     assert compare_json(cfg.ItemWithAA, _json_dump_prod_attr_dict_ref_item_expected_json,
                         expected_all_envs_json=_json_dump_all_envs_attr_dict_ref_item_expected_json % dict(py3_local=py3_local()))
@@ -226,7 +226,7 @@ def test_json_dump_attr_list_ref_item():
             ref2 = Ref2()
         return ref1, ref2
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     ref1, ref2 = cr.root_conf.mc_config_result
     assert compare_json(cr, _json_dump_attr_list_ref_item_expected_json)
     assert ref1.mm == ref1
@@ -295,7 +295,7 @@ def test_json_dump_attr_tuple_ref_item():
             ref2 = Ref2()
         return ref1, ref2
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     ref1, ref2 = cr.root_conf.mc_config_result
     assert compare_json(cr, _json_dump_attr_tuple_ref_item_expected_json)
     assert ref1.mm == ref1
@@ -318,13 +318,13 @@ def test_json_dump_ref_outside_exluded_item1():
         pass
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ItemWithName('Tootsi') as it:
             it.mc_select_envs(exclude=[prod])
         with Ref1() as ref1:
             ref1.aa = it
 
-    cr = ef.config(prod)
+    cr = config(prod)
     ref1 = cr.Ref1
     assert compare_json(ref1, _json_dump_ref_outside_exluded_item1_expected_json)
 
@@ -344,14 +344,14 @@ def test_json_dump_ref_outside_exluded_item_partially_set_name_attribute_mc_requ
         pass
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ItemWithName() as it:
             it.mc_select_envs(exclude=[prod])
             it.setattr('name', pprd='Tootsi')
         with Ref1() as ref1:
             ref1.aa = it
 
-    cr = ef.config(prod)
+    cr = config(prod)
     ref1 = cr.Ref1
     assert compare_json(ref1, _json_dump_ref_outside_exluded_item_partially_set_name_attribute_mc_required_expected_json)
 
@@ -371,13 +371,13 @@ def test_json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_exi
         pass
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ConfigItem() as it:
             it.mc_select_envs(exclude=[prod])
             it.setattr('name', pprd='Tootsi', mc_set_unknown=True)
         with Ref1() as ref1:
             ref1.aa = it
 
-    cr = ef.config(prod)
+    cr = config(prod)
     ref1 = cr.Ref1
     assert compare_json(ref1, _json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_existing_expected_json)

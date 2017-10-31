@@ -42,7 +42,7 @@ def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp)
-        def _(_):
+        def config(_):
             with Builder():
                 errorline[0] = line_num()
 

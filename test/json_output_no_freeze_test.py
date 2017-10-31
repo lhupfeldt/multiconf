@@ -43,89 +43,89 @@ class NestedRepeatable(RepeatableConfigItem):
 
 def test_json_no_freeze_before_setattr():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a', aa=7) as ci:
                 print(ci)
                 ci.setattr('aa', prod=1, pp=2)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.someitems['a'].aa == 1
 
-    cr = ef.config(pp).root
+    cr = config(pp).root
     assert cr.someitems['a'].aa == 2
 
 
 def test_json_no_freeze_after_setattr():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a', aa=7) as ci:
                 ci.setattr('aa', prod=1, pp=2)
                 print(ci)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.someitems['a'].aa == 1
 
-    cr = ef.config(pp).root
+    cr = config(pp).root
     assert cr.someitems['a'].aa == 2
 
 
 def test_json_no_freeze_before_setattr_mc_required():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a') as ci:
                 print(ci)
                 ci.setattr('aa', prod=1, pp=2)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.someitems['a'].aa == 1
 
-    cr = ef.config(pp).root
+    cr = config(pp).root
     assert cr.someitems['a'].aa == 2
 
 
 def test_json_no_freeze_after_setattr_mc_required():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a') as ci:
                 ci.setattr('aa', prod=1, pp=2)
                 print(ci)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.someitems['a'].aa == 1
 
-    cr = ef.config(pp).root
+    cr = config(pp).root
     assert cr.someitems['a'].aa == 2
 
 
 def test_json_no_freeze_no_setattr():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a', aa=7) as ci:
                 print(ci)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.someitems['a'].aa == 7
 
-    cr = ef.config(pp).root
+    cr = config(pp).root
     assert cr.someitems['a'].aa == 7
 
 
 def test_json_no_freeze_no_setattr_mc_required():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a') as ci:
                 print(ci)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.someitems['a'].aa == 17
 
-    cr = ef.config(pp).root
+    cr = config(pp).root
     assert cr.someitems['a'].aa == 17
 
 
@@ -143,7 +143,7 @@ def test_json_no_freeze_after_setattr_property():
 
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root(aa=0):
             with Xx() as xx:
                 print(xx)
@@ -152,10 +152,10 @@ def test_json_no_freeze_after_setattr_property():
                 ci.setattr('aa', prod=1, pp=2)
                 print(ci)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.someitems['a'].aa == 1
 
-    cr = ef.config(pp).root
+    cr = config(pp).root
     assert cr.someitems['a'].aa == 2
 
     assert cr.Xx.aa == 3
@@ -198,7 +198,7 @@ def test_json_no_freeze_after_setattr_property_side_effect_error(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with root(aa=0):
                 with Xx() as xx:
                     print(xx)

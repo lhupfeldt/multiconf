@@ -26,7 +26,7 @@ prod = ef_pp_prod.Env('prod')
 def test_type_check_enable_not_allowed_for_older_python(capsys):
     with raises(ConfigException) as exinfo:
         @mc_config(ef_pp_prod, do_type_check=True)
-        def _(_):
+        def config(_):
             pass
 
     assert str(exinfo.value) == "Type checking only supported from Python 3.6.1"
@@ -38,10 +38,10 @@ def test_type_check_enable_not_allowed_for_older_python(capsys):
 
 def test_type_check_disable_allowed(capsys):
     @mc_config(ef_pp_prod, do_type_check=False)
-    def _(_):
+    def config(_):
         pass
 
-    ef_pp_prod.config(pp)
+    config(pp)
 
     sout, serr = capsys.readouterr()
     assert not sout

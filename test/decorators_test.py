@@ -43,7 +43,7 @@ def test_named_as():
             proj.name = 'abc'
         return proj
 
-    cfg = ef2_prod_dev2ct.config(prod2)
+    cfg = config(prod2)
     assert replace_ids(repr(cfg.mc_config_result), named_as=False) == _g_expected
 
 
@@ -56,7 +56,7 @@ def test_nested_repeatables():
     def config(croot):
         root()
 
-    cr = ef1_prod.config(prod1).root
+    cr = config(prod1).root
     assert cr.ritm1 == {}
     assert cr.ritm2 == {}
 
@@ -84,14 +84,14 @@ def test_mc_key_value():
         pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with root() as cr:
             Rr('aa')
             Rr('bb')
             SingularRr()
             Singular2()
 
-    cr = ef1_prod.config(prod1).root
+    cr = config(prod1).root
     assert 'aa' in cr.ritem
     assert 'bb' in cr.ritem
     assert 'single' in cr.ritem
@@ -126,7 +126,7 @@ def test_repeatable_key():
         pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with root() as cr:
             Rr('aa')
             Rr('bb')
@@ -135,7 +135,7 @@ def test_repeatable_key():
             FixedKeyRr()
             FixedKey2()
 
-    cr = ef1_prod.config(prod1).root
+    cr = config(prod1).root
     print(cr.ritem)
     assert 'aa' in cr.ritem
     assert 'bb' in cr.ritem

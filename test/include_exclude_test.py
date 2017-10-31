@@ -105,7 +105,7 @@ _include_exclude_for_configitem_all_envs_expected_json = """{
 
 def test_include_for_configitem_with_mc_required():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_include=[dev1, pp]) as it:
@@ -113,13 +113,13 @@ def test_include_for_configitem_with_mc_required():
                 it.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True,
                         expected_all_envs_json=_include_exclude_for_configitem_all_envs_expected_json)
 
-    cr = ef.config(dev1).ItemWithAA
+    cr = config(dev1).ItemWithAA
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
 
@@ -138,7 +138,7 @@ _include_exclude_for_decorated_configitem_expected_json = """{
 
 def test_include_for_configitem_with_required_decorator():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
             with decorated_item(mc_include=[dev1, pp]) as it:
@@ -146,19 +146,19 @@ def test_include_for_configitem_with_required_decorator():
                 anotheritem()
         return cr
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_decorated_configitem_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).ItemWithAA
+    cr = config(dev1).ItemWithAA
     assert cr.item.anitem.xx == 1
     assert cr.item.anotheritem.xx == 2
 
 
 def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_exclude=[dev2, prod]) as it:
@@ -167,12 +167,12 @@ def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
                 it.setattr('anotherattr', dev1=1, dev3=0, pp=2)
         return cr
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).ItemWithAA
+    cr = config(dev1).ItemWithAA
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
 
@@ -182,7 +182,7 @@ def test_include_missing_for_configitem(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(rt):
+        def config(rt):
             with ItemWithAA() as cr:
                 cr.aa = 1
                 with item(mc_include=[dev1, pp]) as it:
@@ -198,7 +198,7 @@ def test_include_missing_for_configitem(capsys):
 
 def test_exclude_for_configitem():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_exclude=[dev2, prod]) as it:
@@ -206,12 +206,12 @@ def test_exclude_for_configitem():
                 it.setattr('anotherattr', dev1=1, dev3=0, pp=2)
         return cr
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).ItemWithAA
+    cr = config(dev1).ItemWithAA
     assert cr.item.anattr == 2
     assert cr.item.anotherattr == 1
 
@@ -250,13 +250,13 @@ _include_exclude_for_configitem_repeatable_expected_json = """{
 
 def test_include_for_configitem_repeatable_with_mc_required():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=1):
             with ritem('a', mc_include=[dev1, pp]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
                 it.setattr('anotherattr', dev1=1, pp=2)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.aa == 1
     assert cr.ritems == {}
     for key, val in cr.ritems.items():
@@ -267,14 +267,14 @@ def test_include_for_configitem_repeatable_with_mc_required():
         fail("There should not be any values")
     assert compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.ritems['a'].anattr == 2
     assert cr.ritems['a'].anotherattr == 1
 
 
 def test_include_for_configitem_repeatable_with_required_decorater():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root() as cr:
             cr.aa = 1
             with decorated_ritem('a', mc_include=[dev1, pp]) as it:
@@ -282,37 +282,37 @@ def test_include_for_configitem_repeatable_with_required_decorater():
                 anotheritem()
         return cr
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.aa == 1
     assert cr.ritems == {}
     assert compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.ritems['a'].anitem.xx == 1
     assert cr.ritems['a'].anotheritem.xx == 2
 
 
 def test_exclude_for_configitem_repeatable():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=1):
             with ritem('a', mc_exclude=[dev2, prod]) as it:
                 it.setattr('anattr', pp=1, g_dev12_3=2)
                 it.setattr('anotherattr', dev1=1, dev3=0, pp=2)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.aa == 1
     assert cr.ritems == {}
     assert compare_json(cr, _include_exclude_for_configitem_repeatable_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.ritems['a'].anattr == 2
     assert cr.ritems['a'].anotherattr == 1
 
 
 def test_exclude_for_nested_configitem():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
@@ -323,19 +323,19 @@ def test_exclude_for_nested_configitem():
                     it2.setattr('anotherattr', dev1=1, pp=2)
         return cr
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).ItemWithAA
+    cr = config(dev1).ItemWithAA
     assert cr.item.item.anattr == 2
     assert cr.item.item.anotherattr == 1
 
 
 def test_exclude_for_repeatable_nested_configitem():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=1):
             with ritem('a', mc_exclude=[dev2, dev3, prod]) as rit:
                 rit.setattr('anattr', pp=1, g_dev12_3=2)
@@ -361,7 +361,7 @@ def test_exclude_for_repeatable_nested_configitem():
                     it1.setattr('anattr', pp=1, g_dev12_3=2)
                     it1.setattr('anotherattr', dev1=1, dev3=0, pp=2)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.aa == 1
     assert 'a' not in cr.ritems
     assert 'b' in cr.ritems
@@ -370,7 +370,7 @@ def test_exclude_for_repeatable_nested_configitem():
     assert 'c' not in cr.ritems
     assert len(cr.ritems) == 1
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.aa == 1
     assert 'a' in cr.ritems
     assert 'b' not in cr.ritems
@@ -383,7 +383,7 @@ def test_exclude_for_repeatable_nested_configitem():
 
 def test_exclude_for_repeatable_nested_excludes_configitem():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root() as cr:
             cr.aa = 1
             with ritem('a', mc_exclude=[dev2, prod]) as rit:
@@ -405,7 +405,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
 
         return cr
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.aa == 1
     assert len(cr.ritems) == 1
 
@@ -414,7 +414,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['b'].anattr == 31
     assert cr.ritems['b'].item.anattr == 33
 
-    cr = ef.config(dev1).root
+    cr = config(dev1).root
     assert cr.aa == 1
     assert len(cr.ritems) == 1
 
@@ -423,7 +423,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['a'].item.item.anattr == 2
     assert 'b' not in cr.ritems
 
-    cr = ef.config(pp).root
+    cr = config(pp).root
     assert cr.aa == 1
     assert len(cr.ritems) == 2
 
@@ -434,7 +434,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['b'].anattr == 1
     assert not cr.ritems['b'].item
 
-    cr = ef.config(dev2).root
+    cr = config(dev2).root
     assert cr.aa == 1
     assert len(cr.ritems) == 1
 
@@ -447,7 +447,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
     assert cr.ritems['b'].item.anattr == 2
     assert cr.ritems['b'].item.anotherattr == 1
 
-    cr = ef.config(dev3).root
+    cr = config(dev3).root
     assert cr.aa == 1
     assert len(cr.ritems) == 1
 
@@ -464,7 +464,7 @@ def test_exclude_include_overlapping_for_configitem(capsys):
     """Test that most specifig group/env wins"""
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev12]) as it:
@@ -473,27 +473,27 @@ def test_exclude_include_overlapping_for_configitem(capsys):
                 it.setattr('anotherattr', default=111)
         return cr
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).ItemWithAA
+    cr = config(dev1).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
 
-    cr = ef.config(dev2).ItemWithAA
+    cr = config(dev2).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
 
-    cr = ef.config(dev3).ItemWithAA
+    cr = config(dev3).ItemWithAA
     assert cr.aa == 1
     assert cr.item
     assert cr.item.anattr == 2
     assert cr.item.b == 0
     assert cr.item.anotherattr == 111
 
-    cr = ef.config(pp).ItemWithAA
+    cr = config(pp).ItemWithAA
     assert cr.aa == 1
     assert cr.item
     assert cr.item.anattr == 1
@@ -508,7 +508,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
     with raises(ConfigException) as exinfo:
         # No most specific
         @mc_config(ef)
-        def _(rt):
+        def config(rt):
             with ItemWithAA(aa=0):
                 errorline[0] = next_line_num()
                 item(mc_exclude=[dev1], mc_include=[dev1, pp])
@@ -521,7 +521,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
     with raises(ConfigException) as exinfo:
         # No most specific
         @mc_config(ef)
-        def _(rt):
+        def config(rt):
             with ItemWithAA(aa=0):
                 errorline[0] = next_line_num()
                 item(mc_exclude=[pp, dev1], mc_include=[dev1])
@@ -540,7 +540,7 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init(capsys
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(rt):
+        def config(rt):
             with root(aa=1):
                 with ritem('a', mc_exclude=[prod]) as ri:
                     ri.anattr = 1
@@ -558,7 +558,7 @@ def test_exclude_include_overlapping_resolved_with_include_for_configitem():
     """Test that most specifig group/env wins"""
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_include=[g_dev12, pp, dev2], mc_exclude=[g_dev23]) as it:
@@ -567,21 +567,21 @@ def test_exclude_include_overlapping_resolved_with_include_for_configitem():
                 it.setattr('anotherattr', default=111)
         return cr
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).ItemWithAA
+    cr = config(dev1).ItemWithAA
     assert cr.item
 
-    cr = ef.config(dev2).ItemWithAA
+    cr = config(dev2).ItemWithAA
     assert cr.item
     assert cr.item.b == 0
 
-    cr = ef.config(dev3).ItemWithAA
+    cr = config(dev3).ItemWithAA
     assert not cr.item
 
-    cr = ef.config(pp).ItemWithAA
+    cr = config(pp).ItemWithAA
     assert cr.item
     assert cr.item.anattr == 1
     assert cr.item.b == 1
@@ -592,7 +592,7 @@ def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
     """Test that most specifig group/env wins"""
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
             with item(mc_include=[g_dev12, pp], mc_exclude=[dev2, g_dev23]) as it:
@@ -601,20 +601,20 @@ def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
                 it.setattr('anotherattr', default=111)
         return cr
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).ItemWithAA
+    cr = config(dev1).ItemWithAA
     assert cr.item
 
-    cr = ef.config(dev2).ItemWithAA
+    cr = config(dev2).ItemWithAA
     assert not cr.item
 
-    cr = ef.config(dev3).ItemWithAA
+    cr = config(dev3).ItemWithAA
     assert not cr.item
 
-    cr = ef.config(pp).ItemWithAA
+    cr = config(pp).ItemWithAA
     assert cr.item
     assert cr.item.anattr == 1
     assert cr.item.b == 1
@@ -623,7 +623,7 @@ def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
 
 def test_exclude_include_disjunct_for_configitem():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
             # Allowed but unnecessary 'mc_exclude'
@@ -633,31 +633,31 @@ def test_exclude_include_disjunct_for_configitem():
                 it.setattr('anotherattr', default=111)
         return cr
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
     assert not cr.item
     assert compare_json(cr, _include_exclude_for_configitem_expected_json, test_excluded=True)
 
-    cr = ef.config(dev1).ItemWithAA
+    cr = config(dev1).ItemWithAA
     assert cr.aa == 1
     assert cr.item
     assert cr.item.anattr == 2
     assert cr.item.b == 3
     assert cr.item.anotherattr == 111
 
-    cr = ef.config(dev2).ItemWithAA
+    cr = config(dev2).ItemWithAA
     assert cr.item
     assert cr.item.anattr == 2
     assert cr.item.b == 17
     assert cr.item.anotherattr == 111
 
-    cr = ef.config(dev3).ItemWithAA
+    cr = config(dev3).ItemWithAA
     assert cr.item
     assert cr.item.anattr == 2
     assert cr.item.b == 0
     assert cr.item.anotherattr == 111
 
-    cr = ef.config(pp).ItemWithAA
+    cr = config(pp).ItemWithAA
     assert not cr.item
 
 
@@ -668,7 +668,7 @@ def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_en
     with raises(ConfigException) as exinfo:
         # No most specific
         @mc_config(ef)
-        def _(rt):
+        def config(rt):
             with ItemWithAA():
                 with McSelectOverrideItem() as it:
                     errorline[0] = next_line_num()
@@ -683,7 +683,7 @@ def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_en
     with raises(ConfigException) as exinfo:
         # No most specific
         @mc_config(ef)
-        def _(rt):
+        def config(rt):
             with ItemWithAA():
                 with McSelectOverrideItem2() as it:
                     errorline[0] = next_line_num()
@@ -711,7 +711,7 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init_overri
                 iitem(mc_exclude=[dev2], mc_include=[dev2, prod])
 
         @mc_config(ef)
-        def _(rt):
+        def config(rt):
             with root(aa=1):
                 X()
 
@@ -721,17 +721,17 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init_overri
 
 def test_exclude__getattr__():
     @mc_config(ef)
-    def conf(_):
+    def config(_):
         with ConfigItem() as cr:
             with item(mc_exclude=[dev2]) as it:
                 it.anattr = 1
                 it.anotherattr = 2
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert cr.item
     assert cr.item.anattr
 
-    cr = ef.config(dev2).ConfigItem
+    cr = config(dev2).ConfigItem
     assert not cr.item
     with raises(ConfigExcludedAttributeError) as exinfo:
         _ = cr.item.anattr
@@ -741,20 +741,20 @@ def test_exclude__getattr__():
 
 def test_exclude_getattr():
     @mc_config(ef)
-    def conf(_):
+    def config(_):
         with ConfigItem() as cr:
             with item(mc_exclude=[dev2]) as it:
                 it.anattr = 1
                 it.anotherattr = 2
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert cr.item
     with raises(ConfigExcludedAttributeError) as exinfo:
         _ = cr.item.getattr('anattr', dev2)
     exp = "Accessing attribute 'anattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_test.item'>"
     assert exp in str(exinfo.value)
 
-    cr = ef.config(dev2).ConfigItem
+    cr = config(dev2).ConfigItem
     assert not cr.item
     with raises(ConfigExcludedAttributeError) as exinfo:
         _ = cr.item.getattr('anattr', dev2)

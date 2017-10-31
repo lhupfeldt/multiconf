@@ -22,13 +22,13 @@ prod = ef.Env('prod')
 
 def test_setattr_root():
     @mc_config(ef)
-    def _(root):
+    def config(root):
         root.setattr('aa', default=1, prod=2, mc_set_unknown=True)
 
-    cr = ef.config(prod)
+    cr = config(prod)
     assert cr.aa == 2
 
-    cr = ef.config(pprd)
+    cr = config(pprd)
     assert cr.aa == 1
 
 
@@ -39,7 +39,7 @@ def test_assignment_root(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(root):
+        def config(root):
             errorline[0] = next_line_num()
             root.aa = 1
 
@@ -49,10 +49,10 @@ def test_assignment_root(capsys):
 
 def test_env_root():
     @mc_config(ef)
-    def _(root):
+    def config(root):
         pass
 
-    cr = ef.config(prod)
+    cr = config(prod)
     assert cr.env == prod
 
 
@@ -67,8 +67,8 @@ _repr_root_expected = """{
 
 def test_repr_root():
     @mc_config(ef)
-    def _(root):
+    def config(root):
         root.setattr('aa', default=1, prod=2, mc_set_unknown=True)
 
-    cr = ef.config(prod)
+    cr = config(prod)
     assert replace_ids(repr(cr), False) == _repr_root_expected

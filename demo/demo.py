@@ -18,7 +18,7 @@ import config
 
 def generate(env):
     print('---- Instantiating config for env: ' + repr(env) + ' -----')
-    c = config.ef.config(config.ef.env(env)).weblogic_config
+    c = config.config(config.ef.env(env)).weblogic_config
 
     print('\n---- Printing entire config as "compact" json: -----')
     # json will dump property method values as well as multiconf property values

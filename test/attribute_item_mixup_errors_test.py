@@ -66,7 +66,7 @@ _nested_item_overrides_simple_attribute_expected_ex = """'ConfigItem' is defined
 def test_nested_item_overrides_simple_attribute():
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def config(_):
             with ConfigItem() as cr:
                 cr.setattr('ConfigItem', default="hello", mc_set_unknown=True)
                 ConfigItem()
@@ -77,7 +77,7 @@ def test_nested_item_overrides_simple_attribute():
 def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repeatable():
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             with ConfigItem() as cr:
                 # cr.RepeatableItems is just an attribute named like an item
                 cr.setattr('RepeatableItems', prod="hello", mc_set_unknown=True)
@@ -94,7 +94,7 @@ def test_attempt_to_replace_empty_nested_repeatable_by_attribute_assignment(caps
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             # RepeatableItems is just an attribute named like an item
             with project() as cr:
                 errorline[0] = next_line_num()
@@ -111,7 +111,7 @@ def test_attempt_to_replace_non_empty_nested_repeatable_by_attribute_assignment(
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             # RepeatableItems is just an attribute named like an item
             with project() as cr:
                 RepeatableItem(mc_key='a')
@@ -148,7 +148,7 @@ def test_simple_attribute_attempt_to_override_contained_item(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             with ConfigItem() as cr:
                 with ConfigItem():
                     pass
@@ -160,7 +160,7 @@ def test_simple_attribute_attempt_to_override_contained_item(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod)
-        def _(_):
+        def config(_):
             with ConfigItem() as cr:
                 ConfigItem()
                 errorline[0] = next_line_num()
