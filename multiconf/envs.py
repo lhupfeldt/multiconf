@@ -147,7 +147,6 @@ class EnvGroup(BaseEnv, Container):
 
 class EnvFactory(object):
     def __init__(self):
-        self.root_proxies = {}
         self.envs = OrderedDict()
         self.groups = OrderedDict()
         self._index = 1  # bit zero reserved to be set for all groups, so that a Group mask will never be equal to an env mask

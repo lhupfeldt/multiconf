@@ -1231,6 +1231,7 @@ def mc_config(
         _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
 
         # Load envs
+        root_proxies = {}
         error_envs = []
         for env in env_factory.envs.values():
             _mc_debug("\n==== Loading", env, "====")
@@ -1264,7 +1265,7 @@ def mc_config(
 
             cr._mc_check_unknown = False
             cr._mc_config_result[env] = res
-            env_factory.root_proxies[conf_func.__name__, env] = rp
+            root_proxies[env] = rp
 
         if error_envs:
             raise ConfigException("The following envs had errors {}".format(error_envs))
@@ -1293,7 +1294,7 @@ def mc_config(
             """
 
             try:
-                cr = env_factory.root_proxies[conf_func.__name__, env]
+                cr = root_proxies[env]
             except KeyError:
                 if not isinstance(env, Env):
                     msg = "{ef_cls}: env must be instance of {env_cls!r}; found type '{got_typ}': {val!r}"
