@@ -51,16 +51,16 @@ def test_env_factories_ef1():
     def config(root):
         with item() as it:
             it.setattr('aa', default=13)
-    cfg = ef.config(prod)
+    cfg = config(prod)
     assert cfg.item.aa == 13
-    cfg = ef.config(dev1)
+    cfg = config(dev1)
     assert cfg.item.aa == 13
 
     @mc_config(ef)
     def config(root):
         with item() as it:
             it.setattr('aa', dev1=1, dev2=2, pp=3, prod=4)
-    cfg = ef.config(dev1)
+    cfg = config(dev1)
 
     assert cfg.item.aa == 1
     assert cfg.item.bb == 111
@@ -134,7 +134,7 @@ def test_env_factories_ef2():
         with item() as it:
             it.setattr('aa', default=13)
 
-    conf = ef.config(prod)
+    conf = config(prod)
     assert conf.item.aa == 13
 
     @mc_config(ef)
@@ -143,20 +143,20 @@ def test_env_factories_ef2():
             with item() as it:
                 it.setattr('aa', dev1=1, g_dev=7, g_prod=17)
 
-    conf = ef.config(prod)
+    conf = config(prod)
     it = conf.ConfigItem.item
     assert it.aa == 17
     assert it.bb == 111
 
-    conf = ef.config(dev1)
+    conf = config(dev1)
     it = conf.ConfigItem.item
     assert it.aa == 1
     assert it.bb == 111
 
-    conf = ef.config(dev2)
+    conf = config(dev2)
     assert conf.ConfigItem.item.aa == 7
 
-    conf = ef.config(dev3)
+    conf = config(dev3)
     assert conf.ConfigItem.item.aa == 7
     
 

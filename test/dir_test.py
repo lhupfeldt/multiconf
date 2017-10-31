@@ -30,7 +30,7 @@ def test_dir():
             return 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0) as iaa:
             iaa.setattr('bb', default=1, pp=2, mc_set_unknown=True)
             with Nested() as nn:
@@ -38,7 +38,7 @@ def test_dir():
                 with RepeatableItemWithAA('rep1', 7) as rep:
                     rep.setattr('bb', default=1, pp=2, mc_set_unknown=True)
 
-    cr = ef.config(prod)
+    cr = config(prod)
 
     iaa = cr.ItemWithAA
     dir_iaa = dir(iaa)

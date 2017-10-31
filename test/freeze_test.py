@@ -61,7 +61,7 @@ def test_automatic_freeze_of_child_on_exit():
     def config(root):
         with ItemWithAA() as ci:
             ci.aa = 1
-    prod_cfg = ef1_prod.config(prod1)
+    prod_cfg = config(prod1)
     assert prod_cfg.ItemWithAA.aa == 1
 
 

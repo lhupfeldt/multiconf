@@ -34,7 +34,7 @@ def test_value_not_assigned_to_all_envs_in_builder(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with B() as bb:
                 errorline[0] = next_line_num()
                 bb.setattr('aa', prod="hello")
@@ -53,7 +53,7 @@ def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_i
                 raise Exception("in build")
 
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with root():
                 with inner():
                     raise Exception("in with")
@@ -72,7 +72,7 @@ def test_error_freezing_previous_sibling__build(capsys):
 
     with raises(Exception) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             errorline[0] = next_line_num()
             inner(1)
             inner(2)
@@ -105,7 +105,7 @@ def test_build_override_underscore_mc_error(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             B()
 
     _sout, serr = capsys.readouterr()
@@ -134,7 +134,7 @@ def test_setattr_no_envs(capsys):
         
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with B() as ci:
                 errorline[0] = next_line_num()
                 ci.setattr('aa')
@@ -143,7 +143,7 @@ def test_setattr_no_envs(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with B() as ci:
                 errorline[0] = next_line_num()
                 ci.setattr('aa', 1)
@@ -173,7 +173,7 @@ def test_setattr_no_envs_set_unknown(capsys):
         
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with B() as ci:
                 errorline[0] = next_line_num()
                 ci.setattr('aa?')
@@ -182,7 +182,7 @@ def test_setattr_no_envs_set_unknown(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with B() as ci:
                 errorline[0] = next_line_num()
                 ci.setattr('aa?', 1)

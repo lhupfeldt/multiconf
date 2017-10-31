@@ -29,11 +29,11 @@ def test_mc_post_validate_getattr_env():
             assert self.getattr('aa', prod2) == self.getattr('aa', pp2) == 7
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with root():
             pass
 
-    rt = ef2_pp_prod.config(prod2).root
+    rt = config(prod2).root
     assert rt.aa == 7
 
 
@@ -44,7 +44,7 @@ def test_setattr_not_allowed_in_mc_post_validate():
 
     with raises(ConfigApiException) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def config(_):
             with root():
                 pass
 
@@ -60,7 +60,7 @@ def test_item_dot_attr_not_allowed_in_mc_post_validate():
 
     with raises(ConfigApiException) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def config(_):
             with root() as rt:
                 rt.aa = 1
 
@@ -76,7 +76,7 @@ def test_mc_post_validate_exception():
 
     with raises(Exception) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def config(_):
             with ConfigItem():
                 item()
 
@@ -93,7 +93,7 @@ def test_mc_post_validate_excluded_item():
 
     with raises(ConfigExcludedAttributeError) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def config(_):
             with root() as rt:
                 rt.mc_select_envs(exclude=[pp2])
 
@@ -117,7 +117,7 @@ def test_mc_post_validate_excluded_repeatable_item():
 
     with raises(ConfigExcludedAttributeError) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def config(_):
             with Root() as rt:
                 Rep(1)
                 with Rep(2) as r2:

@@ -25,7 +25,7 @@ g_prod = ef.EnvGroup('g_prod', preprod, prod)
 # This function is used to describe all environments and return an instantiated environment
 # configuration for environment with name 'env_name', which is passed as parameter
 @mc_config(ef)
-def _(_):
+def config(_):
     # This will define a weblogic configuration for all environments defined above
     # But the result of execution of conf() will be the setting for environment
     # passed as argument 'env_name'

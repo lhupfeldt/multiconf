@@ -75,11 +75,11 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
         pass
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ItemWithName('myp'):
             with OuterItem():
                 OuterBuilder()
 
-    cr = ef.config(prod).ItemWithName
+    cr = config(prod).ItemWithName
     cr.json(builders=True)
     # TODO, verify values

@@ -147,7 +147,6 @@ class EnvGroup(BaseEnv, Container):
 
 class EnvFactory(object):
     def __init__(self):
-        self.root_proxies = {}
         self.envs = OrderedDict()
         self.groups = OrderedDict()
         self._index = 1  # bit zero reserved to be set for all groups, so that a Group mask will never be equal to an env mask
@@ -301,39 +300,6 @@ class EnvFactory(object):
             return 2
 
         return None
-
-
-    def config(self, env, allow_todo=False):
-        """Retreive the configuration for the specified env.
-
-        NOTE, There can only be one current config!
-        It is possible to call 'config' multiple times, but storing references
-        to items in the configuration, and accessing attributes at a later time,
-        will return the value from the last env.
-
-        Arguments:
-            allow_todo (bool): If true, then retreiving a configuration for an env which contains `MC_TODO` values will not raise an error.
-
-        Return (Root ConfigItem proxy): Reference to the config with the current env set to env.
-        """
-
-        try:
-            cr = self.root_proxies[env]
-        except KeyError:
-            if not isinstance(env, Env):
-                msg = "{ef_cls}: env must be instance of {env_cls!r}; found type '{got_typ}': {val!r}"
-                raise ConfigException(msg.format(ef_cls=self.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
-            if env.factory != self:
-                raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
-            raise  # Should not happen
-
-        if not allow_todo and cr._mc_todo_msgs[env]:
-            for msg, fname, line in cr._mc_todo_msgs[env]:
-                print(_line_msg(file_name=fname, line_num=line), file=sys.stderr)
-                print(msg, file=sys.stderr)
-            raise ConfigException("Trying to get invalid configuration containing MC_TODO")
-
-        return cr
 
 
 class NO_ENV(object):

@@ -30,13 +30,13 @@ class MeSetterItem(ItemWithAA):
 
 def test_override_setattr():
     @mc_config(ef)
-    def _(root):
+    def config(root):
         with MeSetterItem() as ci:
             ci.setme('aa', prod="hi", pp="hello")
 
-    cr = ef.config(prod).MeSetterItem
+    cr = config(prod).MeSetterItem
     assert cr.aa == "hi"
-    cr = ef.config(pp).MeSetterItem
+    cr = config(pp).MeSetterItem
     assert cr.aa == "hello"
 
 
@@ -54,7 +54,7 @@ def test_override_setattr_error1(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(root):
+        def config(root):
             with MeSetterItem() as ci:
                 errorline[0] = next_line_num()
                 ci.setme('aa', pros="hello", prod="hi", pp="hello")
@@ -79,7 +79,7 @@ def test_override_setattr_error2(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(root):        
+        def config(root):        
             with MeSetterItem() as ci:
                 errorline[0] = next_line_num()
                 ci.setme('aa', prod="hello")

@@ -67,7 +67,7 @@ def test_json_dump_user_defined_attribute_filter():
             with Nested(b=2, hide_me1=7):
                 pass
 
-    cr = ef.config(prod).RootWithHideMe1
+    cr = config(prod).RootWithHideMe1
     assert compare_json(cr, _json_dump_user_defined_attribute_filter_expected_json)
 
 
@@ -129,7 +129,7 @@ def test_json_dump_user_defined_attribute_filter_exception(capsys):
             with Nested(b=2, hide_me1=7):
                 pass
 
-    cr = ef.config(prod).RootWithHideMe1
+    cr = config(prod).RootWithHideMe1
     assert compare_json(cr, _json_dump_user_defined_attribute_filter_exception_expected_json, expect_num_errors=3)
 
     _sout, serr = capsys.readouterr()
@@ -189,7 +189,7 @@ def test_json_fallback_handler():
             cr.setattr('unhandled_non_item', mc_set_unknown=True, default=UnHandledNonItem())
             Nested(b=2)
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_fallback_handler_expected_json % dict(py3_local=py3_local()), expect_num_errors=1)
 
 
@@ -230,7 +230,7 @@ def test_json_fallback_handler_iterable():
             cr.aa = 0
             cr.setattr('handled_non_items', mc_set_unknown=True, default=[HandledNonItem(1), HandledNonItem(2)])
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_fallback_handler_iterable_expected_json)
 
 
@@ -271,7 +271,7 @@ def test_json_equivalent():
             cr.setattr('handled_non_item', mc_set_unknown=True, default=NonItemWithEquiv())
             Item()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_equivalent_expected_json)
 
 
@@ -312,7 +312,7 @@ def test_json_equivalent_bad(capsys):
             cr.setattr('handled_non_item', mc_set_unknown=True, default=NonItemWithEquiv())
             Item()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_equivalent_bad_expected_json, expect_num_errors=1)
 
     _sout, serr = capsys.readouterr()

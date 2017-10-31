@@ -58,18 +58,20 @@ _mc_todo_one_error_expected_ex = """There was 1 error when defining item: {
 
 def _conf_with(ef, errorline, mc_todo_handling_other, mc_todo_handling_allowed):
     @mc_config(ef, mc_todo_handling_other=mc_todo_handling_other, mc_todo_handling_allowed=mc_todo_handling_allowed)
-    def _(root):
+    def config(root):
         with ItemWithAA() as cr:
             errorline[0] = next_line_num()
             cr.setattr('aa', prod=MC_TODO, pprd="hello")
+    return config
 
 
 def _conf_init(ef, errorline, mc_todo_handling_other, mc_todo_handling_allowed):
     @mc_config(ef, mc_todo_handling_other=mc_todo_handling_other, mc_todo_handling_allowed=mc_todo_handling_allowed)
-    def _(root):
+    def config(root):
         with ItemWithAA(aa=MC_TODO) as ci:
             errorline[0] = next_line_num()
             ci.setattr('aa', pprd="hello")
+    return config
 
 
 @mark.parametrize("mc_todo_handling_allowed", [McTodoHandling.SILENT, McTodoHandling.WARNING])
@@ -80,7 +82,7 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_with_get_config_allowed_allow
     pprd = ef.Env('pprd', allow_todo=True)
     prod = ef.Env('prod', allow_todo=True)
 
-    _conf_with(ef, errorline, mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=mc_todo_handling_allowed)
+    config = _conf_with(ef, errorline, mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=mc_todo_handling_allowed)
     _sout, serr = capsys.readouterr()
 
     if mc_todo_handling_allowed == McTodoHandling.SILENT:
@@ -90,8 +92,8 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_with_get_config_allowed_allow
     else:
         raise Exception("Error in test implementation")
 
-    _ = ef.config(pprd, allow_todo=True)
-    _ = ef.config(prod, allow_todo=True)
+    _ = config(pprd, allow_todo=True)
+    _ = config(prod, allow_todo=True)
 
 
 @mark.parametrize("mc_todo_handling_allowed", [McTodoHandling.ERROR])
@@ -120,7 +122,7 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_init_get_config_allowed_allow
     pprd = ef.Env('pprd', allow_todo=True)
     prod = ef.Env('prod', allow_todo=True)
 
-    _conf_init(ef, errorline, mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=mc_todo_handling_allowed)
+    config = _conf_init(ef, errorline, mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=mc_todo_handling_allowed)
     _sout, serr = capsys.readouterr()
 
     if mc_todo_handling_allowed == McTodoHandling.SILENT:
@@ -130,8 +132,8 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_init_get_config_allowed_allow
     else:
         raise Exception("Error in test implementation")
 
-    _ = ef.config(pprd, allow_todo=True)
-    _ = ef.config(prod, allow_todo=True)
+    _ = config(pprd, allow_todo=True)
+    _ = config(prod, allow_todo=True)
 
 
 @mark.parametrize("mc_todo_handling_allowed", [McTodoHandling.ERROR])
@@ -162,7 +164,7 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_with_get_config_not_allowed_a
     pprd = ef.Env('pprd', allow_todo=True)
     prod = ef.Env('prod', allow_todo=True)
 
-    _conf_with(ef, errorline, mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=mc_todo_handling_allowed)
+    config = _conf_with(ef, errorline, mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=mc_todo_handling_allowed)
     _sout, serr = capsys.readouterr()
 
     if mc_todo_handling_allowed == McTodoHandling.SILENT:
@@ -172,10 +174,10 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_with_get_config_not_allowed_a
     else:
         raise Exception("Error in test implementation")
 
-    _ = ef.config(pprd)
+    _ = config(pprd)
 
     with raises(ConfigException) as exinfo:
-        _ = ef.config(prod)
+        _ = config(prod)
 
 
 @mark.parametrize("mc_todo_handling_allowed", [McTodoHandling.SILENT, McTodoHandling.WARNING])
@@ -186,7 +188,7 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_init_get_config_not_allowed_a
     pprd = ef.Env('pprd', allow_todo=True)
     prod = ef.Env('prod', allow_todo=True)
 
-    _conf_init(ef, errorline, mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=mc_todo_handling_allowed)
+    config = _conf_init(ef, errorline, mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=mc_todo_handling_allowed)
     _sout, serr = capsys.readouterr()
 
     if mc_todo_handling_allowed == McTodoHandling.SILENT:
@@ -196,10 +198,10 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_init_get_config_not_allowed_a
     else:
         raise Exception("Error in test implementation")
 
-    _ = ef.config(pprd)
+    _ = config(pprd)
 
     with raises(ConfigException) as exinfo:
-        _ = ef.config(prod)
+        _ = config(prod)
 
 
 @mark.parametrize("mc_todo_handling_allowed", [McTodoHandling.SILENT, McTodoHandling.WARNING])
@@ -211,7 +213,7 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_with_get_config_not_allowed_a
     prod = ef.Env('prod', allow_todo=True)
 
     @mc_config(ef, mc_todo_handling_allowed=mc_todo_handling_allowed)
-    def _(_):
+    def config(_):
         with ConfigItem() as cr:
             errorline[0] = next_line_num()
             cr.setattr('aa', prod=MC_TODO, pprd="hello", mc_set_unknown=True)
@@ -225,10 +227,10 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_with_get_config_not_allowed_a
     else:
         raise Exception("Error in test implementation")
 
-    _ = ef.config(pprd)
+    _ = config(pprd)
 
     with raises(ConfigException) as exinfo:
-        _ = ef.config(prod)
+        _ = config(prod)
 
 
 _attribute_mc_required_mc_todo_different_types_expected_ex = """There were 3 errors when defining item: {
@@ -251,7 +253,7 @@ def test_attribute_mc_required_mc_todo_different_types(capsys, mc_todo_handling_
                 errorline[0] = next_line_num()
                 cr.setattr('aa', dev=1, tst="hello", pp=MC_REQUIRED, prod=MC_TODO)
 
-    # ef3_prod_pp_tst_dev.config(prod3)
+    # config(prod3)
     _sout, serr = capsys.readouterr()
 
     fl = start_file_line(__file__, errorline[0])
@@ -290,7 +292,7 @@ def test_attribute_mc_todo_env_allowed_current_env_access_error(capsys, mc_todo_
 def test_bad_handling_arg_allowed():
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp, mc_todo_handling_allowed=True)
-        def _(_):
+        def config(_):
             pass
 
     exp = "'mc_todo_handling_allowed' arg must be instance of 'McTodoHandling'; found type 'bool': True"
@@ -300,7 +302,7 @@ def test_bad_handling_arg_allowed():
 def test_bad_handling_arg_other():
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp, mc_todo_handling_other=False)
-        def _(_):
+        def config(_):
             pass
 
     exp = "'mc_todo_handling_other' arg must be instance of 'McTodoHandling'; found type 'bool': False"

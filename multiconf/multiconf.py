@@ -7,7 +7,7 @@ import sys, os, traceback
 from collections import OrderedDict
 import json
 
-from .envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV
+from .envs import EnvFactory, Env, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, _McAttributeAccessor, Where
 from .property_wrapper import _McPropertyWrapper
@@ -1161,7 +1161,30 @@ def mc_config(
         env_factory, error_next_env=False, validate_properties=True,
         mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=McTodoHandling.WARNING,
         mc_json_filter=None, mc_json_fallback=None, do_type_check=None):
-    """Instantiate ConfigItem hierarchy for all Envs defined in 'env_factory'.
+    """Function decorator for instanting ConfigItem hierarchy for all Envs defined in 'env_factory'.
+
+       This decorator creates a wrapped config function which is then used for retreiving the configuration for a specific env.
+
+       The wrapped function signature is:
+           Arguments:
+               env (Env): The environment for which to retrieve the config.
+               allow_todo (bool): If true, then retreiving a configuration for an env which contains `MC_TODO` values will not raise an error.
+
+           Return (Root ConfigItem proxy): Reference to the config with the current env set to env.
+
+       E.g.::
+
+           @mc_config(envf)
+           def conf(root):
+               with someitem() as it:
+                   it.setattr('aa', default=1, tst=2, prod=3)
+
+           # Get the cfg instantiated for 'prod'
+           prod_cfg = conf(prod)
+
+       NOTE, There can only be one current config!
+       It is possible to instantiate the config multiple times, but storing references to items in the configuration, and accessing attributes
+       at a later time, will return the value from the last env.
 
     Arguments:
         env_factory (EnvFactory): The EnvFactory defining the envs for which we instantiate the configuration.
@@ -1231,6 +1254,7 @@ def mc_config(
         _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
 
         # Load envs
+        root_proxies = {}
         error_envs = []
         for env in env_factory.envs.values():
             _mc_debug("\n==== Loading", env, "====")
@@ -1264,7 +1288,7 @@ def mc_config(
 
             cr._mc_check_unknown = False
             cr._mc_config_result[env] = res
-            env_factory.root_proxies[env] = rp
+            root_proxies[env] = rp
 
         if error_envs:
             raise ConfigException("The following envs had errors {}".format(error_envs))
@@ -1277,5 +1301,26 @@ def mc_config(
         cr._mc_env = NO_ENV
         _mc_debug("\n==== Calling 'mc_post_validate' ====")
         cr._mc_call_mc_post_validate_recursively()
+
+        def config_wrapper(env, allow_todo=False):
+            try:
+                cr = root_proxies[env]
+            except KeyError:
+                if not isinstance(env, Env):
+                    msg = "{ef_cls}: env must be instance of {env_cls!r}; found type '{got_typ}': {val!r}"
+                    raise ConfigException(msg.format(ef_cls=env_factory.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
+                if env.factory != env_factory:
+                    raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
+                raise  # Should not happen
+
+            if not allow_todo and cr._mc_todo_msgs[env]:
+                for msg, fname, line in cr._mc_todo_msgs[env]:
+                    print(_line_msg(file_name=fname, line_num=line), file=sys.stderr)
+                    print(msg, file=sys.stderr)
+                raise ConfigException("Trying to get invalid configuration containing MC_TODO")
+
+            return cr
+
+        return config_wrapper
 
     return deco

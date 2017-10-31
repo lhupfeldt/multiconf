@@ -57,7 +57,7 @@ def test_contained_in_root_conf():
 
         return c1, c2
 
-    conf = ef2_pp_prod.config(prod2)
+    conf = config(prod2)
     c1, c2 = conf.mc_config_result
 
     assert conf.contained_in is None        

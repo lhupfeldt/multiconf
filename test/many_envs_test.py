@@ -38,7 +38,7 @@ class ItemWithManyAttributes(ItemWithAA):
 
 def test_many_envs():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ItemWithManyAttributes() as conf:
             conf.setattr('aa', default=None, e0_0=0)
             conf.setattr('b', default=None, e1_7=1)
@@ -50,7 +50,7 @@ def test_many_envs():
             conf.setattr('h', default=None, e7_55=7)
             conf.setattr('i', default=None, e0_0=10, e15_127=8)
 
-    conf = ef.config(envs[0]).ItemWithManyAttributes
+    conf = config(envs[0]).ItemWithManyAttributes
     assert conf.aa == 0
     assert conf.b is None
     assert conf.i == 10
@@ -59,13 +59,13 @@ def test_many_envs():
 def test_many_groups():
     # This is slow!
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ItemWithManyAttributes() as conf:
             conf.setattr('aa', default=None, g0=0)
             conf.setattr('b', default=None, g1=1)
             conf.setattr('i', default=None, e0_0=10, g15=8)
 
-    conf = ef.config(envs[0]).ItemWithManyAttributes
+    conf = config(envs[0]).ItemWithManyAttributes
     assert conf.aa == 0
     assert conf.b is None
     assert conf.i == 10

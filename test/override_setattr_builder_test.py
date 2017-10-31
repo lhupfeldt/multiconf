@@ -27,13 +27,13 @@ def test_override_setattr():
     cb = [None]
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with MeSetterBuilder() as bb:
             bb.setme('aa', prod="hi3", pp="hello")
         cb[0] = bb
 
-    ef.config(prod)
+    config(prod)
     assert cb[0].aa == "hi3"
 
-    ef.config(pp)
+    config(pp)
     assert cb[0].aa == "hello"

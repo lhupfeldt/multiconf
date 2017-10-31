@@ -50,7 +50,7 @@ class RepeatableStrictItem(RepeatableConfigItem):
 
 def test_setunknown_strict_ok():
     @mc_config(ef2_prod_pp)
-    def _(root):
+    def config(root):
         with strict_project() as sp:
             sp.b = 1
             sp.setattr('c', mc_set_unknown=True, default=2)
@@ -64,7 +64,7 @@ def test_setunknown_strict_ok():
                 rsi.setattr('z', mc_set_unknown=True, default='yes')
         return sp, si, rsi
 
-    cfg = ef2_prod_pp.config(prod2)
+    cfg = config(prod2)
     sp, si, rsi = cfg.mc_config_result
     assert sp.c == 2
     assert si.z == 'yes'
@@ -76,7 +76,7 @@ def test_setattr_strict_bad(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(root):
+        def config(root):
             with strict_project() as sp:
                 errorline[0] = next_line_num()
                 sp.c = 1
@@ -86,7 +86,7 @@ def test_setattr_strict_bad(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(root):
+        def config(root):
             with strict_project() as sp:
                 errorline[0] = next_line_num()
                 sp.setattr('c', default=1)
@@ -96,7 +96,7 @@ def test_setattr_strict_bad(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(root):
+        def config(root):
             with strict_project() as sp:
                 with StrictItem() as si:
                     errorline[0] = next_line_num()
@@ -107,7 +107,7 @@ def test_setattr_strict_bad(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(root):
+        def config(root):
             with strict_project() as sp:
                 with StrictItem() as si:
                     errorline[0] = next_line_num()
@@ -118,7 +118,7 @@ def test_setattr_strict_bad(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(root):
+        def config(root):
             with strict_project() as sp:
                 with RepeatableStrictItem('a') as rsi:
                     errorline[0] = next_line_num()
@@ -129,7 +129,7 @@ def test_setattr_strict_bad(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(root):
+        def config(root):
             with strict_project() as sp:
                 with RepeatableStrictItem('b') as rsi:
                     errorline[0] = next_line_num()
@@ -146,7 +146,7 @@ def test_setunknown_strict_bad(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(root):
+        def config(root):
             with strict_project() as sp:
                 errorline[0] = next_line_num()
                 sp.setattr('b', mc_set_unknown=True, default=1)
@@ -156,7 +156,7 @@ def test_setunknown_strict_bad(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(root):
+        def config(root):
             with strict_project() as sp:
                 with StrictItem() as si:
                     errorline[0] = next_line_num()
@@ -167,7 +167,7 @@ def test_setunknown_strict_bad(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_prod_pp)
-        def _(root):
+        def config(root):
             with strict_project() as sp:
                 with RepeatableStrictItem('b') as rsi:
                     errorline[0] = next_line_num()

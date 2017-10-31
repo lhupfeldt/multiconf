@@ -68,7 +68,7 @@ class myroot(ConfigItem):
 
 def test_abstract_config_item_multiple_inheritance_explicit_mc_key():
     @mc_config(ef_pp_prod)
-    def _(_):
+    def config(_):
         with myroot():
             with MyItem() as ci:
                 ci.aa = 1
@@ -82,7 +82,7 @@ def test_abstract_config_item_multiple_inheritance_explicit_mc_key():
                 ci.aa = 2
                 anitem()
 
-    cr = ef_pp_prod.config(prod).myroot
+    cr = config(prod).myroot
 
     assert cr.myitem.aa == 1
     assert cr.myitems['a'].aa == 1
@@ -91,7 +91,7 @@ def test_abstract_config_item_multiple_inheritance_explicit_mc_key():
 
 def test_abstract_config_item_multiple_inheritance_cls_mc_key():
     @mc_config(ef_pp_prod)
-    def _(_):
+    def config(_):
         with myroot():
             with MyItem() as ci:
                 ci.aa = 1
@@ -105,7 +105,7 @@ def test_abstract_config_item_multiple_inheritance_cls_mc_key():
                 ci.aa = 2
                 anitem()
 
-    cr = ef_pp_prod.config(prod).myroot
+    cr = config(prod).myroot
 
     assert cr.myitem.aa == 1
     assert cr.myitems['a'].aa == 1

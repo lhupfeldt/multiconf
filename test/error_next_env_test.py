@@ -35,7 +35,7 @@ def test_attribute_mc_required_error_next_env(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa', dev=MC_REQUIRED, tst="hello", pp=MC_REQUIRED, prod=MC_REQUIRED)
 
-    # ef3_prod_pp_tst_dev.config(prod3)
+    # config(prod3)
     sout, serr = capsys.readouterr()
     print(serr)
 
@@ -66,7 +66,7 @@ def test_attribute_mc_required_mc_select_envs_error_next_env(capsys):
                 errorline_setattr[0] = next_line_num()
                 cr.setattr('aa', dev=MC_REQUIRED, tst="hello", prod=MC_REQUIRED)
 
-    # ef3_prod_pp_tst_dev.config(prod3)
+    # config(prod3)
     sout, serr = capsys.readouterr()
     print(serr)
 
@@ -105,7 +105,7 @@ def test_stacktrace_error_next_env(capsys):
             errorline_repeated_obj[0] = next_line_num()
             ItemWithAA()
 
-    # ef3_prod_pp_tst_dev.config(prod3)
+    # config(prod3)
     sout, serr = capsys.readouterr()
     print(serr)
 

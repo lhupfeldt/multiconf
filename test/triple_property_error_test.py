@@ -52,14 +52,14 @@ class FaultyRepeatable(RepeatableConfigItem):
 def test_triple_property_error_config_item():
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             FaultyRoot()
 
 
 def test_triple_property_error_repeatable_config_item():
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with GoodRoot():
                 FaultyRepeatable('aa')
 
@@ -67,6 +67,6 @@ def test_triple_property_error_repeatable_config_item():
 def test_triple_property_error_repeatable_and_simple_config_item():
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with FaultyRoot():
                 FaultyRepeatable('bb')

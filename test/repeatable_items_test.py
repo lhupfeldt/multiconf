@@ -64,7 +64,7 @@ def test_nested_repeatable_items():
                 ci.setattr('aa', prod=5, pp=18)
                 ci.setattr('bb', prod=3, pp=19)
 
-    cr = ef.config(prod).nc_aa_root
+    cr = config(prod).nc_aa_root
 
     assert cr.children['first'].bb == 1
     assert cr.children['second'].bb == 2
@@ -81,7 +81,7 @@ def test_empty_nested_repeatable_items():
     def config(root):
         nc_aa_root()
 
-    cr = ef.config(prod).nc_aa_root
+    cr = config(prod).nc_aa_root
 
     for _ci in cr.children.values():
         fail("list should be empty")
@@ -106,7 +106,7 @@ def test_automatic_contained_item_freeze_on_exit():
                 NestedRepeatable(mc_key='cc')
             NestedRepeatable(mc_key='cc')
 
-    cr = ef.config(prod).root2
+    cr = config(prod).root2
     assert len(cr.recursive_items['aa'].recursive_items) == 0
     assert len(cr.recursive_items['bb'].recursive_items) == 3
     assert len(cr.recursive_items['cc'].recursive_items) == 0
@@ -149,7 +149,7 @@ def test_mc_init_repeatable_items():
             with X(mc_key='bb', aa=1) as x:
                 x.aa = 3
 
-    cr = ef.config(prod)
+    cr = config(prod)
 
     assert cr.Y.aa == 3
     assert cr.Y.Xs['aa'].aa == 7  # v6 change, pre v6 this was 3, now it will be 7  because of object merge
@@ -174,7 +174,7 @@ def test_repeatable_items_get():
             X(mc_key='aa')
             X(mc_key='bb')
 
-    cr = ef.config(prod)
+    cr = config(prod)
 
     assert cr.Y.Xs.get('aa')
     assert cr.Y.Xs.get('cc') is None
@@ -206,7 +206,7 @@ def test_repeatable_items_equal():
             Z(mc_key='aa')
             Z(mc_key='bb')
 
-    cr = ef.config(prod)
+    cr = config(prod)
 
     assert cr.HasRepeatables.Xs == cr.HasRepeatables.Xs
     # assert cr.HasRepeatables.Xs == cr.HasRepeatables.Zs  # TODO? Equality between different dicts?
@@ -230,7 +230,7 @@ def test_repeatable_items_iter():
             X(mc_key='bb')
             X(mc_key='cc')
 
-    cr = ef.config(prod)
+    cr = config(prod)
 
     keys = []
     for key in cr.HasRepeatables.Xs:

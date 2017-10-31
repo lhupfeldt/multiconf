@@ -27,10 +27,10 @@ def test_builder_mc_validate_set_attribute():
             ItemWithAA(self)
 
     @mc_config(ef_pprd_prod)
-    def _(_):
+    def config(_):
         builder()
 
-    cr = ef_pprd_prod.config(prod)
+    cr = config(prod)
     assert cr.ItemWithAA.aa.y == 7
 
 
@@ -44,7 +44,7 @@ def test_user_mc_validate_error_builder():
 
     with raises(Exception) as exinfo:
         @mc_config(ef_pprd_prod)
-        def _(_):
+        def config(_):
             with ConfigItem():
                 builder()
 

@@ -33,12 +33,12 @@ def test_call_of_mc_post_validate_builder():
             pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with builder() as bb:
             bb.setattr('aa', pp=1, prod=2)
         ii.append(bb)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert ii[0].y == 7
 
 
@@ -52,7 +52,7 @@ def test_builder_user_mc_post_validate_error():
 
     with raises(Exception) as exinfo:
         @mc_config(ef2_pp_prod)
-        def _(_):
+        def config(_):
             builder()
 
     assert str(exinfo.value) == "Error in builder mc_post_validate"

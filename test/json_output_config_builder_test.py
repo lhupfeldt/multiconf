@@ -433,7 +433,7 @@ def test_json_dump_configbuilder():
             self.a = a
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ItemWithYs() as cr:
             with YBuilder() as yb1:
                 yb1.setattr('b', default=27, mc_set_unknown=True)
@@ -444,7 +444,7 @@ def test_json_dump_configbuilder():
                     YChild('Hanna', a=11)
                     YChild('Herbert', a=12)
 
-    cr = ef.config(prod).ItemWithYs
+    cr = config(prod).ItemWithYs
 
     assert compare_json(cr, _json_dump_configbuilder_expected_json_full, replace_builders=True, test_decode=True,
                         expected_all_envs_json=_json_dump_configbuilder_all_envs_expected_json_full)
@@ -496,13 +496,13 @@ def test_json_dump_with_builders_containment_check():
         pass
 
     @mc_config(ef2_prod)
-    def _(_):
+    def config(_):
         with ItemWithName() as cr:
             cr.name = 'myp'
             with MyOuterItem():
                 MyOuterBuilder()
 
-    cr = ef2_prod.config(prod2).ItemWithName
+    cr = config(prod2).ItemWithName
     cr.json(builders=True)
     # TODO
     assert True
@@ -583,13 +583,13 @@ def test_json_dump_attr_ref_configbuilder():
             self.aa = 777
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with ItemWithYs() as cr:
             with YBuilder() as yb1:
                 yb1.setattr('b', default=27, mc_set_unknown=True)
             cr.setattr('yb_ref', default=yb1, mc_set_unknown=True)
 
-    cr = ef.config(prod).ItemWithYs
+    cr = config(prod).ItemWithYs
 
     assert compare_json(cr, _json_dump_attr_ref_configbuilder_expected_json % dict(py3_local=py3_local()),
                         replace_builders=False, dump_builders=False, test_decode=True)

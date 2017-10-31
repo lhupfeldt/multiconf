@@ -45,49 +45,49 @@ class item2(ConfigItem):
 
 def test_direct_env_in_mc_init_overrides_default_and_group_in_with():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with item1() as it:
             it.aa = 13
-    it = ef.config(dev1).item1
+    it = config(dev1).item1
     assert it.aa == 7
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with item1() as it:
             it.setattr('aa', default=13)
-    it = ef.config(dev1).item1
+    it = config(dev1).item1
     assert it.aa == 7
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with item1() as it:
             it.setattr('aa', default=1, g_dev=13)
-    it = ef.config(dev1).item1
+    it = config(dev1).item1
     assert it.aa == 7
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with item1() as it:
             it.setattr('aa', default=1, g_dev_tst=13)
-    it = ef.config(dev1).item1
+    it = config(dev1).item1
     assert it.aa == 7
 
 
 def test_direct_env_in_with_overrides_mc_init():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with item1() as it:
             it.setattr('aa', dev1=1, tst=111, g_dev=7, g_prod=17)
-    it = ef.config(dev1).item1
+    it = config(dev1).item1
     assert it.aa == 1
 
 
 def test_more_specific_group_in_with_overrides_mc_init():
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with item2() as it:
             it.setattr('aa', g_dev=1, tst=111, g_prod=17)
-    it = ef.config(dev1).item2
+    it = config(dev1).item2
     assert it.aa == 1
 
 
@@ -111,12 +111,12 @@ def test_children_in_mc_init_frozen():
             X1(aa=1)
 
     @mc_config(ef)
-    def _0(_):
+    def config0(_):
         with ConfigItem():
             X2(17)
         print('after')
 
-    cr = ef.config(prod).ConfigItem.X2
+    cr = config0(prod).ConfigItem.X2
     assert cr.aa == 17
     assert cr.X1.aa == 1
     assert cr.X1.bb == 30
@@ -145,10 +145,10 @@ def test_children_in_mc_init_only_frozen_once():
             X1(aa=1, bb=1)
 
     @mc_config(ef)
-    def _0(_):
+    def config0(_):
         X2(17)
 
-    cr = ef.config(prod).X2
+    cr = config0(prod).X2
     assert cr.aa == 17
     assert cr.bb == None
     assert cr.X1.aa == 1

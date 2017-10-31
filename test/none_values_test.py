@@ -28,14 +28,14 @@ def test_attribute_none_args_partial_set_in_init_overridden_in_mc_init():
             self.b = 7
 
     @mc_config(ef1_prod_pp)
-    def _(_):
+    def config(_):
         Requires()
 
-    cr = ef1_prod_pp.config(prod1)
+    cr = config(prod1)
     assert cr.Requires.a is None  # Note: I pre v6 this would be 7
     assert cr.Requires.b == 2
 
-    cr = ef1_prod_pp.config(pp1)
+    cr = config(pp1)
     assert cr.Requires.a == 7 # Value for pp was not set in __init__ so it will get the value from mc_init 
     assert cr.Requires.b is None  # Note: I pre v6 this would be 7
 
@@ -58,7 +58,7 @@ def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
     with raises(ConfigException):
         errorline_exit[0] = next_line_num()
         @mc_config(ef1_prod_pp)
-        def _(_):
+        def config(_):
             Requires()
         # Unresolved partial assignments from __init__
 

@@ -51,7 +51,7 @@ def test_repeatable_items_mc_select_envs_excluded():
                 ci.mc_select_envs(exclude=[prod])
                 ci.setattr('aa', pp=4)
 
-    cr = ef.config(prod).nc_aa_root
+    cr = config(prod).nc_aa_root
 
     assert len(cr.children) == 3
     index = 2
@@ -69,7 +69,7 @@ def test_repeatable_items_mc_select_envs_excluded():
 
     assert "'fifth'. 'Excluded: <class 'test.repeatable_items_excluded_test.rchild'>' for Env('prod')." in str(exinfo.value)
 
-    cr = ef.config(pp).nc_aa_root
+    cr = config(pp).nc_aa_root
 
     assert len(cr.children) == 4
     index = 1
@@ -93,10 +93,10 @@ def test_repeatable_items_skipped_in_envs():
             for ii in range(0, cr.num_children):
                 rchild("num" + str(ii), aa=27)
 
-    cr = ef.config(prod).nc_aa_root
+    cr = config(prod).nc_aa_root
     assert len(cr.children) == 4
 
-    cr = ef.config(pp).nc_aa_root
+    cr = config(pp).nc_aa_root
     assert len(cr.children) == 2
 
 
@@ -114,7 +114,7 @@ def test_repeatable_items_mc_select_envs_excluded_key_error_property_exception()
                 ci.mc_select_envs(exclude=[prod])
                 ci.setattr('aa', pp=1)
 
-    cr = ef.config(prod).nc_aa_root
+    cr = config(prod).nc_aa_root
 
     assert len(cr.children) == 0
 
@@ -140,7 +140,7 @@ def test_repeatable_items_mc_select_envs_excluded_key_error_property_attributeer
                 ci.mc_select_envs(exclude=[prod])
                 ci.setattr('aa', pp=1)
 
-    cr = ef.config(prod).nc_aa_root
+    cr = config(prod).nc_aa_root
 
     assert len(cr.children) == 0
 
@@ -179,12 +179,12 @@ def test_repeatable_items_bool():
             Y(mc_key='bb')
             Y(mc_key='cc')
 
-    rep = ef.config(prod).HasRepeatables
+    rep = config(prod).HasRepeatables
     assert rep.Xs
     assert rep.Ys
     assert not rep.Zs
 
-    rep = ef.config(pp).HasRepeatables
+    rep = config(pp).HasRepeatables
     assert not rep.Xs
     assert rep.Ys
     assert not rep.Zs

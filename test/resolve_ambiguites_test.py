@@ -44,9 +44,9 @@ def test_value_defined_through_three_groups_resolved_immediately():
         with ItemWithAA() as cr:
             cr.setattr('aa', g_dev_overlap2=7, default=7, dev2cta=15, prod=1, g_dev2=2, g_dev_overlap1=3)
 
-    cr = ef_dev_prod.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
-    cr = ef_dev_prod.config(dev2cta).ItemWithAA
+    cr = config(dev2cta).ItemWithAA
     assert cr.aa == 15
 
 
@@ -56,9 +56,9 @@ def test_value_defined_through_three_groups_resolved_immediately_multiple1():
         with ItemWithAA() as cr:
             cr.setattr('aa', g_dev_overlap23ct=7, default=7, dev2cta=15, prod=1, g_dev2=2, g_dev_overlap23st=3, dev2sta=8)
 
-    cr = ef_dev_prod.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
-    cr = ef_dev_prod.config(dev2cta).ItemWithAA
+    cr = config(dev2cta).ItemWithAA
     assert cr.aa == 15
 
 
@@ -74,13 +74,13 @@ def test_value_defined_through_three_groups_resolved_immediately_multiple2():
                     with ItemWithAA() as it3:
                         it3.setattr('aa', default=7, prod=1, g_dev_overlap23st=3, g_dev_overlap23ctst=23, g_dev2=2, dev3st=0, dev2sta=8, dev2cta=15)
 
-    cr = ef_dev_prod.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert cr.aa == 1
     assert cr.ItemWithAA.aa == 1
     assert cr.ItemWithAA.ItemWithAA.aa == 1
     assert cr.ItemWithAA.ItemWithAA.ItemWithAA.aa == 1
 
-    cr = ef_dev_prod.config(dev2cta).ItemWithAA
+    cr = config(dev2cta).ItemWithAA
     assert cr.aa == 15
     assert cr.ItemWithAA.aa == 15
     assert cr.ItemWithAA.ItemWithAA.aa == 15
@@ -128,6 +128,6 @@ def test_value_defined_through_three_groups_resolved_multiple_x():
                     with ItemWithAA() as it:
                         it.setattr('aa', default=7, prod=1, g_x_overlap23st=3, g_x_overlap23ctst=23, g_x2ctst=2, x3st=0, x2ct=15, x2st=8, g_x_overlap23ct=7)
 
-    ef2_x_prod.config(prod2)
-    ef2_x_prod.config(x2ct2)
+    config(prod2)
+    config(x2ct2)
     # TODO test values

@@ -34,7 +34,7 @@ def test_setattr_to_attribute_underscore_attribute_builder(capsys):
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with CB() as ci:
                 errorline[0] = next_line_num()
                 ci.setattr('_b', default=7)

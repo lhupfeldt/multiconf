@@ -87,23 +87,23 @@ def test_unnamed_nested_repeatable_item_no_name_or_id():
     # Note: This changes from v6, earlier versions inserted objects with the id(obj) if key was None
     # mc_key is not optional, but None is just a value like other keys
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with nc_aa_root():
             with rchild(mc_key=None, aa=1, bb=1) as ci:
                 ci.setattr('aa', prod=3)
 
-    cr = ef2_pp_prod.config(prod2).nc_aa_root
+    cr = config(prod2).nc_aa_root
     assert cr.children[None].aa == 3
 
 
 def test_iteritems_root_attributes():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with aabb_root() as cr:
             cr.aa = 1
             cr.bb = 2
 
-    cr = ef2_pp_prod.config(prod2).aabb_root
+    cr = config(prod2).aabb_root
     for exp, actual in zip([('aa', 1), ('bb', 2)], list(cr.items())):
         exp_key, exp_value = exp
         key, value = actual
@@ -119,12 +119,12 @@ def test_iteritems_item_attributes():
             self.aa = MC_REQUIRED
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with myitem() as ci:
             ci.aa = 1
             anitem()
 
-    ci = ef2_pp_prod.config(prod2).myitem
+    ci = config(prod2).myitem
     for key, value in ci.items():
         if key == 'aa':
             assert value == 1
@@ -138,107 +138,107 @@ def test_iteritems_item_attributes():
 
 def test_property_defined_with_same_type_and_none():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with ItemWithAA() as cr:
             cr.setattr('aa', default=None, prod=1, pp=2)
 
-    cr = ef2_pp_prod.config(prod2).ItemWithAA
+    cr = config(prod2).ItemWithAA
     assert cr.aa == 1
 
 
 def test_property_defined_with_none_and_same_type():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with ItemWithAA() as cr:
             cr.setattr('aa', default=1, prod=None, pp=2)
 
-    cr = ef2_pp_prod.config(prod2).ItemWithAA
+    cr = config(prod2).ItemWithAA
     assert cr.aa is None
 
 
 def test_env_value_overrides_group_value():
     @mc_config(ef4_a_dev1_pp_prod)
-    def _(_):
+    def config(_):
         with ItemWithAABB() as ci:
             ci.setattr('aa', prod=1, g_prod_like=2, dev1=3)
             # Note: Parameters are passed as a dictionary with undefined order
             #  - Having a group named 'a' gives us 100% coverage in C Python
             ci.setattr('bb', dev1=1, a=2, prod=3, pp=4)
 
-    cr = ef4_a_dev1_pp_prod.config(prod4)
+    cr = config(prod4)
     assert cr.ItemWithAABB.aa == 1
     assert cr.ItemWithAABB.bb == 3
 
 
 def test_group_value_overrides_default_value_from_init():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with KwargsItem(aa=1, bb=3) as ci:
             ci.setattr('aa', g_prod_like=2)
             ci.setattr('bb', pp=4)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.KwargsItem.aa == 2
     assert cr.KwargsItem.bb == 3
 
 
 def test_group_value_overrides_default_value_from_setattr():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with ItemWithAA() as ci:
             ci.setattr('aa', default=1, g_prod_like=2)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.ItemWithAA.aa == 2
 
 
 def test_assigned_default_value_overrides_default_value_from_init():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with KwargsItem(aa=1) as ci:
             ci.aa = 2
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.KwargsItem.aa == 2
 
 
 def test_default_value_from_setattr_overrides_default_value_from_init():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with KwargsItem(aa=1) as ci:
             ci.setattr('aa', default=2, pp=3)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.KwargsItem.aa == 2
 
 
 def test_env_value_overrides_default_value():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with KwargsItem(aa=1, bb=3) as ci:
             ci.setattr('aa', prod=2)
             ci.setattr('bb', pp=4)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.KwargsItem.aa == 2
     assert cr.KwargsItem.bb == 3
 
 
 def test_env_value_overrides_group_value_and_default_value():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with KwargsItem(aa=0, bb=0) as ci:
             ci.setattr('aa', prod=1, g_prod_like=2)
             ci.setattr('bb', g_prod_like=2, prod=3)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.KwargsItem.aa == 1
     assert cr.KwargsItem.bb == 3
 
 
 def test_more_specific_group_overrides_less_specific_group_value_and_default_value():
     @mc_config(ef5_a_dev1_pp_prod)
-    def _(_):
+    def config(_):
         with KwargsItem(aa=0, bb=0, cc=0, dd=0, ee=0, ff=0) as ci:
             ci.setattr('aa', g_prod=1, g_prod_like=2, a=17, dev1=18)
             ci.setattr('bb', a=17, dev1=18, g_prod_like=2, g_prod=3)
@@ -247,7 +247,7 @@ def test_more_specific_group_overrides_less_specific_group_value_and_default_val
             ci.setattr('ee', g_prod=3, prod1=1, g_prod_like=2, a=17, dev1=18)
             ci.setattr('ff', a=17, dev1=18, g_prod_like=2, prod1=3, g_prod=3)
 
-    cr1 = ef5_a_dev1_pp_prod.config(prod15)
+    cr1 = config(prod15)
     print("aa:", cr1.KwargsItem.aa)
     assert cr1.KwargsItem.aa == 1
     assert cr1.KwargsItem.bb == 3
@@ -262,14 +262,14 @@ def test_attribute_is_an_ordereddict():
     od_exp = [None]
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with ItemWithAA() as x:
             x.aa = 0
         od = OrderedDict(((None, 1), ('foo', x)))
         od_exp[0] = od
         KwargsItem(aa=od)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.KwargsItem.aa == od_exp[0]
 
 
@@ -277,22 +277,22 @@ def test_attribute_is_a_sequence():
     seq_exp = [None]
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         seq = []
         seq_exp[0] = seq
         KwargsItem(aa=seq)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.KwargsItem.aa == seq_exp[0]
 
 
 def test_get_factory():
     @mc_config(ef2_pp_prod)
-    def _(root):
+    def config(root):
         with ConfigItem():
             ConfigItem()
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.env_factory == ef2_pp_prod
     assert cr.ConfigItem.env_factory == ef2_pp_prod
     assert cr.ConfigItem.ConfigItem.env_factory == ef2_pp_prod
@@ -305,7 +305,7 @@ def test_hasattr():
         pass
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with root() as cr:
             with KwargsItem(aa=1, bb=0) as ii:
                 ii_exp[0] = ii
@@ -318,7 +318,7 @@ def test_hasattr():
             assert hasattr(ii, 'cc')
             assert not hasattr(ii, 'dd')
 
-    cr = ef1_prod.config(prod1).root
+    cr = config(prod1).root
     ii = ii_exp[0]
     assert hasattr(ii, 'aa')
     assert hasattr(ii, 'bb')
@@ -336,11 +336,11 @@ def test_hasattr():
 
 def test_assigning_to_attribute_root():
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with nc_aa_root() as cr:
             cr.aa = 7
 
-    cr = ef1_prod.config(prod1).nc_aa_root
+    cr = config(prod1).nc_aa_root
     assert cr.aa == 7
 
 
@@ -348,13 +348,13 @@ def test_assigning_to_attribute_nested_item():
     ci_exp = [None]
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with nc_aa_root():
             with ItemWithAA() as ci:
                 ci_exp[0] = ci
                 ci.aa = 1
 
-    cr = ef1_prod.config(prod1).nc_aa_root
+    cr = config(prod1).nc_aa_root
     assert ci_exp[0].aa == 1
 
 
@@ -362,13 +362,13 @@ def test_assigning_to_attribute_underscore_attribute():
     ci_exp = [None]
 
     @mc_config(ef1_prod)
-    def _(_):
+    def config(_):
         with nc_aa_root():
             with ConfigItem() as ci:
                 ci_exp[0] = ci
                 ci._a = 1
 
-    cr = ef1_prod.config(prod1).nc_aa_root
+    cr = config(prod1).nc_aa_root
     assert ci_exp[0]._a == 1
 
 
@@ -380,23 +380,23 @@ def test_mc_init_simple_items():
             KwargsItem(aa=1, bb=1)
 
     @mc_config(ef2_pp_prod)
-    def _0(_):
+    def config0(_):
         with ConfigItem():
             with X() as x:
                 x.aa = 2
                 KwargsItem(aa=2)
 
-    cr = ef2_pp_prod.config(prod2).ConfigItem
+    cr = config0(prod2).ConfigItem
     assert cr.X.aa == 2
     assert cr.X.bb is None  # v6 change: None is no longer overridable
     assert cr.X.KwargsItem.aa == 2
     assert cr.X.KwargsItem.bb == 1 # v6 change: 'bb' exist because of object merge
 
     @mc_config(ef2_pp_prod)
-    def _1(_):
+    def config1(_):
         X()
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config1(prod2)
     assert cr.X.aa == 1
     assert cr.X.bb is None  # v6 change: None is no longer overridable
     assert cr.X.KwargsItem.aa == 1
@@ -418,13 +418,13 @@ def test_mc_init_simple_item_definition_more_specific_env_attr_value_merge_to_it
             XChild()
 
     @mc_config(ef2_pp_prod)
-    def _0(_):
+    def config0(_):
         with ConfigItem():
             with X() as x:
                 x.aa = 2
                 XChild(aa=1)
 
-    cr = ef2_pp_prod.config(prod2).ConfigItem
+    cr = config0(prod2).ConfigItem
     assert cr.X.aa == 2
     assert cr.X.XChild.aa == 17
 
@@ -436,14 +436,14 @@ def test_mc_init_simple_item_definition_less_specific_env_attr_value_merge_to_it
             ItemWithAA(aa=1)
 
     @mc_config(ef2_pp_prod)
-    def _0(_):
+    def config0(_):
         with ConfigItem():
             with X() as x:
                 x.aa = 2
                 with ItemWithAA() as it:
                     it.setattr('aa', default=1, prod=17)
 
-    cr = ef2_pp_prod.config(prod2).ConfigItem
+    cr = config0(prod2).ConfigItem
     assert cr.X.aa == 2
     assert cr.X.ItemWithAA.aa == 17
 
@@ -468,7 +468,7 @@ def test_nested_mc_init_simple_items():
             KwargsItem(aa=13, bb=13)
 
     @mc_config(ef2_pp_prod)
-    def _0(_):
+    def config0(_):
         with X1() as x:
             x.aa = 1
             KwargsItem(aa=1)
@@ -479,7 +479,7 @@ def test_nested_mc_init_simple_items():
                     x.aa = 3
                     KwargsItem(aa=3)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config0(prod2)
     assert cr.X1.aa == 1
     assert cr.X1.bb is None  # v6 change: None is no longer overridable
     assert cr.X1.KwargsItem.aa == 1
@@ -496,7 +496,7 @@ def test_nested_mc_init_simple_items():
     assert cr.X1.X2.X3.KwargsItem.bb == 13  # v6 change: 'bb' exist because of object merge
 
     @mc_config(ef2_pp_prod)
-    def _1(_):
+    def config1(_):
         with X1() as x:
             x.aa = 1
             with X2() as x:
@@ -504,7 +504,7 @@ def test_nested_mc_init_simple_items():
                 x.setattr('bb', prod=17)
                 X3()
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config1(prod2)
     assert cr.X1.aa == 1
     assert cr.X1.bb is None  # v6 change: None is no longer overridable
     assert cr.X1.KwargsItem.aa == 11
@@ -529,18 +529,18 @@ def test_override_attr_in_init():
             self.setattr('aa', default=17, mc_force=True)
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         X()
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.X.aa == 17
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with X(aa=2) as x:
             x.aa = 3
 
-    cr = ef2_pp_prod.config(pp2)
+    cr = config(pp2)
     assert cr.X.aa == 3
 
 
@@ -555,7 +555,7 @@ def test_mc_init_override_change_type():
             self.setattr("aa", default="Hello", mc_force=True)
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with X() as x:
             assert x.aa == 1
         assert x.aa == "Hello"
@@ -563,23 +563,23 @@ def test_mc_init_override_change_type():
 
 def test_override_repeated_attr():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with ItemWithAA() as ci:
             ci.aa = 1
             ci.setattr('aa', default=7, mc_force=True)
 
-    ci = ef2_pp_prod.config(prod2).ItemWithAA
+    ci = config(prod2).ItemWithAA
     assert ci.aa == 7
 
 
 def test_override_repeated_unknown_attr():
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with ConfigItem() as ci:
             ci.setattr('aa', default=1, mc_set_unknown=True)
             ci.setattr('aa', default=7, mc_force=True)
 
-    ci = ef2_pp_prod.config(prod2).ConfigItem
+    ci = config(prod2).ConfigItem
     assert ci.aa == 7
 
 
@@ -593,13 +593,13 @@ def test_mc_init_setattr_ref_env_value():
             self.setattr("aa", prod=3)
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         x = X()
 
-    cr = ef2_pp_prod.config(pp2)
+    cr = config(pp2)
     assert cr.X.aa == 1
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.X.aa == 3
 
 
@@ -613,30 +613,30 @@ def test_mc_init_setattr_ref_env_value_from_with():
             self.setattr("aa", prod=3)
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with X() as x:
             x.setattr('aa', default=13, pp=4, prod=7)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.X.aa == 7
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with X() as x:
             x.setattr('aa', default=13, pp=4)
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.X.aa == 3
 
-    cr = ef2_pp_prod.config(pp2)
+    cr = config(pp2)
     assert cr.X.aa == 4
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with X() as x:
             x.setattr('aa', default=13)
 
-    cr = ef2_pp_prod.config(pp2)
+    cr = config(pp2)
     assert cr.X.aa == 13
 
 
@@ -653,23 +653,23 @@ def test_attribute_args_partial_set_in_init_overridden_or_finished_in_mc_init():
             self.bb = 7
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         Requires()
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.Requires.aa == 13
     assert cr.Requires.bb == 2
 
-    cr = ef2_pp_prod.config(pp2)
+    cr = config(pp2)
     assert cr.Requires.aa == 7
     assert cr.Requires.bb == 17  # Pre v6 this would be 7!
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         with Requires() as req:
             req.bb = 3
 
-    cr = ef2_pp_prod.config(pp2)
+    cr = config(pp2)
     assert cr.Requires.aa == 7
     assert cr.Requires.bb == 3
 
@@ -682,10 +682,29 @@ def test_item_equality():
         pass
 
     @mc_config(ef2_pp_prod)
-    def _(_):
+    def config(_):
         X()
         Y()
 
-    cr = ef2_pp_prod.config(prod2)
+    cr = config(prod2)
     assert cr.X == cr.X
     assert cr.X != cr.Y  # TODO? Equality between items?
+
+
+def test_multiple_configs_same_env_factory():
+    @mc_config(ef2_pp_prod)
+    def config1(_):
+        with KwargsItem(aa=1, bb=3) as ci:
+            ci.setattr('aa', prod=2)
+
+    @mc_config(ef2_pp_prod)
+    def config2(_):
+        with KwargsItem(aa=1, bb=3) as ci:
+            ci.setattr('aa', prod=3)
+
+    cr1 = config1(prod2)
+    assert cr1.KwargsItem.aa == 2
+    
+    cr2 = config2(prod2)
+    assert cr2.KwargsItem.aa == 3
+

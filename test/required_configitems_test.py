@@ -45,12 +45,12 @@ def test_required_items_for_configroot_as_args():
         pass
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root():
             anitem(1)
             anotheritem(2)
 
-    cr = ef.config(prod).root            
+    cr = config(prod).root            
     assert cr.anitem.val == 1
     assert cr.anotheritem.val == 2
 
@@ -64,13 +64,13 @@ def test_required_items_for_configitem_as_args():
         pass
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root():
             with item():
                 aa(1)
                 bb(2)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert cr.item.aa.val == 1
     assert cr.item.bb.val == 2
 
@@ -92,11 +92,11 @@ def test_required_items_accept_override_of_default():
             bb(self.b)
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with item(a=1, b=1):
             bb(2)
 
-    cr = ef.config(prod)
+    cr = config(prod)
     assert cr.item.aa.val == 1
     assert cr.item.bb.val == 2
 
@@ -111,14 +111,14 @@ def test_required_items_inherited_ok(capsys):
         pass
 
     @mc_config(ef)
-    def _(_):
+    def config(_):
         with root2():
             anitem(1)
             anotheritem(2)
             someitem2(3)
             someotheritem2(4)
 
-    cr = ef.config(prod).root2
+    cr = config(prod).root2
     assert cr.anitem.val == 1
     assert cr.anotheritem.val == 2
     assert cr.someitem2.val == 3
@@ -139,7 +139,7 @@ def test_required_items_missing_for_configroot(capsys):
             pass
 
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with root():
                 errorline[0] = line_num()
 
@@ -160,7 +160,7 @@ def test_required_items_missing_for_configitem(capsys):
             pass
 
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with root():
                 with item():
                     errorline[0] = next_line_num()
@@ -195,7 +195,7 @@ def test_error_freezing_previous_sibling_missing_required(capsys):
 
     with raises(Exception) as exinfo:
         @mc_config(ef)
-        def _(_):
+        def config(_):
             with ConfigItem():
                 errorline[0] = next_line_num()
                 inner()

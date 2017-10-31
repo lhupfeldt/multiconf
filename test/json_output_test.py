@@ -80,10 +80,10 @@ _json_dump_root_no_env_expected_json = """{
 
 def test_json_dump_root():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         ConfigItem()
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert compare_json(cr, _json_dump_root_expected_json, expected_all_envs_json=_json_dump_root_no_env_expected_json)
 
 
@@ -234,7 +234,7 @@ _json_dump_simple_all_envs_expected_json = """{
 
 def test_json_dump_simple():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             NestedRepeatable(mc_key='a-level1')
             with NestedRepeatable(mc_key='b-level1') as ci:
@@ -247,7 +247,7 @@ def test_json_dump_simple():
                 NestedRepeatable(mc_key='c-level2', something=2)
             NestedRepeatable(mc_key='c-level1', something=3)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_simple_expected_json, sort_attributes=False, expected_all_envs_json=_json_dump_simple_all_envs_expected_json)
 
 
@@ -307,7 +307,7 @@ def test_json_dump_cyclic_references_in_conf_items():
             self.ref = MC_REQUIRED
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             with NestedRepeatable(mc_key='a1', some_value=27) as ref_obj1:
                 ref_obj1.setattr('some_value', pp=1, prod=2)
@@ -320,7 +320,7 @@ def test_json_dump_cyclic_references_in_conf_items():
                 last_item.something = 3
                 last_item.setattr('ref', pp=ref_obj1, prod=ref_obj2)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_cyclic_references_in_conf_items_expected_json, sort_attributes=False, test_containment=False)
 
 
@@ -347,13 +347,13 @@ def test_json_dump_cyclic_references_between_conf_items_and_other_objects():
     cycler = {}
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             with SimpleItem(id='b1', someattr=12, cycl=cycler) as ref_obj2:
                 pass
             cycler['cyclic_item_ref'] = ref_obj2
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, __json_dump_cyclic_references_between_conf_items_and_other_objects_expected_json)
 
 
@@ -381,11 +381,11 @@ def test_json_dump_property_method():
             return 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_dump_property_method_expected)
 
 
@@ -414,12 +414,12 @@ def test_json_dump_property_attribute_method_override():
             return 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
                 nn.setattr("m", mc_overwrite_property=True, default=7)
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_dump_property_attribute_method_override_expected_json)
     assert cr.someitem.m == 7
 
@@ -466,12 +466,12 @@ def test_json_dump_property_attribute_method_override_other_env():
             return 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ConfigItem():
             with Nested() as nn:
                 nn.setattr("m", mc_overwrite_property=True, pp=7)
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert compare_json(cr, _json_dump_property_attribute_method_override_other_env_expected_json,
                         expected_all_envs_json=_json_dump_property_attribute_method_override_other_env_all_envs_expected_json)
     assert cr.someitem.m == 1
@@ -512,11 +512,11 @@ def test_json_dump_property_method_raises_InvalidUsageException():
             raise InvalidUsageException("No m now")
 
     @mc_config(ef, validate_properties=False)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_dump_property_method_raises_InvalidUsageException_expected_json,
                         expected_all_envs_json=_json_dump_property_method_raises_InvalidUsageException_all_envs_expected_json)
 
@@ -560,12 +560,12 @@ def test_json_dump_property_method_raises_exception():
             raise Exception("Something is wrong")
 
     @mc_config(ef, validate_properties=False)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as it:
             it.setattr('aa', default=1, prod=0)
             Nested()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(
         cr, _json_dump_property_method_raises_exception_expected_json, expect_num_errors=1,
         expected_all_envs_json=_json_dump_property_method_raises_exception_all_envs_expected_json, expect_all_envs_num_errors=2)
@@ -619,12 +619,12 @@ def test_json_dump_property_method_raises_exception_in_pp():
             return self.aa + 7
 
     @mc_config(ef, validate_properties=False)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
                 nn.setattr('aa', default=1, pp=17)
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(
         cr, _json_dump_property_method_raises_exception_in_pp_expected_json, expect_num_errors=1,
         expected_all_envs_json=_json_dump_property_method_raises_exception_in_pp_all_envs_expected_json)
@@ -640,11 +640,11 @@ def test_json_dump_property_method_raises_ConfigException():
             raise ConfigException("Something is wrong")
 
     @mc_config(ef, validate_properties=False)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _e2b_expected_json_output, expect_num_errors=1)
 
 
@@ -672,11 +672,11 @@ def test_json_dump_property_method_returns_self():
             return self
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_dump_property_method_returns_self_expected_json)
 
 
@@ -715,12 +715,12 @@ def test_json_dump_property_method_returns_already_seen_conf_item():
             self.a = a
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             X(a=0)
             Nested()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_dump_property_method_returns_already_seen_conf_item_expected_json)
 
 
@@ -759,11 +759,11 @@ def test_json_dump_property_method_calls_json(capsys):
             return 7
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     warn_nesting = os.environ.get('MULTICONF_WARN_JSON_NESTING', "false")
     os.environ['MULTICONF_WARN_JSON_NESTING'] = "true"
     try:
@@ -785,11 +785,11 @@ def test_json_dump_property_method_calls_json_no_warn(capsys):
             self.json()
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     cr.json(warn_nesting=False)
     sout, serr = capsys.readouterr()
     assert not sout
@@ -820,11 +820,11 @@ def test_json_dump_non_conf_item_not_json_serializable(capsys):
             return "<Key object>"
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             SimpleItem(b={Key(): 2})
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
 
     sout, serr = capsys.readouterr()
     assert not sout
@@ -861,11 +861,11 @@ def test_json_dump_non_conf_item():
             self._x = 7
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             SimpleItem(a=SomeClass())
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert replace_ids(cr.json()) == _json_dump_non_conf_item_expected_json
     # to_compact will not handle conversion of non-multiconf object representation, an extra '#as...' is inserted,
     # we remove it again
@@ -891,11 +891,11 @@ def test_json_dump_unhandled_item_function_ref():
         pass
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ConfigItem():
             SimpleItem(func=fff)
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert compare_json(cr, _json_dump_unhandled_item_function_ref_expected_json, expect_num_errors=1)
 
 
@@ -921,11 +921,11 @@ def test_json_dump_iterable():
             yield 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ConfigItem():
             SimpleItem(a=MyIterable())
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert compare_json(cr, _json_dump_iterable_expected_json)
 
 
@@ -955,11 +955,11 @@ def test_json_dump_iterable_static():
         a = MyIterable()
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ConfigItem():
             SimpleItem()
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert compare_json(cr, _json_dump_iterable_static_expected_json, test_compact=False)
 
 
@@ -986,14 +986,14 @@ _uplevel_ref_expected_json_output = """{
 
 def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             with NestedRepeatable(mc_key='n1', name='Number 1', b=1) as n1:
                 with NestedRepeatable(mc_key='n2', c=2) as n2:
                     NestedRepeatable(mc_key='n3', uplevel_ref=n1, d=3)
         return n2
 
-    cfg = ef.config(prod)
+    cfg = config(prod)
     n2 = cfg.mc_config_result
     assert compare_json(n2, _uplevel_ref_expected_json_output, test_containment=False)
 
@@ -1030,12 +1030,12 @@ def test_json_dump_dir_error(capsys):
             return "will-show"
 
     @mc_config(ef, validate_properties=False)
-    def _(rt):
+    def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
                 nn.aa = 2
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     cr.json()
     sout, serr = capsys.readouterr()
     assert serr == sout == ''
@@ -1086,12 +1086,12 @@ def test_json_dump_property_method_returns_later_confitem_same_level():
             return self.contained_in.someitems['two']
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             NamedNestedRepeatable(name='one')
             NamedNestedRepeatable(name='two')
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_property_method_returns_later_confitem_same_level_expected_json)
 
 
@@ -1150,13 +1150,13 @@ def test_json_dump_property_method_returns_later_confitem_list_same_level():
             return [self.contained_in.someitems['two'], self.contained_in.someitems['three']]
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             NamedNestedRepeatable(name='one')
             NamedNestedRepeatable(name='two')
             NamedNestedRepeatable(name='three')
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_property_method_returns_later_confitem_list_same_level_expected_json)
 
 
@@ -1167,13 +1167,13 @@ def test_json_dump_property_method_returns_later_confitem_tuple_same_level():
             return self.contained_in.someitems['two'], self.contained_in.someitems['three']
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             NamedNestedRepeatable(name='one')
             NamedNestedRepeatable(name='two')
             NamedNestedRepeatable(name='three')
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_property_method_returns_later_confitem_list_same_level_expected_json)
 
 
@@ -1232,13 +1232,13 @@ def test_json_dump_property_method_returns_later_confitem_dict_same_level():
             return OrderedDict((('a', self.contained_in.someitems['two']), ('b', self.contained_in.someitems['three'])))
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             NamedNestedRepeatable(name='one')
             NamedNestedRepeatable(name='two')
             NamedNestedRepeatable(name='three')
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json, test_decode=True)
 
 
@@ -1249,13 +1249,13 @@ def test_json_dump_property_method_returns_later_confitem_ordereddict_same_level
             return OrderedDict((('a', self.contained_in.someitems['two']), ('b', self.contained_in.someitems['three'])))
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             NamedNestedRepeatable(name='one')
             NamedNestedRepeatable(name='two')
             NamedNestedRepeatable(name='three')
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json)
 
 
@@ -1297,11 +1297,11 @@ def test_json_dump_nested_class_non_mc():
             pass
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             McWithNestedClass()
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(py3_local=py3_local('McWithNestedClass.')))
 
     class NonMcWithNestedClass(object):
@@ -1309,12 +1309,12 @@ def test_json_dump_nested_class_non_mc():
             pass
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             with ItemWithAA() as ci:
                 ci.aa = NonMcWithNestedClass
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_local=py3_local()))
 
 
@@ -1325,11 +1325,11 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
                 return ""
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             McWithNestedClass()
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(py3_local=py3_local('McWithNestedClass.')))
 
     class NonMcWithNestedClass(object):
@@ -1338,12 +1338,12 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
                 return ""
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             with ItemWithAA() as ci:
                 ci.aa = NonMcWithNestedClass
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_local=py3_local()))
 
 
@@ -1374,12 +1374,12 @@ def test_json_dump_multiple_errors():
         pass
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ConfigItem():
             with SimpleItem(func=fff):
                 SimpleItem(func=ggg)
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert compare_json(cr, _json_dump_multiple_errors_expected_json, expect_num_errors=2)
 
 
@@ -1419,7 +1419,7 @@ def test_iterable_attr_forward_item_ref():
             self.a = 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 0
             with ItemWithAnXRef() as x_ref:
@@ -1427,7 +1427,7 @@ def test_iterable_attr_forward_item_ref():
             xx = Xx()
             x_ref.item_refs.append(xx)
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _iterable_attr_forward_item_ref)
 
 
@@ -1467,7 +1467,7 @@ def test_iterable_tuple_attr_forward_item_ref():
             self.a = 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 0
             with ItemWithAnXRef() as x_ref:
@@ -1475,7 +1475,7 @@ def test_iterable_tuple_attr_forward_item_ref():
                 xx = Xx()
                 x_ref.item_refs = (xx,)
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _iterable_tuple_attr_forward_item_ref)
 
 
@@ -1515,7 +1515,7 @@ def test_dict_attr_forward_item_ref():
             self.a = 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 0
             with ItemWithAnXRef() as x_ref:
@@ -1523,7 +1523,7 @@ def test_dict_attr_forward_item_ref():
                 xx = Xx()
                 x_ref.item_refs['xr'] = xx
 
-    cr = ef.config(prod).ItemWithAA
+    cr = config(prod).ItemWithAA
     assert compare_json(cr, _dict_attr_forward_item_ref)
 
 
@@ -1547,11 +1547,11 @@ def test_static_member_direct():
         a = 1
 
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with ConfigItem():
             Xx()
 
-    cr = ef.config(prod).ConfigItem
+    cr = config(prod).ConfigItem
     assert compare_json(cr, _static_member_direct_expected_json)
 
 
@@ -1611,14 +1611,14 @@ def test_static_member_inherited_mc():
         pass
 
     @mc_config(ef)
-    def _(root):
+    def config(root):
         Xx()
         Yy()
         Zz()
         Aa()
         Bb()
 
-    cr = ef.config(prod)
+    cr = config(prod)
     assert compare_json(cr, _static_member_inherited_mc_expected_json)
 
 
@@ -1645,10 +1645,10 @@ def test_env_ref():
             self.setattr('env_ref', default=pp, mc_set_unknown=True)
 
     @mc_config(ef)
-    def _(root):
+    def config(root):
         Xx()
 
-    cr = ef.config(prod)
+    cr = config(prod)
     assert compare_json(cr, _env_ref_expected_json)
 
 
@@ -1675,10 +1675,10 @@ def test_envgroup_ref():
             self.setattr('egref', default=g_p, mc_set_unknown=True)
 
     @mc_config(ef)
-    def _(root):
+    def config(root):
         Xx()
 
-    cr = ef.config(prod)
+    cr = config(prod)
     assert compare_json(cr, _envgroup_ref_expected_json)
 
 
@@ -1696,10 +1696,10 @@ def test_exception_generating_json():
             self.setattr('egref', default=X(), mc_set_unknown=True)
 
     @mc_config(ef)
-    def _(root):
+    def config(root):
         Xx()
 
-    cr = ef.config(prod)
+    cr = config(prod)
 
     # Accessing a completey undefind attribute does not invoke multiconf exception, so the bad __repr__ is no called
     with raises(AttributeError) as exinfo:
@@ -1848,7 +1848,7 @@ _json_dump_depth_expected_json_full = """{
 
 def test_json_dump_depth(capsys):
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0):
             ItemWithAA(1)
             NestedRepeatable(mc_key='a-level1')
@@ -1861,7 +1861,7 @@ def test_json_dump_depth(capsys):
                         ci.setattr('a', prod=1, pp=2)
                         NestedRepeatable(mc_key='c-level3', something=1)
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
 
     sout, serr = capsys.readouterr()
     assert not sout
@@ -1899,7 +1899,7 @@ _json_dump_during_load_json1_exp = """{
 def test_json_dump_during_load():
     jsons = []
     @mc_config(ef)
-    def _(rt):
+    def config(rt):
         with root(aa=0) as cr:
             jsons.append(cr.json())
             NestedRepeatable(mc_key='a-level1')
@@ -1907,6 +1907,6 @@ def test_json_dump_during_load():
                 jsons.append(ci.json())
                 NestedRepeatable(mc_key='a-level2')
 
-    cr = ef.config(prod).root
+    cr = config(prod).root
     assert replace_ids(jsons[0]) == _json_dump_during_load_json0_exp
     assert replace_ids(jsons[1]) == _json_dump_during_load_json1_exp
