@@ -689,22 +689,3 @@ def test_item_equality():
     cr = config(prod2)
     assert cr.X == cr.X
     assert cr.X != cr.Y  # TODO? Equality between items?
-
-
-def test_multiple_configs_same_env_factory():
-    @mc_config(ef2_pp_prod)
-    def config1(_):
-        with KwargsItem(aa=1, bb=3) as ci:
-            ci.setattr('aa', prod=2)
-
-    @mc_config(ef2_pp_prod)
-    def config2(_):
-        with KwargsItem(aa=1, bb=3) as ci:
-            ci.setattr('aa', prod=3)
-
-    cr1 = config1(prod2)
-    assert cr1.KwargsItem.aa == 2
-    
-    cr2 = config2(prod2)
-    assert cr2.KwargsItem.aa == 3
-
