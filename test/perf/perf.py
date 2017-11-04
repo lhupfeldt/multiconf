@@ -96,9 +96,10 @@ third_range = 100
 
 def config(validate_properties=True):
     global hp
+    global conf
 
     @mc_config(ef, validate_properties=validate_properties)
-    def _(_):
+    def conf_func(_):
         with root() as cr:
             for ii in range(0, first_range):
                 rchild_init(repr(ii), aa=1, bb=1, xx="hello", yy="hi")
@@ -145,9 +146,11 @@ def config(validate_properties=True):
     if hp:
         print(hp.heap())
 
+    conf = conf_func
+
 
 def use():
-    cr = ef.config(prod).root
+    cr = conf(prod).root
     for ii in range(0, 5):
         for jj in range(0, first_range):
             assert cr.children_init[repr(jj)].bb == 1
