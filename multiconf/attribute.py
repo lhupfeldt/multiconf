@@ -4,7 +4,7 @@
 from enum import Enum
 
 from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigApiException
-from .envs import NO_ENV
+from .envs import NO_ENV, thread_local
 
 
 class Where(Enum):
@@ -44,12 +44,12 @@ class _McAttributeAccessor(object):
                 return self
 
             cr = obj._mc_root
-            current_env = cr._mc_env
+            current_env = thread_local.env
             if cr._mc_config_loaded:
                 raise ConfigExcludedAttributeError(obj, self.attr_name, current_env)
 
         cr = obj._mc_root
-        current_env = cr._mc_env
+        current_env = thread_local.env
 
         try:
             mc_attribute = obj._mc_attributes[self.attr_name]

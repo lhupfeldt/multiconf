@@ -8,6 +8,7 @@ from collections import Mapping, OrderedDict
 import types
 
 from . import envs
+from .envs import thread_local
 from .values import McInvalidValue
 from .config_errors import InvalidUsageException, ConfigExcludedAttributeError
 from .bases import get_bases
@@ -220,9 +221,9 @@ class ConfigItemEncoder(object):
         if key in attributes_overriding_property:
             overridden_property = ' #overridden @property'
 
-        orig_env = obj._mc_root._mc_env
+        orig_env = thread_local.env
         try:
-            obj._mc_root._mc_env = env
+            thread_local.env = env
             val = getattr(obj, key)
         except InvalidUsageException as ex:
             self.num_invalid_usages += 1
@@ -232,7 +233,7 @@ class ConfigItemEncoder(object):
             traceback.print_exception(*sys.exc_info())
             return key, [(overridden_property + ' #json_error trying to handle property method', repr(ex))]
         finally:
-            obj._mc_root._mc_env = orig_env
+            thread_local.env = orig_env
 
         if type(val) == types.MethodType:
             return key, ()

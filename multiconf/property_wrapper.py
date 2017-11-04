@@ -2,6 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 
+from .envs import thread_local
 from .config_errors import ConfigAttributeError, failed_property_call_msg
 
 
@@ -22,7 +23,7 @@ class _McPropertyWrapper(object):
             # @property is not overwritten for current instance
             pass
         else:
-            current_env = obj._mc_root._mc_env
+            current_env = thread_local.env
             if current_env in env_values:
                 return env_values[current_env]
 

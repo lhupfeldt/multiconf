@@ -7,7 +7,7 @@ import sys, os, traceback
 from collections import OrderedDict
 import json
 
-from .envs import EnvFactory, Env, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV
+from .envs import EnvFactory, Env, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV, thread_local
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, _McAttributeAccessor, Where
 from .property_wrapper import _McPropertyWrapper
@@ -75,7 +75,7 @@ class _ConfigBase(object):
     def _mc_print_value_error_msg(self, attr_name, value, mc_caller_file_name, mc_caller_line_num):
         """Print message about invalid or missing value"""
         cr = self._mc_root
-        current_env = cr._mc_env
+        current_env = thread_local.env
 
         value_msg = ' ' + repr(value) if value != MC_NO_VALUE else ''
         msg = "Attribute: '{attr}'{value_msg} did not receive a value for env {env}".format(attr=attr_name, value_msg=value_msg, env=current_env)
@@ -141,10 +141,9 @@ class _ConfigBase(object):
         _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
 
         try:
-            # TODO: Thread safety
-            orig_env = cr._mc_env
+            orig_env = thread_local.env
             if show_all_envs:
-                cr._mc_env = NO_ENV
+                thread_local.env = NO_ENV
 
             # python3 doesn't need  separators=(',', ': ')
             json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
@@ -154,7 +153,7 @@ class _ConfigBase(object):
             _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
             cr._mc_in_json = False
 
-            cr._mc_env = orig_env
+            thread_local.env = orig_env
 
     def _mc_excl_repr(self):
         return "Excluded: " + repr(type(self))
@@ -207,7 +206,7 @@ class _ConfigBase(object):
         """
 
     def __bool__(self):
-        return not (self._mc_root._mc_env.mask & self._mc_excluded)
+        return not (thread_local.env.mask & self._mc_excluded)
 
     # Python2 compatibility
     __nonzero__ = __bool__
@@ -228,7 +227,7 @@ class _ConfigBase(object):
         cr = self._mc_root
         if not cr._mc_config_loaded:
             return True
-        env_mask = cr._mc_env.mask
+        env_mask = thread_local.env.mask
         if env_mask & self._mc_excluded:
             return False
         return self._mc_handled_env_bits & env_mask or env_mask == 0
@@ -560,7 +559,7 @@ class _ConfigBase(object):
             return
 
         cr = self._mc_root
-        self._mc_setattr(cr._mc_env, attr_name, value, cr._mc_env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
+        self._mc_setattr(thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
 
     def setattr(self, attr_name, mc_overwrite_property=False, mc_set_unknown=False, mc_force=False, mc_error_info_up_level=2, **env_values):
         """Set env specific values for an attribute.
@@ -591,7 +590,7 @@ class _ConfigBase(object):
             return
 
         cr = self._mc_root
-        env_factory = cr._mc_env_factory
+        env_factory = cr.env_factory
 
         if cr._mc_check_unknown:
             # Check that there are no undefined eg names specified
@@ -605,7 +604,7 @@ class _ConfigBase(object):
                 msg = "No such Env or EnvGroup: " + repr(undefined[0])  # TODO list
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
 
-        current_env = cr._mc_env
+        current_env = thread_local.env
         try:
             value, eg = env_factory._mc_resolve_env_group_value(current_env, env_values)
             self._mc_setattr(current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level + 1)
@@ -624,12 +623,11 @@ class _ConfigBase(object):
         """Get an attribute value for any env."""
         cr = self._mc_root
         try:
-            # TODO: Thread safety
-            orig_env = cr._mc_env
-            cr._mc_env = env
+            orig_env = thread_local.env
+            thread_local.env = env
             return getattr(self, attr_name)
         finally:
-            cr._mc_env = orig_env
+            thread_local.env = orig_env
 
     def items(self):
         for key, item in self._mc_items.items():
@@ -639,7 +637,7 @@ class _ConfigBase(object):
 
     @property
     def env(self):
-        return self._mc_root._mc_env
+        return thread_local.env
 
     @property
     def env_factory(self):
@@ -761,7 +759,7 @@ class AbstractConfigItem(_ConfigBase):
         _ConfigBase._mc_last_item = self
 
         if not self._mc_contained_in:
-            self._mc_excluded |= self._mc_root._mc_env.mask
+            self._mc_excluded |= thread_local.env.mask
             raise _McExcludedException()
 
         if mc_include or mc_exclude:
@@ -780,7 +778,7 @@ class AbstractConfigItem(_ConfigBase):
             raise ex
 
         if selected == 1 or (selected is None and include):
-            self._mc_excluded |= self._mc_root._mc_env.mask
+            self._mc_excluded |= thread_local.env.mask
             return True
 
         return False
@@ -840,13 +838,13 @@ class ConfigItem(AbstractConfigItem):
 
         try:
             self = object.__getattribute__(contained_in, name)
-            if self._mc_handled_env_bits & self._mc_root._mc_env.mask:
+            if self._mc_handled_env_bits & thread_local.env.mask:
                 # We are trying to replace a non-repeatable object. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     self._mc_where = Where.IN_RE_INIT
                     return self
                 raise ConfigException("Repeated non repeatable conf item: '{name}': {cls}".format(name=name, cls=cls))
-            self._mc_handled_env_bits |= self._mc_root._mc_env.mask
+            self._mc_handled_env_bits |= thread_local.env.mask
 
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
@@ -879,7 +877,7 @@ class ConfigItem(AbstractConfigItem):
             object.__setattr__(contained_in, name, self)
             contained_in._mc_items[name] = self  # Needed to implement reliable 'items' method
 
-            self._mc_handled_env_bits = self._mc_root._mc_env.mask
+            self._mc_handled_env_bits = thread_local.env.mask
             return self
 
     def __init__(self, mc_include=None, mc_exclude=None):
@@ -912,7 +910,7 @@ class RepeatableConfigItem(AbstractConfigItem):
 
         try:
             self = repeatable[mc_key]
-            if self._mc_handled_env_bits & self._mc_root._mc_env.mask:
+            if self._mc_handled_env_bits & thread_local.env.mask:
                 # We are trying to replace an object with the same mc_key. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     self._mc_where = Where.IN_RE_INIT
@@ -920,7 +918,7 @@ class RepeatableConfigItem(AbstractConfigItem):
                 build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else ""
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
-            self._mc_handled_env_bits |= self._mc_root._mc_env.mask
+            self._mc_handled_env_bits |= thread_local.env.mask
 
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
@@ -942,7 +940,7 @@ class RepeatableConfigItem(AbstractConfigItem):
                 self._mc_items[key] = od  # Needed to implement reliable 'items' method
                 object.__setattr__(self, key, od)
 
-            self._mc_handled_env_bits = self._mc_root._mc_env.mask
+            self._mc_handled_env_bits = thread_local.env.mask
 
             # Insert self in repeatable
             repeatable[mc_key] = self
@@ -970,7 +968,7 @@ class _ConfigBuilder(AbstractConfigItem):
 
         try:
             self = contained_in._mc_items[private_key]
-            if self._mc_handled_env_bits & self._mc_root._mc_env.mask:
+            if self._mc_handled_env_bits & thread_local.env.mask:
                 # We are trying to replace an object with the same mc_key. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     self._mc_where = Where.IN_RE_INIT
@@ -978,7 +976,7 @@ class _ConfigBuilder(AbstractConfigItem):
                 build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else ""
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
-            self._mc_handled_env_bits |= self._mc_root._mc_env.mask
+            self._mc_handled_env_bits |= thread_local.env.mask
 
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
@@ -995,7 +993,7 @@ class _ConfigBuilder(AbstractConfigItem):
             self._mc_root = contained_in._mc_root
             self._mc_excluded = 0
 
-            self._mc_handled_env_bits = self._mc_root._mc_env.mask
+            self._mc_handled_env_bits = thread_local.env.mask
             contained_in._mc_items[private_key] = self
 
             return self
@@ -1094,7 +1092,7 @@ class _ItemParentProxy(object):
             return
 
         cr = self._mc_item._mc_root
-        self._mc_item._mc_setattr(cr._mc_env, attr_name, value, cr._mc_env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
+        self._mc_item._mc_setattr(thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
 
 
 class _ConfigRoot(_ConfigBase):
@@ -1141,12 +1139,13 @@ class _RootEnvProxy(object):
     __slots__ = ('_mc_root', '_mc_env')
 
     def __init__(self, env, root_item):
+        thread_local.env = env
         object.__setattr__(self, '_mc_env', env)
         object.__setattr__(self, '_mc_root', root_item)
 
     def __getattr__(self, name):
         cr = self._mc_root
-        cr._mc_env = self._mc_env
+        thread_local.env = self._mc_env
         return getattr(cr, name)
 
     @property
@@ -1253,7 +1252,7 @@ def mc_config(
     def load_one_env(env, conf_func, cr, root_proxies, error_envs):
         _mc_debug("\n==== Loading", env, "====")
         rp = _RootEnvProxy(env, cr)
-        cr._mc_env = env
+        thread_local.env = env
         del cr.__class__._mc_hierarchy[:]
         _ConfigBase._mc_last_item = None
 
@@ -1309,7 +1308,7 @@ def mc_config(
 
             if do_post_validate:
                 # Call mc_post_validate
-                cr._mc_env = NO_ENV
+                thread_local.env = NO_ENV
                 _mc_debug("\n==== Calling 'mc_post_validate' ====")
                 cr._mc_call_mc_post_validate_recursively()
 

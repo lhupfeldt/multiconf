@@ -7,6 +7,7 @@ import sys
 from collections import Container, OrderedDict
 import itertools
 import json
+import threading
 
 from .bits import int_to_bin_str
 from .config_errors import ConfigException, _line_msg
@@ -306,3 +307,7 @@ class NO_ENV(object):
     mask = 0
     name = "MC_NO_ENV"
     lookup_order = ()
+
+
+thread_local = threading.local()
+thread_local.env = NO_ENV
