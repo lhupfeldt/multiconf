@@ -1160,7 +1160,7 @@ class _RootEnvProxy(object):
 def mc_config(
         env_factory, error_next_env=False, validate_properties=True,
         mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=McTodoHandling.WARNING,
-        mc_json_filter=None, mc_json_fallback=None, do_type_check=None, do_post_validate=True):
+        mc_json_filter=None, mc_json_fallback=None, do_type_check=None, do_post_validate=True, lazy_load=False):
     """Function decorator for instanting ConfigItem hierarchy for all Envs defined in 'env_factory'.
 
        This decorator creates a wrapped config function which is then used for retreiving the configuration for a specific env.
@@ -1219,6 +1219,10 @@ def mc_config(
             It will be checked that x.a is instance of int.
 
         do_post_validate (bool): Allow skipping the mc_post_validate call. I.e. if set to False the user defined call backs are not called.
+
+        lazy_load (bool): Allow loading config only for envs for which is instantiated by calling the wrapped config method. If False the config is
+            pre-instantiated for all envs in order to validate correctness of the configuration for all envs. Enabling lazy_load also disables
+            `mc_post_validate` calls and other checking which cannot be done with lazy loading.
     """
 
     if not isinstance(env_factory, EnvFactory):
@@ -1246,6 +1250,39 @@ def mc_config(
     else:
         do_type_check = do_type_check is None and allow_type_check
 
+    def load_one_env(env, conf_func, cr, root_proxies, error_envs):
+        _mc_debug("\n==== Loading", env, "====")
+        rp = _RootEnvProxy(env, cr)
+        cr._mc_env = env
+        del cr.__class__._mc_hierarchy[:]
+        _ConfigBase._mc_last_item = None
+
+        try:
+            with cr:
+                res = conf_func(cr)
+            cr._mc_handled_env_bits |= env.mask
+            cr._mc_call_mc_validate_recursively(env)
+            if validate_properties:
+                _mc_debug("\n==== Validating @properties", env, "====")
+                cr._mc_validate_properties_recursively(env)
+                if cr._mc_num_property_errors:
+                    raise ConfigException("Error validating @property methods for {}".format(env))
+
+            cr._mc_check_unknown = False
+            cr._mc_config_result[env] = res
+            root_proxies[env] = rp
+        except ConfigException as ex:
+            if not error_next_env or ex.is_fatal:
+                raise
+
+            if not ex.is_summary:
+                traceback.print_exc(file=sys.stderr)
+            else:
+                print(ex.__class__.__name__ + ':', ex, file=sys.stderr)
+            print("Error in config for {} above.\n".format(env), file=sys.stderr)
+
+            error_envs.append(env)
+
     def deco(conf_func):
         env_factory._mc_calc_env_group_order()
         # Create root object
@@ -1258,52 +1295,23 @@ def mc_config(
         # Load envs
         root_proxies = {}
         error_envs = []
-        for env in env_factory.envs.values():
-            _mc_debug("\n==== Loading", env, "====")
-            rp = _RootEnvProxy(env, cr)
-            cr._mc_env = env
-            del cr.__class__._mc_hierarchy[:]
-            _ConfigBase._mc_last_item = None
 
-            try:
-                with cr:
-                    res = conf_func(cr)
-                cr._mc_handled_env_bits |= env.mask
-                cr._mc_call_mc_validate_recursively(env)
-                if validate_properties:
-                    _mc_debug("\n==== Validating @properties", env, "====")
-                    cr._mc_validate_properties_recursively(env)
-                    if cr._mc_num_property_errors:
-                        raise ConfigException("Error validating @property methods for {}".format(env))
-            except ConfigException as ex:
-                if not error_next_env or ex.is_fatal:
-                    raise
+        if not lazy_load:
+            for env in env_factory.envs.values():
+                load_one_env(env, conf_func, cr, root_proxies, error_envs)
 
-                if not ex.is_summary:
-                    traceback.print_exc(file=sys.stderr)
-                else:
-                    print(ex.__class__.__name__ + ':', ex, file=sys.stderr)
-                print("Error in config for {} above.\n".format(env), file=sys.stderr)
+            if error_envs:
+                raise ConfigException("The following envs had errors {}".format(error_envs))
 
-                error_envs.append(env)
-                continue
+            # No modifications are allowed after this
+            cr._mc_config_loaded = True
+            _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
 
-            cr._mc_check_unknown = False
-            cr._mc_config_result[env] = res
-            root_proxies[env] = rp
-
-        if error_envs:
-            raise ConfigException("The following envs had errors {}".format(error_envs))
-
-        # No modifications are allowed after this
-        cr._mc_config_loaded = True
-        _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
-
-        if do_post_validate:
-            # Call mc_post_validate
-            cr._mc_env = NO_ENV
-            _mc_debug("\n==== Calling 'mc_post_validate' ====")
-            cr._mc_call_mc_post_validate_recursively()
+            if do_post_validate:
+                # Call mc_post_validate
+                cr._mc_env = NO_ENV
+                _mc_debug("\n==== Calling 'mc_post_validate' ====")
+                cr._mc_call_mc_post_validate_recursively()
 
         def config_wrapper(env, allow_todo=False):
             try:
@@ -1314,7 +1322,17 @@ def mc_config(
                     raise ConfigException(msg.format(ef_cls=env_factory.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
                 if env.factory != env_factory:
                     raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
-                raise  # Should not happen
+
+                if lazy_load:
+                    cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, do_type_check)
+                    cr._mc_check_unknown = True
+
+                    # Make sure _mc_setattr is the real one if decorator is used multiple times
+                    _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
+
+                    load_one_env(env, conf_func, cr, root_proxies, error_envs)
+                else:
+                    raise  # Should not happen
 
             if not allow_todo and cr._mc_todo_msgs[env]:
                 for msg, fname, line in cr._mc_todo_msgs[env]:
