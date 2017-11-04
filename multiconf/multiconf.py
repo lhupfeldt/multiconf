@@ -1160,7 +1160,7 @@ class _RootEnvProxy(object):
 def mc_config(
         env_factory, error_next_env=False, validate_properties=True,
         mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=McTodoHandling.WARNING,
-        mc_json_filter=None, mc_json_fallback=None, do_type_check=None):
+        mc_json_filter=None, mc_json_fallback=None, do_type_check=None, do_post_validate=True):
     """Function decorator for instanting ConfigItem hierarchy for all Envs defined in 'env_factory'.
 
        This decorator creates a wrapped config function which is then used for retreiving the configuration for a specific env.
@@ -1217,6 +1217,8 @@ def mc_config(
                         self.a = a
 
             It will be checked that x.a is instance of int.
+
+        do_post_validate (bool): Allow skipping the mc_post_validate call. I.e. if set to False the user defined call backs are not called.
     """
 
     if not isinstance(env_factory, EnvFactory):
@@ -1297,10 +1299,11 @@ def mc_config(
         cr._mc_config_loaded = True
         _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
 
-        # Call mc_post_validate
-        cr._mc_env = NO_ENV
-        _mc_debug("\n==== Calling 'mc_post_validate' ====")
-        cr._mc_call_mc_post_validate_recursively()
+        if do_post_validate:
+            # Call mc_post_validate
+            cr._mc_env = NO_ENV
+            _mc_debug("\n==== Calling 'mc_post_validate' ====")
+            cr._mc_call_mc_post_validate_recursively()
 
         def config_wrapper(env, allow_todo=False):
             try:

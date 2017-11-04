@@ -126,3 +126,24 @@ def test_mc_post_validate_excluded_repeatable_item():
     exp_class = "Excluded: <class 'test.mc_post_validate_test.%(py3_local)sRep'>" % dict(py3_local=py3_local())
     exp = "Accessing attribute 'aa' for Env('pp') on an excluded config item: " + exp_class
     assert exp in str(exinfo.value)
+
+
+def test_mc_post_validate_disabled():
+    @nested_repeatables('reps')
+    class Root(ConfigItem):
+        pass
+
+    @named_as('reps')
+    class Rep(RepeatableItemWithAA):
+        def mc_init(self):
+            self.aa = 7
+
+        def mc_post_validate(self):
+            raise Exception('Never called')
+
+    @mc_config(ef2_pp_prod, do_post_validate=False)
+    def config(_):
+        with Root() as rt:
+            Rep(1)
+            with Rep(2) as r2:
+                r2.mc_select_envs(exclude=[pp2])
