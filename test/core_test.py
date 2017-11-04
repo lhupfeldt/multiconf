@@ -5,12 +5,13 @@ from __future__ import print_function
 
 from collections import OrderedDict
 # pylint: disable=E0611
-from pytest import fail, xfail
+from pytest import raises, fail
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, MC_REQUIRED
 from multiconf.decorators import nested_repeatables, named_as, required
 from multiconf.envs import EnvFactory
 
+from .utils.utils import replace_ids
 from .utils.tstclasses import ItemWithAA, ItemWithAABB
 
 
@@ -298,6 +299,19 @@ def test_get_factory():
     assert cr.ConfigItem.ConfigItem.env_factory == ef2_pp_prod
 
 
+# 'dd' is set at class level, resulting in the long exception message 
+_hasattr_expected_ex = """{
+    "__class__": "KwargsItem #as: 'xxxx', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 1,
+    "bb": 2,
+    "cc": 3
+}, object of type: <class 'test.core_test.KwargsItem'> has no attribute 'dd'."""
+
+
 def test_hasattr():
     ii_exp = [None]
 
@@ -325,13 +339,10 @@ def test_hasattr():
     assert hasattr(ii, 'cc')
     assert not hasattr(ii, 'dd')
 
-    try:
+    with raises(AttributeError) as exinfo:
         print(ii.dd)
-    except AttributeError as ex:
-        # Coverage
-        print(ex)
 
-    xfail('TODO: test ex msg')
+    assert replace_ids(str(exinfo.value)) == _hasattr_expected_ex
 
 
 def test_assigning_to_attribute_root():

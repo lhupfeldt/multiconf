@@ -4,7 +4,7 @@
 from __future__ import print_function
 
 # pylint: disable=E0611
-from pytest import raises, xfail
+from pytest import raises
 
 from multiconf import mc_config, ConfigItem
 from multiconf.envs import EnvFactory
@@ -53,16 +53,6 @@ def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_
     assert replace_ids(str(exinfo.value), named_as=False) == _t2_expected_repr
 
 
-_access_undefined_attribute_json_single_level_expected_repr = """{
-    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "aa": 17,
-    "ConfigItem": "<class 'multiconf.multiconf.ConfigItem'>"
-}, object of type: <class 'test.utils.tstclasses.ItemWithAA'> has no attribute 'b'."""
-
 def test_access_undefined_attribute_json_single_level():
     @mc_config(ef)
     def config(_):
@@ -77,8 +67,7 @@ def test_access_undefined_attribute_json_single_level():
 
     print(exinfo.value)
 
-    xfail("TODO error json error")
-    assert replace_ids(str(exinfo.value), named_as=False) == _access_undefined_attribute_json_single_level_expected_repr
+    assert str(exinfo.value) == "'ItemWithAA' object has no attribute 'b'"
 
 
 _access_undefined_private_attribute_expected_repr = "'ConfigItem' object has no attribute '_b'"
