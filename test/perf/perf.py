@@ -24,6 +24,8 @@ from multiconf.envs import EnvFactory
 ef = None
 prod = None
 hp = None
+conf = None
+
 
 def envs_setup():
     global ef
@@ -94,11 +96,11 @@ second_range = 100
 third_range = 100
 
 
-def config(validate_properties=True):
+def config(validate_properties=True, lazy_load=False):
     global hp
     global conf
 
-    @mc_config(ef, validate_properties=validate_properties)
+    @mc_config(ef, validate_properties=validate_properties, lazy_load=lazy_load)
     def conf_func(_):
         with root() as cr:
             for ii in range(0, first_range):
@@ -150,6 +152,8 @@ def config(validate_properties=True):
 
 
 def use():
+    global conf
+
     cr = conf(prod).root
     for ii in range(0, 5):
         for jj in range(0, first_range):
@@ -183,6 +187,9 @@ def cli(time, profile, heap_check):
 
         with open(tfile, 'w') as ff:
             _test("envs", ff, "envs_setup()", setup="from __main__ import envs_setup", repeat=10, number=20000)
+            _test("load - lazy", ff, "config(validate_properties=False, lazy_load=True); from __main__ import conf; conf(prod)",
+                  setup="from __main__ import config, conf, prod", repeat=10, number=10)
+            _test("use_validate_lazy", ff, "use()", setup="from __main__ import use", repeat=1, number=1)
             _test("load - no @props", ff, "config(validate_properties=False)", setup="from __main__ import config", repeat=10, number=10)
             _test("load - @props", ff, "config(validate_properties=True)", setup="from __main__ import config", repeat=10, number=10)
             _test("use", ff, "use()", setup="from __main__ import use", repeat=10, number=300)
