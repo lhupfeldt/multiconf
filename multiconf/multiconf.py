@@ -1072,8 +1072,6 @@ class _ItemParentProxy(object):
         object.__setattr__(self, '_mc_contained_in', ci)
         object.__setattr__(self, '_mc_item', item)
 
-        item._mc_excluded |= ci._mc_excluded
-
     def __getattribute__(self, name):
         if name in object.__getattribute__(self, '__slots__'):
             return object.__getattribute__(self, name)
@@ -1093,6 +1091,12 @@ class _ItemParentProxy(object):
 
         cr = self._mc_item._mc_root
         self._mc_item._mc_setattr(thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
+
+    def __bool__(self):
+        return self._mc_contained_in.__bool__() and self._mc_item.__bool__()
+
+    # Python2 compatibility
+    __nonzero__ = __bool__
 
 
 class _ConfigRoot(_ConfigBase):

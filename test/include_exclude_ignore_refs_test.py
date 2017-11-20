@@ -130,7 +130,7 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
     exp = "Accessing attribute 'anattr' for Env('prod') on an excluded config item: Excluded: <class 'test.include_exclude_ignore_refs_test.item'>"
     assert exp in str(exinfo.value)
 
-    # It would be nice it this would raise AttributeError as above as cr.item is excluded, but that would require a different implementation
+    # TODO: It would be nice it this would raise AttributeError as above as cr.item is excluded, but that would require a different implementation
     assert not cr.item.item
 
     with raises(AttributeError) as exinfo:
