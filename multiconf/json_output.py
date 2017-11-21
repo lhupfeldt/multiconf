@@ -67,7 +67,7 @@ class ConfigItemEncoder(object):
         Check the `multiconf.json` and `multiconf.mc_build` methods for public arguments passed on to this.
 
         Arguments:
-            multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type (type): Passed as arguments as a workarond for cyclic imports.
+            multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type (type): Passed as arguments as a workaround for cyclic imports.
         """
 
         self.user_filter_callable = filter_callable

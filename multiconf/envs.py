@@ -266,7 +266,7 @@ class EnvFactory(object):
         raise MissingValueEnvException("No value for: " + str(env))
 
     def _mc_select_env_list(self, env, eg_list1, eg_list2):
-        """Resolve in which lists env is most speficic, if in any.
+        """Resolve in which lists env is most specific, if in any.
 
         Returns (int or None): 1, 2 or None:
             1 if list1 has the most specific group or direct env.

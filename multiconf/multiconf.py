@@ -58,11 +58,11 @@ class _ConfigBase(object):
         raise ConfigException(msg, is_summary = True)
 
     def _mc_print_error(self, message, file_name, line_num):
-        """Print a single message preceeded by file:line"""
+        """Print a single message preceded by file:line"""
         print(_line_msg(file_name=file_name, line_num=line_num) + '\n' + self._mc_error_msg(message), file=sys.stderr)
 
     def _mc_print_error_caller(self, message, mc_error_info_up_level):
-        """Print a single message preceeded by file:line"""
+        """Print a single message preceded by file:line"""
         file_name, line_num = caller_file_line(up_level=mc_error_info_up_level + 1)
         print(_line_msg(file_name=file_name, line_num=line_num) + '\n' + self._mc_error_msg(message), file=sys.stderr)
         if self._mc_where == Where.FROZEN:
@@ -70,7 +70,7 @@ class _ConfigBase(object):
             self._mc_raise_errors()
 
     def _mc_print_warning(self, message, file_name, line_num):
-        """Print a single message preceeded by file:line"""
+        """Print a single message preceded by file:line"""
         print(_line_msg(file_name=file_name, line_num=line_num) + '\n' + self._mc_warning_msg(message), file=sys.stderr)
 
     def _mc_print_value_error_msg(self, attr_name, value, mc_caller_file_name, mc_caller_line_num):
@@ -115,7 +115,7 @@ class _ConfigBase(object):
 
         Arguments:
             compact (bool): Set compact to true if dumping for easier human readable output, false for machine readable output.
-            sort_attributes (bool): Sort sttributes by name. Sort dir() entries by name.
+            sort_attributes (bool): Sort attributes by name. Sort dir() entries by name.
             property_methods (bool): call @property methods and insert values in output, including a comment that the value is calculated.
             builders (bool): Include ConfigBuilder items in json.
             skipkeys (bool): Passed to json.dumps.
@@ -689,7 +689,7 @@ class _ConfigBase(object):
         raise ConfigException("Searching from: " + repr(type(self)) + msg)
 
     def find_attribute_or_none(self, name):
-        """Find first occurence of attribute or child item 'name', by searching backwards towards root_conf, starting with self."""
+        """Find first occurrence of attribute or child item 'name', by searching backwards towards root_conf, starting with self."""
         contained_in = self
         while contained_in:
             attr = contained_in._mc_attributes.get(name)
@@ -702,7 +702,7 @@ class _ConfigBase(object):
         return None
 
     def find_attribute(self, name):
-        """Find first occurence of attribute or child item 'name', by searching backwards towards root_conf, starting with self."""
+        """Find first occurrence of attribute or child item 'name', by searching backwards towards root_conf, starting with self."""
         contained_in = self
         while contained_in:
             attr = contained_in._mc_attributes.get(name)
@@ -1066,7 +1066,7 @@ class _ConfigBuilder(AbstractConfigItem):
 
 
 class _ItemParentProxy(object):
-    """The purpose of this is to set the current '_mc_contained_in' when accessing an item created by a builder and assigned under mutiple parent items"""
+    """The purpose of this is to set the current '_mc_contained_in' when accessing an item created by a builder and assigned under multiple parent items"""
     __slots__ = ('_mc_contained_in', '_mc_item')
     _mc_lock = threading.RLock()
 
@@ -1168,14 +1168,14 @@ def mc_config(
         env_factory, error_next_env=False, validate_properties=True,
         mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=McTodoHandling.WARNING,
         mc_json_filter=None, mc_json_fallback=None, do_type_check=None, do_post_validate=True, lazy_load=False):
-    """Function decorator for instanting ConfigItem hierarchy for all Envs defined in 'env_factory'.
+    """Function decorator for instantiating ConfigItem hierarchy for all Envs defined in 'env_factory'.
 
-       This decorator creates a wrapped config function which is then used for retreiving the configuration for a specific env.
+       This decorator creates a wrapped config function which is then used for retrieving the configuration for a specific env.
 
        The wrapped function signature is:
            Arguments:
                env (Env): The environment for which to retrieve the config.
-               allow_todo (bool): If true, then retreiving a configuration for an env which contains `MC_TODO` values will not raise an error.
+               allow_todo (bool): If true, then retrieving a configuration for an env which contains `MC_TODO` values will not raise an error.
 
            Return (Root ConfigItem proxy): Reference to the config with the current env set to env.
 
@@ -1199,7 +1199,7 @@ def mc_config(
             If True, then instantiation is attempted for all envs, but an exception is raised at the end in any envs could not
             be instantiated.
 
-        mc_todo_handling_other (McTodoHandling): This specifies how to handl attributes set to MC_TODO for envs with 'allow_todo' False.
+        mc_todo_handling_other (McTodoHandling): This specifies how to handle attributes set to MC_TODO for envs with 'allow_todo' False.
             The default is McTodoHandling.ERROR, causing an error message to be printed and the configuration to be considered invalid.
         mc_todo_handling_allowed (McTodoHandling): This specifies how to handle attributes set to MC_TODO for envs with 'allow_todo' True.
             The default is McTodoHandling.WARNING, causing a warning message to be printed but the configuration to be considered valid.
@@ -1210,9 +1210,9 @@ def mc_config(
 
         mc_json_fallback (func(obj)): User defined function for handling objects not otherwise encoded in json output.
             - fallback_callable is called for objects that are not handled by the builtin encoder.
-            - It must return a tupple (object, handled). If handled is True, the object must be encodable by the standard json encoder.
+            - It must return a tuple (object, handled). If handled is True, the object must be encodable by the standard json encoder.
 
-        do_type_check (bool): Do type checking of attributes based on typing annotations. Default is True for Pythonn 3.6.1+. Attempting
+        do_type_check (bool): Do type checking of attributes based on typing annotations. Default is True for Python 3.6.1+. Attempting
             to enable this for earlier Python versions will raise an exception.
 
             Type checking of attributes is done based on typing information from the __init__ signature. If an attribute exists with the same

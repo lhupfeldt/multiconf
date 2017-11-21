@@ -11,7 +11,7 @@ class McInvalidValue(Enum):
         MC_REQUIRED: This is used as the default value for attributes in __init__ when there is no reasonable default.
             Multiconf will verify that a real value is assigned to the attribute during the config instantiation.
 
-        MC_TODO: This can be used in the configuration as a temporary placeholder for values which are currently unknown.
+        MC_TODO: This can be used in the configuration as a temporary place holder for values which are currently unknown.
             There are various options to make multiconf report on MC_TODO values.
     """
 

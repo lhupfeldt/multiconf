@@ -84,7 +84,7 @@ class ConfigExcludedKeyError(KeyError):
 
 
 def caller_file_line(up_level=2):
-    """Return the file and line of the caller of the function calliing this function (depending on up_level)"""
+    """Return the file and line of the caller of the function calling this function (depending on up_level)"""
     frame = sys._getframe(up_level)
     return frame.f_globals['__file__'], frame.f_lineno
 
@@ -98,7 +98,14 @@ def find_user_file_line(up_level_start=2):
 
 
 def _line_msg(up_level=2, file_name=None, line_num=None, msg=''):
-    """ufl is a tuple of filename, linenumber referece to user code"""
+    """Generate the file:line information for error messages.
+
+    Arguments:
+        up_level (int): If file_name is None then automatically determine the file and line 'up_level' stack frames up from here.
+        file_name (str): File name of user config with error.
+        line_num (int): Line number of user config with error.
+    """
+
     if file_name is None:
         file_name, line_num = find_user_file_line(up_level + 1)
     file_name = file_name.rstrip('c')  # file_name may point to the *.pyc file
