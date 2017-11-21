@@ -6,6 +6,7 @@ from __future__ import print_function
 import sys, os, traceback
 from collections import OrderedDict
 import json
+import threading
 
 from .envs import EnvFactory, Env, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV, thread_local
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
@@ -1067,6 +1068,7 @@ class _ConfigBuilder(AbstractConfigItem):
 class _ItemParentProxy(object):
     """The purpose of this is to set the current '_mc_contained_in' when accessing an item created by a builder and assigned under mutiple parent items"""
     __slots__ = ('_mc_contained_in', '_mc_item')
+    _mc_lock = threading.RLock()
 
     def __init__(self, ci, item):
         object.__setattr__(self, '_mc_contained_in', ci)
@@ -1077,12 +1079,14 @@ class _ItemParentProxy(object):
             return object.__getattribute__(self, name)
 
         item = object.__getattribute__(self, '_mc_item')
+        _ItemParentProxy._mc_lock.acquire()
         orig_ci = item._mc_contained_in
         item._mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
         try:
             return getattr(item, name)
         finally:
             item._mc_contained_in = orig_ci
+            _ItemParentProxy._mc_lock.release()
 
     def __setattr__(self, attr_name, value):
         if attr_name[0] == '_':
