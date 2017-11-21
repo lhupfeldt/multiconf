@@ -72,7 +72,7 @@ class NestedRepeatable(RepeatableConfigItem):
 class KwargsItem(ConfigItem):
     def __init__(self, **kwargs):
         super(KwargsItem, self).__init__()
-        for key, val in kwargs.items():
+        for key, val in sorted(kwargs.items()):
             setattr(self, key, val)
 
 
