@@ -129,39 +129,6 @@ def test_attribute_mc_required(capsys):
     assert replace_ids(str(exinfo.value), False) == _mc_required_one_error_expected_ex % dict(env_name='pp')
 
 
-_attribute_mc_required_different_types_expected_ex = """There were 2 errors when defining item: {
-    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "aa": "hi"
-}""" + already_printed_msg
-
-def test_attribute_mc_required_different_types(capsys):
-    xfail("TODO typecheck")
-    errorline = [None]
-    with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp_dev)
-        def config(root):
-            with ItemWithAA() as cr:
-                errorline[0] = next_line_num()
-                cr.setattr('aa', dev=1, prod="hi", pp=MC_REQUIRED)
-
-    # config(prod2)
-    _sout, serr = capsys.readouterr()
-
-    fl = start_file_line(__file__, errorline[0])
-    assert lines_in(
-        serr,
-        ("{fl}, dev <{tc} 'int'>".format(f=fl, tc=py3_tc), "{fl}, prod <{tc} 'str'>".format(f=fl, tc=py3_tc)),
-        "^ConfigError: Found different value types for property 'aa' for different envs",
-        fl,
-        config_error_mc_required_expected.format(attr='aa', env=pp1)
-    )
-    assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_different_types_expected_ex
-
-
 def test_attribute_mc_required_default_all_overridden():
     @mc_config(ef1_prod_pp)
     def config(root):

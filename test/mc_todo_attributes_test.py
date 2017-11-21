@@ -233,41 +233,6 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_with_get_config_not_allowed_a
         _ = config(prod)
 
 
-_attribute_mc_required_mc_todo_different_types_expected_ex = """There were 3 errors when defining item: {
-    "__class__": "ItemWithAA #as: 'ItemWithAA', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "aa": "MC_TODO"
-}""" + already_printed_msg
-
-@mark.parametrize("mc_todo_handling_allowed", [McTodoHandling.SILENT, McTodoHandling.WARNING, McTodoHandling.ERROR])
-def test_attribute_mc_required_mc_todo_different_types(capsys, mc_todo_handling_allowed):
-    xfail("TODO type checks?")
-    errorline = [None]
-    with raises(ConfigException) as exinfo:
-        @mc_config(ef3_prod_pp_tst_dev, mc_todo_handling_allowed=mc_todo_handling_allowed)
-        def config(root):
-            with ItemWithAA() as cr:
-                errorline[0] = next_line_num()
-                cr.setattr('aa', dev=1, tst="hello", pp=MC_REQUIRED, prod=MC_TODO)
-
-    # config(prod3)
-    _sout, serr = capsys.readouterr()
-
-    fl = start_file_line(__file__, errorline[0])
-    assert lines_in(
-        serr,
-        ("{fl}, dev <{tc} 'int'>".format(f=fl, tc=py3_tc), "{fl}, tst <{tc} 'str'>".format(f=fl, tc=py3_tc)),
-        "^ConfigError: Found different value types for property 'aa' for different envs",
-        fl,
-        config_error_mc_required_expected.format(attr='aa', env=pp3),
-        config_error_mc_todo_expected.format(attr='aa', env=prod3, allowed=''),
-    )
-    assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_mc_todo_different_types_expected_ex
-
-
 _continuing_with_invalid_conf = ". Continuing with invalid configuration!"
 _attribute_mc_current_env_todo_allowed_expected = _attribute_mc_todo_not_allowed_env_expected + _continuing_with_invalid_conf
 
