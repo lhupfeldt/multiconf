@@ -10,7 +10,7 @@ import types
 from . import envs
 from .envs import thread_local
 from .values import McInvalidValue
-from .config_errors import InvalidUsageException, ConfigExcludedAttributeError
+from .config_errors import InvalidUsageException, ConfigExcludedAttributeError, ConfigApiException
 from .bases import get_bases
 from .attribute import Where, _McAttributeAccessor
 from .repeatable import RepeatableDict
@@ -38,6 +38,8 @@ def _attr_ref_msg(obj, attr_name):
         return attr_name + ": " + ex.value if ex.value else ''
     except AttributeError:
         return ''
+    except ConfigApiException:
+        return attr_name + ": 'NO-CURRENT-VALUE"
 
 
 def ref_id(obj):
@@ -61,7 +63,7 @@ class ConfigItemEncoder(object):
     recursion_check.in_default = None
 
     def __init__(self, filter_callable, fallback_callable, compact, sort_attributes, property_methods, builders, warn_nesting,
-                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs, depth):
+                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs, depth, persistent_ids):
         """Encoder for json.
 
         Check the `multiconf.json` and `multiconf.mc_build` methods for public arguments passed on to this.
@@ -90,32 +92,41 @@ class ConfigItemEncoder(object):
         self.start_depth = None
         self.current_depth = None
 
+        self.persistent_ids = persistent_ids
+
         if warn_nesting != None:
             ConfigItemEncoder.recursion_check.warn_nesting = warn_nesting
         else:
             ConfigItemEncoder.recursion_check.warn_nesting = str(os.environ.get('MULTICONF_WARN_JSON_NESTING')).lower() == 'true'
 
+    def ref_repr(self, obj):
+        if self.persistent_ids:
+            # This will not identify the object, but it gives an indication
+            return _mc_identification_msg_str(obj)
+
+        return ref_id(obj)
+
     if major_version < 3:
         def _class_dict(self, obj):
             if self.compact:
-                return OrderedDict((_class_tuple(obj, ' #id: ' + repr(ref_id(obj))),))
-            return OrderedDict((_class_tuple(obj), ('__id__', ref_id(obj))))
+                return OrderedDict((_class_tuple(obj, ' #id: ' + str(self.ref_repr(obj))),))
+            return OrderedDict((_class_tuple(obj), ('__id__', self.ref_repr(obj))))
 
     def _mc_class_dict(self, obj):
         not_frozen_msg = "" if obj._mc_where == Where.FROZEN else ", not-frozen"
         if self.compact:
-            msg = " #as: '" + obj.named_as() + "', id: " + str(ref_id(obj)) + not_frozen_msg
+            msg = " #as: '" + obj.named_as() + "', id: " + str(self.ref_repr(obj)) + not_frozen_msg
             return OrderedDict((_class_tuple(obj, msg),))
-        return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', ref_id(obj))))
+        return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', self.ref_repr(obj))))
 
     def _excl_and_builder_str(self, objval):
         excl = ' excluded' if not objval else ''
         if isinstance(objval, self.multiconf_builder_type):
             bldr = ' builder'
-            id_msg = (", id: " + repr(ref_id(objval))) if self.builders else (" " + _mc_identification_msg_str(objval))
+            id_msg = (", id: " + str(self.ref_repr(objval))) if self.builders else (" " + _mc_identification_msg_str(objval))
         else:
             bldr = ''
-            id_msg = ", id: " + repr(ref_id(objval))
+            id_msg = ", id: " + str(self.ref_repr(objval))
 
         return excl + bldr + id_msg
 
@@ -153,7 +164,7 @@ class ConfigItemEncoder(object):
                 contained_in = contained_in._mc_contained_in
 
             # We found a reference to an item which is outside of the currently dumped hierarchy
-            # Showing ref_id(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
+            # Showing self.ref_repr(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
             return "#outside-ref: " + _mc_identification_msg_str(child_obj)
 
         return child_obj
