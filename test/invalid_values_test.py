@@ -5,12 +5,12 @@ from __future__ import print_function
 
 import os.path
 
-from pytest import raises, xfail  # pylint: disable=no-name-in-module
+from pytest import raises
 
 from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, next_line_num, replace_ids, lines_in, start_file_line, py3_tc
+from .utils.utils import config_error, next_line_num, replace_ids, lines_in, start_file_line
 from .utils.messages import already_printed_msg
 from .utils.messages import config_error_mc_required_expected
 from .utils.messages import mc_required_expected
@@ -24,11 +24,6 @@ _utils = os.path.join(os.path.dirname(__file__), 'utils')
 ef1_prod_pp = EnvFactory()
 pp1 = ef1_prod_pp.Env('pp')
 prod1 = ef1_prod_pp.Env('prod')
-
-ef2_prod_pp_dev = EnvFactory()
-dev2 = ef2_prod_pp_dev.Env('dev')
-pp2 = ef2_prod_pp_dev.Env('pp')
-prod2 = ef2_prod_pp_dev.Env('prod')
 
 
 def ce(line_num, *lines):
