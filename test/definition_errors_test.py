@@ -940,7 +940,7 @@ def test_mc_init_redefine_item_errors_default(capsys):
                 errorline[0] = next_line_num()
                 aai.setattr('aa', default=2)
 
-    xfail("TODO: This will not raise because the first aai.setatrt do not change the value, so value in second aai.setattr is still from __init__")
+    xfail("TODO: This will not raise because the first aai.setatte does not change the value, so value in second aai.setattr is still from __init__")
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_pp_prod)
         def config0(_):
