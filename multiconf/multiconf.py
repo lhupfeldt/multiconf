@@ -261,9 +261,7 @@ class _ConfigBase(object):
             self._mc_builder_freeze()
 
         # New items may have been created in mc_init
-        previous_item = _ConfigBase._mc_last_item
-        if previous_item != self and previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
-            previous_item._mc_freeze(mc_error_info_up_level)
+        self._mc_freeze_previous(mc_error_info_up_level)
 
         if must_pop:
             self.__class__._mc_hierarchy.pop()
@@ -281,6 +279,11 @@ class _ConfigBase(object):
         if self._mc_num_errors:
             self._mc_raise_errors()
         self._mc_where = Where.FROZEN
+
+    def _mc_freeze_previous(self, mc_error_info_up_level):
+        previous_item = _ConfigBase._mc_last_item
+        if previous_item is not self and previous_item is not self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
+            previous_item._mc_freeze(mc_error_info_up_level + 1 if mc_error_info_up_level is not None else None)
 
     def _mc_call_mc_validate_recursively(self, env):
         """Call the user defined 'mc_validate' methods on all items"""
@@ -353,10 +356,7 @@ class _ConfigBase(object):
 
     def __exit__(self, exc_type, value, traceback):
         if not exc_type:
-            previous_item = _ConfigBase._mc_last_item
-            if previous_item != self and previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
-                previous_item._mc_freeze(mc_error_info_up_level=1)
-
+            self._mc_freeze_previous(mc_error_info_up_level=1)
             self._mc_freeze(mc_error_info_up_level=1)
             self.__class__._mc_hierarchy.pop()
             return None
@@ -748,18 +748,17 @@ class AbstractConfigItem(_ConfigBase):
         return super(AbstractConfigItem, cls).__new__(cls)
 
     def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
-        previous_item = _ConfigBase._mc_last_item
-        if previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN and previous_item is not self:
-            try:
-                previous_item._mc_freeze(mc_error_info_up_level=None)
-            except Exception as ex:
-                print("Exception validating previously defined object -", file=sys.stderr)
-                print("  type:", type(previous_item), file=sys.stderr)
-                print("Stack trace will be misleading!", file=sys.stderr)
-                print("This happens if there is an error (e.g. attributes with value MC_REQUIRED or missing '@required' ConfigItems) in", file=sys.stderr)
-                print("an object that was not directly enclosed in a with statement. Objects that are not arguments to a with", file=sys.stderr)
-                print("statement will not be validated until the next ConfigItem is declared or an outer with statement is exited.", file=sys.stderr)
-                raise
+        try:
+            self._mc_freeze_previous(mc_error_info_up_level=None)
+        except Exception as ex:
+            previous_item = _ConfigBase._mc_last_item
+            print("Exception validating previously defined object -", file=sys.stderr)
+            print("  type:", type(previous_item), file=sys.stderr)
+            print("Stack trace will be misleading!", file=sys.stderr)
+            print("This happens if there is an error (e.g. attributes with value MC_REQUIRED or missing '@required' ConfigItems) in", file=sys.stderr)
+            print("an object that was not directly enclosed in a with statement. Objects that are not arguments to a with", file=sys.stderr)
+            print("statement will not be validated until the next ConfigItem is declared or an outer with statement is exited.", file=sys.stderr)
+            raise
 
         _ConfigBase._mc_last_item = self
 
@@ -1062,10 +1061,7 @@ class _ConfigBuilder(AbstractConfigItem):
 
                 insert(item_from_build, item_from_with_key, item_from_with)
 
-        previous_item = _ConfigBase._mc_last_item
-        if previous_item != self and previous_item != self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
-            previous_item._mc_freeze(mc_error_info_up_level=1)
-
+        self._mc_freeze_previous(mc_error_info_up_level=1)
         self._mc_where = Where.NOWHERE
 
 
