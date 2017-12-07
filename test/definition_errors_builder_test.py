@@ -78,8 +78,8 @@ def test_error_freezing_previous_sibling__build(capsys):
             inner(2)
 
     _sout, serr = capsys.readouterr()
-    assert serr == exception_previous_object_expected_stderr % dict(
-        module='definition_errors_builder_test', py3_local=py3_local())
+    exp = exception_previous_object_expected_stderr % dict(module='definition_errors_builder_test', py3_local=py3_local())
+    assert serr == exp
     assert str(exinfo.value) == "Error in build"
 
 
