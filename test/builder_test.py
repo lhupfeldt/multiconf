@@ -4,7 +4,7 @@
 from collections import OrderedDict
 from pytest import xfail, raises
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED, ConfigApiException
 from multiconf.decorators import nested_repeatables, named_as, required
 from multiconf.envs import EnvFactory
 
@@ -87,7 +87,7 @@ def test_configbuilder_with_required_item_decorator():
         cr.xses['server3']
     with raises(KeyError):
         cr.xses['server4']
-    
+
 
 def test_configbuilder_build_with_mc_required():
     class XBuilder(ConfigBuilder):
@@ -403,7 +403,6 @@ def test_configbuilder_nested_items_access_to_contained_in():
 
 def test_configbuilder_multilevel_nested_items_access_to_contained_in():
     ybuilder_in_build_contained_in = []
-    ys_in_init_contained_in = []
 
     yc10 = [None]
     yc11 = [None]
@@ -433,7 +432,6 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
             super(Y, self).__init__(mc_key=mc_key)
             self.name = name
             self.server_num = server_num
-            ys_in_init_contained_in.append(self.contained_in)
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
@@ -446,11 +444,11 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
         with ItemWithYs() as item:
             with YBuilder() as yb1:
                 yb1.b = 27
-                yc10[0] = YChild(mc_key=10)
-                yc11[0] = YChild(mc_key=11)
+                yc10[0] = YChild(mc_key=10)  # TODO: this should not be allowed, but it is impossible in python to prevent this, a workaround woul be to use factories for object creation aand then let the factory return None (if under a builder 'with')
+                yc11[0] = YChild(mc_key=11)  # TODO: this must not be allowed
                 with YBuilder(start=3) as yb2:
                     yb2.b = 28
-                    yc20[0] = YChild(mc_key=20)
+                    yc20[0] = YChild(mc_key=20)  # TODO: this must not be allowed
                     YChild(mc_key=21)
 
     item = config(prod2).ItemWithYs
@@ -476,23 +474,52 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
     exp = 206
     assert total == exp, "Expected {exp} but got {got}".format(exp=exp, got=total)
 
+    check_containment(item)
+
+    # Note the length depends on the number of envs!
+    assert len(ybuilder_in_build_contained_in) == 4
+    for ci in ybuilder_in_build_contained_in:
+        assert ci == item
+
     xfail("TODO: ref to item from with must not allow (wrong) contained_in")
     # The item created under the builder with statement will have contained_in == None
-    # It may be proxied (or possibly cloned) for insertion under multiple items created in 'build'
+    # It may be proxied (in earlier versions cloned) for insertion under multiple items created in 'build'
     # The proxying (or cloning) is necessery to make sure the contained_in ref actually references the final parent
     got = type(yc10[0].contained_in)
+
     assert got == Y, "Expected type {exp}, but got type {got}".format(exp=Y, got=got)
     assert type(yc11[0].contained_in) == Y
     assert type(yc20[0].contained_in) == Y
 
-    assert len(ybuilder_in_build_contained_in) == 2
-    for ci in ybuilder_in_build_contained_in:
-        assert ci == item
 
-    assert len(ys_in_init_contained_in) == 4
-    for ci in ys_in_init_contained_in:
-        assert ci == item
-    check_containment(item)
+def test_configbuilder_multilevel_nested_items_bad_access_to_contained_in():
+    class YBuilder(ConfigBuilder):
+        def __init__(self, start=1):
+            super(YBuilder, self).__init__()
+
+        def mc_build(self):
+            with Y(mc_key='hello') as c:
+                pass
+
+    @nested_repeatables('ys')
+    class ItemWithYs(ConfigItem):
+        pass
+
+    @named_as('ys')
+    @nested_repeatables('ys')
+    class Y(RepeatableConfigItem):
+        def __init__(self, mc_key):
+            super(Y, self).__init__(mc_key=mc_key)
+            # invalid access to self.contained_in
+            print(self.contained_in)
+
+    with raises(ConfigApiException):
+        @mc_config(ef2_pp_prod)
+        def config(_):
+            with ItemWithYs() as item:
+                with YBuilder() as yb1:
+                    with YBuilder(start=3) as yb2:
+                        pass
 
 
 def test_configbuilder_repeated():

@@ -34,6 +34,7 @@ def _mc_debug(*args):
 
 class _ConfigBase(object):
     _mc_last_item = None
+    _mc_built_by = None
     _mc_hierarchy = []
     _mc_deco_named_as = None
     _mc_deco_required = ()
@@ -41,7 +42,10 @@ class _ConfigBase(object):
 
     @classmethod
     def _mc_debug_hierarchy(cls, msg):
-        _mc_debug(msg, cls, '_mc_hierarchy: {}'.format([id(item) for item in cls._mc_hierarchy]))
+        _mc_debug(
+            msg,
+            cls if not isinstance(cls, _ConfigBase) else (type(cls), id(cls)),
+            '_mc_hierarchy: {}'.format([id(item) for item in cls._mc_hierarchy]))
 
     def _mc_error_msg(self, message):
         self._mc_num_errors += 1
@@ -122,7 +126,7 @@ class _ConfigBase(object):
             skipkeys (bool): Passed to json.dumps.
             show_all_envs (bool): Display attribute values for all envs in a single dump. Without this only the values for the current env is displayed.
             depth (int): The number of levels of child objects to dump. None means all.
-            persistent_ids (bool): Use a persistent value instead of using id(obj) as reference keys. 
+            persistent_ids (bool): Use a persistent value instead of using id(obj) as reference keys.
                 NOTE: This will mostly make it impossible to identify the referenced obj, but it makes it possible to compare json across runs.
         """
 
@@ -748,12 +752,12 @@ class AbstractConfigItem(_ConfigBase):
         return super(AbstractConfigItem, cls).__new__(cls)
 
     def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
+        previous_item = _ConfigBase._mc_last_item
         try:
             self._mc_freeze_previous(mc_error_info_up_level=None)
         except Exception as ex:
-            previous_item = _ConfigBase._mc_last_item
             print("Exception validating previously defined object -", file=sys.stderr)
-            print("  type:", type(previous_item), file=sys.stderr)
+            print("  type:", type(_ConfigBase._mc_last_item or previous_item), file=sys.stderr)
             print("Stack trace will be misleading!", file=sys.stderr)
             print("This happens if there is an error (e.g. attributes with value MC_REQUIRED or missing '@required' ConfigItems) in", file=sys.stderr)
             print("an object that was not directly enclosed in a with statement. Objects that are not arguments to a with", file=sys.stderr)
@@ -831,12 +835,14 @@ class ConfigItem(AbstractConfigItem):
 
     def __new__(cls, *init_args, **init_kwargs):
         # cls._mc_debug_hierarchy('ConfigItem.__new__')
-        _mc_contained_in = cls._mc_hierarchy[-1]
+        contained_in = cls._mc_hierarchy[-1]
+        built_by = None
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
-        contained_in = _mc_contained_in
-        while contained_in._mc_where == Where.IN_MC_BUILD:
-            contained_in = contained_in._mc_contained_in
+        if contained_in._mc_where == Where.IN_MC_BUILD:
+            built_by = contained_in
+            while contained_in._mc_where == Where.IN_MC_BUILD:
+                contained_in = contained_in._mc_contained_in
 
         name = cls.named_as()
 
@@ -861,8 +867,9 @@ class ConfigItem(AbstractConfigItem):
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = None
             self._mc_items = OrderedDict()
-            self._mc_contained_in = _mc_contained_in
+            self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
+            self._mc_built_by = built_by
             self._mc_excluded = 0
 
             for key in cls._mc_deco_nested_repeatables:
@@ -902,12 +909,14 @@ class RepeatableConfigItem(AbstractConfigItem):
 
     def __new__(cls, mc_key=None, *init_args, **init_kwargs):
         # cls._mc_debug_hierarchy('RepeatableConfigItem.__new__')
-        _mc_contained_in = cls._mc_hierarchy[-1]
+        contained_in = cls._mc_hierarchy[-1]
+        built_by = None
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
-        contained_in = _mc_contained_in
-        while contained_in._mc_where == Where.IN_MC_BUILD:
-            contained_in = contained_in._mc_contained_in
+        if contained_in._mc_where == Where.IN_MC_BUILD:
+            built_by = contained_in
+            while contained_in._mc_where == Where.IN_MC_BUILD:
+                contained_in = contained_in._mc_contained_in
 
         repeatable = contained_in._mc_get_repeatable(cls.named_as(), cls)
         mc_key = init_kwargs.get(cls._mc_key_name) or cls._mc_key_value or mc_key
@@ -919,7 +928,7 @@ class RepeatableConfigItem(AbstractConfigItem):
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     self._mc_where = Where.IN_RE_INIT
                     return self
-                build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else ""
+                build_msg = " from 'mc_build'" if built_by else ""
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
             self._mc_handled_env_bits |= thread_local.env.mask
@@ -935,8 +944,9 @@ class RepeatableConfigItem(AbstractConfigItem):
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = None
             self._mc_items = OrderedDict()
-            self._mc_contained_in = _mc_contained_in
+            self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
+            self._mc_built_by = built_by
             self._mc_excluded = 0
 
             for key in cls._mc_deco_nested_repeatables:
@@ -961,12 +971,14 @@ class _ConfigBuilder(AbstractConfigItem):
 
     def __new__(cls, mc_key='default-builder', *init_args, **init_kwargs):
         # cls._mc_debug_hierarchy('_ConfigBuilder.__new__')
-        _mc_contained_in = cls._mc_hierarchy[-1]
+        contained_in = cls._mc_hierarchy[-1]
+        built_by = None
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
-        contained_in = _mc_contained_in
-        while contained_in._mc_where == Where.IN_MC_BUILD:
-            contained_in = contained_in._mc_contained_in
+        if contained_in._mc_where == Where.IN_MC_BUILD:
+            built_by = contained_in
+            while contained_in._mc_where == Where.IN_MC_BUILD:
+                contained_in = contained_in._mc_contained_in
 
         private_key = cls.named_as() + ' ' + str(mc_key)
 
@@ -977,7 +989,7 @@ class _ConfigBuilder(AbstractConfigItem):
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     self._mc_where = Where.IN_RE_INIT
                     return self
-                build_msg = " from 'mc_build'" if _mc_contained_in._mc_where == Where.IN_MC_BUILD else ""
+                build_msg = " from 'mc_build'" if built_by else ""
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
                     key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
             self._mc_handled_env_bits |= thread_local.env.mask
@@ -993,8 +1005,9 @@ class _ConfigBuilder(AbstractConfigItem):
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = None
             self._mc_items = OrderedDict()
-            self._mc_contained_in = _mc_contained_in
+            self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
+            self._mc_built_by = built_by
             self._mc_excluded = 0
 
             self._mc_handled_env_bits = thread_local.env.mask
@@ -1023,6 +1036,7 @@ class _ConfigBuilder(AbstractConfigItem):
 
     def _mc_builder_freeze(self):
         self._mc_where = Where.IN_MC_BUILD
+        _ConfigBase._mc_last_item = None
         try:
             self.mc_build()
         except _McExcludedException:
@@ -1030,7 +1044,7 @@ class _ConfigBuilder(AbstractConfigItem):
 
         def insert(from_build, from_with_key, from_with):
             """Insert items from with statement (single or repeatable) in a single (non repeatable) item from mc_build."""
-            if from_build._mc_contained_in is not self:
+            if from_build._mc_built_by is not self:
                 return
 
             if isinstance(from_with, RepeatableDict):
@@ -1045,13 +1059,8 @@ class _ConfigBuilder(AbstractConfigItem):
             object.__setattr__(from_build, from_with_key, pp)
 
         # Now set all items created in the 'with' block of the builder on the items created in the 'mc_build' method
-        # Find the first parent which is not a builder if we are in the mc_build method of a builder
-        contained_in = self._mc_contained_in
-        while contained_in._mc_where == Where.IN_MC_BUILD:
-            contained_in = contained_in._mc_contained_in
-
         for item_from_with_key, item_from_with in self.items():
-            for item_from_build_key, item_from_build in contained_in.items():
+            for item_from_build_key, item_from_build in self._mc_contained_in.items():
 
                 if isinstance(item_from_build, RepeatableDict):
                     for bi_key, bi in item_from_build.items():
