@@ -61,6 +61,54 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
                         _item = y1.contained_in
 
     _sout, serr = capsys.readouterr()
-    exp = "Use of 'contained_in' in not allowed in object while under the 'with statement of a ConfigBuilder. The final containment is still unknown."
+    exp = "Use of 'contained_in' in not allowed in object while under the 'with' statement of a ConfigBuilder. The final containment is still unknown."
     assert serr == ce(errorline[0], exp)
+    assert replace_ids(str(exinfo.value), False) == exp
+
+
+def test_configbuilder_multilevel_nested_items_access_to_contained_in_through_direct_built_item_ref(capsys):
+    yc10 = [None]
+
+    class YBuilder(ConfigBuilder):
+        def __init__(self, start=1):
+            super(YBuilder, self).__init__()
+            self.start = start
+
+        def mc_build(self):
+            pass
+
+    @nested_repeatables('ys')
+    class ItemWithYs(ConfigItem):
+        aaa = 2
+
+    @named_as('ys')
+    @nested_repeatables('y_children', 'ys')
+    class Y(RepeatableConfigItem):
+        def __init__(self, mc_key, name, server_num):
+            super(Y, self).__init__(mc_key=mc_key)
+            self.name = name
+            self.server_num = server_num
+
+    @named_as('y_children')
+    class YChild(RepeatableConfigItem):
+        def __init__(self, mc_key):
+            super(YChild, self).__init__(mc_key=None)
+            self.a = mc_key
+
+    @mc_config(ef)
+    def config(_):
+        with ItemWithYs() as item:
+            with YBuilder() as yb1:
+                yc10[0] = YChild(mc_key=10)
+
+    item = config(prod).ItemWithYs
+
+    with raises(ConfigApiException) as exinfo:
+        errorline = next_line_num()
+        yc10[0].contained_in
+
+    sout, serr = capsys.readouterr()
+    exp = "Use of 'contained_in' in not allowed through direct reference to an item from 'with' statement of a ConfigBuilder. Containment is unknown."
+    assert serr == ce(errorline, exp)
+    assert sout == ''
     assert replace_ids(str(exinfo.value), False) == exp

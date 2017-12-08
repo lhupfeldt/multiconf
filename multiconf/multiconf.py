@@ -65,10 +65,14 @@ class _ConfigBase(object):
         """Print a single message preceded by file:line"""
         print(_line_msg(file_name=file_name, line_num=line_num) + '\n' + self._mc_error_msg(message), file=sys.stderr)
 
-    def _mc_print_error_caller(self, message, mc_error_info_up_level):
-        """Print a single message preceded by file:line"""
+    def _mc_print_error_caller_unchecked(self, message, mc_error_info_up_level):
+        """Print a single message preceded by file:line. The caller is responsible for checking if self is frozen."""
         file_name, line_num = caller_file_line(up_level=mc_error_info_up_level + 1)
         print(_line_msg(file_name=file_name, line_num=line_num) + '\n' + self._mc_error_msg(message), file=sys.stderr)
+
+    def _mc_print_error_caller(self, message, mc_error_info_up_level):
+        """Print a single message preceded by file:line. If self is frozen then raise error immediately."""
+        self._mc_print_error_caller_unchecked(message, mc_error_info_up_level + 1)
         if self._mc_where == Where.FROZEN:
             # We need to raise now, self is already frozen so error count will not be checked later
             self._mc_raise_errors()
@@ -662,8 +666,12 @@ class _ConfigBase(object):
         child = self
         while isinstance(mc_contained_in, _ConfigBuilder):
             if mc_contained_in._mc_where == Where.IN_WITH and not child._mc_where == Where.IN_MC_BUILD:
-                msg = "Use of 'contained_in' in not allowed in object while under the 'with statement of a ConfigBuilder. The final containment is still unknown."
+                msg = "Use of 'contained_in' in not allowed in object while under the 'with' statement of a ConfigBuilder. The final containment is still unknown."
                 self._mc_print_error_caller(msg, mc_error_info_up_level=2)
+                raise ConfigApiException(msg)
+            if self._mc_root._mc_config_post_validated and not isinstance(child, _ItemParentProxy):
+                msg = "Use of 'contained_in' in not allowed through direct reference to an item from 'with' statement of a ConfigBuilder. Containment is unknown."
+                self._mc_print_error_caller_unchecked(msg, mc_error_info_up_level=2)
                 raise ConfigApiException(msg)
             mc_contained_in = mc_contained_in._mc_contained_in
             child = child._mc_contained_in
@@ -1137,6 +1145,7 @@ class _ConfigRoot(_ConfigBase):
         self._mc_num_warnings = 0
         self._mc_config_result = {}
         self._mc_config_loaded = False
+        self._mc_config_post_validated = False
         self._mc_num_property_errors = 0
         self._mc_num_invalid_property_usage = 0
         self._mc_in_json = False
@@ -1328,6 +1337,8 @@ def mc_config(
                 thread_local.env = NO_ENV
                 _mc_debug("\n==== Calling 'mc_post_validate' ====")
                 cr._mc_call_mc_post_validate_recursively()
+
+            cr._mc_config_post_validated = True
 
         def config_wrapper(env, allow_todo=False):
             try:

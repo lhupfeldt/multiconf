@@ -27,10 +27,14 @@ def check_containment(start_item, level=0, prefix="  ", verbose=False):
             continue
 
         if isinstance(item, (ConfigItem, _ItemParentProxy)):  #  and not isinstance(item, ConfigBuilder):
-            ci = item.contained_in
-            assert id(ci) == id(start_item), \
-                "Wrong containment:\n" + \
-                "  item: " + _id_name_type(item) + '\n' + \
-                "  item.contained_in: " + _id_name_type(ci) + '\n' + \
-                "  start_item: " + _id_name_type(start_item) + '\n'
+            ci = None
+            try:
+                ci = item.contained_in
+                assert id(ci) == id(start_item)
+            except Exception as ex:
+                raise AssertionError(
+                    "Containment error:\n" + repr(ex) + \
+                    "  item: " + _id_name_type(item) + '\n' + \
+                    "  item.contained_in: " + _id_name_type(ci) + '\n' + \
+                    "  start_item: " + _id_name_type(start_item))
             check_containment(item, level+1, verbose=verbose)
