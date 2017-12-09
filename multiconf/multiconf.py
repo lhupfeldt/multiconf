@@ -236,7 +236,7 @@ class _ConfigBase(object):
         return self._mc_handled_env_bits & env_mask
 
     def _mc_exists_in_env(self):
-        """Note: This always returns True when the onfig is not fully loaded"""
+        """Note: This always returns True when the config is not fully loaded"""
         cr = self._mc_root
         if not cr._mc_config_loaded:
             return True
@@ -828,7 +828,7 @@ class AbstractConfigItem(_ConfigBase):
             return object.__getattribute__(self, repeatable_class_key)
 
         if isinstance(repeatable_cls_or_dict, RepeatableDict):
-            # Get class of first item for error message
+            # Get class of first item for error message. TODO: muliple types can be in the same repeatable
             for item in repeatable_cls_or_dict.values():  # pragma: no branch
                 repeatable_cls_or_dict = type(item)
                 break
@@ -1033,6 +1033,7 @@ class _ConfigBuilder(AbstractConfigItem):
         return '_mc_ConfigBuilder_' + cls.__name__
 
     def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
+        """ConfigBuilder allows any nested repeatable without previous declaration."""
         repeatable = getattr(self, repeatable_class_key, None)
         if repeatable:
             return repeatable
