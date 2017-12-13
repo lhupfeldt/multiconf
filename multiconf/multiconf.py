@@ -372,13 +372,21 @@ class _ConfigBase(object):
             self.__class__._mc_hierarchy.pop()
             return True
 
-    def _mc_setattr_env_value(self, current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level):
+    def _mc_setattr_env_value(self, current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level, mc_5_migration):
         # print("_mc_setattr_env_value:", current_env, attr_name, value, old_value)
         if old_value != MC_NO_VALUE and not mc_force:
             if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value != MC_REQUIRED:
                 # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
-                if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
-                    return
+                if not mc_5_migration:
+                    if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
+                        return
+                else:
+                    # or previous value was set in __init__ and the env is at least as specific and mc_5_migration is set
+                    if from_eg not in env_attr.from_eg:
+                        if env_attr.where_from != Where.IN_INIT:
+                            return
+                        if from_eg != env_attr.from_eg:
+                            return
 
             if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value != MC_REQUIRED:
                 # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
@@ -468,15 +476,17 @@ class _ConfigBase(object):
 
         return False
 
-    def _mc_setattr(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
+    def _mc_setattr(
+            self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level,
+            mc_5_migration=False, is_assign=False):
         """Common code for assignment and item.setattr"""
 
-        #print("_mc_setattr:", current_env, attr_name, value)
+        #_mc_debug("_mc_setattr:", current_env, attr_name, value)
         try:
             cls_attr = getattr(self.__class__, attr_name)
             # print("_mc_setattr, cls_attr:", type(cls_attr))
         except AttributeError as ex:
-            #print("_mc_setattr, AttributeError:", ex)
+            #_mc_debug("_mc_setattr, AttributeError:", ex)
             if self._mc_check_no_existing_attr(attr_name, mc_overwrite_property, mc_set_unknown, mc_error_info_up_level+1):
                 return
 
@@ -484,7 +494,7 @@ class _ConfigBase(object):
             setattr(self.__class__, attr_name, _McAttributeAccessor(attr_name))
             env_attr = _McAttribute()
             self._mc_attributes[attr_name] = env_attr
-            self._mc_setattr_env_value(current_env, attr_name, env_attr, value, MC_NO_VALUE, from_eg, mc_force, mc_error_info_up_level + 1)
+            self._mc_setattr_env_value(current_env, attr_name, env_attr, value, MC_NO_VALUE, from_eg, mc_force, mc_error_info_up_level + 1, mc_5_migration)
         else:
             if isinstance(cls_attr, _McAttributeAccessor):
                 # print("_mc_setattr found _McAttributeAccessor")
@@ -502,11 +512,11 @@ class _ConfigBase(object):
                         msg = "Attempting to use 'mc_set_unknown' to set attribute '{attr_name}' which already exists.".format(attr_name=attr_name)
                         self._mc_print_error_caller(msg, mc_error_info_up_level)
                         return
-                self._mc_setattr_env_value(current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level + 1)
+                self._mc_setattr_env_value(current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level + 1, mc_5_migration)
                 return
 
             if isinstance(cls_attr, _McPropertyWrapper):
-                #print("_mc_setattr found _McPropertyWrapper")
+                #_mc_debug("_mc_setattr found _McPropertyWrapper")
                 if value == MC_NO_VALUE:
                     return
 
@@ -521,7 +531,7 @@ class _ConfigBase(object):
                         msg = "Attempting to use 'mc_set_unknown' to overwrite a an existing @property '{attr_name}'.".format(attr_name=attr_name)
                         self._mc_print_error_caller(msg, mc_error_info_up_level)
                         return
-                self._mc_setattr_env_value(current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level + 1)
+                self._mc_setattr_env_value(current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level + 1, mc_5_migration)
                 return
 
             if isinstance(cls_attr, RepeatableDict):
@@ -552,10 +562,12 @@ class _ConfigBase(object):
             setattr(self.__class__, attr_name, _McPropertyWrapper(attr_name, cls_attr))
             env_attr = _McAttribute()
             self._mc_attributes[attr_name] = env_attr
-            self._mc_setattr_env_value(current_env, attr_name, env_attr, value, MC_NO_VALUE, from_eg, mc_force, mc_error_info_up_level + 1)
+            self._mc_setattr_env_value(current_env, attr_name, env_attr, value, MC_NO_VALUE, from_eg, mc_force, mc_error_info_up_level + 1, mc_5_migration)
             return
 
-    def _mc_setattr_disabled(self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
+    def _mc_setattr_disabled(
+            self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level,
+            mc_5_migration=False, is_assign=False):
         """Common code for assignment and item.setattr to disable attribute modification after config is loaded"""
         msg = "Trying to set attribute '{}'. Setting attributes is not allowed after configuration is loaded or while doing json dump (print) (in order to enforce derived value validity)."
         raise ConfigApiException(msg.format(attr_name))
@@ -568,7 +580,9 @@ class _ConfigBase(object):
             return
 
         cr = self._mc_root
-        self._mc_setattr(thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
+        self._mc_setattr(
+            thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3,
+            mc_5_migration=cr._mc_5_migration, is_assign=True)
 
     def setattr(self, attr_name, mc_overwrite_property=False, mc_set_unknown=False, mc_force=False, mc_error_info_up_level=2, **env_values):
         """Set env specific values for an attribute.
@@ -616,10 +630,12 @@ class _ConfigBase(object):
         current_env = thread_local.env
         try:
             value, eg = env_factory._mc_resolve_env_group_value(current_env, env_values)
-            self._mc_setattr(current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level + 1)
+            self._mc_setattr(
+                current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level + 1, cr._mc_5_migration)
             return
         except MissingValueEnvException:
-            self._mc_setattr(current_env, attr_name, MC_NO_VALUE, env_factory.eg_none, mc_overwrite_property, mc_set_unknown, False, mc_error_info_up_level + 1)
+            self._mc_setattr(
+                current_env, attr_name, MC_NO_VALUE, env_factory.eg_none, mc_overwrite_property, mc_set_unknown, False, mc_error_info_up_level + 1, cr._mc_5_migration)
             return
         except AmbiguousEnvException as ex:
             msg = "Value for {env} is specified more than once, with no single most specific group or direct env:".format(env=current_env)
@@ -1108,7 +1124,9 @@ class _ItemParentProxy(object):
             return
 
         cr = self._mc_item._mc_root
-        self._mc_item._mc_setattr(thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3, is_assign=True)
+        self._mc_item._mc_setattr(
+            thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3,
+            mc_5_migration=cr._mc_5_migration, is_assign=True)
 
     def __bool__(self):
         return self._mc_contained_in.__bool__() and self._mc_item.__bool__()
@@ -1120,13 +1138,14 @@ class _ItemParentProxy(object):
 class _ConfigRoot(_ConfigBase):
     _mc_cls_dir_entries = ()
 
-    def __init__(self, env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, mc_do_type_check):
+    def __init__(self, env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, mc_do_type_check, mc_5_migration):
         self._mc_env_factory = env_factory
         self._mc_todo_handling_other = mc_todo_handling_other
         self._mc_todo_handling_allowed = mc_todo_handling_allowed
         self._mc_json_filter = mc_json_filter
         self._mc_json_fallback = mc_json_fallback
         self._mc_do_type_check = mc_do_type_check
+        self._mc_5_migration = mc_5_migration
 
         self._mc_where = Where.IN_INIT
         self._mc_num_errors = 0
@@ -1182,7 +1201,7 @@ class _RootEnvProxy(object):
 def mc_config(
         env_factory, error_next_env=False, validate_properties=True,
         mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=McTodoHandling.WARNING,
-        mc_json_filter=None, mc_json_fallback=None, do_type_check=None, do_post_validate=True, lazy_load=False):
+        mc_json_filter=None, mc_json_fallback=None, do_type_check=None, do_post_validate=True, lazy_load=False, mc_5_migration=False):
     """Function decorator for instantiating ConfigItem hierarchy for all Envs defined in 'env_factory'.
 
        This decorator creates a wrapped config function which is then used for retrieving the configuration for a specific env.
@@ -1245,6 +1264,8 @@ def mc_config(
         lazy_load (bool): Allow loading config only for envs for which is instantiated by calling the wrapped config method. If False the config is
             pre-instantiated for all envs in order to validate correctness of the configuration for all envs. Enabling lazy_load also disables
             `mc_post_validate` calls and other checking which cannot be done with lazy loading.
+
+        mc_5_migration (bool): This changes the attribute overwriting rule to me more compatible with version 5. Do not use this in any new configurations.
     """
 
     if not isinstance(env_factory, EnvFactory):
@@ -1308,7 +1329,7 @@ def mc_config(
     def deco(conf_func):
         env_factory._mc_calc_env_group_order()
         # Create root object
-        cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, do_type_check)
+        cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, do_type_check, mc_5_migration)
         cr._mc_check_unknown = True
 
         # Make sure _mc_setattr is the real one if decorator is used multiple times
@@ -1348,7 +1369,7 @@ def mc_config(
                     raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
 
                 if lazy_load:
-                    cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, do_type_check)
+                    cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, do_type_check, mc_5_migration)
                     cr._mc_check_unknown = True
 
                     # Make sure _mc_setattr is the real one if decorator is used multiple times
