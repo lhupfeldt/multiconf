@@ -13,7 +13,7 @@ else:
     from .multiconf_builder_py3 import ConfigBuilder
 
 from .config_errors import ConfigException, ConfigDefinitionException, ConfigApiException, InvalidUsageException
-from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError
+from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigExcludedKeyError
 from .config_errors import caller_file_line
 from .values import MC_REQUIRED, MC_TODO, McInvalidValue, McTodoHandling
 

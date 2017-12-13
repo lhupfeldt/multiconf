@@ -16,9 +16,6 @@ class RepeatableDict(object):
     def __init__(self):
         self._items = OrderedDict()
 
-    def __setitem__(self, key, val):
-        self._items[key] = val
-
     def __getitem__(self, key):
         val = self._items[key]
         if val._mc_exists_in_env():
@@ -92,7 +89,7 @@ class RepeatableDict(object):
         return repr(OrderedDict(((key, val) for (key, val) in self._items.items() if val._mc_exists_in_env())))
 
     def _update_mc_excluded_recursively(self, mc_excluded_mask):
-        for item in self.values():
+        for item in self._items.values():
             item._update_mc_excluded_recursively(mc_excluded_mask)
     
     def _mc_call_mc_validate_recursively(self, env):

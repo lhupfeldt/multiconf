@@ -4,7 +4,7 @@
 # pylint: disable=E0611
 from pytest import raises, xfail
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, ConfigExcludedAttributeError, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, ConfigExcludedAttributeError, ConfigExcludedKeyError, MC_REQUIRED
 from multiconf.decorators import named_as, nested_repeatables, required
 from multiconf.envs import EnvFactory
 
@@ -148,7 +148,7 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
 
 
 def test_exclude_refs_for_multilevel_excluded_configitem():
-    with raises(AttributeError) as exinfo:
+    with raises(ConfigExcludedKeyError) as exinfo:
         @mc_config(ef)
         def config(_):
             with decorated_root() as cr:
@@ -164,12 +164,12 @@ def test_exclude_refs_for_multilevel_excluded_configitem():
                             it2.setattr('anattr', pp=1, g_dev12_3=2)
                             it2.setattr('anotherattr', dev1=1, pp=2)
 
-                # This is invalid as all of rit, rit.item and rit.item.ritems are included
-                cr.x = rit.item.ritems['a'].anotherattr
+                # This is invalid as all of rit, rit.item and rit.item.ritems are excluded
+                cr.x = rit.item.ritems['a']
 
     got = str(exinfo.value)
     print(got)
-    exp = "Accessing attribute 'anotherattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_ignore_refs_test.ritem'>"
+    exp = "'a'. 'Excluded: <class 'test.include_exclude_ignore_refs_test.ritem'>' for Env('dev2')."
     print(exp)
     assert exp in got
 
@@ -196,9 +196,6 @@ def test_exclude_refs_for_repeatable_nested_configitem():
                         it2.setattr('anotherattr', dev1=1, pp=2)
 
                     it1.x = it1.ritems['a']
-                    it1.y = it1.ritems['b'].anattr
-
-            cr.x = rit.item.ritems['a']
 
             with ritem(mc_key='b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)
@@ -272,9 +269,6 @@ def test_exclude_refs_for_repeatable_nested_configitem_required_items():
                         anitem()
 
                     it1.x = it1.ritems['a']
-                    it1.y = it1.ritems['b'].anattr
-
-            cr.x = rit.item.ritems['a']
 
             with decorated_ritem(mc_key='b', mc_exclude=[dev1, dev3]) as rit:
                 rit.setattr('anattr', prod=31, pp=1, g_dev12_3=2)

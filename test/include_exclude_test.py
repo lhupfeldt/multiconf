@@ -739,7 +739,7 @@ def test_exclude__getattr__():
     assert exp in str(exinfo.value)
 
 
-def test_exclude_getattr():
+def test_exclude_getattr_env():
     @mc_config(ef)
     def config(_):
         with ConfigItem() as cr:
@@ -760,3 +760,18 @@ def test_exclude_getattr():
         _ = cr.item.getattr('anattr', dev2)
     exp = "Accessing attribute 'anattr' for Env('dev2') on an excluded config item: Excluded: <class 'test.include_exclude_test.item'>"
     assert exp in str(exinfo.value)
+
+
+def test_exclude_during_load__getattr__():
+    with raises(ConfigExcludedAttributeError):
+        @mc_config(ef)
+        def config(_):
+            with ConfigItem() as cr:
+                with item(mc_exclude=[dev2]) as it:
+                    it.anattr = 1
+                    it.anotherattr = 2
+                    with item(mc_exclude=[dev2]) as it:
+                        it.anattr = 1
+                        it.anotherattr = 2
+
+            assert cr.item.item.anattr

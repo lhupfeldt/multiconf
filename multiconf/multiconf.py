@@ -236,10 +236,6 @@ class _ConfigBase(object):
         return self._mc_handled_env_bits & env_mask
 
     def _mc_exists_in_env(self):
-        """Note: This always returns True when the config is not fully loaded"""
-        cr = self._mc_root
-        if not cr._mc_config_loaded:
-            return True
         env_mask = thread_local.env.mask
         if env_mask & self._mc_excluded:
             return False
@@ -829,7 +825,7 @@ class AbstractConfigItem(_ConfigBase):
 
         if isinstance(repeatable_cls_or_dict, RepeatableDict):
             # Get class of first item for error message. TODO: muliple types can be in the same repeatable
-            for item in repeatable_cls_or_dict.values():  # pragma: no branch
+            for item in repeatable_cls_or_dict._items.values():  # pragma: no branch
                 repeatable_cls_or_dict = type(item)
                 break
 
@@ -930,7 +926,7 @@ class RepeatableConfigItem(AbstractConfigItem):
         mc_key = init_kwargs.get(cls._mc_key_name) or cls._mc_key_value or mc_key
 
         try:
-            self = repeatable[mc_key]
+            self = repeatable._items[mc_key]
             if self._mc_handled_env_bits & thread_local.env.mask:
                 # We are trying to replace an object with the same mc_key. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
@@ -965,7 +961,7 @@ class RepeatableConfigItem(AbstractConfigItem):
             self._mc_handled_env_bits = thread_local.env.mask
 
             # Insert self in repeatable
-            repeatable[mc_key] = self
+            repeatable._items[mc_key] = self
             return self
 
     @classmethod
@@ -1035,7 +1031,7 @@ class _ConfigBuilder(AbstractConfigItem):
     def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
         """ConfigBuilder allows any nested repeatable without previous declaration."""
         repeatable = getattr(self, repeatable_class_key, None)
-        if repeatable:
+        if repeatable is not None:
             return repeatable
 
         repeatable = RepeatableDict()
@@ -1058,9 +1054,9 @@ class _ConfigBuilder(AbstractConfigItem):
 
             if isinstance(from_with, RepeatableDict):
                 repeatable = from_build._mc_get_repeatable(from_with_key, from_with)
-                for wi_key, wi in from_with.items():
+                for wi_key, wi in from_with._items.items():
                     pp = _ItemParentProxy(from_build, wi)
-                    repeatable[wi_key] = pp
+                    repeatable._items[wi_key] = pp
                 return
 
             pp = _ItemParentProxy(from_build, from_with)
@@ -1072,7 +1068,7 @@ class _ConfigBuilder(AbstractConfigItem):
             for item_from_build_key, item_from_build in self._mc_contained_in.items():
 
                 if isinstance(item_from_build, RepeatableDict):
-                    for bi_key, bi in item_from_build.items():
+                    for bi_key, bi in item_from_build._items.items():
                         insert(bi, item_from_with_key, item_from_with)
                         continue
                     continue

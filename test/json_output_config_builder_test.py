@@ -18,7 +18,86 @@ ef2_prod = EnvFactory()
 prod2 = ef2_prod.Env('prod')
 
 
-_json_dump_configbuilder_expected_json_full = """{
+_json_dump_configbuilder1_all_envs_expected_json_full = """{
+    "__class__": "ItemWithYs",
+    "__id__": 0000,
+    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "ys": {
+        "server1": {
+            "__class__": "Y",
+            "__id__": 0000,
+            "name": "server1",
+            "server_num": 1,
+            "y_children": {
+                "Hugo": {
+                    "__class__": "YChild",
+                    "__id__": 0000,
+                    "a": 10,
+                    "name": "Hugo"
+                }
+            },
+            "ys": {}
+        }
+    },
+    "_mc_ConfigBuilder_YBuilder default-builder": {
+        "__class__": "YBuilder",
+        "__id__": 0000,
+        "b": 27,
+        "start": 1,
+        "y_children": {
+            "Hugo": "#ref, id: 0000"
+        }
+    },
+    "aaa": 1,
+    "aaa #static": true
+}"""
+
+def test_json_dump_configbuilder1():
+    class YBuilder(ConfigBuilder):
+        def __init__(self, start=1):
+            super(YBuilder, self).__init__()
+            self.start = start
+
+        def mc_build(self):
+            for num in range(self.start, self.start + self.contained_in.aaa):
+                Y('server%d' % num, server_num=num)
+
+    @nested_repeatables('ys')
+    class ItemWithYs(ConfigItem):
+        aaa = 1
+
+    @named_as('ys')
+    @nested_repeatables('y_children', 'ys')
+    class Y(RepeatableConfigItem):
+        def __init__(self, mc_key, server_num):
+            super(Y, self).__init__(mc_key=mc_key)
+            self.name = mc_key
+            self.server_num = server_num
+
+    @named_as('y_children')
+    class YChild(RepeatableConfigItem):
+        def __init__(self, mc_key, a):
+            super(YChild, self).__init__(mc_key=mc_key)
+            self.name = mc_key
+            self.a = a
+
+    @mc_config(ef)
+    def config(_):
+        with ItemWithYs() as cr:
+            with YBuilder() as yb1:
+                yb1.setattr('b', default=27, mc_set_unknown=True)
+                YChild('Hugo', a=10)
+                # with YBuilder() as yb2:
+                #     yb2.setattr('start', default=3, pp=117)
+                #     yb2.setattr('c', default=28, mc_set_unknown=True)
+
+    cr = config(prod).ItemWithYs
+
+    assert compare_json(cr, None, replace_builders=True, test_decode=True,
+                        expected_all_envs_json=_json_dump_configbuilder1_all_envs_expected_json_full)
+
+
+_json_dump_configbuilder2_expected_json_full = """{
     "__class__": "ItemWithYs",
     "__id__": 0000,
     "env": {
@@ -115,7 +194,7 @@ _json_dump_configbuilder_expected_json_full = """{
     "aaa #static": true
 }"""
 
-_json_dump_configbuilder_all_envs_expected_json_full = """{
+_json_dump_configbuilder2_all_envs_expected_json_full = """{
     "__class__": "ItemWithYs",
     "__id__": 0000,
     "env": "<class 'multiconf.envs.NO_ENV'>",
@@ -275,7 +354,7 @@ _json_dump_configbuilder_all_envs_expected_json_full = """{
     "aaa #static": true
 }"""
 
-_json_dump_configbuilder_expected_json_repeatable_item = """{
+_json_dump_configbuilder2_expected_json_repeatable_item = """{
     "__class__": "Y",
     "__id__": 0000,
     "env": {
@@ -328,7 +407,7 @@ _json_dump_configbuilder_expected_json_repeatable_item = """{
     }
 }"""
 
-_json_dump_configbuilder_dont_dump_expected_json_full = """{
+_json_dump_configbuilder2_dont_dump_expected_json_full = """{
     "__class__": "ItemWithYs",
     "__id__": 0000,
     "env": {
@@ -403,7 +482,7 @@ _json_dump_configbuilder_dont_dump_expected_json_full = """{
 }"""
 
 
-def test_json_dump_configbuilder():
+def test_json_dump_configbuilder2():
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
             super(YBuilder, self).__init__()
@@ -446,12 +525,12 @@ def test_json_dump_configbuilder():
 
     cr = config(prod).ItemWithYs
 
-    assert compare_json(cr, _json_dump_configbuilder_expected_json_full, replace_builders=True, test_decode=True,
-                        expected_all_envs_json=_json_dump_configbuilder_all_envs_expected_json_full)
-    assert compare_json(cr.ys['server2'], _json_dump_configbuilder_expected_json_repeatable_item, replace_builders=True, test_decode=True)
+    assert compare_json(cr, _json_dump_configbuilder2_expected_json_full, replace_builders=True, test_decode=True,
+                        expected_all_envs_json=_json_dump_configbuilder2_all_envs_expected_json_full)
+    assert compare_json(cr.ys['server2'], _json_dump_configbuilder2_expected_json_repeatable_item, replace_builders=True, test_decode=True)
 
-    assert compare_json(cr, _json_dump_configbuilder_dont_dump_expected_json_full, replace_builders=False, dump_builders=False, test_decode=True)
-    assert compare_json(cr.ys['server2'], _json_dump_configbuilder_expected_json_repeatable_item, replace_builders=False, dump_builders=False, test_decode=True)
+    assert compare_json(cr, _json_dump_configbuilder2_dont_dump_expected_json_full, replace_builders=False, dump_builders=False, test_decode=True)
+    assert compare_json(cr.ys['server2'], _json_dump_configbuilder2_expected_json_repeatable_item, replace_builders=False, dump_builders=False, test_decode=True)
 
 
 def test_json_dump_with_builders_containment_check():

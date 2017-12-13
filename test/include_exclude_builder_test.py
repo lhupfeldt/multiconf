@@ -56,8 +56,6 @@ class anotheritem(ConfigItem):
 
 
 def test_exclude_for_configitem_builder_with_mc_required():
-    ri1_excluded = [None]
-
     class RepBuilder(ConfigBuilder):
         def mc_build(self):
             ritem(0)
@@ -76,8 +74,6 @@ def test_exclude_for_configitem_builder_with_mc_required():
                 anitem()
                 with anotheritem() as ii:
                     ii.mc_select_envs(exclude=[dev1])
-
-            ri1_excluded[0] = rt.ritems[1]
 
     cr = config(dev1).root
 
@@ -103,11 +99,3 @@ def test_exclude_for_configitem_builder_with_mc_required():
     assert ri2.anitem.contained_in == ri2
     assert not ri2.anotheritem
     assert ri0.anotheritem.is_excluded()
-
-    ri1 = ri1_excluded[0]
-    assert not ri1
-    assert repr(ri1).startswith('Excluded')
-
-    # TODO: It would be nice it this would raise AttributeError 'on an excluded ...' as cr.item is excluded, but that would require a different implementation
-    assert not ri1.anitem
-    assert not ri1.anotheritem
