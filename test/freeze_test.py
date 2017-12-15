@@ -3,6 +3,8 @@
 
 from __future__ import print_function
 
+from pytest import xfail
+
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, MC_REQUIRED
 from multiconf.decorators import nested_repeatables, named_as, required
 from multiconf.envs import EnvFactory
@@ -72,6 +74,23 @@ def test_automatic_freeze_of_previous_sibling():
             rchild(mc_key='aa', aa=18)
             assert rt.children['aa'].aa == 18
 
+
+def test_frozen_attribute_attempted_set_in_mc_init():
+    class Xx(ConfigItem):
+        def __init__(self):
+            super(Xx, self).__init__()
+            self.aa = 1
+            self.bb = MC_REQUIRED
+
+        def mc_init(self):
+            super(Xx, self).mc_init()
+            xfail("TODO: strict freeze should not allow this?")
+            self.aa = 2
+
+    @mc_config(ef1_prod)
+    def _(_):
+        with Xx() as rt:
+            rt.bb = rt.aa
 
 # TODO test_automatic_freeze_of_previous_sibling mc_init
 
