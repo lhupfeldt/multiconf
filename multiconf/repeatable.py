@@ -9,8 +9,13 @@ from .config_errors import ConfigExcludedKeyError
 
 
 class RepeatableDict(object):
-    """Dictionary dedicated for holding RepeatableConfigItem"""
-    __slots__ = ('_all_items',)
+    """Dictionary dedicated for holding RepeatableConfigItem.
+
+    A ConfigItem may be excluded from some envs. This class works as a simplified OrderedDict, but behaves in an env specific manner
+    excluding items which are excluded in the current env.
+    """
+
+    __slots__ = ('_all_items',)  # Referenced in multiconf.py
     __class__ = OrderedDict
 
     def __init__(self):
@@ -91,7 +96,7 @@ class RepeatableDict(object):
     def _update_mc_excluded_recursively(self, mc_excluded_mask):
         for item in self._all_items.values():
             item._update_mc_excluded_recursively(mc_excluded_mask)
-    
+
     def _mc_call_mc_validate_recursively(self, env):
         """Call the user defined 'mc_validate' methods on all items"""
 
@@ -111,3 +116,13 @@ class RepeatableDict(object):
 
         for _, item in self._all_items.items():
             item._mc_call_mc_post_validate_recursively()
+
+    @property
+    def all_items(self):
+        """Return the underlying OrderedDict holding all items, including items excluded from current env.
+
+        This can be used in applications which need access to the ConfigItems from all envs.
+        Modifications are not allowed!
+        """
+
+        return self._all_items

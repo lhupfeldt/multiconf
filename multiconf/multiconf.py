@@ -13,7 +13,7 @@ from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, _McAttributeAccessor, Where
 from .property_wrapper import _McPropertyWrapper
 from .repeatable import RepeatableDict
-from .config_errors import ConfigException, ConfigApiException, InvalidUsageException
+from .config_errors import ConfigException, ConfigApiException, InvalidUsageException, ConfigExcludedAttributeError, ConfigExcludedKeyError
 from .config_errors import caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg, not_repeatable_in_parent_msg, repeatable_in_parent_msg
 from .json_output import ConfigItemEncoder, _mc_filter_out_keys, _mc_identification_msg_str
 from . import typecheck
@@ -356,7 +356,7 @@ class _ConfigBase(object):
     def _update_mc_excluded_recursively(self, mc_excluded_mask):
         self._mc_excluded |= mc_excluded_mask
         for item in self._mc_items.values():
-            item._update_mc_excluded_recursively(mc_excluded_mask)
+            item._update_mc_excluded_recursively(self._mc_excluded)
 
     def __exit__(self, exc_type, value, traceback):
         if not exc_type:
@@ -368,7 +368,7 @@ class _ConfigBase(object):
         # self.__class__._mc_debug_hierarchy('_ConfigBase.__exit__')
         if exc_type is _McExcludedException:
             # We need to update _mc_excluded mask on all children which may have been skipped
-            _ConfigBase._update_mc_excluded_recursively(self, self._mc_excluded)
+            self._update_mc_excluded_recursively(self._mc_excluded)
             self.__class__._mc_hierarchy.pop()
             return True
 
@@ -645,14 +645,76 @@ class _ConfigBase(object):
             self._mc_print_error_caller(msg, mc_error_info_up_level)
 
     def getattr(self, attr_name, env):
-        """Get an attribute value for any env."""
-        cr = self._mc_root
+        """Get the attribute value for the specified env.
+
+        Arguments:
+            attr_name (str): The attribute name.
+            env (Env): The env to get the value for.
+        """
+
         try:
             orig_env = thread_local.env
             thread_local.env = env
             return getattr(self, attr_name)
         finally:
             thread_local.env = orig_env
+
+    def attr_env_items(self, attr_name, ignored_exceptions=()):
+        """Iterate through the attribute (env, value) for the all defined envs.
+
+        If ConfigExcludedAttributeError, ConfigExcludedKeyError or any exception specified in `ignored_exceptions` is raised then
+        `MC_NO_VALUE` is returned.
+
+        Arguments:
+            attr_name (str): The attribute name.
+            ignored_exceptions (type or sequence(type)): Additional exception classes to ignore. This can be necessary when
+                `attr_name` references a @property method which may raise an arbitrary error when called for an env where some of
+                it's dependencies not be setup correctly.
+
+        Yield:
+            env (Env), value (any): The (env, attribute value) for each env or `MC_NO_VALUE` is there is not value for a specific
+               env (e.g. the item is excluded). If an exception was raised for all envs the last exception will propagate.
+        """
+
+        try:
+            exception = True
+            orig_env = thread_local.env
+            # print("attr_env_items 1:", attr_name, 'current env:', orig_env, bool(self))
+            for env in self._mc_root._mc_env_factory.envs.values():
+                thread_local.env = env
+                # print("attr_env_items 2:", env, type(self), bool(self),
+                #       '\n self._mc_excluded:       ', int_to_bin_str(self._mc_excluded),
+                #       '\n self._mc_handled_env_bits', int_to_bin_str(self._mc_handled_env_bits),
+                #       '\n env.mask                 ', int_to_bin_str(env.mask))
+                try:
+                    yield env, getattr(self, attr_name)
+                    exception = False
+                except (ConfigExcludedAttributeError, ConfigExcludedKeyError) as ex:
+                    # print("attr_env_items 3:", ex)
+                    if exception:
+                        exception = ex
+                    yield env, MC_NO_VALUE
+                except ignored_exceptions as ex:
+                    # print("attr_env_items 4:", repr(ex), 'hello')
+                    if exception:
+                        exception = ex
+                    yield env, MC_NO_VALUE
+        finally:
+            thread_local.env = orig_env
+            if exception and exception is not True:
+                raise exception
+
+    def attr_env_values(self, attr_name, ignored_exceptions=()):
+        """Iterate through the attribute value for the all defined envs.
+
+        See `attr_env_items`for common behaviour.
+
+        Yield:
+            value (any): The attribute value for each env.
+        """
+
+        for _, value in self.attr_env_items(attr_name, ignored_exceptions):
+            yield value
 
     def items(self):
         for key, item in self._mc_items.items():
