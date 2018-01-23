@@ -230,15 +230,10 @@ class _ConfigBase(object):
                     if not isinstance(getattr(self.__class__, name, None), _McAttributeAccessor) or name in self._mc_attributes]
 
     def _mc_exists_in_given_env(self, env):
-        env_mask = env.mask
-        if env_mask & self._mc_excluded:
-            return False
-        return self._mc_handled_env_bits & env_mask
+        return self._mc_handled_env_bits & env.mask
 
     def _mc_exists_in_env(self):
         env_mask = thread_local.env.mask
-        if env_mask & self._mc_excluded:
-            return False
         return self._mc_handled_env_bits & env_mask or env_mask == 0
 
     def _mc_freeze(self, mc_error_info_up_level):
@@ -353,11 +348,6 @@ class _ConfigBase(object):
         # self.__class__._mc_debug_hierarchy('_ConfigBase.__enter__')
         return self
 
-    def _update_mc_excluded_recursively(self, mc_excluded_mask):
-        self._mc_excluded |= mc_excluded_mask
-        for item in self._mc_items.values():
-            item._update_mc_excluded_recursively(self._mc_excluded)
-
     def __exit__(self, exc_type, value, traceback):
         if not exc_type:
             self._mc_freeze_previous(mc_error_info_up_level=1)
@@ -367,8 +357,6 @@ class _ConfigBase(object):
 
         # self.__class__._mc_debug_hierarchy('_ConfigBase.__exit__')
         if exc_type is _McExcludedException:
-            # We need to update _mc_excluded mask on all children which may have been skipped
-            self._update_mc_excluded_recursively(self._mc_excluded)
             self.__class__._mc_hierarchy.pop()
             return True
 
@@ -683,7 +671,6 @@ class _ConfigBase(object):
             for env in self._mc_root._mc_env_factory.envs.values():
                 thread_local.env = env
                 # print("attr_env_items 2:", env, type(self), bool(self),
-                #       '\n self._mc_excluded:       ', int_to_bin_str(self._mc_excluded),
                 #       '\n self._mc_handled_env_bits', int_to_bin_str(self._mc_handled_env_bits),
                 #       '\n env.mask                 ', int_to_bin_str(env.mask))
                 try:
@@ -849,7 +836,7 @@ class AbstractConfigItem(_ConfigBase):
         _ConfigBase._mc_last_item = self
 
         if not self._mc_contained_in:
-            self._mc_excluded |= thread_local.env.mask
+            self._mc_handled_env_bits &= ~thread_local.env.mask
             raise _McExcludedException()
 
         if mc_include or mc_exclude:
@@ -868,7 +855,7 @@ class AbstractConfigItem(_ConfigBase):
             raise ex
 
         if selected == 1 or (selected is None and include):
-            self._mc_excluded |= thread_local.env.mask
+            self._mc_handled_env_bits &= ~thread_local.env.mask
             return True
 
         return False
@@ -952,7 +939,6 @@ class ConfigItem(AbstractConfigItem):
             self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
-            self._mc_excluded = 0
             self._mc_handled_env_bits = thread_local.env.mask
 
             for key in cls._mc_deco_nested_repeatables:
@@ -1030,7 +1016,6 @@ class RepeatableConfigItem(AbstractConfigItem):
             self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
-            self._mc_excluded = 0
             self._mc_handled_env_bits = thread_local.env.mask
 
             for key in cls._mc_deco_nested_repeatables:
@@ -1090,7 +1075,6 @@ class _ConfigBuilder(AbstractConfigItem):
             self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
-            self._mc_excluded = 0
             self._mc_handled_env_bits = thread_local.env.mask
 
             contained_in._mc_items[private_key] = self
@@ -1218,7 +1202,6 @@ class _ConfigRoot(_ConfigBase):
         self._mc_items = OrderedDict()
         self._mc_contained_in = None
         self._mc_root = self
-        self._mc_excluded = 0
         self._mc_handled_env_bits = 0
         self._mc_num_warnings = 0
         self._mc_config_result = {}
