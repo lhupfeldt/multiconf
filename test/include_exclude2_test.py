@@ -4,13 +4,13 @@
 # pylint: disable=E0611
 from pytest import raises
 
-from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
-from multiconf.decorators import required, named_as
+from multiconf import mc_config, ConfigItem, ConfigException, ConfigExcludedAttributeError, MC_REQUIRED, McInvalidValue
+from multiconf.decorators import required, named_as, nested_repeatables
 from multiconf.envs import EnvFactory
 
 from .utils.utils import config_error, next_line_num, file_line
 from .utils.compare_json import compare_json
-
+from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
 
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
@@ -345,3 +345,87 @@ def test_exclude_include_error_before_exclude(capsys):
     _sout, serr = capsys.readouterr()
     msg = "Trying to set attribute '_a' on a config item. Atributes starting with '_' cannot be set using item.setattr. Use assignment instead."
     assert ce(errorline[0], msg) == serr
+
+
+def test_exclude_include_iter_all(capsys):
+    @nested_repeatables('RepeatableItems')
+    class item(ConfigItem):
+        pass
+
+    @mc_config(ef)
+    def config(_):
+        with item():
+            with RepeatableItemWithAA(mc_key=1, aa=1) as r1:
+                ItemWithAA(aa=11)
+            with RepeatableItemWithAA(mc_key=2, aa=2) as r2:
+                r2.mc_select_envs(exclude=[prod])
+                ItemWithAA(aa=12)
+
+    _sout, serr = capsys.readouterr()
+    cr = config(pp)
+    for key, rit in cr.item.RepeatableItems.all_items.items():
+        assert rit.aa == key
+        assert rit.ItemWithAA.aa == 10 + key
+
+    cr = config(prod)
+    for key, rit in cr.item.RepeatableItems.all_items.items():
+        if key == 1:
+            assert rit.aa == 1
+            assert rit.ItemWithAA.aa == 11
+        if key == 2:
+            with raises(ConfigExcludedAttributeError) as exinfo:
+                errorline = next_line_num()
+                rit.ItemWithAA.aa
+
+    exinfo.value == "Accessing attribute 'aa' for Env('prod') on an excluded config item: Excluded: <class 'test.utils.tstclasses.ItemWithAA'>"
+
+
+def test_exclude_include_iter_2_level_all_env_attr_items(capsys):
+    """Test iteration over repeatable with excludede items and usage of `env_attr_items` where first defined env is excluded"""
+
+    @nested_repeatables('RepItemsOuter')
+    class item(ConfigItem):
+        pass
+
+    @named_as('RepItemsOuter')
+    @nested_repeatables('RepItemsMiddle')
+    class RepItemsOuter(RepeatableItemWithAA):
+        pass
+
+    @named_as('RepItemsMiddle')
+    @nested_repeatables('RepItemsInner')
+    class RepItemsMiddle(RepeatableItemWithAA):
+        pass
+
+    @named_as('RepItemsInner')
+    class RepItemsInner(RepeatableItemWithAA):
+        pass
+
+    @mc_config(ef)
+    def config(_):
+        with item():
+            with RepItemsOuter(mc_key=1, aa=11) as r2:
+                r2.mc_select_envs(exclude=[dev1])
+                with RepItemsMiddle(mc_key=2, aa=22):
+                    with RepItemsInner(mc_key=3, aa=33):
+                        with ItemWithAA(aa=44):
+                            ItemWithAA(aa=55)
+
+    def _test(cr):
+        for keyo, rito in cr.item.RepItemsOuter.all_items.items():
+            print('rito:', bool(rito))
+            for keym, ritm in rito.RepItemsMiddle.all_items.items():
+                print('ritm:', bool(ritm))
+                for keyi, riti in ritm.RepItemsInner.all_items.items():
+                    print('riti:', bool(riti))
+                    for env, val in riti.attr_env_items('aa'):
+                        # print(env, val)
+                        assert val == McInvalidValue.MC_NO_VALUE if env == dev1 else 33
+
+                    for env, val in riti.ItemWithAA.attr_env_items('aa'):
+                        # print(env, val)
+                        assert val == McInvalidValue.MC_NO_VALUE if env == dev1 else 44
+
+    _sout, serr = capsys.readouterr()
+    _test(config(pp))
+    _test(config(prod))

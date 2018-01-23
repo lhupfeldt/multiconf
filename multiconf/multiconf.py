@@ -219,7 +219,7 @@ class _ConfigBase(object):
         """
 
     def __bool__(self):
-        return not (thread_local.env.mask & self._mc_excluded)
+        return bool(self._mc_exists_in_env())
 
     # Python2 compatibility
     __nonzero__ = __bool__
@@ -953,6 +953,7 @@ class ConfigItem(AbstractConfigItem):
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
             self._mc_excluded = 0
+            self._mc_handled_env_bits = thread_local.env.mask
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict()
@@ -967,10 +968,10 @@ class ConfigItem(AbstractConfigItem):
             if name in contained_in._mc_attributes:
                 msg = "'{name}' is defined both as simple value and a contained item: {self}".format(name=name, self=self)
                 raise ConfigException(msg, is_fatal=True)
+
             object.__setattr__(contained_in, name, self)
             contained_in._mc_items[name] = self  # Needed to implement reliable 'items' method
 
-            self._mc_handled_env_bits = thread_local.env.mask
             return self
 
     def __init__(self, mc_include=None, mc_exclude=None):
@@ -1030,13 +1031,12 @@ class RepeatableConfigItem(AbstractConfigItem):
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
             self._mc_excluded = 0
+            self._mc_handled_env_bits = thread_local.env.mask
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict()
                 self._mc_items[key] = od  # Needed to implement reliable 'items' method
                 object.__setattr__(self, key, od)
-
-            self._mc_handled_env_bits = thread_local.env.mask
 
             # Insert self in repeatable
             repeatable._all_items[mc_key] = self
@@ -1091,8 +1091,8 @@ class _ConfigBuilder(AbstractConfigItem):
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
             self._mc_excluded = 0
-
             self._mc_handled_env_bits = thread_local.env.mask
+
             contained_in._mc_items[private_key] = self
 
             return self
