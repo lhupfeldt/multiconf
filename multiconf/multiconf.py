@@ -663,16 +663,16 @@ class _ConfigBase(object):
         """Iterate through the attribute (env, value) for the all defined envs.
 
         If ConfigExcludedAttributeError, ConfigExcludedKeyError or any exception specified in `ignored_exceptions` is raised then
-        `MC_NO_VALUE` is returned.
+        `McInvalidValue.MC_NO_VALUE` is returned.
 
         Arguments:
             attr_name (str): The attribute name.
             ignored_exceptions (type or sequence(type)): Additional exception classes to ignore. This can be necessary when
                 `attr_name` references a @property method which may raise an arbitrary error when called for an env where some of
-                it's dependencies not be setup correctly.
+                it's dependencies may not be setup correctly.
 
         Yield:
-            env (Env), value (any): The (env, attribute value) for each env or `MC_NO_VALUE` is there is not value for a specific
+            env (Env), value (any): The (env, attribute value) for each env or `MC_NO_VALUE` is there is no value for a specific
                env (e.g. the item is excluded). If an exception was raised for all envs the last exception will propagate.
         """
 
