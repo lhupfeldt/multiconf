@@ -9,7 +9,7 @@ class McInvalidValue(Enum):
 
     Attributes:
         MC_NO_VALUE: This is the initial value for attribute until it receives a value for an Env. This will only be observed
-            when iterating over the env values of an attribute and the ConfigItem was excluded from some Envs. See `attr_env_items`.
+            when iterating over the env values of an attribute and the ConfigItem was excluded from some Envs. See :meth:`~multiconf.ConfigItem.attr_env_items`.
             You should never set an attribute to this value.
 
         MC_REQUIRED: This is used as the default value for attributes in __init__ when there is no reasonable default.

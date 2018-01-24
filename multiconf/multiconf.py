@@ -120,7 +120,7 @@ class _ConfigBase(object):
              depth=None, persistent_ids=False):
         """Create json representation of configuration.
 
-        The mc_json_filter and mc_json_fallback arguments to `mc_config` also influence the output.
+        The mc_json_filter and mc_json_fallback arguments to :func:`mc_config` also influence the output.
 
         Arguments:
             compact (bool): Set compact to true if dumping for easier human readable output, false for machine readable output.
@@ -659,7 +659,7 @@ class _ConfigBase(object):
                 `attr_name` references a @property method which may raise an arbitrary error when called for an env where some of
                 it's dependencies may not be setup correctly.
 
-        Yield:
+        Yields:
             env (Env), value (any): The (env, attribute value) for each env or `MC_NO_VALUE` is there is no value for a specific
                env (e.g. the item is excluded). If an exception was raised for all envs the last exception will propagate.
         """
@@ -694,9 +694,9 @@ class _ConfigBase(object):
     def attr_env_values(self, attr_name, ignored_exceptions=()):
         """Iterate through the attribute value for the all defined envs.
 
-        See `attr_env_items`for common behaviour.
+        See :meth:`attr_env_items` for common behaviour.
 
-        Yield:
+        Yields:
             value (any): The attribute value for each env.
         """
 

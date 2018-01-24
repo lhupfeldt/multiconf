@@ -66,7 +66,7 @@ class ConfigItemEncoder(object):
                  multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs, depth, persistent_ids):
         """Encoder for json.
 
-        Check the `multiconf.json` and `multiconf.mc_build` methods for public arguments passed on to this.
+        Check the :meth:`~multiconf.ConfigItem.json` and :meth:`~multiconf.ConfigItem.mc_build` methods for public arguments passed on to this.
 
         Arguments:
             multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type (type): Passed as arguments as a workaround for cyclic imports.
