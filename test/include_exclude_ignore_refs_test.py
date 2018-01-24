@@ -425,7 +425,6 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
 
 
 def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
-    xfail('TODO')
     @mc_config(ef)
     def config(_):
         with decorated_root() as cr:
@@ -452,7 +451,11 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
                         it1.x = it1.ritems['a']
                         it1.y = it1.ritems['b'].anattr
 
-                cr.x = rit.item.ritems['a'].anotherattr
+                try:
+                    # This is invalid as it will fail for 'dev3'
+                    _ = rit.item.ritems['a'].anotherattr
+                except ConfigExcludedKeyError:
+                    assert cr.env == dev3
 
             with ritem(mc_key='b') as rit:
                 rit.mc_select_envs(exclude=[dev1, dev3])
