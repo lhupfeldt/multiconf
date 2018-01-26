@@ -64,8 +64,9 @@ def test_item_dot_attr_not_allowed_in_mc_post_validate():
             with root() as rt:
                 rt.aa = 1
 
-    exp = "Trying to access attribute 'aa'. "
-    exp += "Item.attribute access is not allowed in 'mc_post_validate' as there is no current env, use: item.getattr(attr_name, env)"
+    exp = "Trying to access attribute 'aa'. " \
+          "Item.attribute access is not allowed in 'mc_post_validate' as there is no current env. " \
+          "Use: item.attr_env_items('aa') or item.getattr('aa', <env>)"
     assert str(exinfo.value) == exp
 
 

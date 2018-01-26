@@ -2,6 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
+from collections import namedtuple
 
 import sys
 from collections import Container, OrderedDict
@@ -46,7 +47,7 @@ class BaseEnv(object):
             raise EnvException(cls.__name__ + ": 'name' must not be empty")
         if name[0] == '_':
             raise EnvException(cls.__name__ + ": 'name' must not start with '_', got: " + repr(name))
-        if name == 'default':
+        if name in ('default', 'MC_NO_ENV'):
             raise EnvException(cls.__name__ + ": name '" + name + "' is reserved")
 
     def json(self, skipkeys=True):
@@ -303,11 +304,10 @@ class EnvFactory(object):
         return None
 
 
-class NO_ENV(object):
-    mask = 0
-    name = "MC_NO_ENV"
-    lookup_order = ()
+MC_NO_ENV = Env("MC_NO_ENV", type('', (object,), {'_index': 0}), allow_todo=True)
+MC_NO_ENV.mask = 0
+MC_NO_ENV.lookup_order = ()
 
 
 thread_local = threading.local()
-thread_local.env = NO_ENV
+thread_local.env = MC_NO_ENV

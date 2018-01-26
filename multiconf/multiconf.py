@@ -8,7 +8,7 @@ from collections import OrderedDict
 import json
 import threading
 
-from .envs import EnvFactory, Env, MissingValueEnvException, AmbiguousEnvException, EnvException, NO_ENV, thread_local
+from .envs import EnvFactory, Env, MissingValueEnvException, AmbiguousEnvException, EnvException, MC_NO_ENV, thread_local
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, _McAttributeAccessor, Where
 from .property_wrapper import _McPropertyWrapper
@@ -156,7 +156,7 @@ class _ConfigBase(object):
         try:
             orig_env = thread_local.env
             if show_all_envs:
-                thread_local.env = NO_ENV
+                thread_local.env = MC_NO_ENV
 
             # python3 doesn't need  separators=(',', ': ')
             json_str = json.dumps(self, skipkeys=skipkeys, default=encoder, check_circular=False, sort_keys=False, indent=4, separators=(',', ': '))
@@ -1206,6 +1206,7 @@ class _ConfigRoot(_ConfigBase):
         self._mc_num_warnings = 0
         self._mc_config_result = {}
         self._mc_config_loaded = False
+        self._mc_in_post_validate = False
         self._mc_config_post_validated = False
         self._mc_num_property_errors = 0
         self._mc_num_invalid_property_usage = 0
@@ -1385,6 +1386,7 @@ def mc_config(
         error_envs = []
 
         if not lazy_load:
+            root_proxies[MC_NO_ENV] = cr
             for env in env_factory.envs.values():
                 load_one_env(env, conf_func, cr, root_proxies, error_envs)
 
@@ -1396,41 +1398,47 @@ def mc_config(
             _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
 
             if do_post_validate:
+                cr._mc_in_post_validate = True
                 # Call mc_post_validate
-                thread_local.env = NO_ENV
+                thread_local.env = MC_NO_ENV
                 _mc_debug("\n==== Calling 'mc_post_validate' ====")
                 cr._mc_call_mc_post_validate_recursively()
+                cr._mc_in_post_validate = False
 
             cr._mc_config_post_validated = True
 
         def config_wrapper(env, allow_todo=False):
             try:
-                cr = root_proxies[env]
+                rp = root_proxies[env]
             except KeyError:
                 if not isinstance(env, Env):
                     msg = "{ef_cls}: env must be instance of {env_cls!r}; found type '{got_typ}': {val!r}"
                     raise ConfigException(msg.format(ef_cls=env_factory.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
+
+                if lazy_load and env is MC_NO_ENV:
+                    raise ConfigException("{} cannot be used with 'lazy_load'.".format(env))
+
                 if env.factory != env_factory:
                     raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
 
                 if lazy_load:
-                    cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, do_type_check, mc_5_migration)
                     cr._mc_check_unknown = True
 
                     # Make sure _mc_setattr is the real one if decorator is used multiple times
                     _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
 
                     load_one_env(env, conf_func, cr, root_proxies, error_envs)
+                    rp = _RootEnvProxy(env, cr)
                 else:
                     raise  # Should not happen
 
-            if not allow_todo and cr._mc_todo_msgs[env]:
-                for msg, fname, line in cr._mc_todo_msgs[env]:
+            if env is not MC_NO_ENV and not allow_todo and rp._mc_todo_msgs[env]:
+                for msg, fname, line in rp._mc_todo_msgs[env]:
                     print(_line_msg(file_name=fname, line_num=line), file=sys.stderr)
                     print(msg, file=sys.stderr)
                 raise ConfigException("Trying to get invalid configuration containing MC_TODO")
 
-            return cr
+            return rp
 
         return config_wrapper
 

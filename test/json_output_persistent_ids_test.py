@@ -78,7 +78,10 @@ _json_dump_persistent_ids_expected_json = """{
 _json_dump_persistent_ids_all_envs_expected_json = """{
     "__class__": "root",
     "__id__": "<class 'test.json_output_persistent_ids_test.root'>, name: 'NO-CURRENT-VALUE",
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "aa": "#ref later, id: <class 'test.json_output_persistent_ids_test.NestedRepeatable'>, id: 'NO-CURRENT-VALUE",
     "someitems": {
         "a-level1": {

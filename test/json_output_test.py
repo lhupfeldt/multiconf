@@ -75,7 +75,10 @@ _json_dump_root_expected_json = """{
 _json_dump_root_no_env_expected_json = """{
     "__class__": "ConfigItem",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>"
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    }
 }"""
 
 def test_json_dump_root():
@@ -162,7 +165,10 @@ _json_dump_simple_expected_json = """{
 _json_dump_simple_all_envs_expected_json = """{
     "__class__": "root",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "aa": 0,
     "someitems": {
         "a-level1": {
@@ -443,7 +449,10 @@ _json_dump_property_attribute_method_override_other_env_expected_json = """{
 _json_dump_property_attribute_method_override_other_env_all_envs_expected_json = """{
     "__class__": "ConfigItem",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
@@ -495,7 +504,10 @@ _json_dump_property_method_raises_InvalidUsageException_expected_json = """{
 _json_dump_property_method_raises_InvalidUsageException_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "aa": 0,
     "someitem": {
         "__class__": "Nested",
@@ -539,7 +551,10 @@ _json_dump_property_method_raises_exception_expected_json = """{
 _json_dump_property_method_raises_exception_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "aa": {
         "pp": 1,
         "prod": 0
@@ -590,7 +605,10 @@ _json_dump_property_method_raises_exception_in_pp_expected_json = """{
 _json_dump_property_method_raises_exception_in_pp_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "aa": 0,
     "someitem": {
         "__class__": "Nested",

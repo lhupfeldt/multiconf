@@ -80,7 +80,10 @@ _json_dump_prod_attr_dict_ref_item_expected_json = """{
 _json_dump_all_envs_attr_dict_ref_item_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "aa": 0,
     "Ref1": {
         "__class__": "Ref1",

@@ -21,7 +21,10 @@ prod2 = ef2_prod.Env('prod')
 _json_dump_configbuilder1_all_envs_expected_json_full = """{
     "__class__": "ItemWithYs",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "ys": {
         "server1": {
             "__class__": "Y",
@@ -197,7 +200,10 @@ _json_dump_configbuilder2_expected_json_full = """{
 _json_dump_configbuilder2_all_envs_expected_json_full = """{
     "__class__": "ItemWithYs",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "ys": {
         "server1": {
             "__class__": "Y",

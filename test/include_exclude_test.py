@@ -77,7 +77,10 @@ _include_exclude_for_configitem_expected_json = """{
 _include_exclude_for_configitem_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
-    "env": "<class 'multiconf.envs.NO_ENV'>",
+    "env": {
+        "__class__": "Env",
+        "name": "MC_NO_ENV"
+    },
     "aa": 1,
     "item": {
         "__class__": "item",
