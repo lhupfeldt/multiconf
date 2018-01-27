@@ -8,7 +8,6 @@ python:
 script: tox
 os:
   - linux
-  - osx
 before_install:
   - travis_retry pip install --upgrade pip
   - travis_retry pip install --upgrade requirements-builder
@@ -24,7 +23,6 @@ env:
   - REQUIREMENTS=release
 matrix:
   allow_failures:
-  - python: 3.7-dev
-  - os: osx
+  -  python: 3.7-dev
 after_success:
   - coveralls --rcfile="./test/.coverage_rc_$TRAVIS_PYTHON_VERSION"
