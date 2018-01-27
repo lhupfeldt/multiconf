@@ -5,7 +5,8 @@ from __future__ import print_function
 
 from pytest import raises
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigException, ConfigApiException, ConfigExcludedAttributeError, McInvalidValue
+from multiconf import (
+    mc_config, ConfigItem, RepeatableConfigItem, ConfigException, ConfigApiException, ConfigExcludedAttributeError, McInvalidValue, MC_REQUIRED)
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory, MC_NO_ENV
 
@@ -151,3 +152,29 @@ def test_lazy_load_no_env():
 
     exp_ex = "Env('MC_NO_ENV') cannot be used with 'lazy_load'."
     assert exp_ex in str(exinfo.value)
+
+
+def test_mc_env_loop():
+    class item(ConfigItem):
+        def __init__(self, aa):
+            super(item, self).__init__()
+            self.aa = aa
+            self.aa_alternate = MC_REQUIRED
+
+        @property
+        def aa_special(self):
+            return self.aa_alternate + self.aa
+
+    @mc_config(ef)
+    def config(root):
+        with item(aa=1) as it:
+            it.setattr('aa_alternate', default=1, prod=7)
+
+    cr = config(MC_NO_ENV)
+
+    exp_envs = [pp, prod]
+    exp_values = [2, 8]
+    for index, env in enumerate(cr.item.env_loop()):
+        assert env is exp_envs[index]
+        assert cr.item.aa == 1
+        assert cr.item.aa_special is exp_values[index]

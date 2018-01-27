@@ -703,7 +703,58 @@ class _ConfigBase(object):
         for _, value in self.attr_env_items(attr_name, ignored_exceptions):
             yield value
 
+    def env_loop(self):
+        """Iterator over all defined envs.
+
+        Sets current env and yields it.
+        This is most useful for cross env applications where the config has been instantiated with `MC_NO_ENV`.
+
+        E.g.::
+
+            class item(ConfigItem):
+                def __init__(self, aa):
+                    super(item, self).__init__()
+                    self.aa = aa
+                    self.aa_alternate = MC_REQUIRED
+
+                @property
+                def aa_special(self):
+                    return self.aa_alternate + self.aa
+
+            @mc_config(ef)
+            def config(root):
+                with item(aa=1) as it:
+                    it.setattr('aa_alternate', default=1, prod=7)
+
+            cr = config(MC_NO_ENV)
+
+            exp_envs = [pp, prod]
+            exp_values = [2, 8]
+            for index, env in enumerate(cr.item.env_loop()):
+                print(cr.item.aa)
+                print(cr.item.aa_special)
+
+          prints: 1 2 1 8
+
+        Yields:
+            env (Env): The env which was set as the current env.
+        """
+
+        try:
+            orig_env = thread_local.env
+            for env in self._mc_root._mc_env_factory.envs.values():
+                thread_local.env = env
+                yield env
+        finally:
+            thread_local.env = orig_env
+
     def items(self):
+        """Iterate all nested items.
+
+        Yields:
+            item (ConfigItem or RepeatableDict): Nested items.
+        """
+
         for key, item in self._mc_items.items():
             if not item or isinstance(item, _ConfigBuilder):
                 continue
