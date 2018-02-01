@@ -19,7 +19,7 @@ def main(args):
     if args and args != ['-v']:
         return pytest.main(['--capture=sys'] + args)
 
-    engine = tenjin.Engine()
+    engine = tenjin.Engine(cache=False)
     major_version = sys.version_info[0]
     # Note: This naming is duplicated in .travis.yml
     cov_rc_file_name = jp(here, '.coverage_rc_' +  str(os.environ.get('TRAVIS_PYTHON_VERSION', major_version)))
