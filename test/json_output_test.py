@@ -395,6 +395,38 @@ def test_json_dump_property_method():
     assert compare_json(cr, _json_dump_property_method_expected)
 
 
+_json_dump_property_method_name_only_expected = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 0,
+    "someitem": {
+        "__class__": "Nested",
+        "__id__": 0000,
+        "m": "@property method value - call disabled",
+        "m #calculated": true
+    }
+}"""
+
+def test_json_dump_property_method_name_only():
+    @named_as('someitem')
+    class Nested(ConfigItem):
+        @property
+        def m(self):
+            return 1
+
+    @mc_config(ef)
+    def config(rt):
+        with ItemWithAA(aa=0):
+            Nested()
+
+    cr = config(prod).ItemWithAA
+    assert compare_json(cr, _json_dump_property_method_name_only_expected, property_methods=None)
+
+
 _json_dump_property_attribute_method_override_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,

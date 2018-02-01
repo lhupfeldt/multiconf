@@ -23,8 +23,9 @@ if major_version > 2:
 _calculated_value = ' #calculated'
 _static_value = ' #static'
 _dynamic_value = ' #dynamic'
+_property_method_value_hidden = '@property method value - call disabled'
 
-_mc_filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'mc_config_result', 'num_invalid_property_usage')
+_mc_filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'mc_config_result', 'num_invalid_property_usage', 'named_as')
 
 
 def _class_tuple(obj, obj_info=""):
@@ -169,7 +170,7 @@ class ConfigItemEncoder(object):
 
         return child_obj
 
-    def _handle_one_attr_one_env(self, obj, key, mc_attr, env, attributes_overriding_property, dir_entries):
+    def _handle_one_attr_one_env(self, obj, key, mc_attr, env, attributes_overriding_property, dir_entries, names_only):
         attr_inf = []
         try:
             val = mc_attr.env_values[env]
@@ -224,7 +225,7 @@ class ConfigItemEncoder(object):
             new_val.append(self._ref_mc_item_str(maybeitem))
         return key, [('', new_val)] + attr_inf
 
-    def _handle_one_dir_entry_one_env(self, obj, key, _val, env, attributes_overriding_property, _dir_entries):
+    def _handle_one_dir_entry_one_env(self, obj, key, _val, env, attributes_overriding_property, _dir_entries, names_only):
         if key.startswith('_') or key in obj._mc_items or key in _mc_filter_out_keys:
             return key, ()
 
@@ -232,22 +233,55 @@ class ConfigItemEncoder(object):
         if key in attributes_overriding_property:
             overridden_property = ' #overridden @property'
 
-        orig_env = thread_local.env
+        # Figure out if the attribute is a @property or a static value
         try:
-            thread_local.env = env
-            val = getattr(obj, key)
-        except InvalidUsageException as ex:
-            self.num_invalid_usages += 1
-            return key, [(overridden_property + ' #invalid usage context', repr(ex))]
-        except Exception as ex:
-            self.num_errors += 1
-            traceback.print_exception(*sys.exc_info())
-            return key, [(overridden_property + ' #json_error trying to handle property method', repr(ex))]
-        finally:
-            thread_local.env = orig_env
+            # If proxy object then get proxied object, the access to __class__ does not work through the proxy
+            real_obj = object.__getattribute__(obj, '_mc_proxied_item')
+        except AttributeError:
+            real_obj = obj
 
-        if type(val) == types.MethodType:
-            return key, ()
+        for cls in get_bases(object.__getattribute__(real_obj, '__class__')):
+            try:
+                real_attr = object.__getattribute__(cls, key)
+            except AttributeError:
+                continue
+
+            if isinstance(real_attr, (property, self.multiconf_property_wrapper_type)):
+                calc_or_static = _calculated_value
+
+                if names_only:
+                    val = _property_method_value_hidden
+                    break
+
+                orig_env = thread_local.env
+                try:
+                    thread_local.env = env
+                    if isinstance(real_attr, self.multiconf_property_wrapper_type):
+                        val = real_attr.prop.__get__(obj, type(obj))
+                        break
+
+                    val = getattr(obj, key)
+                except InvalidUsageException as ex:
+                    self.num_invalid_usages += 1
+                    return key, [(overridden_property + ' #invalid usage context', repr(ex))]
+                except Exception as ex:
+                    self.num_errors += 1
+                    traceback.print_exception(*sys.exc_info())
+                    return key, [(overridden_property + ' #json_error trying to handle property method', repr(ex))]
+                finally:
+                    thread_local.env = orig_env
+                break
+            elif not (hasattr(real_attr, '__call__') or hasattr(real_attr, '__func__')):
+                calc_or_static = _static_value
+                val = real_attr
+                break
+            elif isinstance(real_attr, type):
+                calc_or_static = ''
+                val = real_attr
+                break
+            else:
+                # Ignore methods
+                return key, ()
 
         property_inf = []
         if self.user_filter_callable:
@@ -264,22 +298,6 @@ class ConfigItemEncoder(object):
             return key, [(overridden_property, repr(val))] + property_inf
 
         val = self._check_nesting(obj, val)
-
-        # Figure out if the attribute is a @property or a static value
-        for cls in get_bases(object.__getattribute__(obj, '__class__')):
-            try:
-                real_attr = object.__getattribute__(cls, key)
-                if isinstance(real_attr, self.multiconf_property_wrapper_type):
-                    val = real_attr.prop.__get__(obj, type(obj))
-                    calc_or_static = _calculated_value
-                elif isinstance(real_attr, property):
-                    calc_or_static = _calculated_value
-                else:
-                    calc_or_static = _static_value
-                break
-            except AttributeError:
-                # This can happen for Builders
-                calc_or_static = _dynamic_value
 
         if isinstance(val, (str, int, long, float)):
             if overridden_property:
@@ -302,9 +320,10 @@ class ConfigItemEncoder(object):
 
         return key, [(overridden_property, val), (calc_or_static, True)] + property_inf
 
-    def _handle_one_value_multiple_envs(self, dd, obj, attr_key, attr_val, env, attributes_overriding_property, dir_entries, one_env_func, multi_value_meta_inf):
+    def _handle_one_value_multiple_envs(
+            self, dd, obj, attr_key, attr_val, env, attributes_overriding_property, dir_entries, one_env_func, multi_value_meta_inf, names_only):
         if not self.show_all_envs:
-            attr_key, property_inf = one_env_func(obj, attr_key, attr_val, env, attributes_overriding_property, dir_entries)
+            attr_key, property_inf = one_env_func(obj, attr_key, attr_val, env, attributes_overriding_property, dir_entries, names_only)
             for meta_key, val in property_inf:
                 dd[attr_key + meta_key] = val
             return
@@ -313,7 +332,7 @@ class ConfigItemEncoder(object):
         prev_key_property_inf = None
         multiple_values = False
         for env in obj.env_factory.envs.values():
-            key_property_inf = one_env_func(obj, attr_key, attr_val, env, attributes_overriding_property, dir_entries)
+            key_property_inf = one_env_func(obj, attr_key, attr_val, env, attributes_overriding_property, dir_entries, names_only)
             if key_property_inf != prev_key_property_inf:
                 if prev_key_property_inf is not None:
                     multiple_values = True
@@ -390,7 +409,7 @@ class ConfigItemEncoder(object):
                 for attr_key, mc_attr in obj._mc_attributes.items():
                     self._handle_one_value_multiple_envs(
                         attr_dict, obj, attr_key, mc_attr, obj.env, attributes_overriding_property, dir_entries, self._handle_one_attr_one_env,
-                        ' #multiconf attribute')
+                        ' #multiconf attribute', names_only=False)
 
                 if self.sort_attributes:
                     for key in sorted(attr_dict):
@@ -424,8 +443,8 @@ class ConfigItemEncoder(object):
 
                     dd[key] = item
 
-                if not self.property_methods:
-                    # Note also excludes class/static members
+                if self.property_methods is False:
+                    # Note: also excludes class/static members
                     return dd
 
                 # --- Handle results from dir() call ---
@@ -437,7 +456,7 @@ class ConfigItemEncoder(object):
                 for attr_key in dir_entries:
                     self._handle_one_value_multiple_envs(
                         property_dict, obj, attr_key, None, obj.env, attributes_overriding_property, None, self._handle_one_dir_entry_one_env,
-                        ' #multiconf env specific @property')
+                        ' #multiconf env specific @property', names_only=self.property_methods is None)
 
                 if self.sort_attributes:
                     for key in sorted(property_dict):

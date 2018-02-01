@@ -201,13 +201,22 @@ def test_json_no_freeze_after_setattr_property_side_effect_error(capsys):
         def config(_):
             with root(aa=0):
                 with Xx() as xx:
-                    print(xx)
+                    print(xx.json(compact=True))
 
                 with NestedRepeatable(mc_key='a') as ci:
                     ci.setattr('aa', prod=1, pp=2)
                     print(ci)
 
-    sout, serr = capsys.readouterr()
+    sout, _ = capsys.readouterr()
     sout = replace_ids(sout)
+    print('--- got exception ---')
+    print(exinfo.value)
+    print('--- got sout ---')
+    print(sout)
+    print('--- exp1 ---')
+    print(json_no_freeze_after_setattr_property_side_effect_error_exp1)
+    print('--- exp2 ---')
+    print(json_no_freeze_after_setattr_property_side_effect_error_exp2)
+    print('------')
     assert json_no_freeze_after_setattr_property_side_effect_error_exp1 in sout
     assert json_no_freeze_after_setattr_property_side_effect_error_exp2 in sout

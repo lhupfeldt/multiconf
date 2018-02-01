@@ -125,7 +125,9 @@ class _ConfigBase(object):
         Arguments:
             compact (bool): Set compact to true if dumping for easier human readable output, false for machine readable output.
             sort_attributes (bool): Sort attributes by name. Sort dir() entries by name.
-            property_methods (bool): call @property methods and insert values in output, including a comment that the value is calculated.
+            property_methods (bool or None): Call @property methods and insert values in output, including a comment that the value is calculated.
+                If `property_methods` is None the @property method is not called but the name is still output, with the value replace by a fixed
+                message. False completely disables information about @property methods.
             builders (bool): Include ConfigBuilder items in json.
             skipkeys (bool): Passed to json.dumps.
             show_all_envs (bool): Display attribute values for all envs in a single dump. Without this only the values for the current env is displayed.
@@ -173,8 +175,9 @@ class _ConfigBase(object):
 
     def __repr__(self):
         if self:
-            # Don't call property methods in repr?, it is too dangerous, leading to double errors in case of incorrect user implemented property methods
-            return self.json(compact=True, property_methods=True, builders=True, depth=None)
+            # Don't call @property methods in repr, it is too dangerous, leading to double errors (endless loops) in case of incorrect user
+            # implemented @property methods. We only insert the method name and a predefined message in the generated json.
+            return self.json(compact=True, property_methods=None, builders=True, depth=None)
         return self._mc_excl_repr()
 
     def num_json_errors(self):

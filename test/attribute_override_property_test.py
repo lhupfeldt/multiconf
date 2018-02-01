@@ -306,7 +306,7 @@ _attribute_overrides_failing_property_method_exp = """{
         "name": "prod"
     },
     "m #no value for Env('prod')": true,
-    "m #json_error trying to handle property method": "ConfigAttributeError('',)"
+    "m #json_error trying to handle property method": "Exception('bad property method',)"
 }, object of type: <class 'test.attribute_override_property_test.%(py3_local)sNestedBadM'> has no attribute 'm'.
 """.strip()
 

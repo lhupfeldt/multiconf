@@ -18,14 +18,14 @@ from .check_containment import check_containment
 
 def _compare_json(
         item, expected_json, replace_builders, dump_builders, sort_attributes,
-        test_decode, test_containment, test_excluded, test_compact,
+        test_decode, test_containment, test_excluded, test_compact, property_methods,
         expect_num_errors, warn_nesting, show_all_envs, depth, replace_ids):
     try:
         compact_json = item.json(
-            compact=True, builders=dump_builders, sort_attributes=sort_attributes, warn_nesting=warn_nesting, show_all_envs=show_all_envs, depth=depth,
-            persistent_ids=not replace_ids)
-        full_json = item.json(builders=dump_builders, sort_attributes=sort_attributes, warn_nesting=warn_nesting, show_all_envs=show_all_envs, depth=depth,
-                              persistent_ids=not replace_ids)
+            compact=True, property_methods=property_methods, builders=dump_builders, sort_attributes=sort_attributes, warn_nesting=warn_nesting,
+            show_all_envs=show_all_envs, depth=depth, persistent_ids=not replace_ids)
+        full_json = item.json(property_methods=property_methods, builders=dump_builders, sort_attributes=sort_attributes, warn_nesting=warn_nesting,
+                              show_all_envs=show_all_envs, depth=depth, persistent_ids=not replace_ids)
 
         if replace_ids:
             if replace_builders:
@@ -98,13 +98,13 @@ def _compare_json(
 
 
 def compare_json(item, expected_json, replace_builders=False, dump_builders=True, sort_attributes=True,
-                 test_decode=False, test_containment=True, test_excluded=False, test_compact=True,
+                 test_decode=False, test_containment=True, test_excluded=False, test_compact=True, property_methods=True,
                  expect_num_errors=0, warn_nesting=False, expected_all_envs_json=None, expect_all_envs_num_errors=None, depth=None, replace_ids=True):
     res = True
     if expected_json:
         res = _compare_json(
             item, expected_json, replace_builders, dump_builders, sort_attributes,
-            test_decode, test_containment, test_excluded, test_compact,
+            test_decode, test_containment, test_excluded, test_compact, property_methods,
             expect_num_errors, warn_nesting, show_all_envs=False, depth=depth, replace_ids=replace_ids)
 
     res2 = True
@@ -112,7 +112,7 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
         expect_num_errors = expect_all_envs_num_errors or expect_num_errors
         res2 = _compare_json(
             item, expected_all_envs_json, replace_builders, dump_builders, sort_attributes,
-            test_decode, test_containment=False, test_excluded=test_excluded, test_compact=False,
+            test_decode, test_containment=False, test_excluded=test_excluded, test_compact=False, property_methods=property_methods,
             expect_num_errors=expect_num_errors, warn_nesting=warn_nesting, show_all_envs=True, depth=depth, replace_ids=replace_ids)
 
     return res and res2
