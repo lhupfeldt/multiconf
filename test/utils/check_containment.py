@@ -17,7 +17,7 @@ def check_containment(start_item, level=0, prefix="  ", verbose=False):
     if isinstance(start_item, _RootEnvProxy):
         start_item = start_item.root_conf
     if isinstance(start_item, _ItemParentProxy):
-        start_item = start_item._mc_item
+        start_item = start_item._mc_proxied_item
     if verbose:
         print(prefix, 'level:', level, start_item.json(compact=True, builders=True))
     for key, item in start_item.items():

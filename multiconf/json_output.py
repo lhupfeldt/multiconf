@@ -44,7 +44,7 @@ def _attr_ref_msg(obj, attr_name):
 
 def ref_id(obj):
     try:
-        return id(object.__getattribute__(obj, '_mc_item'))
+        return id(object.__getattribute__(obj, '_mc_proxied_item'))
     except AttributeError:
         return id(obj)
 

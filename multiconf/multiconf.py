@@ -1194,18 +1194,18 @@ class _ConfigBuilder(AbstractConfigItem):
 
 class _ItemParentProxy(object):
     """The purpose of this is to set the current '_mc_contained_in' when accessing an item created by a builder and assigned under multiple parent items"""
-    __slots__ = ('_mc_contained_in', '_mc_item')
+    __slots__ = ('_mc_contained_in', '_mc_proxied_item')
     _mc_lock = threading.RLock()
 
     def __init__(self, ci, item):
         object.__setattr__(self, '_mc_contained_in', ci)
-        object.__setattr__(self, '_mc_item', item)
+        object.__setattr__(self, '_mc_proxied_item', item)
 
     def __getattribute__(self, name):
         if name in object.__getattribute__(self, '__slots__'):
             return object.__getattribute__(self, name)
 
-        item = object.__getattribute__(self, '_mc_item')
+        item = object.__getattribute__(self, '_mc_proxied_item')
         _ItemParentProxy._mc_lock.acquire()
         orig_ci = item._mc_contained_in
         item._mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
@@ -1217,16 +1217,16 @@ class _ItemParentProxy(object):
 
     def __setattr__(self, attr_name, value):
         if attr_name[0] == '_':
-            object.__setattr__(self._mc_item, attr_name, value)
+            object.__setattr__(self._mc_proxied_item, attr_name, value)
             return
 
-        cr = self._mc_item._mc_root
-        self._mc_item._mc_setattr(
+        cr = self._mc_proxied_item._mc_root
+        self._mc_proxied_item._mc_setattr(
             thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3,
             mc_5_migration=cr._mc_5_migration, is_assign=True)
 
     def __bool__(self):
-        return self._mc_contained_in.__bool__() and self._mc_item.__bool__()
+        return self._mc_contained_in.__bool__() and self._mc_proxied_item.__bool__()
 
     # Python2 compatibility
     __nonzero__ = __bool__
