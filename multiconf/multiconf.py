@@ -365,47 +365,51 @@ class _ConfigBase(object):
 
     def _mc_setattr_env_value(self, current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level, mc_5_migration):
         # print("_mc_setattr_env_value:", current_env, attr_name, value, old_value)
-        if old_value != MC_NO_VALUE and not mc_force:
-            if self._mc_where == Where.IN_MC_INIT and env_attr.where_from != Where.IN_MC_INIT and old_value != MC_REQUIRED:
-                # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
-                if not mc_5_migration:
+        if old_value not in (MC_NO_VALUE, MC_REQUIRED) and not mc_force:
+            if self._mc_where == Where.IN_MC_INIT:
+                if env_attr.where_from != Where.IN_MC_INIT:
+                    # In mc_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
+                    if not mc_5_migration:
+                        if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
+                            return
+                    else:
+                        # or previous value was set in __init__ and the env is at least as specific and mc_5_migration is set
+                        if from_eg not in env_attr.from_eg:
+                            if env_attr.where_from != Where.IN_INIT:
+                                return
+                            if from_eg != env_attr.from_eg:
+                                return
+
+            elif self._mc_where == Where.IN_RE_INIT:
+                if env_attr.where_from != Where.IN_RE_INIT:  # pragma: no branch TODO: test
+                    # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
                     if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
                         return
-                else:
-                    # or previous value was set in __init__ and the env is at least as specific and mc_5_migration is set
-                    if from_eg not in env_attr.from_eg:
-                        if env_attr.where_from != Where.IN_INIT:
-                            return
-                        if from_eg != env_attr.from_eg:
-                            return
 
-            if self._mc_where == Where.IN_RE_INIT and env_attr.where_from != Where.IN_RE_INIT and old_value != MC_REQUIRED:
-                # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
-                if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
+            elif self._mc_where == Where.IN_RE_WITH:
+                if env_attr.where_from == Where.IN_RE_WITH:
+                    # Trying to set the same attribute again in with block
+                    msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
+                    self._mc_print_error_caller(msg, mc_error_info_up_level)
                     return
 
-            if self._mc_where == Where.IN_RE_WITH and env_attr.where_from == Where.IN_RE_WITH:
-                # Trying to set the same attribute again in with block
-                msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
-                self._mc_print_error_caller(msg, mc_error_info_up_level)
-                return
+            elif self._mc_where == Where.IN_WITH:
+                if env_attr.where_from == Where.IN_WITH:
+                    # Trying to set the same attribute again in with block
+                    msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
+                    self._mc_print_error_caller(msg, mc_error_info_up_level)
+                    return
 
-            if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH:
-                # Trying to set the same attribute again in with block
-                msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
-                self._mc_print_error_caller(msg, mc_error_info_up_level)
-                return
+            elif self._mc_where == Where.FROZEN:
+                msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
+                msg += "Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
+                self._mc_print_error_caller(msg, mc_error_info_up_level)  # Note: This always raises en exception
 
             if env_attr.where_from == Where.FROZEN:
                 msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
                 msg += "Setting attributes is not allowed after value has been used (in order to enforce derived value validity)."
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
                 return
-
-            if self._mc_where == Where.FROZEN:
-                msg = "Trying to set attribute '{attr_name}'. ".format(attr_name=attr_name)
-                msg += "Setting attributes is not allowed after item is 'frozen' (with 'scope' is exited)."
-                self._mc_print_error_caller(msg, mc_error_info_up_level)  # Note: This always raises en exception
 
         if value == MC_NO_VALUE:
             if old_value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
