@@ -34,6 +34,7 @@ def _mc_debug(*args):
 
 class _ConfigBase(object):
     _mc_last_item = None
+    _mc_in_build = None
     _mc_built_by = None
     _mc_hierarchy = []
     _mc_deco_named_as = None
@@ -282,6 +283,9 @@ class _ConfigBase(object):
             self._mc_raise_errors()
         self._mc_where = Where.FROZEN
 
+        if not _ConfigBase._mc_in_build:
+            self._mc_built_by = None
+
     def _mc_freeze_previous(self, mc_error_info_up_level):
         previous_item = _ConfigBase._mc_last_item
         if previous_item is not self and previous_item is not self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
@@ -364,7 +368,7 @@ class _ConfigBase(object):
             return True
 
     def _mc_setattr_env_value(self, current_env, attr_name, env_attr, value, old_value, from_eg, mc_force, mc_error_info_up_level, mc_5_migration):
-        # print("_mc_setattr_env_value:", current_env, attr_name, value, old_value)
+        # print("_mc_setattr_env_value:", current_env, attr_name, value, old_value, self._mc_where, env_attr.where_from)
         if old_value not in (MC_NO_VALUE, MC_REQUIRED) and not mc_force:
             if self._mc_where == Where.IN_MC_INIT:
                 if env_attr.where_from != Where.IN_MC_INIT:
@@ -382,22 +386,33 @@ class _ConfigBase(object):
 
             elif self._mc_where == Where.IN_RE_INIT:
                 if env_attr.where_from != Where.IN_RE_INIT:  # pragma: no branch TODO: test
-                    # In mc_re_init we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
+                    # In RE_INIT we will not overwrite a proper value set previously unless the eg is more specific than the previous one or mc_force is used
+                    if _ConfigBase._mc_in_build:  # pragma: no cover TODO: test
+                        return
+
                     if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
                         return
 
             elif self._mc_where == Where.IN_RE_WITH:
+                # In RE_WITH we will not overwrite a proper value set previously
                 if env_attr.where_from == Where.IN_RE_WITH:
-                    # Trying to set the same attribute again in with block
-                    msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
-                    self._mc_print_error_caller(msg, mc_error_info_up_level)
+                    # In mc_build we ignore this
+                    if not _ConfigBase._mc_in_build:  # pragma: no branch TODO: test
+                        # Trying to set the same attribute again in with block
+                        msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)
                     return
+
+                if env_attr.where_from == Where.IN_WITH:
+                    if from_eg not in env_attr.from_eg or from_eg == env_attr.from_eg:
+                        return
 
             elif self._mc_where == Where.IN_WITH:
                 if env_attr.where_from == Where.IN_WITH:
-                    # Trying to set the same attribute again in with block
-                    msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
-                    self._mc_print_error_caller(msg, mc_error_info_up_level)
+                    if not _ConfigBase._mc_in_build:  # pragma: no branch TODO: test
+                        # Trying to set the same attribute again in with block
+                        msg = "The attribute '{attr_name}' is already fully defined.".format(attr_name=attr_name)
+                        self._mc_print_error_caller(msg, mc_error_info_up_level)
                     return
 
             elif self._mc_where == Where.FROZEN:
@@ -963,7 +978,7 @@ class ConfigItem(AbstractConfigItem):
     def __new__(cls, *init_args, **init_kwargs):
         # cls._mc_debug_hierarchy('ConfigItem.__new__')
         contained_in = cls._mc_hierarchy[-1]
-        built_by = None
+        built_by = _ConfigBase._mc_in_build
 
         # Find the first parent which is not a builder if we are in the mc_build method of a builder
         if contained_in._mc_where == Where.IN_MC_BUILD:
@@ -980,6 +995,12 @@ class ConfigItem(AbstractConfigItem):
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     self._mc_where = Where.IN_RE_INIT
                     return self
+
+                if _ConfigBase._mc_in_build and self._mc_built_by != _ConfigBase._mc_in_build:
+                    # We are trying to replace a non-repeatable in mc_build. In mc_build we ignore this.
+                    self._mc_where = Where.IN_RE_INIT
+                    return self
+
                 raise ConfigException("Repeated non repeatable conf item: '{name}': {cls}".format(name=name, cls=cls))
             self._mc_handled_env_bits |= thread_local.env.mask
 
@@ -1162,10 +1183,12 @@ class _ConfigBuilder(AbstractConfigItem):
     def _mc_builder_freeze(self):
         self._mc_where = Where.IN_MC_BUILD
         _ConfigBase._mc_last_item = None
+        was_in_build = _ConfigBase._mc_in_build
         try:
+            _ConfigBase._mc_in_build = self
             self.mc_build()
         except _McExcludedException:
-            pass
+            _ConfigBase._mc_in_build = was_in_build
 
         def insert(from_build, from_with_key, from_with):
             """Insert items from with statement (single or repeatable) in a single (non repeatable) item from mc_build."""
@@ -1231,6 +1254,12 @@ class _ItemParentProxy(object):
         self._mc_proxied_item._mc_setattr(
             thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3,
             mc_5_migration=cr._mc_5_migration, is_assign=True)
+
+    def __enter__(self):
+        return self._mc_proxied_item.__enter__()
+
+    def __exit__(self, exc_type, value, traceback):
+        return self._mc_proxied_item.__exit__(exc_type, value, traceback)
 
     def __bool__(self):
         return self._mc_contained_in.__bool__() and self._mc_proxied_item.__bool__()
@@ -1403,6 +1432,7 @@ def mc_config(
         thread_local.env = env
         del cr.__class__._mc_hierarchy[:]
         _ConfigBase._mc_last_item = None
+        _ConfigBase._mc_in_build = None
 
         try:
             with cr:

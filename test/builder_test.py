@@ -9,7 +9,7 @@ from multiconf.decorators import nested_repeatables, named_as, required
 from multiconf.envs import EnvFactory
 
 from .utils.check_containment import check_containment
-from .utils.tstclasses import ItemWithName
+from .utils.tstclasses import ItemWithName, ItemWithAABB
 
 
 ef1_prod = EnvFactory()
@@ -947,3 +947,73 @@ def test_assign_underscore_on_proxied_built_item_child_after_freeze():
 
     cr = config(prod1)
     assert cr.y.ConfigItem._aa == 1
+
+
+def test_configbuilder_child_with_child_merge_setattr_in_with():
+    """Test that values of an item defined in the config 'with block' overwrites values from a nested item in created in builder"""
+    class XBuilder(ConfigBuilder):
+        def __init__(self):
+            super(XBuilder, self).__init__()
+
+        def mc_build(self):
+            with Xses(1):
+                with ItemWithAABB(1) as xcab:
+                    xcab.setattr('bb', pp=3, prod=4)
+
+    @nested_repeatables('xses')
+    class Root(ConfigItem):
+        pass
+
+    @mc_config(ef2_pp_prod)
+    def config(_):
+        with Root():
+            with XBuilder():
+                with ItemWithAABB(1) as xcab:
+                    xcab.setattr('bb', default=7, prod=14)
+
+    cr = config(prod2).Root
+    assert len(cr.xses) == 1
+    assert cr.xses[1].ItemWithAABB.aa == 1
+    assert cr.xses[1].ItemWithAABB.bb == 14
+    check_containment(cr)
+
+    cr = config(pp2).Root
+    assert cr.xses[1].ItemWithAABB.aa == 1
+    xfail("TODO merge instead of 'owerwrite'")
+    assert cr.xses[1].ItemWithAABB.bb == 3
+    check_containment(cr)
+
+
+def test_configbuilder_child_with_child_merge_setattr_in_init_with():
+    """Test that values of an item defined in the config 'with block' overwrites values from a nested item in created in builder"""
+    class XBuilder(ConfigBuilder):
+        def __init__(self):
+            super(XBuilder, self).__init__()
+
+        def mc_build(self):
+            with Xses(1):
+                with ItemWithAABB(1) as xcab:
+                    xcab.setattr('bb', pp=3, prod=4)
+
+    @nested_repeatables('xses')
+    class Root(ConfigItem):
+        pass
+
+    @mc_config(ef2_pp_prod)
+    def config(_):
+        with Root():
+            with XBuilder():
+                with ItemWithAABB(1) as xcab:
+                    xcab.setattr('aa', default=7, prod=14)
+
+    cr = config(prod2).Root
+    assert len(cr.xses) == 1
+    assert cr.xses[1].ItemWithAABB.aa == 14
+    assert cr.xses[1].ItemWithAABB.bb == 4
+    check_containment(cr)
+
+    cr = config(pp2).Root
+    assert cr.xses[1].ItemWithAABB.aa == 7
+    xfail("TODO merge instead of 'owerwrite'")
+    assert cr.xses[1].ItemWithAABB.bb == 3
+    check_containment(cr)
