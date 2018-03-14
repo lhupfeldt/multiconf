@@ -80,7 +80,7 @@ def test_validate_properties_property_method_raises_InvalidUsageException():
 _validate_properties_property_method_raises_exception_expected_stderr = """
 ConfigError: Exception validating @property 'm' on item <class 'test.validate_properties_test.%(py3_local)sNested'> in Env('pp').
 Traceback (most recent call last):
-  File "fake_multiconf_dir/multiconf.py", line 999, in _mc_validate_properties_recursively
+  File "fake_multiconf_dir/multiconf.py", line 999, in _mc_validate_properties
     val = getattr(self, key)
   %(file_line)s, in m
     raise Exception("Something is wrong")

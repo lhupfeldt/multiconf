@@ -9,6 +9,8 @@ from pytest import raises
 from multiconf import mc_config, ConfigBuilder
 from multiconf.envs import EnvFactory
 
+from .utils.tstclasses import ItemWithAA
+
 
 ef2_pp_prod = EnvFactory()
 pp2 = ef2_pp_prod.Env('pp')
@@ -56,3 +58,36 @@ def test_builder_user_mc_post_validate_error():
             builder()
 
     assert str(exinfo.value) == "Error in builder mc_post_validate"
+
+
+def test_builder_mc_post_validate_child_item_only_called_once():
+    num_calls_builder =  [0]
+    num_calls_built = [0]
+    num_calls_child = [0]
+
+    class Built(ItemWithAA):
+        def mc_post_validate(self):
+            num_calls_built[0] += 1
+
+    class Child(ItemWithAA):
+        def mc_post_validate(self):
+            num_calls_child[0] += 1
+
+    class builder(ConfigBuilder):
+        def mc_post_validate(self):
+            num_calls_builder[0] += 1
+
+        def mc_build(self):
+            Built(3)
+
+    @mc_config(ef2_pp_prod)
+    def config(_):
+        with builder():
+            Child(4)
+
+    cr = config(prod2)
+    assert cr.Built.aa == 3
+    assert cr.Built.Child.aa == 4
+    assert num_calls_builder[0] == 1
+    assert num_calls_built[0] == 1
+    assert num_calls_child[0] == 1

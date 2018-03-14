@@ -291,8 +291,8 @@ class _ConfigBase(object):
         if previous_item is not self and previous_item is not self._mc_contained_in and previous_item and previous_item._mc_where != Where.FROZEN:
             previous_item._mc_freeze(mc_error_info_up_level + 1 if mc_error_info_up_level is not None else None)
 
-    def _mc_call_mc_validate_recursively(self, env):
-        """Call the user defined 'mc_validate' methods on all items"""
+    def _mc_call_mc_validate(self, env):
+        """Call the user defined 'mc_validate' method and verify attributes"""
         if not self._mc_exists_in_given_env(env):
             return
 
@@ -304,10 +304,14 @@ class _ConfigBase(object):
             self._mc_raise_errors()
         self._mc_where = Where.FROZEN
 
-        for child_item in self._mc_items.values():
-            child_item._mc_call_mc_validate_recursively(env)
+    def _mc_call_mc_post_validate(self):
+        """Call the user defined 'mc_post_validate' method."""
 
-    def _mc_validate_properties_recursively(self, env):
+        self._mc_where = Where.NOWHERE
+        self.mc_post_validate()
+        self._mc_where = Where.FROZEN
+
+    def _mc_validate_properties(self, env):
         """Validate that @property methods can be called without error"""
         if not self._mc_exists_in_given_env(env):
             return
@@ -328,9 +332,6 @@ class _ConfigBase(object):
                     prop_name=key, item=_mc_identification_msg_str(self), env=env)), file=sys.stderr)
                 traceback.print_exception(*sys.exc_info())
 
-        for child_item in self._mc_items.values():
-            child_item._mc_validate_properties_recursively(env)
-
     @property
     def num_invalid_property_usage(self):
         """Returns number of 'InvalidUsageException' s encountered when validating @property methods
@@ -338,16 +339,6 @@ class _ConfigBase(object):
         """
 
         return self._mc_root._mc_num_invalid_property_usage
-
-    def _mc_call_mc_post_validate_recursively(self):
-        """Call the user defined 'mc_post_validate' methods on all items"""
-
-        self._mc_where = Where.NOWHERE
-        self.mc_post_validate()
-        self._mc_where = Where.FROZEN
-
-        for child_item in self._mc_items.values():
-            child_item._mc_call_mc_post_validate_recursively()
 
     def __enter__(self):
         self._mc_where = Where.IN_WITH if self._mc_where != Where.IN_RE_INIT else Where.IN_RE_WITH
@@ -972,7 +963,52 @@ class AbstractConfigItem(_ConfigBase):
         raise ConfigException(msg)
 
 
-class ConfigItem(AbstractConfigItem):
+class _RealConfigItemMixin(object):
+    """Method definitions for non-ConfigBuilder classes"""
+
+    def _mc_call_mc_validate_recursively(self, env):
+        """Call the user defined 'mc_validate' methods on item and child items"""
+        self._mc_call_mc_validate(env)
+
+        for child_item in self._mc_items.values():
+            child_item._mc_call_mc_validate_recursively(env)
+
+    def _mc_call_mc_post_validate_recursively(self):
+        """Call the user defined 'mc_post_validate' methods on all items"""
+        self._mc_call_mc_post_validate()
+
+        for child_item in self._mc_items.values():
+            child_item._mc_call_mc_post_validate_recursively()
+
+    def _mc_validate_properties_recursively(self, env):
+        """Call _mc_validate_properties recursively"""
+        self._mc_validate_properties(env)
+
+        for child_item in self._mc_items.values():
+            child_item._mc_validate_properties_recursively(env)
+
+
+class _ConfigBuilderMixin(object):
+    """Method definitions for ConfigBuilder classes
+
+    This must have the same methods as the _RealConfigItemMixin class.
+    We never recurse from the builder item, recursion is done from the real item where the built items are placed.
+    """
+
+    def _mc_call_mc_validate_recursively(self, env):
+        """Call the user defined 'mc_validate' methods on item but don't actually recurse"""
+        self._mc_call_mc_validate(env)
+
+    def _mc_call_mc_post_validate_recursively(self):
+        """Call the user defined 'mc_post_validate' methods on item but don't actually recurse"""
+        self._mc_call_mc_post_validate()
+
+    def _mc_validate_properties_recursively(self, env):
+        """Call _mc_validate_properties but don't actually recurse"""
+        self._mc_validate_properties(env)
+
+
+class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
     """Base class for config items."""
 
     def __new__(cls, *init_args, **init_kwargs):
@@ -1043,7 +1079,7 @@ class ConfigItem(AbstractConfigItem):
         super(ConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
 
-class RepeatableConfigItem(AbstractConfigItem):
+class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
     """Base class for config items which may be repeated.
 
     RepeatableConfigItems will be stored in an OrderedDict using the key 'mc_key'.
@@ -1112,7 +1148,7 @@ class RepeatableConfigItem(AbstractConfigItem):
         return cls._mc_deco_named_as or (cls.__name__ + 's')
 
 
-class _ConfigBuilder(AbstractConfigItem):
+class _ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin):
     """Base class for 'builder' items which can create (a collection of) other items."""
 
     def __new__(cls, mc_key='default-builder', *init_args, **init_kwargs):
@@ -1268,7 +1304,7 @@ class _ItemParentProxy(object):
     __nonzero__ = __bool__
 
 
-class _ConfigRoot(_ConfigBase):
+class _ConfigRoot(_ConfigBase, _RealConfigItemMixin):
     _mc_cls_dir_entries = ()
 
     def __init__(self, env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, mc_do_type_check, mc_5_migration):

@@ -49,3 +49,42 @@ def test_user_mc_validate_error_builder():
                 builder()
 
     assert str(exinfo.value) == "Error in builder validate"
+
+
+def test_builder_mc_validate_child_item_only_called_once_per_env():
+    num_calls_builder = {pprd: 0, prod: 0}
+    num_calls_built = {pprd: 0, prod: 0}
+    num_calls_child = {pprd: 0, prod: 0}
+
+    class Built(ItemWithAA):
+        def mc_validate(self):
+            num_calls_built[self.env] += 1
+
+    class Child(ItemWithAA):
+        def mc_validate(self):
+            num_calls_child[self.env] += 1
+
+    class builder(ConfigBuilder):
+        def __init__(self):
+            super(builder, self).__init__()
+
+        def mc_validate(self):
+            num_calls_builder[self.env] += 1
+
+        def mc_build(self):
+            Built(3)
+
+    @mc_config(ef_pprd_prod)
+    def config(_):
+        with builder():
+            Child(4)
+
+    cr = config(prod)
+    assert cr.Built.aa == 3
+    assert cr.Built.Child.aa == 4
+    assert num_calls_builder[prod] == 1
+    assert num_calls_builder[pprd] == 1
+    assert num_calls_built[prod] == 1
+    assert num_calls_built[pprd] == 1
+    assert num_calls_child[prod] == 1
+    assert num_calls_child[pprd] == 1
