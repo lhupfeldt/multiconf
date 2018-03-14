@@ -1234,11 +1234,11 @@ class _ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin):
             if isinstance(from_with, RepeatableDict):
                 repeatable = from_build._mc_get_repeatable(from_with_key, from_with)
                 for wi_key, wi in from_with._all_items.items():
-                    pp = _ItemParentProxy(from_build, wi)
+                    pp = _mc_item_parent_proxy_factory(from_build, wi)
                     repeatable._all_items[wi_key] = pp
                 return
 
-            pp = _ItemParentProxy(from_build, from_with)
+            pp = _mc_item_parent_proxy_factory(from_build, from_with)
             from_build._mc_items[from_with_key] = pp
             object.__setattr__(from_build, from_with_key, pp)
 
@@ -1302,6 +1302,12 @@ class _ItemParentProxy(object):
 
     # Python2 compatibility
     __nonzero__ = __bool__
+
+
+def _mc_item_parent_proxy_factory(ci, item):
+    cls_name = 'ItemParentProxy:<' + type(item).__module__ + '.' + type(item).__name__ + '>'
+    ItemParentProxy = type(cls_name, (_ItemParentProxy,), {})
+    return ItemParentProxy(ci, item)
 
 
 class _ConfigRoot(_ConfigBase, _RealConfigItemMixin):

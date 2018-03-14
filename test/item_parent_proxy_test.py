@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-from multiconf.multiconf import _ItemParentProxy
+from multiconf.multiconf import _ItemParentProxy, _mc_item_parent_proxy_factory
 
 
 class MockConfigItem(object):
@@ -19,6 +19,12 @@ def test_type():
 
 def test_isinstance():
     root = MockConfigItem()
-    ipp = _ItemParentProxy(root, MockConfigItem())
+    ipp = _mc_item_parent_proxy_factory(root, MockConfigItem())
     assert isinstance(ipp, MockConfigItem)
     assert isinstance(ipp, _ItemParentProxy)
+
+
+def test_type_repr():
+    root = MockConfigItem()
+    ipp = _mc_item_parent_proxy_factory(root, MockConfigItem())
+    assert repr(type(ipp)) == "<class 'multiconf.multiconf.ItemParentProxy:<test.item_parent_proxy_test.MockConfigItem>'>"
