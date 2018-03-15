@@ -459,7 +459,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
         num_children = 0
         for y_child in item.ys[server].y_children.values():
             num_children += 1
-            assert type(y_child.contained_in) == Y
+            assert isinstance(y_child.contained_in, Y)
             total += y_child.a
         assert num_children == 2
 
@@ -467,7 +467,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
             num_children = 0
             for y_child in item.ys[server].ys[inner_server].y_children.values():
                 num_children += 1
-                assert type(y_child.contained_in) == Y
+                assert isinstance(y_child.contained_in, Y)
                 total += y_child.a
             assert num_children == 2
 

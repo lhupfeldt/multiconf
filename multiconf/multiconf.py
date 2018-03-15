@@ -1276,7 +1276,10 @@ class _ItemParentProxy(object):
         orig_ci = item._mc_contained_in
         item._mc_contained_in = object.__getattribute__(self, '_mc_contained_in')
         try:
-            return getattr(item, name)
+            attr = getattr(item, name)
+            if isinstance(attr, AbstractConfigItem) and not isinstance(attr, _ItemParentProxy):
+                return _mc_item_parent_proxy_factory(self, attr)
+            return attr
         finally:
             item._mc_contained_in = orig_ci
             _ItemParentProxy._mc_lock.release()
@@ -1302,6 +1305,9 @@ class _ItemParentProxy(object):
 
     # Python2 compatibility
     __nonzero__ = __bool__
+
+    def __eq__(self, other):
+        return self is other or self._mc_proxied_item is other
 
 
 def _mc_item_parent_proxy_factory(ci, item):
