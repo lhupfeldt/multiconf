@@ -1220,7 +1220,7 @@ def test_json_dump_property_method_returns_later_confitem_tuple_same_level():
     assert compare_json(cr, _json_dump_property_method_returns_later_confitem_list_same_level_expected_json)
 
 
-_json_dump_property_method_returns_later_confitem_dict_same_level_expected_json = """{
+_json_dump_property_method_returns_later_confitem_ordereddict_same_level_expected_json = """{
     "__class__": "root",
     "__id__": 0000,
     "env": {
@@ -1268,23 +1268,6 @@ _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json 
     }
 }"""
 
-def test_json_dump_property_method_returns_later_confitem_dict_same_level():
-    class NamedNestedRepeatable(_NamedNestedRepeatable):
-        @property
-        def m(self):
-            return OrderedDict((('a', self.contained_in.someitems['two']), ('b', self.contained_in.someitems['three'])))
-
-    @mc_config(ef)
-    def config(rt):
-        with root(aa=0):
-            NamedNestedRepeatable(name='one')
-            NamedNestedRepeatable(name='two')
-            NamedNestedRepeatable(name='three')
-
-    cr = config(prod).root
-    assert compare_json(cr, _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json, test_decode=True)
-
-
 def test_json_dump_property_method_returns_later_confitem_ordereddict_same_level():
     class NamedNestedRepeatable(_NamedNestedRepeatable):
         @property
@@ -1299,7 +1282,7 @@ def test_json_dump_property_method_returns_later_confitem_ordereddict_same_level
             NamedNestedRepeatable(name='three')
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_property_method_returns_later_confitem_dict_same_level_expected_json)
+    assert compare_json(cr, _json_dump_property_method_returns_later_confitem_ordereddict_same_level_expected_json, test_decode=True)
 
 
 _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 = """{
