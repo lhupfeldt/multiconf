@@ -19,7 +19,7 @@ from .check_containment import check_containment
 def _compare_json(
         item, expected_json, replace_builders, dump_builders, sort_attributes,
         test_decode, test_containment, test_excluded, test_compact, property_methods,
-        expect_num_errors, warn_nesting, show_all_envs, depth, replace_ids):
+        expect_num_errors, warn_nesting, show_all_envs, depth, replace_ids, replace_address):
     try:
         compact_json = item.json(
             compact=True, property_methods=property_methods, builders=dump_builders, sort_attributes=sort_attributes, warn_nesting=warn_nesting,
@@ -27,15 +27,16 @@ def _compare_json(
         full_json = item.json(property_methods=property_methods, builders=dump_builders, sort_attributes=sort_attributes, warn_nesting=warn_nesting,
                               show_all_envs=show_all_envs, depth=depth, persistent_ids=not replace_ids)
 
-        if replace_ids:
+        if replace_ids or replace_address:
+            assert replace_ids, "You must use 'replace_ids' if using 'replace_address'"
             if replace_builders:
                 if test_compact:
-                    compact_json_replaced = replace_ids_builder(compact_json)
-                full_json_replaced = replace_ids_builder(full_json)
+                    compact_json_replaced = replace_ids_builder(compact_json, address=replace_address)
+                full_json_replaced = replace_ids_builder(full_json, address=replace_address)
             else:
                 if test_compact:
-                    compact_json_replaced = _replace_ids(compact_json)
-                full_json_replaced = _replace_ids(full_json)
+                    compact_json_replaced = _replace_ids(compact_json, address=replace_address)
+                full_json_replaced = _replace_ids(full_json, address=replace_address)
         else:
             compact_json_replaced = compact_json
             full_json_replaced = full_json
@@ -99,13 +100,15 @@ def _compare_json(
 
 def compare_json(item, expected_json, replace_builders=False, dump_builders=True, sort_attributes=True,
                  test_decode=False, test_containment=True, test_excluded=False, test_compact=True, property_methods=True,
-                 expect_num_errors=0, warn_nesting=False, expected_all_envs_json=None, expect_all_envs_num_errors=None, depth=None, replace_ids=True):
+                 expect_num_errors=0, warn_nesting=False, expected_all_envs_json=None, expect_all_envs_num_errors=None, depth=None,
+                 replace_ids=True, replace_address=False):
     res = True
     if expected_json:
         res = _compare_json(
             item, expected_json, replace_builders, dump_builders, sort_attributes,
             test_decode, test_containment, test_excluded, test_compact, property_methods,
-            expect_num_errors, warn_nesting, show_all_envs=False, depth=depth, replace_ids=replace_ids)
+            expect_num_errors, warn_nesting, show_all_envs=False, depth=depth,
+            replace_ids=replace_ids, replace_address=replace_address)
 
     res2 = True
     if expected_all_envs_json:
@@ -113,6 +116,7 @@ def compare_json(item, expected_json, replace_builders=False, dump_builders=True
         res2 = _compare_json(
             item, expected_all_envs_json, replace_builders, dump_builders, sort_attributes,
             test_decode, test_containment=False, test_excluded=test_excluded, test_compact=False, property_methods=property_methods,
-            expect_num_errors=expect_num_errors, warn_nesting=warn_nesting, show_all_envs=True, depth=depth, replace_ids=replace_ids)
+            expect_num_errors=expect_num_errors, warn_nesting=warn_nesting, show_all_envs=True, depth=depth,
+            replace_ids=replace_ids, replace_address=replace_address)
 
     return res and res2

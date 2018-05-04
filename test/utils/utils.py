@@ -24,6 +24,7 @@ def py3_local(extra_class_levels=''):
 
 
 py3_tc = 'type' if sys.version_info[0] < 3 else 'class'
+py3_oi = 'object' if sys.version_info[0] >= 3 else 'instance'
 
 
 def line_num():
@@ -99,17 +100,20 @@ def replace_multiconf_file_line_msg(string):
 _replace_ids_regex = re.compile(r'("__id__"|, id| #id): [0-9]+("?)')
 _replace_refs_regex = re.compile(r'"#ref (self, |later, |)id: [0-9]+')
 _replace_named_as_regex = re.compile(r" #as: '[^,]+',")
-def replace_ids(json_string, named_as=True):
+_replace_address_regex = re.compile(r" at 0x[^>]*>")
+def replace_ids(json_string, named_as=True, address=False):
     json_string = _replace_ids_regex.sub(r'\1: 0000\2', json_string)
     if named_as:
         json_string = _replace_named_as_regex.sub(r" #as: 'xxxx',", json_string)
+    if address:
+        json_string = _replace_address_regex.sub(r" at 0x0000>", json_string)
     return _replace_refs_regex.sub(r'"#ref \1id: 0000', json_string)
 
 
 _replace_builder_ids_regex = re.compile(r"""\.builder\.[0-9]+(["'])""")
-def replace_ids_builder(json_string, named_as=True):
+def replace_ids_builder(json_string, named_as=True, address=False):
     json_string = _replace_builder_ids_regex.sub(r'.builder.0000\1', json_string)
-    return replace_ids(json_string, named_as)
+    return replace_ids(json_string, named_as, address)
 
 
 _compact_ids_regex = re.compile(r'("),\n *"__id__": ([0-9]+),')

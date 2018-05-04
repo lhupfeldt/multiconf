@@ -13,8 +13,8 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageE
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import replace_ids, next_line_num, to_compact, config_error
-from .utils.utils import py3_local
+from .utils.utils import replace_ids, next_line_num, to_compact
+from .utils.utils import py3_local, py3_oi
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
@@ -839,8 +839,7 @@ def test_json_dump_property_method_calls_json_no_warn(capsys):
     assert "Warning: Nested json calls" not in serr
 
 
-# TODO: insert information about skipped objects into json output
-_json_dump_non_conf_item_not_json_serializable_expected_json = """{
+_json_dump_non_conf_item_used_as_key_expected_json = """{
     "__class__": "ItemWithAA",
     "__id__": 0000,
     "env": {
@@ -852,15 +851,14 @@ _json_dump_non_conf_item_not_json_serializable_expected_json = """{
         "__class__": "SimpleItem",
         "__id__": 0000,
         "b": {
-            
+            "<test.json_output_test.%(py3_local)sKey %(py3_oi)s at 0x0000>": 2
         }
     }
 }"""
 
-def test_json_dump_non_conf_item_not_json_serializable(capsys):
+def test_json_dump_non_conf_item_used_as_key(capsys):
     class Key():
-        def __repr__(self):
-            return "<Key object>"
+        pass
 
     @mc_config(ef)
     def config(rt):
@@ -873,7 +871,7 @@ def test_json_dump_non_conf_item_not_json_serializable(capsys):
     assert not sout
     assert not serr
 
-    assert compare_json(cr, _json_dump_non_conf_item_not_json_serializable_expected_json)
+    assert compare_json(cr, _json_dump_non_conf_item_used_as_key_expected_json % dict(py3_local=py3_local(), py3_oi=py3_oi), replace_address=True)
 
 
 _json_dump_non_conf_item_expected_json = """{

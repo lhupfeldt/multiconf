@@ -203,7 +203,7 @@ class ConfigItemEncoder(object):
             new_val = OrderedDict()
             for inner_key, maybeitem in val.items():
                 if not isinstance(maybeitem, self.multiconf_base_type):
-                    new_val[inner_key] = maybeitem
+                    new_val[str(inner_key)] = maybeitem
                     continue
                 new_val[inner_key] = self._ref_mc_item_str(maybeitem)
             return key, [('', new_val)] + attr_inf
