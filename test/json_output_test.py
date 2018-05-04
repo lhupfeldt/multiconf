@@ -13,13 +13,10 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageE
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import replace_ids, next_line_num, to_compact, replace_multiconf_file_line_msg, config_error, file_line
+from .utils.utils import replace_ids, next_line_num, to_compact, config_error
 from .utils.utils import py3_local
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
-
-
-major_version = sys.version_info[0]
 
 
 ef = EnvFactory()
@@ -29,10 +26,6 @@ g_p = ef.EnvGroup('g_p', pp, prod)
 
 ef2_prod = EnvFactory()
 prod2 = ef2_prod.Env('prod')
-
-
-def ce(line_num, *lines):
-    return config_error(__file__, line_num, *lines)
 
 
 @nested_repeatables('someitems')
