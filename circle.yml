@@ -1,3 +1,0 @@
-dependencies:
-  post:
-    - pip install pytest pytest-cov demjson
