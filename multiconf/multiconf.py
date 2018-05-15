@@ -178,7 +178,7 @@ class _ConfigBase(object):
         if self:
             # Don't call @property methods in repr, it is too dangerous, leading to double errors (endless loops) in case of incorrect user
             # implemented @property methods. We only insert the method name and a predefined message in the generated json.
-            return self.json(compact=True, property_methods=None, builders=True, depth=None)
+            return self.json(compact=True, property_methods=None, builders=False, depth=None)
         return self._mc_excl_repr()
 
     def num_json_errors(self):
@@ -1112,9 +1112,14 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     self._mc_where = Where.IN_RE_INIT
                     return self
-                build_msg = " from 'mc_build'" if built_by else ""
+                if built_by:
+                    build_msg = " from 'mc_build'"
+                    ci_msg = contained_in.json(compact=True, property_methods=None, builders=True, depth=None)
+                else:
+                    build_msg = ""
+                    ci_msg = contained_in
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
-                    key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
+                    key=mc_key, cls=cls, build_msg=build_msg, ci=ci_msg))
             self._mc_handled_env_bits |= thread_local.env.mask
 
             self._mc_where = Where.IN_INIT
@@ -1173,7 +1178,7 @@ class _ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin):
                     return self
                 build_msg = " from 'mc_build'" if built_by else ""
                 raise ConfigException("Re-used key '{key}' in repeated item {cls}{build_msg} overwrites existing entry in parent:\n{ci}".format(
-                    key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in))
+                    key=mc_key, cls=cls, build_msg=build_msg, ci=contained_in.json(compact=True, property_methods=None, builders=True, depth=None)))
             self._mc_handled_env_bits |= thread_local.env.mask
 
             self._mc_where = Where.IN_INIT
