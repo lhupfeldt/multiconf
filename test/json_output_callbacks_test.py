@@ -7,7 +7,7 @@ from multiconf import mc_config, ConfigItem, MC_REQUIRED
 from multiconf.decorators import named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import py3_local, lines_in, file_line, next_line_num
+from .utils.utils import py3_local, py37_no_exc_comma, lines_in, file_line, next_line_num
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
@@ -80,20 +80,20 @@ _json_dump_user_defined_attribute_filter_exception_expected_json = """{
     },
     "aa": 0,
     "hide_me1": "FAILED",
-    "hide_me1 #json_error calling filter": "Exception('Error in filter',)",
+    "hide_me1 #json_error calling filter": "Exception('Error in filter'%(comma)s)",
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
         "b": 2,
         "hide_me1": 7,
-        "hide_me1 #json_error calling filter": "Exception('Error in filter',)",
+        "hide_me1 #json_error calling filter": "Exception('Error in filter'%(comma)s)",
         "a": 1,
         "a #calculated": true,
         "hide_me2": "FAIL",
         "hide_me2 #calculated": true,
-        "hide_me2 #json_error calling filter": "Exception('Error in filter',)"
+        "hide_me2 #json_error calling filter": "Exception('Error in filter'%(comma)s)"
     }
-}"""
+}""" % dict(comma=py37_no_exc_comma)
 
 def test_json_dump_user_defined_attribute_filter_exception(capsys):
     def json_filter(_obj, key, value):
@@ -283,13 +283,13 @@ _json_equivalent_bad_expected_json = """{
         "name": "prod"
     },
     "aa": 0,
-    "handled_non_item": "__json_error__ calling 'json_equivalent': Exception('bad json_equivalent',)",
+    "handled_non_item": "__json_error__ calling 'json_equivalent': Exception('bad json_equivalent'%(comma)s)",
     "someitem": {
         "__class__": "Item",
         "__id__": 0000,
         "a": 7
     }
-}"""
+}""" % dict(comma=py37_no_exc_comma)
 
 def test_json_equivalent_bad(capsys):
     errorline = [None]

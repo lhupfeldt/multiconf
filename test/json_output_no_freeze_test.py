@@ -11,7 +11,7 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, MC_REQUIRED, 
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from utils.utils import replace_ids
+from utils.utils import py37_no_exc_comma, replace_ids
 
 
 major_version = sys.version_info[0]
@@ -169,8 +169,8 @@ json_no_freeze_after_setattr_property_side_effect_error_exp1 = """{
     },
     "bb": "MC_REQUIRED",
     "cc": 1,
-    "aa #json_error trying to handle property method": "ConfigApiException(\\"Trying to set attribute 'cc'. Setting attributes is not allowed after configuration is loaded or while doing json dump (print) (in order to enforce derived value validity).\\",)"
-}"""
+    "aa #json_error trying to handle property method": "ConfigApiException(\\"Trying to set attribute 'cc'. Setting attributes is not allowed after configuration is loaded or while doing json dump (print) (in order to enforce derived value validity).\\"%(comma)s)"
+}""" % dict(comma=py37_no_exc_comma)
 
 json_no_freeze_after_setattr_property_side_effect_error_exp2 = """{
     "__class__": "NestedRepeatable #as: 'xxxx', id: 0000, not-frozen",

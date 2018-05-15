@@ -14,7 +14,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import replace_ids, next_line_num, to_compact
-from .utils.utils import py3_local, py3_oi
+from .utils.utils import py3_local, py3_oi, py37_no_exc_comma
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
@@ -522,9 +522,9 @@ _json_dump_property_method_raises_InvalidUsageException_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m #invalid usage context": "InvalidUsageException('No m now',)"
+        "m #invalid usage context": "InvalidUsageException('No m now'%(comma)s)"
     }
-}"""
+}""" % dict(comma=py37_no_exc_comma)
 
 _json_dump_property_method_raises_InvalidUsageException_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
@@ -537,9 +537,9 @@ _json_dump_property_method_raises_InvalidUsageException_all_envs_expected_json =
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m #invalid usage context": "InvalidUsageException('No m now',)"
+        "m #invalid usage context": "InvalidUsageException('No m now'%(comma)s)"
     }
-}"""
+}""" % dict(comma=py37_no_exc_comma)
 
 def test_json_dump_property_method_raises_InvalidUsageException():
     @named_as('someitem')
@@ -569,9 +569,9 @@ _json_dump_property_method_raises_exception_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m #json_error trying to handle property method": "Exception('Something is wrong',)"
+        "m #json_error trying to handle property method": "Exception('Something is wrong'%(comma)s)"
     }
-}"""
+}""" % dict(comma=py37_no_exc_comma)
 
 _json_dump_property_method_raises_exception_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
@@ -588,9 +588,9 @@ _json_dump_property_method_raises_exception_all_envs_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m #json_error trying to handle property method": "Exception('Something is wrong',)"
+        "m #json_error trying to handle property method": "Exception('Something is wrong'%(comma)s)"
     }
-}"""
+}""" % dict(comma=py37_no_exc_comma)
 
 def test_json_dump_property_method_raises_exception():
     @named_as('someitem')
@@ -623,9 +623,9 @@ _json_dump_property_method_raises_exception_in_pp_expected_json = """{
         "__class__": "Nested",
         "__id__": 0000,
         "aa": 1,
-        "m #json_error trying to handle property method": "Exception('Something is wrong',)"
+        "m #json_error trying to handle property method": "Exception('Something is wrong'%(comma)s)"
     }
-}"""
+}""" % dict(comma=py37_no_exc_comma)
 
 _json_dump_property_method_raises_exception_in_pp_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
@@ -646,11 +646,11 @@ _json_dump_property_method_raises_exception_in_pp_all_envs_expected_json = """{
         "m": {
             "pp": 24,
             "pp #calculated": true,
-            "prod #json_error trying to handle property method": "Exception('Something is wrong',)"
+            "prod #json_error trying to handle property method": "Exception('Something is wrong'%(comma)s)"
         },
         "m #multiconf env specific @property": true
     }
-}"""
+}""" % dict(comma=py37_no_exc_comma)
 
 def test_json_dump_property_method_raises_exception_in_pp():
     @named_as('someitem')

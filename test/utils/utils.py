@@ -7,6 +7,9 @@ import sys, re
 
 from .lines_in import lines_in as generic_lines_in
 
+major_version = sys.version_info[0]
+minor_version = sys.version_info[1]
+
 
 def py3_local(extra_class_levels=''):
     """Return extra string for python 3 representation of a test-funtion-local function or class.
@@ -25,6 +28,7 @@ def py3_local(extra_class_levels=''):
 
 py3_tc = 'type' if sys.version_info[0] < 3 else 'class'
 py3_oi = 'object' if sys.version_info[0] >= 3 else 'instance'
+py37_no_exc_comma = ',' if str(major_version) + '.' + str(minor_version) < '3.7' else ''
 
 
 def line_num():
