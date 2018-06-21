@@ -21,7 +21,7 @@ prod = ef.Env('prod')
 
 
 def test_setattr_root():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         root.setattr('aa', default=1, prod=2, mc_set_unknown=True)
 
@@ -38,7 +38,7 @@ def test_assignment_root(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(root):
             errorline[0] = next_line_num()
             root.aa = 1
@@ -48,7 +48,7 @@ def test_assignment_root(capsys):
 
 
 def test_env_root():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         pass
 
@@ -66,7 +66,7 @@ _repr_root_expected = """{
 }"""
 
 def test_repr_root():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         root.setattr('aa', default=1, prod=2, mc_set_unknown=True)
 

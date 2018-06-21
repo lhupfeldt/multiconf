@@ -34,7 +34,7 @@ def test_call_of_mc_post_validate_builder():
         def mc_build(self):
             pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with builder() as bb:
             bb.setattr('aa', pp=1, prod=2)
@@ -53,7 +53,7 @@ def test_builder_user_mc_post_validate_error():
             raise Exception("Error in builder mc_post_validate")
 
     with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             builder()
 
@@ -80,7 +80,7 @@ def test_builder_mc_post_validate_child_item_only_called_once():
         def mc_build(self):
             Built(3)
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with builder():
             Child(4)

@@ -81,7 +81,7 @@ def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_i
         pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             with Root():
                 X('server1')
@@ -97,7 +97,7 @@ def test_configbuilder_without_build():
         pass
 
     with raises(Exception) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             ABuilder()
 
@@ -114,7 +114,7 @@ def test_unexpected_repeatable_child_builder():
             RepeatableChild(mc_key=None)
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ConfigItem():
                 UnexpectedRepeatableChildBuilder()
@@ -158,7 +158,7 @@ def test_unexpected_repeatable_child_nested_builders_with():
         pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ItemWithoutARepeatable():
                 OuterBuilder()
@@ -191,7 +191,7 @@ def test_unexpected_repeatable_child_nested_builders_no_with():
         pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ItemWithoutARepeatable():
                 OuterBuilder()
@@ -220,7 +220,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
         pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             with Root():
                 XBuilder()
@@ -241,7 +241,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
         aaa = 2
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             with Root():
                 with XBuilder() as xb:
@@ -273,7 +273,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
     exp = "Repeated non repeatable conf item: 'MiddleItem': <class 'test.builder_definition_errors_test.%(py3_local)sMiddleItem'>" % dict(py3_local=py3_local())
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ItemWithName() as root:
                 root.name = 'myp'
@@ -283,7 +283,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
     assert replace_ids(str(exinfo.value), False) == exp
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ItemWithName() as root:
                 root.name = 'myp'
@@ -317,7 +317,7 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
             self.a = a
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ItemWithYs():
                 with YBuilder() as yb1:
@@ -354,7 +354,7 @@ def test_configbuilder_repeated():
         pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             with Root():
                 XBuilder('aa')
@@ -377,7 +377,7 @@ def test_configbuilder_repeated_in_mc_init():
             # This redefinition is ignored as it it interpreted as a defult value
             XBuilder('aa')
 
-    @mc_config(ef2_prod_pp)
+    @mc_config(ef2_prod_pp, load_now=True)
     def config(_):
         with Root():
             XBuilder('aa')
@@ -412,7 +412,7 @@ def test_assign_on_built_item_after_it_is_built(capsys):
             self.something = None
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(root):
             with YBuilder():
                 pass
@@ -455,7 +455,7 @@ def test_assign_and_assign_on_proxied_built_item_child_after_freeze(capsys):
 
     # Test assignment error
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config1(root):
             with YBuilder():
                 ItemWithAA(17)
@@ -469,7 +469,7 @@ def test_assign_and_assign_on_proxied_built_item_child_after_freeze(capsys):
 
     # Test setattr error
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config2(root):
             with YBuilder():
                 ItemWithAA(17)

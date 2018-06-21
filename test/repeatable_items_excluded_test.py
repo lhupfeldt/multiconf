@@ -30,7 +30,7 @@ class rchild(RepeatableItemWithAA):
 
 
 def test_repeatable_items_mc_select_envs_excluded():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with nc_aa_root(1) as cr:
             with rchild("first") as ci:
@@ -86,7 +86,7 @@ def test_repeatable_items_mc_select_envs_excluded():
 
 
 def test_repeatable_items_skipped_in_envs():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with nc_aa_root(1) as cr:
             cr.setattr('num_children', pp=2, prod=4, mc_set_unknown=True)
@@ -107,13 +107,14 @@ def test_repeatable_items_mc_select_envs_excluded_key_error_property_exception()
         def xxx(self):
             raise Exception('bad')
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config(root):
         with nc_aa_root(1) as cr:
             with badchild("first") as ci:
                 ci.mc_select_envs(exclude=[prod])
                 ci.setattr('aa', pp=1)
 
+    config.load(validate_properties=False)
     cr = config(prod).nc_aa_root
 
     assert len(cr.children) == 0
@@ -133,13 +134,14 @@ def test_repeatable_items_mc_select_envs_excluded_key_error_property_attributeer
         def xxx(self):
             self.no_such_property
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config(root):
         with nc_aa_root(1) as cr:
             with badchild("first") as ci:
                 ci.mc_select_envs(exclude=[prod])
                 ci.setattr('aa', pp=1)
 
+    config.load(validate_properties=False)
     cr = config(prod).nc_aa_root
 
     assert len(cr.children) == 0
@@ -165,7 +167,7 @@ def test_repeatable_items_bool():
     class HasRepeatables(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with HasRepeatables() as y:
             with X(mc_key='aa') as xx:

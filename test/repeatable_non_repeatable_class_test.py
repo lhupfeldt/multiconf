@@ -67,7 +67,7 @@ class myroot(ConfigItem):
 
 
 def test_abstract_config_item_multiple_inheritance_explicit_mc_key():
-    @mc_config(ef_pp_prod)
+    @mc_config(ef_pp_prod, load_now=True)
     def config(_):
         with myroot():
             with MyItem() as ci:
@@ -90,7 +90,7 @@ def test_abstract_config_item_multiple_inheritance_explicit_mc_key():
 
 
 def test_abstract_config_item_multiple_inheritance_cls_mc_key():
-    @mc_config(ef_pp_prod)
+    @mc_config(ef_pp_prod, load_now=True)
     def config(_):
         with myroot():
             with MyItem() as ci:

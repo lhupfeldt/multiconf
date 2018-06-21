@@ -49,7 +49,7 @@ class RepeatableStrictItem(RepeatableConfigItem):
 
 
 def test_setunknown_strict_ok():
-    @mc_config(ef2_prod_pp)
+    @mc_config(ef2_prod_pp, load_now=True)
     def config(root):
         with strict_project() as sp:
             sp.b = 1
@@ -75,7 +75,7 @@ def test_setattr_strict_bad(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(root):
             with strict_project() as sp:
                 errorline[0] = next_line_num()
@@ -85,7 +85,7 @@ def test_setattr_strict_bad(capsys):
     assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('c'))
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(root):
             with strict_project() as sp:
                 errorline[0] = next_line_num()
@@ -95,7 +95,7 @@ def test_setattr_strict_bad(capsys):
     assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('c'))
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(root):
             with strict_project() as sp:
                 with StrictItem() as si:
@@ -106,7 +106,7 @@ def test_setattr_strict_bad(capsys):
     assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('z'))
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(root):
             with strict_project() as sp:
                 with StrictItem() as si:
@@ -117,7 +117,7 @@ def test_setattr_strict_bad(capsys):
     assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('z'))
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(root):
             with strict_project() as sp:
                 with RepeatableStrictItem('a') as rsi:
@@ -128,7 +128,7 @@ def test_setattr_strict_bad(capsys):
     assert replace_ids(serr) == ce(errorline[0], setattr_not_defined_in_init_expected.format('z'))
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(root):
             with strict_project() as sp:
                 with RepeatableStrictItem('b') as rsi:
@@ -145,7 +145,7 @@ def test_setunknown_strict_bad(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(root):
             with strict_project() as sp:
                 errorline[0] = next_line_num()
@@ -155,7 +155,7 @@ def test_setunknown_strict_bad(capsys):
     assert replace_ids(serr) == ce(errorline[0], _setunknown_strict_bad_expected.format('b'))
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(root):
             with strict_project() as sp:
                 with StrictItem() as si:
@@ -166,7 +166,7 @@ def test_setunknown_strict_bad(capsys):
     assert replace_ids(serr) == ce(errorline[0], _setunknown_strict_bad_expected.format('y'))
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(root):
             with strict_project() as sp:
                 with RepeatableStrictItem('b') as rsi:

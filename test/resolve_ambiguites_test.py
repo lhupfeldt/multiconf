@@ -39,7 +39,7 @@ g_prod = ef_dev_prod.EnvGroup('g_prod', pp, prod)
 
 
 def test_value_defined_through_three_groups_resolved_immediately():
-    @mc_config(ef_dev_prod)
+    @mc_config(ef_dev_prod, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
             cr.setattr('aa', g_dev_overlap2=7, default=7, dev2cta=15, prod=1, g_dev2=2, g_dev_overlap1=3)
@@ -51,7 +51,7 @@ def test_value_defined_through_three_groups_resolved_immediately():
 
 
 def test_value_defined_through_three_groups_resolved_immediately_multiple1():
-    @mc_config(ef_dev_prod)
+    @mc_config(ef_dev_prod, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
             cr.setattr('aa', g_dev_overlap23ct=7, default=7, dev2cta=15, prod=1, g_dev2=2, g_dev_overlap23st=3, dev2sta=8)
@@ -63,7 +63,7 @@ def test_value_defined_through_three_groups_resolved_immediately_multiple1():
 
 
 def test_value_defined_through_three_groups_resolved_immediately_multiple2():
-    @mc_config(ef_dev_prod)
+    @mc_config(ef_dev_prod, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
             cr.setattr('aa', g_dev_overlap23ct=7, default=7, dev2cta=15, prod=1, g_dev2=2, g_dev_overlap23st=3, dev2sta=8, g_dev_overlap23ctst=23, dev3st=0)
@@ -117,7 +117,7 @@ g_prod2 = ef2_x_prod.EnvGroup('g_prod', pp2, prod2)
 
 
 def test_value_defined_through_three_groups_resolved_multiple_x():
-    @mc_config(ef2_x_prod)
+    @mc_config(ef2_x_prod, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
             cr.setattr('aa', g_x_overlap23ct=7, default=7, x2st=8, prod=1, g_x2ctst=2, g_x_overlap23st=3, g_x_overlap23ctst=23, x3st=0, x2ct=15)

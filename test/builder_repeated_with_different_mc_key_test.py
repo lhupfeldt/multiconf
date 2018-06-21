@@ -35,7 +35,7 @@ class Version(ConfigBuilder):
 
 
 def test_key():
-    @mc_config(efac)
+    @mc_config(efac, load_now=True)
     def config(_):
         with Root() as cr:
             cr.setattr('version', default="1.0", e2="1.1")

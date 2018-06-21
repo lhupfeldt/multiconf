@@ -52,7 +52,7 @@ def test_find_contained_in_named_as():
     class root3(ItemWithAA):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with root3() as cr:
             cr.aa = 0
@@ -86,7 +86,7 @@ def test_find_attribute_attribute_name():
     class root4(ItemWithAA):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with root4(aa=-1) as cr:
             cr.setattr('q', default='q0', mc_set_unknown=True)
@@ -120,7 +120,7 @@ def test_find_attribute_attribute_name():
 def test_find_contained_in_or_none():
     i1_exp = [None]
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with KwargsItem(aa=1) as i1:
             i1_exp[0] = i1
@@ -134,7 +134,7 @@ def test_find_contained_in_or_none():
 def test_find_attribute_or_none():
     exp_item = [None]
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with KwargsItem(aa=1, my_attr=0) as i1:
             i1.my_attr = 7
@@ -173,7 +173,7 @@ def test_find_contained_in_named_as_not_found():
     class root(ItemWithAA):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with root(aa=0):
             NestedRepeatable(mc_key=0)
@@ -218,7 +218,7 @@ def test_find_attribute_with_attribute_name_not_found():
             super(root, self).__init__(aa=aa)
             self.q = None
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with root(aa=0) as cr:
             cr.q = 17

@@ -44,28 +44,28 @@ class item2(ConfigItem):
 
 
 def test_direct_env_in_mc_init_overrides_default_and_group_in_with():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item1() as it:
             it.aa = 13
     it = config(dev1).item1
     assert it.aa == 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item1() as it:
             it.setattr('aa', default=13)
     it = config(dev1).item1
     assert it.aa == 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item1() as it:
             it.setattr('aa', default=1, g_dev=13)
     it = config(dev1).item1
     assert it.aa == 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item1() as it:
             it.setattr('aa', default=1, g_dev_tst=13)
@@ -74,7 +74,7 @@ def test_direct_env_in_mc_init_overrides_default_and_group_in_with():
 
 
 def test_direct_env_in_with_overrides_mc_init():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item1() as it:
             it.setattr('aa', dev1=1, tst=111, g_dev=7, g_prod=17)
@@ -83,7 +83,7 @@ def test_direct_env_in_with_overrides_mc_init():
 
 
 def test_more_specific_group_in_with_overrides_mc_init():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item2() as it:
             it.setattr('aa', g_dev=1, tst=111, g_prod=17)
@@ -110,7 +110,7 @@ def test_children_in_mc_init_frozen():
             self.aa = 1
             X1(aa=1)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config0(_):
         with ConfigItem():
             X2(17)
@@ -144,7 +144,7 @@ def test_children_in_mc_init_only_frozen_once():
             self.bb = 1
             X1(aa=1, bb=1)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config0(_):
         X2(17)
 

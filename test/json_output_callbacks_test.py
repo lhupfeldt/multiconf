@@ -59,7 +59,7 @@ def test_json_dump_user_defined_attribute_filter():
         def a(self):
             return 1
 
-    @mc_config(ef, mc_json_filter=json_filter)
+    @mc_config(ef, mc_json_filter=json_filter, load_now=True)
     def config(root):
         with RootWithHideMe1() as cr:
             cr.aa = 0
@@ -121,7 +121,7 @@ def test_json_dump_user_defined_attribute_filter_exception(capsys):
         def a(self):
             return 1
 
-    @mc_config(ef, mc_json_filter=json_filter)
+    @mc_config(ef, mc_json_filter=json_filter, load_now=True)
     def config(root):
         with RootWithHideMe1() as cr:
             cr.aa = 0
@@ -181,7 +181,7 @@ def test_json_fallback_handler():
             return [obj.a, obj.b], True
         return obj, False
 
-    @mc_config(ef, mc_json_fallback=json_fallback_handler)
+    @mc_config(ef, mc_json_fallback=json_fallback_handler, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
             cr.aa = 0
@@ -224,7 +224,7 @@ def test_json_fallback_handler_iterable():
             return [obj.a, obj.b], True
         return obj, False
 
-    @mc_config(ef, mc_json_fallback=json_fallback_handler)
+    @mc_config(ef, mc_json_fallback=json_fallback_handler, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
             cr.aa = 0
@@ -264,7 +264,7 @@ def test_json_equivalent():
             super(Item, self).__init__()
             self.a = 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
             cr.aa = 0
@@ -305,7 +305,7 @@ def test_json_equivalent_bad(capsys):
             super(Item, self).__init__()
             self.a = 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
             cr.aa = 0

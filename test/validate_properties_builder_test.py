@@ -41,7 +41,7 @@ def test_builder_validate_properties_child_item_only_called_once_per_env():
         def mc_build(self):
             Built(3)
 
-    @mc_config(ef_pprd_prod)
+    @mc_config(ef_pprd_prod, load_now=True)
     def config(_):
         with builder():
             Child(4)

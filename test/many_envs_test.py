@@ -37,7 +37,7 @@ class ItemWithManyAttributes(ItemWithAA):
 
 
 def test_many_envs():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithManyAttributes() as conf:
             conf.setattr('aa', default=None, e0_0=0)
@@ -58,7 +58,7 @@ def test_many_envs():
 
 def test_many_groups():
     # This is slow!
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithManyAttributes() as conf:
             conf.setattr('aa', default=None, g0=0)

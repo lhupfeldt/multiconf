@@ -23,7 +23,7 @@ def test_getattr_env():
         def mc_init(self):
             self.setattr('aa', default=7, prod=8)
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         root()
 
@@ -59,7 +59,7 @@ def test_getattr_property():
         def myprop(self):
             return 17
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         root()
 
@@ -95,7 +95,7 @@ def test_getattr_overwritten_property():
         def myprop(self):
             return 17
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with root() as rt:
             rt.setattr('myprop', prod=18, mc_overwrite_property=True)
@@ -132,7 +132,7 @@ def test_getattr_overwritten_property_ref_mc_attribute():
         def myprop(self):
             return self.xx + 1
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with root() as rt:
             rt.setattr('xx', pp=15, prod=16)
@@ -167,7 +167,7 @@ def test_getattr_overwritten_property_error():
         def myprop(self):
             raise Exception("Error in myprop")
 
-    @mc_config(ef2_pp_prod, validate_properties=False)
+    @mc_config(ef2_pp_prod)
     def config(_):
         with root() as rt:
             rt.setattr('xx', pp=15, prod=16)
@@ -176,7 +176,9 @@ def test_getattr_overwritten_property_error():
     exp_indexed = [McInvalidValue.MC_NO_VALUE, 18]
     exp_envs = {pp2: McInvalidValue.MC_NO_VALUE, prod2: 18}
 
+    config.load(validate_properties=False)
     rt = config(prod2).root
+
     assert rt.myprop == 18
     with raises(Exception):
         _ = rt.getattr('myprop', pp2)
@@ -210,11 +212,13 @@ def test_getattr_non_existing():
     class root(ConfigItem):
         pass
 
-    @mc_config(ef2_pp_prod, validate_properties=False)
+    @mc_config(ef2_pp_prod)
     def config(_):
         root()
 
+    config.load(validate_properties=False)
     rt = config(prod2).root
+
     with raises(AttributeError):
         _ = rt.getattr('myprop', pp2)
 
@@ -236,7 +240,7 @@ def test_attr_env_items_excluded_env():
         def mc_init(self):
             self.setattr('aa', default=7)
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with item() as it:
             it.mc_select_envs(exclude=[prod2])
@@ -286,7 +290,7 @@ def test_attr_env_items_excluded_multiple_envs():
         def mc_init(self):
             self.setattr('aa', default=7)
 
-    @mc_config(ef3_pprd_prod)
+    @mc_config(ef3_pprd_prod, load_now=True)
     def config(_):
         with item() as it:
             it.mc_select_envs(exclude=[tst3, prod3])
@@ -334,7 +338,7 @@ def test_getattr_overwritten_property_error_multiple_envs_first_ok():
         def myprop(self):
             raise Exception("Error in myprop")
 
-    @mc_config(ef3_pprd_prod, validate_properties=False)
+    @mc_config(ef3_pprd_prod)
     def config(_):
         with root() as rt:
             rt.setattr('xx', tst=1, pprd=15, prod=16)
@@ -343,7 +347,9 @@ def test_getattr_overwritten_property_error_multiple_envs_first_ok():
     exp_indexed = [17, McInvalidValue.MC_NO_VALUE, 18]
     exp_envs = {tst3: 17, pprd3: McInvalidValue.MC_NO_VALUE, prod3: 18}
 
+    config.load(validate_properties=False)
     rt = config(prod3).root
+
     assert rt.myprop == 18
     with raises(Exception):
         _ = rt.getattr('myprop', pprd3)

@@ -107,7 +107,7 @@ _include_exclude_for_configitem_all_envs_expected_json = """{
 }"""
 
 def test_include_for_configitem_with_mc_required():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
@@ -140,7 +140,7 @@ _include_exclude_for_decorated_configitem_expected_json = """{
 }"""
 
 def test_include_for_configitem_with_required_decorator():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
@@ -160,7 +160,7 @@ def test_include_for_configitem_with_required_decorator():
 
 
 def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
@@ -184,7 +184,7 @@ def test_include_missing_for_configitem(capsys):
     errorline = []
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(rt):
             with ItemWithAA() as cr:
                 cr.aa = 1
@@ -200,7 +200,7 @@ def test_include_missing_for_configitem(capsys):
 
 
 def test_exclude_for_configitem():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
@@ -252,7 +252,7 @@ _include_exclude_for_configitem_repeatable_expected_json = """{
 }"""
 
 def test_include_for_configitem_repeatable_with_mc_required():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=1):
             with ritem('a', mc_include=[dev1, pp]) as it:
@@ -276,7 +276,7 @@ def test_include_for_configitem_repeatable_with_mc_required():
 
 
 def test_include_for_configitem_repeatable_with_required_decorater():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root() as cr:
             cr.aa = 1
@@ -296,7 +296,7 @@ def test_include_for_configitem_repeatable_with_required_decorater():
 
 
 def test_exclude_for_configitem_repeatable():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=1):
             with ritem('a', mc_exclude=[dev2, prod]) as it:
@@ -314,7 +314,7 @@ def test_exclude_for_configitem_repeatable():
 
 
 def test_exclude_for_nested_configitem():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
@@ -337,7 +337,7 @@ def test_exclude_for_nested_configitem():
 
 
 def test_exclude_for_repeatable_nested_configitem():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=1):
             with ritem('a', mc_exclude=[dev2, dev3, prod]) as rit:
@@ -385,7 +385,7 @@ def test_exclude_for_repeatable_nested_configitem():
 
 
 def test_exclude_for_repeatable_nested_excludes_configitem():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root() as cr:
             cr.aa = 1
@@ -466,7 +466,7 @@ def test_exclude_for_repeatable_nested_excludes_configitem():
 def test_exclude_include_overlapping_for_configitem(capsys):
     """Test that most specifig group/env wins"""
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
@@ -510,7 +510,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(rt):
             with ItemWithAA(aa=0):
                 errorline[0] = next_line_num()
@@ -523,7 +523,7 @@ def test_exclude_include_overlapping_ambiguous_single_env_init(capsys):
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(rt):
             with ItemWithAA(aa=0):
                 errorline[0] = next_line_num()
@@ -542,7 +542,7 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init(capsys
     exp = "Env('dev2') is specified in both include and exclude, with no single most specific group or direct env:"
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(rt):
             with root(aa=1):
                 with ritem('a', mc_exclude=[prod]) as ri:
@@ -560,7 +560,7 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init(capsys
 def test_exclude_include_overlapping_resolved_with_include_for_configitem():
     """Test that most specifig group/env wins"""
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
@@ -594,7 +594,7 @@ def test_exclude_include_overlapping_resolved_with_include_for_configitem():
 def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
     """Test that most specifig group/env wins"""
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
@@ -625,7 +625,7 @@ def test_exclude_include_overlapping_resolved_with_exclude_for_configitem():
 
 
 def test_exclude_include_disjunct_for_configitem():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 1
@@ -670,7 +670,7 @@ def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_en
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(rt):
             with ItemWithAA():
                 with McSelectOverrideItem() as it:
@@ -685,7 +685,7 @@ def test_exclude_include_overlapping_for_configitem_with_overridden_mc_select_en
 
     with raises(ConfigException) as exinfo:
         # No most specific
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(rt):
             with ItemWithAA():
                 with McSelectOverrideItem2() as it:
@@ -713,7 +713,7 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init_overri
             def __init__(self):
                 iitem(mc_exclude=[dev2], mc_include=[dev2, prod])
 
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(rt):
             with root(aa=1):
                 X()
@@ -723,7 +723,7 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init_overri
 
 
 def test_exclude__getattr__():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ConfigItem() as cr:
             with item(mc_exclude=[dev2]) as it:
@@ -743,7 +743,7 @@ def test_exclude__getattr__():
 
 
 def test_exclude_getattr_env():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ConfigItem() as cr:
             with item(mc_exclude=[dev2]) as it:
@@ -767,7 +767,7 @@ def test_exclude_getattr_env():
 
 def test_exclude_during_load__getattr__():
     with raises(ConfigExcludedAttributeError):
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 with item(mc_exclude=[dev2]) as it:

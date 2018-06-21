@@ -29,7 +29,7 @@ def test_dir():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0) as iaa:
             iaa.setattr('bb', default=1, pp=2, mc_set_unknown=True)

@@ -26,7 +26,7 @@ def test_builder_mc_validate_set_attribute():
         def mc_build(self):
             ItemWithAA(self)
 
-    @mc_config(ef_pprd_prod)
+    @mc_config(ef_pprd_prod, load_now=True)
     def config(_):
         builder()
 
@@ -43,7 +43,7 @@ def test_user_mc_validate_error_builder():
             raise Exception("Error in builder validate")
 
     with raises(Exception) as exinfo:
-        @mc_config(ef_pprd_prod)
+        @mc_config(ef_pprd_prod, load_now=True)
         def config(_):
             with ConfigItem():
                 builder()
@@ -74,7 +74,7 @@ def test_builder_mc_validate_child_item_only_called_once_per_env():
         def mc_build(self):
             Built(3)
 
-    @mc_config(ef_pprd_prod)
+    @mc_config(ef_pprd_prod, load_now=True)
     def config(_):
         with builder():
             Child(4)

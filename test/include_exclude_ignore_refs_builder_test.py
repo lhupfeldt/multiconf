@@ -41,7 +41,7 @@ class BB(ConfigBuilder):
 
 
 def test_exclude_with_builder():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithName(name='x') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
@@ -59,7 +59,7 @@ def test_exclude_with_builder():
 
 
 def test_exclude_no_builder():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithName(name='esb') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
@@ -79,7 +79,7 @@ def test_exclude_no_builder():
 
 
 def test_exclude_with_builder_repeated():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithName(name='x') as cr:
             with HasRepeatables(name='r1', mc_exclude=[prod]) as it:
@@ -121,7 +121,7 @@ class ExclInBuild2(ConfigBuilder):
 
 
 def test_exclude_in_build():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithName(name='x') as cr:
             with HasRepeatables(name='r1', mc_exclude=None) as it:
@@ -154,7 +154,7 @@ def test_mc_select_envs_with_builder():
             super(HasRepeatables2, self).__init__()
             self.name = name
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithName(name='x') as cr:
             with HasRepeatables2(name='r1') as it:

@@ -34,7 +34,7 @@ def test_attribute_overrides_property_method_config_item_ok():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config0(_):
         with Nested() as nn:
             nn.setattr('m', default=7, mc_overwrite_property=True)
@@ -42,7 +42,7 @@ def test_attribute_overrides_property_method_config_item_ok():
     cr = config0(prod)
     assert cr.someitem.m == 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config1(_):
         with Nested() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
@@ -50,7 +50,7 @@ def test_attribute_overrides_property_method_config_item_ok():
     cr = config1(prod)
     assert cr.someitem.m == 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config2(_):
         with Nested() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
@@ -71,7 +71,7 @@ def test_attribute_overrides_property_method_repeatable_config_item_ok():
     class Root(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config0(_):
         with Root():
             with Rep('r1') as rr:
@@ -82,7 +82,7 @@ def test_attribute_overrides_property_method_repeatable_config_item_ok():
     assert cr.someitems['r1'].m == 7
     assert cr.someitems['r2'].m == 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config1(_):
         with Root():
             with Rep('r1') as rr:
@@ -93,7 +93,7 @@ def test_attribute_overrides_property_method_repeatable_config_item_ok():
     assert cr.someitems['r1'].m == 7
     assert cr.someitems['r2'].m == 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config2(_):
         with Root():
             with Rep('r1') as rr:
@@ -115,7 +115,7 @@ def test_attribute_overrides_property_inherited_method():
     class Nested(NestedBase):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config0(_):
         with Nested() as nn:
             nn.setattr('m', default=7, mc_overwrite_property=True)
@@ -123,7 +123,7 @@ def test_attribute_overrides_property_inherited_method():
     cr = config0(prod)
     assert cr.someitem.m == 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config1(_):
         with Nested() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
@@ -131,7 +131,7 @@ def test_attribute_overrides_property_inherited_method():
     cr = config1(prod)
     assert cr.someitem.m == 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config2(_):
         with Nested() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
@@ -148,7 +148,7 @@ def test_attribute_overrides_property_method_not_existing(capsys):
         pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with Nested() as nn:
                 errorline[0] = next_line_num()
@@ -168,7 +168,7 @@ def test_attribute_overrides_property_method_is_regular_method(capsys):
             return 2
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with Nested() as nn:
                 errorline[0] = next_line_num()
@@ -198,7 +198,7 @@ def test_setattr_replace_property_in_with_not_allowed(capsys):
             return 2
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with Nested() as nn:
                 errorline[0] = next_line_num()
@@ -224,7 +224,7 @@ def test_assigment_replace_property_in_init_not_allowed(capsys):
             return 2
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             Nested(m=7)
 
@@ -244,7 +244,7 @@ def test_assigment_replace_property_in_with_not_allowed(capsys):
             return 1
 
     with raises(Exception) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with Nested() as nn:
                 errorline[0] = next_line_num()
@@ -265,7 +265,7 @@ def test_assigment_replace_mc_property_wrapper_not_allowed(capsys):
             return 1
 
     with raises(Exception) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config2(_):
             with Nested() as nn:
                 nn.setattr('mm', prod=3, mc_overwrite_property=True)
@@ -288,7 +288,7 @@ def test_replace_mc_property_wrapper_not_allowed(capsys):
             return 1
 
     with raises(Exception) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config2(_):
             with Nested() as nn:
                 nn.setattr('mm', prod=3, mc_overwrite_property=True)
@@ -321,20 +321,20 @@ def test_attribute_overrides_failing_property_method():
             errorline[0] = next_line_num()
             raise Exception("bad property method")
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config0(_):
         with NestedBadM() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
 
-    cr = config0(prod)
+    cr = config0.load(validate_properties=False)(prod)
     assert cr.someitem.m == 7
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config1(_):
         with NestedBadM() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
 
-    cr = config1(prod)
+    cr = config1.load(validate_properties=False)(prod)
     with raises(AttributeError) as exinfo:
         print(cr.someitem.m)
 
@@ -383,20 +383,20 @@ def test_attribute_overrides_property_method_raising_attribute_error():
             print("test_attribute_overrides_property_method_raising_attribute_error, @property m, raises AttributeError.")
             return self.i_dont_have_this_attribute
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config1(_):
         with Nested() as nn:
             nn.setattr('m', prod=7, mc_overwrite_property=True)
 
-    cr = config1(prod)
+    cr = config1.load(validate_properties=False)(prod)
     assert cr.someitem.m == 7
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config2(_):
         with Nested() as nn:
             nn.setattr('m', pp=7, mc_overwrite_property=True)
 
-    nn = config2(prod).someitem
+    nn = config2.load(validate_properties=False)(prod).someitem
     with raises(AttributeError) as exinfo:
         mmm = nn.m
         print(mmm)
@@ -418,7 +418,7 @@ def test_attribute_overrides_property_method_using_mc_set_unknown_repeated_env(c
             return 2
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with Nested() as nn:
                 errorline[0] = next_line_num()

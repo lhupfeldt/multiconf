@@ -118,7 +118,7 @@ _json_dump_persistent_ids_all_envs_expected_json = """{
 }"""
 
 def test_json_dump_persistent_ids():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0) as rt:
             NestedRepeatable(mc_key='a-level1')

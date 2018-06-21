@@ -44,7 +44,7 @@ def test_required_items_for_configroot_as_args():
     class root(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root():
             anitem(1)
@@ -63,7 +63,7 @@ def test_required_items_for_configitem_as_args():
     class item(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root():
             with item():
@@ -91,7 +91,7 @@ def test_required_items_accept_override_of_default():
             aa(self.a)
             bb(self.b)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item(a=1, b=1):
             bb(2)
@@ -110,7 +110,7 @@ def test_required_items_inherited_ok(capsys):
     class root2(root):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root2():
             anitem(1)
@@ -133,15 +133,17 @@ def test_required_items_inherited_ok(capsys):
 def test_required_items_missing_for_configroot(capsys):
     errorline = [None]
 
-    with raises(ConfigException) as exinfo:
-        @required('someitem1', 'someitem2')
-        class root(ConfigItem):
-            pass
+    @required('someitem1', 'someitem2')
+    class root(ConfigItem):
+        pass
 
-        @mc_config(ef)
-        def config(_):
-            with root():
-                errorline[0] = line_num()
+    @mc_config(ef)
+    def config(_):
+        with root():
+            errorline[0] = line_num()
+
+    with raises(ConfigException) as exinfo:
+        config.load()
 
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline[0], "Missing '@required' items: ['someitem1', 'someitem2']")
@@ -159,7 +161,7 @@ def test_required_items_missing_for_configitem(capsys):
         class item(ConfigItem):
             pass
 
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with root():
                 with item():
@@ -194,7 +196,7 @@ def test_error_freezing_previous_sibling_missing_required(capsys):
         pass
 
     with raises(Exception) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with ConfigItem():
                 errorline[0] = next_line_num()

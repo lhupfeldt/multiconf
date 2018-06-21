@@ -50,7 +50,7 @@ class BuilderStrictItem(ConfigBuilder):
 def test_setattr_strict_builder_ok():
     bsi = [None]
 
-    @mc_config(ef2_prod_pp)
+    @mc_config(ef2_prod_pp, load_now=True)
     def config(_):
         with strict_project() as sp:
             sp.a = 1
@@ -70,7 +70,7 @@ def test_setattr_strict_builder_ok():
 def test_setunknown_strict_builder_ok():
     bsi = [None]
 
-    @mc_config(ef2_prod_pp)
+    @mc_config(ef2_prod_pp, load_now=True)
     def config(_):
         with strict_project() as sp:
             sp.b = 1

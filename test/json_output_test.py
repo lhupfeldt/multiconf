@@ -75,7 +75,7 @@ _json_dump_root_no_env_expected_json = """{
 }"""
 
 def test_json_dump_root():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         ConfigItem()
 
@@ -232,7 +232,7 @@ _json_dump_simple_all_envs_expected_json = """{
 }"""
 
 def test_json_dump_simple():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             NestedRepeatable(mc_key='a-level1')
@@ -305,7 +305,7 @@ def test_json_dump_cyclic_references_in_conf_items():
             self.something = MC_REQUIRED
             self.ref = MC_REQUIRED
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             with NestedRepeatable(mc_key='a1', some_value=27) as ref_obj1:
@@ -345,7 +345,7 @@ __json_dump_cyclic_references_between_conf_items_and_other_objects_expected_json
 def test_json_dump_cyclic_references_between_conf_items_and_other_objects():
     cycler = {}
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             with SimpleItem(id='b1', someattr=12, cycl=cycler) as ref_obj2:
@@ -379,7 +379,7 @@ def test_json_dump_property_method():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -411,7 +411,7 @@ def test_json_dump_property_method_name_only():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -444,7 +444,7 @@ def test_json_dump_property_attribute_method_override():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
@@ -499,7 +499,7 @@ def test_json_dump_property_attribute_method_override_other_env():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ConfigItem():
             with Nested() as nn:
@@ -548,11 +548,12 @@ def test_json_dump_property_method_raises_InvalidUsageException():
         def m(self):
             raise InvalidUsageException("No m now")
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
+    config.load(validate_properties=False)
     cr = config(prod).ItemWithAA
     assert compare_json(cr, _json_dump_property_method_raises_InvalidUsageException_expected_json,
                         expected_all_envs_json=_json_dump_property_method_raises_InvalidUsageException_all_envs_expected_json)
@@ -599,12 +600,13 @@ def test_json_dump_property_method_raises_exception():
         def m(self):
             raise Exception("Something is wrong")
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config(rt):
         with ItemWithAA() as it:
             it.setattr('aa', default=1, prod=0)
             Nested()
 
+    config.load(validate_properties=False)
     cr = config(prod).ItemWithAA
     assert compare_json(
         cr, _json_dump_property_method_raises_exception_expected_json, expect_num_errors=1,
@@ -661,12 +663,13 @@ def test_json_dump_property_method_raises_exception_in_pp():
                 raise Exception("Something is wrong")
             return self.aa + 7
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
                 nn.setattr('aa', default=1, pp=17)
 
+    config.load(validate_properties=False)
     cr = config(prod).ItemWithAA
     assert compare_json(
         cr, _json_dump_property_method_raises_exception_in_pp_expected_json, expect_num_errors=1,
@@ -682,11 +685,12 @@ def test_json_dump_property_method_raises_ConfigException():
         def m(self):
             raise ConfigException("Something is wrong")
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
 
+    config.load(validate_properties=False)
     cr = config(prod).ItemWithAA
     assert compare_json(cr, _e2b_expected_json_output, expect_num_errors=1)
 
@@ -714,7 +718,7 @@ def test_json_dump_property_method_returns_self():
         def m(self):
             return self
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -757,7 +761,7 @@ def test_json_dump_property_method_returns_already_seen_conf_item():
             super(X, self).__init__()
             self.a = a
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             X(a=0)
@@ -801,7 +805,7 @@ def test_json_dump_property_method_calls_json(capsys):
             self.json()
             return 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -827,7 +831,7 @@ def test_json_dump_property_method_calls_json_no_warn(capsys):
         def other_conf_item(self):
             self.json()
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -860,7 +864,7 @@ def test_json_dump_non_conf_item_used_as_key(capsys):
     class Key():
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             SimpleItem(b={Key(): 2})
@@ -901,7 +905,7 @@ def test_json_dump_non_conf_item():
             self.a = 187
             self._x = 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             SimpleItem(a=SomeClass())
@@ -931,7 +935,7 @@ def test_json_dump_unhandled_item_function_ref():
     def fff():
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ConfigItem():
             SimpleItem(func=fff)
@@ -961,7 +965,7 @@ def test_json_dump_iterable():
         def __iter__(self):
             yield 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ConfigItem():
             SimpleItem(a=MyIterable())
@@ -995,7 +999,7 @@ def test_json_dump_iterable_static():
     class SimpleItem(ConfigItem):
         a = MyIterable()
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ConfigItem():
             SimpleItem()
@@ -1026,7 +1030,7 @@ _uplevel_ref_expected_json_output = """{
 }"""
 
 def test_json_dump_uplevel_reference_while_dumping_from_lower_nesting_level():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             with NestedRepeatable(mc_key='n1', name='Number 1', b=1) as n1:
@@ -1070,12 +1074,13 @@ def test_json_dump_dir_error(capsys):
         def c(self):
             return "will-show"
 
-    @mc_config(ef, validate_properties=False)
+    @mc_config(ef)
     def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
                 nn.aa = 2
 
+    config.load(validate_properties=False)
     cr = config(prod).ItemWithAA
     cr.json()
     sout, serr = capsys.readouterr()
@@ -1126,7 +1131,7 @@ def test_json_dump_property_method_returns_later_confitem_same_level():
         def m(self):
             return self.contained_in.someitems['two']
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             NamedNestedRepeatable(name='one')
@@ -1190,7 +1195,7 @@ def test_json_dump_property_method_returns_later_confitem_list_same_level():
         def m(self):
             return [self.contained_in.someitems['two'], self.contained_in.someitems['three']]
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             NamedNestedRepeatable(name='one')
@@ -1207,7 +1212,7 @@ def test_json_dump_property_method_returns_later_confitem_tuple_same_level():
         def m(self):
             return self.contained_in.someitems['two'], self.contained_in.someitems['three']
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             NamedNestedRepeatable(name='one')
@@ -1272,7 +1277,7 @@ def test_json_dump_property_method_returns_later_confitem_ordereddict_same_level
         def m(self):
             return OrderedDict((('a', self.contained_in.someitems['two']), ('b', self.contained_in.someitems['three'])))
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             NamedNestedRepeatable(name='one')
@@ -1320,7 +1325,7 @@ def test_json_dump_nested_class_non_mc():
         class TTT(object):
             pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             McWithNestedClass()
@@ -1332,7 +1337,7 @@ def test_json_dump_nested_class_non_mc():
         class TTT(object):
             pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             with ItemWithAA() as ci:
@@ -1348,7 +1353,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
             def json_equivalent(self):
                 return ""
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             McWithNestedClass()
@@ -1361,7 +1366,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
             def json_equivalent(self):
                 return ""
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             with ItemWithAA() as ci:
@@ -1397,7 +1402,7 @@ def test_json_dump_multiple_errors():
     def ggg():
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ConfigItem():
             with SimpleItem(func=fff):
@@ -1442,7 +1447,7 @@ def test_iterable_attr_forward_item_ref():
             super(Xx, self).__init__()
             self.a = 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 0
@@ -1490,7 +1495,7 @@ def test_iterable_tuple_attr_forward_item_ref():
             super(Xx, self).__init__()
             self.a = 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 0
@@ -1538,7 +1543,7 @@ def test_dict_attr_forward_item_ref():
             super(Xx, self).__init__()
             self.a = 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
             cr.aa = 0
@@ -1570,7 +1575,7 @@ def test_static_member_direct():
     class Xx(ConfigItem):
         a = 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ConfigItem():
             Xx()
@@ -1634,7 +1639,7 @@ def test_static_member_inherited_mc():
     class Bb(Aa):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         Xx()
         Yy()
@@ -1668,7 +1673,7 @@ def test_env_ref():
         def mc_init(self):
             self.setattr('env_ref', default=pp, mc_set_unknown=True)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         Xx()
 
@@ -1698,7 +1703,7 @@ def test_envgroup_ref():
         def mc_init(self):
             self.setattr('egref', default=g_p, mc_set_unknown=True)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         Xx()
 
@@ -1719,7 +1724,7 @@ def test_exception_generating_json():
         def mc_init(self):
             self.setattr('egref', default=X(), mc_set_unknown=True)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         Xx()
 
@@ -1871,7 +1876,7 @@ _json_dump_depth_expected_json_full = """{
 }"""
 
 def test_json_dump_depth(capsys):
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             ItemWithAA(1)
@@ -1922,7 +1927,7 @@ _json_dump_during_load_json1_exp = """{
 
 def test_json_dump_during_load():
     jsons = []
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0) as cr:
             jsons.append(cr.json())

@@ -52,7 +52,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
             self.a = a
 
     with raises(ConfigApiException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with ItemWithYs():
                 with YBuilder() as yb1:
@@ -95,7 +95,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_through_di
             super(YChild, self).__init__(mc_key=None)
             self.a = mc_key
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithYs() as item:
             with YBuilder() as yb1:

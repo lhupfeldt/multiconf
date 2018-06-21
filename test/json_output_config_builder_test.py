@@ -84,7 +84,7 @@ def test_json_dump_configbuilder1():
             self.name = mc_key
             self.a = a
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithYs() as cr:
             with YBuilder() as yb1:
@@ -517,7 +517,7 @@ def test_json_dump_configbuilder2():
             self.name = mc_key
             self.a = a
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithYs() as cr:
             with YBuilder() as yb1:
@@ -580,7 +580,7 @@ def test_json_dump_with_builders_containment_check():
     class MyOuterItem(ConfigItem):
         pass
 
-    @mc_config(ef2_prod)
+    @mc_config(ef2_prod, load_now=True)
     def config(_):
         with ItemWithName() as cr:
             cr.name = 'myp'
@@ -667,7 +667,7 @@ def test_json_dump_attr_ref_configbuilder():
             super(Y, self).__init__(mc_key=mc_key)
             self.aa = 777
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithYs() as cr:
             with YBuilder() as yb1:

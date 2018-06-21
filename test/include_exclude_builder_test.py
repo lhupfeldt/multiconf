@@ -67,7 +67,7 @@ def test_exclude_for_configitem_builder_with_mc_required():
     class root(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root() as rt:
             with RepBuilder():

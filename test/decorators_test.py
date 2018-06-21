@@ -37,7 +37,7 @@ def test_named_as():
     class root(ItemWithName):
         pass
 
-    @mc_config(ef2_prod_dev2ct)
+    @mc_config(ef2_prod_dev2ct, load_now=True)
     def config(croot):
         with root() as proj:
             proj.name = 'abc'
@@ -52,7 +52,7 @@ def test_nested_repeatables():
     class root(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(croot):
         root()
 
@@ -83,7 +83,7 @@ def test_mc_key_value():
     class root(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with root() as cr:
             Rr('aa')
@@ -125,7 +125,7 @@ def test_repeatable_key():
     class root(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with root() as cr:
             Rr('aa')

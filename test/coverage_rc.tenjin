@@ -29,6 +29,7 @@ exclude_lines =
     _py3 import
     long = int
     if major_version >= 3:
+    self.cr._mc_do_type_check = True
     <?py else: ?>
     _py2 import
     if major_version < 3:

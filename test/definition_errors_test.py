@@ -113,7 +113,7 @@ class RepeatableItem(RepeatableConfigItem):
 
 
 def test_non_env_for_instantiatiation_env():
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         pass
 
@@ -125,7 +125,7 @@ def test_non_env_for_instantiatiation_env():
 
 def test_env_factory_is_not_an_env_factory():
     with raises(ConfigException) as exinfo:
-        @mc_config(1)
+        @mc_config(1, load_now=True)
         def config(_):
             pass
 
@@ -188,7 +188,7 @@ def test_assign_to_undefine_env(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -203,7 +203,7 @@ def test_value_not_assigned_to_all_envs(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -220,7 +220,7 @@ def test_attribute_redefinition_attempt1(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA(aa=0) as cr:
                 cr.setattr('aa', prod=1)
@@ -236,7 +236,7 @@ def test_attribute_redefinition_attempt2(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA() as cr:
                 cr.setattr('aa', pp=1, prod=3)
@@ -252,7 +252,7 @@ def test_attribute_redefinition_attempt3(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA(aa=0) as cr:
                 cr.setattr('aa', pp=1)
@@ -268,7 +268,7 @@ def test_attribute_redefinition_attempt4(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA(aa=0) as cr:
                 cr.setattr('aa', prod=1)
@@ -284,7 +284,7 @@ def test_attribute_redefinition_attempt5(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA() as cr:
                 cr.setattr('aa', pp=1)
@@ -310,7 +310,7 @@ def test_setattr_after_getattr(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA(1) as cr:
                 # Use the default value of aa when setting bb
@@ -338,7 +338,7 @@ def test_setattr_after_item_frozen(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA(1) as cr:
                 pass
@@ -354,7 +354,7 @@ def test_setattr_after_item_frozen(capsys):
 
 def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class():
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 RepeatableItem(mc_key=None)
@@ -380,7 +380,7 @@ def test_non_repeatable_but_container_expects_repeatable():
         pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with project():
                 RepeatableItems()
@@ -390,7 +390,7 @@ def test_non_repeatable_but_container_expects_repeatable():
 
 def test_attempt_to_call_contained_item():
     with raises(TypeError) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 ConfigItem()
@@ -401,7 +401,7 @@ def test_attempt_to_call_contained_item():
 
 def test_repeated_non_repeatable_item():
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 ConfigItem()
@@ -426,7 +426,7 @@ _nested_repeatable_items_with_repeated_mc_key_expected_ex = """Re-used key 'my_n
 
 def test_nested_repeatable_items_with_repeated_mc_key():
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with project():
                 RepeatableItem(mc_key='my_name')
@@ -459,7 +459,7 @@ def test_value_defined_through_two_groups(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef3_dev_prod)
+        @mc_config(ef3_dev_prod, load_now=True)
         def config(_):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -497,7 +497,7 @@ def test_value_defined_through_three_groups(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef5_dev_prod)
+        @mc_config(ef5_dev_prod, load_now=True)
         def config(_):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -535,12 +535,14 @@ value: 3, from: EnvGroup('g_dev_overlap') {
 def test_two_values_defined_through_two_groups(capsys):
     errorline = [None]
 
+    @mc_config(ef4_dev_prod)
+    def config(_):
+        with ItemWithAA() as cr:
+            errorline[0] = next_line_num()
+            cr.setattr('aa', prod=1, dev3st=14, pp=33, g_dev2=2, g_dev3=12, g_dev_overlap=3)
+
     with raises(ConfigException) as exinfo:
-        @mc_config(ef4_dev_prod, error_next_env=True)
-        def config(_):
-            with ItemWithAA() as cr:
-                errorline[0] = next_line_num()
-                cr.setattr('aa', prod=1, dev3st=14, pp=33, g_dev2=2, g_dev3=12, g_dev_overlap=3)
+        config.load(error_next_env=True)
 
     _sout, serr = capsys.readouterr()
     assert serr.startswith(file_line(__file__, errorline[0]))
@@ -563,7 +565,7 @@ def test_assigning_owerwrites_attribute(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ItemWithAA() as cr:
                 cr.setattr('aa', prod=1)
@@ -611,7 +613,7 @@ def test_double_error_for_configroot_mc_required_missing(capsys):
             self.someattr1 = MC_REQUIRED
 
     with raises(Exception) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with root():
                 raise Exception("Error in root with block")
@@ -629,7 +631,7 @@ def test_double_error_for_configroot_required_item_missing(capsys):
             super(root, self).__init__()
 
     with raises(Exception) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with root():
                 raise Exception("Error in root with block")
@@ -642,7 +644,7 @@ def test_double_error_for_configroot_required_item_missing(capsys):
 
 def test_root_attribute_exception_in_with_block():
     with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ConfigItem():
                 raise Exception("Error in root with block")
@@ -659,7 +661,7 @@ def test_mc_init_override_underscore_error(capsys):
             self.setattr("_a", default="Hello", mc_force=True)
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ConfigItem():
                 X()
@@ -678,7 +680,7 @@ def test_mc_init_override_underscore_mc_error(capsys):
             self.setattr("_mca", default="Hello", mc_force=True)
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ConfigItem():
                 X()
@@ -715,7 +717,7 @@ def test_attribute_mc_required_args_partial_set_in_init_unfinished(capsys):
             self.b = 7
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 errorline_exit_check[0] = next_line_num()
@@ -749,7 +751,7 @@ def test_setattr_no_envs(capsys):
 
     # ConfigItem
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -758,7 +760,7 @@ def test_setattr_no_envs(capsys):
     check(errorline[0])
 
     with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -768,7 +770,7 @@ def test_setattr_no_envs(capsys):
 
     # RepeatableItem
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with project():
                 with RepeatableItemWithAA(mc_key='a') as ci:
@@ -778,7 +780,7 @@ def test_setattr_no_envs(capsys):
     check(errorline[0])
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with project():
                 with RepeatableItemWithAA(mc_key='a') as ci:
@@ -804,7 +806,7 @@ def test_setattr_no_envs_set_unknown(capsys):
 
     # ConfigItem
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config0(_):
             with ConfigItem() as cr:
                 errorline[0] = next_line_num()
@@ -813,7 +815,7 @@ def test_setattr_no_envs_set_unknown(capsys):
     check(errorline[0])
 
     with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config1(_):
             with ConfigItem() as cr:
                 errorline[0] = next_line_num()
@@ -823,7 +825,7 @@ def test_setattr_no_envs_set_unknown(capsys):
 
     # RepeatableItem
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config2(_):
             with project():
                 with RepeatableItem(mc_key='a') as ci:
@@ -833,7 +835,7 @@ def test_setattr_no_envs_set_unknown(capsys):
     check(errorline[0])
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config3(_):
             with project():
                 with RepeatableItem(mc_key='a') as ci:
@@ -853,7 +855,7 @@ def test_init_line_num(capsys):
             self.a = MC_REQUIRED
 
     with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config1(_):
             with ConfigItem():
                 errorline[0] = next_line_num()
@@ -871,7 +873,7 @@ def test_init_line_num(capsys):
         pass
 
     with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config2(_):
             with ConfigItem(prod2, ef2_pp_prod):
                 errorline[0] = next_line_num()
@@ -891,7 +893,7 @@ def test_init_line_num(capsys):
             self.b = MC_REQUIRED
 
     with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config3(_):
             with ConfigItem(prod2, ef2_pp_prod):
                 errorline[0] = next_line_num()
@@ -918,7 +920,7 @@ def test_mc_init_redefine_item_errors_more_specific_env(capsys):
                 aai.setattr('aa', default=2)
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config0(_):
             with X() as x:
                 ItemWithAA(aa=7)
@@ -940,9 +942,9 @@ def test_mc_init_redefine_item_errors_default(capsys):
                 errorline[0] = next_line_num()
                 aai.setattr('aa', default=2)
 
-    xfail("TODO: This will not raise because the first aai.setatte does not change the value, so value in second aai.setattr is still from __init__")
+    xfail("TODO: This will not raise because the first aai.setattr does not change the value, so value in second aai.setattr is still from __init__")
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config0(_):
             with X() as x:
                 ItemWithAA(aa=7)

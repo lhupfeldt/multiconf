@@ -26,7 +26,7 @@ class ItemWithAA(ConfigItem):
     def __init__(self):
         self.aa = None
 
-@mc_config(ef)
+@mc_config(ef, load_now=True)
 def config(_):
     with ItemWithAA() as cr:
         print("here1")

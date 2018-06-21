@@ -17,6 +17,9 @@ import config
 
 
 def generate(env):
+    print('---- Loading config -----')
+    config.config.load()
+
     print('---- Instantiating config for env: ' + repr(env) + ' -----')
     c = config.config(config.ef.env(env)).weblogic_config
 

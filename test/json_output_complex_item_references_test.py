@@ -145,7 +145,7 @@ def test_json_dump_attr_dict_ref_item():
         def r1mmnn(self):
             return self.contained_in.Ref1.mm.a + self.contained_in.Ref1.nn.a
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with ItemWithAA(aa=0) as cr:
             with Ref1() as ref1:
@@ -220,7 +220,7 @@ def test_json_dump_attr_list_ref_item():
         def r1mmnn(self):
             return self.contained_in.Ref1.mm.a + self.contained_in.Ref1.nn.a
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with ItemWithAA(aa=0) as cr:
             with Ref1() as ref1:
@@ -289,7 +289,7 @@ def test_json_dump_attr_tuple_ref_item():
         def r1mmnn(self):
             return self.contained_in.Ref1.mm.xx + self.contained_in.Ref1.nn.aa
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with ItemWithAA(aa=1) as cr:
             with Ref1() as ref1:
@@ -320,7 +320,7 @@ def test_json_dump_ref_outside_exluded_item1():
     class Ref1(ItemWithAA):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithName('Tootsi') as it:
             it.mc_select_envs(exclude=[prod])
@@ -346,7 +346,7 @@ def test_json_dump_ref_outside_exluded_item_partially_set_name_attribute_mc_requ
     class Ref1(ItemWithAA):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithName() as it:
             it.mc_select_envs(exclude=[prod])
@@ -373,7 +373,7 @@ def test_json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_exi
     class Ref1(ItemWithAA):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ConfigItem() as it:
             it.mc_select_envs(exclude=[prod])

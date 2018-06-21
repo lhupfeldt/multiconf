@@ -6,7 +6,7 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
-from multiconf import mc_config, ConfigItem, ConfigException
+from multiconf import mc_config, ConfigItem, ConfigException, ConfigApiException
 from multiconf.envs import EnvFactory
 
 from .utils.utils import api_error, config_error, next_line_num
@@ -43,7 +43,7 @@ def test_setattr_multiconf_private_attribute(capsys):
     msg = """Trying to set attribute '_mc_whatever' on a config item. Atributes starting with '_mc' are reserved for multiconf internal usage."""
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             with root() as cr:
                 errorline[0] = next_line_num()
@@ -53,7 +53,7 @@ def test_setattr_multiconf_private_attribute(capsys):
     assert serr == ce(errorline[0], msg)
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             with root() as cr:
                 with inner() as ci:
@@ -70,7 +70,7 @@ def test_setattr_to_attribute_underscore_attribute(capsys):
 
     msg = """Trying to set attribute '_b' on a config item. Atributes starting with '_' cannot be set using item.setattr. Use assignment instead."""
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             with ConfigItem():
                 with ConfigItem() as ci:
@@ -86,7 +86,7 @@ def test_setattr_to_attribute_underscore_attribute_root(capsys):
 
     msg = """Trying to set attribute '_b' on a config item. Atributes starting with '_' cannot be set using item.setattr. Use assignment instead."""
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 errorline[0] = next_line_num()
@@ -102,10 +102,21 @@ def test_getattr_repr_error():
             raise Exception("Bad repr")
 
     with raises(AttributeError) as exinfo:
-        @mc_config(ef2_prod_pp)
+        @mc_config(ef2_prod_pp, load_now=True)
         def config(_):
             with ConfigItem():
                 x = X()
                 _ = x.a
 
     assert "X' object has no attribute 'a'" in str(exinfo.value)
+
+
+def test_load_only_allowed_once():
+    @mc_config(ef2_prod_pp, load_now=True)
+    def config(_):
+        pass
+
+    with raises(ConfigApiException) as exinfo:
+        config.load()
+
+    assert "Configuration can only be loaded once." in str(exinfo.value)

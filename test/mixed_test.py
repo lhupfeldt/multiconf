@@ -74,7 +74,7 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
     class OuterItem(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithName('myp'):
             with OuterItem():

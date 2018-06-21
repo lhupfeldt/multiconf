@@ -28,7 +28,7 @@ def test_mc_post_validate_getattr_env():
         def mc_post_validate(self):
             assert self.getattr('aa', prod2) == self.getattr('aa', pp2) == 7
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with root():
             pass
@@ -43,7 +43,7 @@ def test_setattr_not_allowed_in_mc_post_validate():
             self.setattr('y', default=7, mc_set_unknown=True)
 
     with raises(ConfigApiException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with root():
                 pass
@@ -59,7 +59,7 @@ def test_item_dot_attr_not_allowed_in_mc_post_validate():
             print(self.aa)
 
     with raises(ConfigApiException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with root() as rt:
                 rt.aa = 1
@@ -76,7 +76,7 @@ def test_mc_post_validate_exception():
             raise Exception("Error in item mc_post_validate")
 
     with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ConfigItem():
                 item()
@@ -93,7 +93,7 @@ def test_mc_post_validate_excluded_item():
             assert self.getattr('aa', prod2) == self.getattr('aa', pp2) == 7
 
     with raises(ConfigExcludedAttributeError) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with root() as rt:
                 rt.mc_select_envs(exclude=[pp2])
@@ -117,7 +117,7 @@ def test_mc_post_validate_excluded_repeatable_item():
             assert self.getattr('aa', prod2) == self.getattr('aa', pp2) == 7
 
     with raises(ConfigExcludedAttributeError) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with Root() as rt:
                 Rep(1)
@@ -142,9 +142,11 @@ def test_mc_post_validate_disabled():
         def mc_post_validate(self):
             raise Exception('Never called')
 
-    @mc_config(ef2_pp_prod, do_post_validate=False)
+    @mc_config(ef2_pp_prod)
     def config(_):
         with Root() as rt:
             Rep(1)
             with Rep(2) as r2:
                 r2.mc_select_envs(exclude=[pp2])
+
+    config.load(do_post_validate=False)

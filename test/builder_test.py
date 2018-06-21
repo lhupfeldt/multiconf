@@ -60,7 +60,7 @@ def test_configbuilder_with_required_item_decorator():
     class Root(ConfigItem):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             with XBuilder(num_servers=4, aa=7) as xb:
@@ -109,7 +109,7 @@ def test_configbuilder_build_with_mc_required():
     class Root(ConfigItem):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             with XBuilder(a=1, something=7) as xb:
@@ -149,7 +149,7 @@ def test_configbuilder_override_with_required_item():
     class Root(ConfigItem):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             with XBuilder(4) as xb:
@@ -183,7 +183,7 @@ def test_configbuilder_build_at_root_freeze():
     class Root(ConfigItem):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             XBuilder(a=1)
@@ -212,7 +212,7 @@ def test_configbuilder_access_to_contained_in_from_build():
     class Root(ConfigItem):
         aaa = 7
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             YBuilder()
@@ -242,7 +242,7 @@ def test_configbuilder_access_to_contained_in_from___init__():
     class Root(ConfigItem):
         aaa = 7
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             XBuilder()
@@ -267,7 +267,7 @@ def test_configbuilder_access_to_contained_in_from_with_block():
     class Root(ConfigItem):
         aaa = 7
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             with XBuilder() as xb:
@@ -312,7 +312,7 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
     class Root(ConfigItem):
         aaa = 7
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             XBuilder()
@@ -342,7 +342,7 @@ def test_configbuilder_nested_items():
     class Root(ConfigItem):
         aaa = 2
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             with XBuilder() as xb:
@@ -380,7 +380,7 @@ def test_configbuilder_nested_items_access_to_contained_in():
     class Root(ConfigItem):
         aaa = 2
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             with XBuilder() as xb:
@@ -439,7 +439,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
             super(YChild, self).__init__(mc_key=None)
             self.a = mc_key
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with ItemWithYs() as item:
             with YBuilder() as yb1:
@@ -514,7 +514,7 @@ def test_configbuilder_multilevel_nested_items_bad_access_to_contained_in():
             print(self.contained_in)
 
     with raises(ConfigApiException):
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ItemWithYs() as item:
                 with YBuilder() as yb1:
@@ -539,7 +539,7 @@ def test_configbuilder_repeated():
     class Root(ConfigItem):
         aaa = 2
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root() as cr:
             with XBuilder() as xb1:
@@ -582,7 +582,7 @@ def test_configbuilder_repeated_what_built():
     class Root(ConfigItem):
         aaa = 2
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root() as cr:
             with XBuilder() as xb1:
@@ -626,7 +626,7 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder_w
         def mc_build(self):
             pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with builder() as wii:
             ii[0] = wii
@@ -652,7 +652,7 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder_w
         def mc_build(self):
             pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with builder() as wii:
             ii[0] = wii
@@ -679,7 +679,7 @@ def test_configbuilder_child_with_nested_repeatables():
     class Root(ConfigItem):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             XBuilder()
@@ -703,7 +703,7 @@ def test_configbuilder_child_with_declared_but_not_defined_nested_repeatables():
     class Root(ConfigItem):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root() as cr:
             XBuilder()
@@ -747,7 +747,7 @@ def test_configbuilders_alternating_with_items():
     class OuterItem(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with ItemWithName() as cr:
             cr.name = 'myp'
@@ -785,7 +785,7 @@ def test_configbuilders_alternating_with_items_repeatable_simple():
     class OuterItem(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with ItemWithName() as cr:
             cr.name = 'myp'
@@ -832,7 +832,7 @@ def test_configbuilders_alternating_with_items_repeatable_many():
     class OuterItem(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with OuterItem():
             with MiddleBuilder('base'):
@@ -884,7 +884,7 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel():
     class OuterItem(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with OuterItem():
             OuterBuilder()
@@ -912,7 +912,7 @@ def test_item_parent_proxy_get_env():
     class OuterItem(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(_):
         with OuterItem():
             with Builder():
@@ -938,7 +938,7 @@ def test_assign_underscore_on_proxied_built_item_child_after_freeze():
             self.something = None
 
     # Test assignment '_xxx'ok
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(root):
         with YBuilder():
             ConfigItem()
@@ -964,7 +964,7 @@ def test_configbuilder_child_with_child_merge_setattr_in_with():
     class Root(ConfigItem):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             with XBuilder():
@@ -999,7 +999,7 @@ def test_configbuilder_child_with_child_merge_setattr_in_init_with():
     class Root(ConfigItem):
         pass
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with Root():
             with XBuilder():

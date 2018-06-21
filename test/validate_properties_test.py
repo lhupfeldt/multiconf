@@ -34,7 +34,7 @@ def test_validate_properties_property_method():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -50,7 +50,7 @@ def test_validate_properties_property_attribute_method_override():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
@@ -68,7 +68,7 @@ def test_validate_properties_property_method_raises_InvalidUsageException():
         def m(self):
             raise InvalidUsageException("No m now")
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -98,7 +98,7 @@ def test_validate_properties_property_method_raises_exception(capsys):
             raise Exception("Something is wrong")
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(rt):
             with ItemWithAA() as it:
                 it.setattr('aa', default=1, prod=0)
@@ -125,7 +125,7 @@ def test_validate_properties_property_method_on_repeatable_raises_exception(caps
         pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(rt):
             with ItemWithAAAndSomeItems() as it:
                 it.setattr('aa', default=1, prod=0)
@@ -157,7 +157,7 @@ def test_validate_properties_dir_error(capsys):
         def c(self):
             return "show-me"
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
@@ -175,6 +175,6 @@ def test_mc_validate_has_method():
         def hi(self, there):
             raise Exception("Error in hello " + there)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         item()

@@ -26,7 +26,7 @@ class MeSetterBuilder(BuilderWithAA):
 def test_override_setattr():
     cb = [None]
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with MeSetterBuilder() as bb:
             bb.setme('aa', prod="hi3", pp="hello")

@@ -56,7 +56,7 @@ _repr_root_expected_repr = """{
 }"""
 
 def test_repr_root():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         ConfigItem()
 
@@ -128,7 +128,7 @@ _repr_simple_expected_repr = """{
 
 
 def test_repr_simple():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             NestedRepeatable(mc_key='a-level1')
@@ -195,7 +195,7 @@ def test_repr_cyclic_references_in_conf_items():
             self.something = MC_REQUIRED
             self.ref = MC_REQUIRED
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0):
             with NestedRepeatable(mc_key='a1', some_value=27) as ref_obj1:
@@ -233,7 +233,7 @@ def test_repr_property_method_name_only():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             Nested()
@@ -264,7 +264,7 @@ def test_repr_property_attribute_method_override():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             with Nested() as nn:
@@ -295,7 +295,7 @@ def test_repr_property_attribute_method_override_other_env():
         def m(self):
             return 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ConfigItem():
             with Nested() as nn:
@@ -325,7 +325,7 @@ def test_repr_non_conf_item_used_as_key(capsys):
     class Key():
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA(aa=0):
             SimpleItem(b={Key(): 2})
@@ -358,7 +358,7 @@ def test_repr_iterable():
         def __iter__(self):
             yield 1
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with ConfigItem():
             SimpleItem(a=MyIterable())
@@ -390,7 +390,7 @@ _repr_during_load_json1_exp = """{
 def test_repr_during_load():
     jsons = []
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(rt):
         with root(aa=0) as cr:
             jsons.append(repr(cr))

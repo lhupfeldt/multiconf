@@ -46,7 +46,7 @@ _mc_required_one_error_expected_ex = """There was 1 error when defining item: {
 def test_attribute_mc_required_env(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -60,7 +60,7 @@ def test_attribute_mc_required_env(capsys):
 def test_attribute_mc_required_mc_force_env(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -79,7 +79,7 @@ def test_attribute_mc_required_mc_force_env(capsys):
 def test_attribute_mc_required_default(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -95,7 +95,7 @@ def test_attribute_mc_required_default(capsys):
 def test_attribute_mc_required_init(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             with ItemWithAA(aa=MC_REQUIRED) as ci:
                 errorline[0] = next_line_num()
@@ -112,7 +112,7 @@ def test_attribute_mc_required_init(capsys):
 def test_attribute_mc_required(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             with ItemWithAA() as cr:
                 errorline[0] = next_line_num()
@@ -125,7 +125,7 @@ def test_attribute_mc_required(capsys):
 
 
 def test_attribute_mc_required_default_all_overridden():
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
             # TODO: This should actually not be allowed, it does not make sense!
@@ -141,7 +141,7 @@ def test_attribute_mc_required_init_args_all_overridden():
             super(Requires, self).__init__()
             self.aa = aa
 
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config1(root):
         with ConfigItem() as cr:
             Requires(aa=3)
@@ -149,7 +149,7 @@ def test_attribute_mc_required_init_args_all_overridden():
     cr = config1(prod1).ConfigItem
     assert cr.Requires.aa == 3
 
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config2(root):
         with ConfigItem() as cr:
             with Requires() as rq:
@@ -168,7 +168,7 @@ def test_attribute_mc_required_args_all_overridden_in_mc_init():
         def mc_init(self):
             self.aa = 7
 
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config(root):
         Requires()
 
@@ -188,7 +188,7 @@ def test_attribute_mc_required_args_partial_set_in_init_overridden_in_mc_init():
             self.aa = 7
             self.b = 7
 
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config(root):
         Requires()
     cr = config(prod1)
@@ -209,7 +209,7 @@ def test_attribute_mc_required_args_partial_set_in_init_overridden_in_with():
             self.setattr('aa', prod=aa)
             self.setattr('b', default=MC_REQUIRED, prod=2)
 
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config(root):
         with Requires() as rq:
             rq.aa = 8
@@ -230,7 +230,7 @@ def test_attribute_mc_required_args_set_in_init_overridden_in_with():
             super(Requires, self).__init__()
             self.aa = aa
 
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config(root):
         with Requires() as rq:
             rq.aa = 7
@@ -260,7 +260,7 @@ def test_attribute_mc_required_init_args_missing_env_value(capsys):
             self.aa = aa
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             with Requires() as rq:
                 errorline[0] = next_line_num()
@@ -287,7 +287,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     # If the error occures on the last object, and that is not under a with statement, then the line will be the @mc_config
     with raises(ConfigException) as exinfo:
         errorline[0] = next_line_num()
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             McRequiredInInitL1()
 
@@ -304,7 +304,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     assert got == exp
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config0(root):
             with McRequiredInInitL1():
                 errorline[0] = next_line_num()
@@ -323,7 +323,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     # If the error occures on the last object, and that is not under a with statement, then the line will be the @mc_config
     with raises(ConfigException) as exinfo:
         errorline[0] = next_line_num()
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config1(root):
             McRequiredInInitL3()
 
@@ -338,7 +338,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_required_init_arg_missing_with_expected_ex.format('McRequiredInInitL3')
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config2(root):
             with McRequiredInInitL3():
                 errorline[0] = next_line_num()
@@ -358,7 +358,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
 def test_attribute_mc_required_init_args_missing_previous_item(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             errorline[0] = next_line_num()
             McRequiredInInitL1()
@@ -380,14 +380,14 @@ def test_attribute_mc_required_init_assign_all_overridden():
             super(Requires, self).__init__()
             self.aa = aa
 
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config(root):
         Requires(aa=3)
 
     cr = config(prod1)
     assert cr.Requires.aa == 3
 
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config(_):
         with Requires() as rq:
             rq.aa = 3
@@ -418,7 +418,7 @@ def test_attribute_setattr_mc_required_force_in_init(capsys):
             self.setattr('bb', default=MC_REQUIRED, mc_force=True)
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(_):
             MyRoot()
 
@@ -443,7 +443,7 @@ def test_multiple_attributes_mc_required_init_not_set(capsys):
             self.cc = MC_REQUIRED
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 errorline[0] = next_line_num()
@@ -479,7 +479,7 @@ def test_multiple_attributes_mc_required_env(capsys):
             self.bb = MC_REQUIRED
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(_):
             with MyRoot() as cr:
                 errorline[0] = next_line_num()

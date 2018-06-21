@@ -42,7 +42,7 @@ class NestedRepeatable(RepeatableConfigItem):
 
 
 def test_json_no_freeze_before_setattr():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a', aa=7) as ci:
@@ -57,7 +57,7 @@ def test_json_no_freeze_before_setattr():
 
 
 def test_json_no_freeze_after_setattr():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a', aa=7) as ci:
@@ -72,7 +72,7 @@ def test_json_no_freeze_after_setattr():
 
 
 def test_json_no_freeze_before_setattr_mc_required():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a') as ci:
@@ -87,7 +87,7 @@ def test_json_no_freeze_before_setattr_mc_required():
 
 
 def test_json_no_freeze_after_setattr_mc_required():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a') as ci:
@@ -102,7 +102,7 @@ def test_json_no_freeze_after_setattr_mc_required():
 
 
 def test_json_no_freeze_no_setattr():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a', aa=7) as ci:
@@ -116,7 +116,7 @@ def test_json_no_freeze_no_setattr():
 
 
 def test_json_no_freeze_no_setattr_mc_required():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root(aa=0):
             with NestedRepeatable(mc_key='a') as ci:
@@ -142,7 +142,7 @@ def test_json_no_freeze_after_setattr_property():
             return self.bb
 
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root(aa=0):
             with Xx() as xx:
@@ -197,7 +197,7 @@ def test_json_no_freeze_after_setattr_property_side_effect_error(capsys):
             return self.bb
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with root(aa=0):
                 with Xx() as xx:

@@ -33,7 +33,7 @@ def test_builder_ref_env_attr_and_override():
             self.setattr('aa', default=self.aa + 3, mc_force=True)
             X(1)
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         XBuilder()
 
@@ -41,7 +41,7 @@ def test_builder_ref_env_attr_and_override():
     assert not hasattr(cr, 'aa')  # Note: in pre v6 cr.aa == 19
     assert cr.X.aa == 2  # Note: in pre v6 cr.X.aa == 16
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with XBuilder(aa=2) as x:
             x.aa = 3
@@ -50,7 +50,7 @@ def test_builder_ref_env_attr_and_override():
     assert not hasattr(cr, 'aa')  # Note: in pre v6 cr.aa == 5
     assert cr.X.aa == 2
 
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(_):
         with XBuilder(aa=2) as x:
             x.setattr('aa', default=3, pp=5)

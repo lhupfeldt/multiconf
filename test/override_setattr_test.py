@@ -29,7 +29,7 @@ class MeSetterItem(ItemWithAA):
 
 
 def test_override_setattr():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with MeSetterItem() as ci:
             ci.setme('aa', prod="hi", pp="hello")
@@ -53,7 +53,7 @@ _override_setattr1_expected_ex = """There was 1 error when defining item: {
 def test_override_setattr_error1(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(root):
             with MeSetterItem() as ci:
                 errorline[0] = next_line_num()
@@ -78,7 +78,7 @@ _override_setattr2_expected_ex = """There was 1 error when defining item: {
 def test_override_setattr_error2(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(root):        
             with MeSetterItem() as ci:
                 errorline[0] = next_line_num()

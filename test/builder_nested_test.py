@@ -80,14 +80,14 @@ class OuterMaker(ConfigBuilder):
 
 
 def test_nested_builders():
-    @mc_config(ef, validate_properties=False, lazy_load=True)
+    @mc_config(ef)
     def conf(_):
         with OuterMaker():
             with OuterChild():
                 with MiddleChild():
                     InnerChild()
 
-    cfg = conf(tst).root_conf
+    cfg = conf.load(validate_properties=False, lazy_load=True)(tst).root_conf
     print(cfg)
     print('outer:', id(cfg.outer), 'contained_in:', id(cfg.outer.contained_in))
 

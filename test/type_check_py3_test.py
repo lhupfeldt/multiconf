@@ -43,7 +43,7 @@ class ItemWithStrAA(ItemWithAA):
 
 @pytest.mark.skipif(not vcheck(), reason=skip_version_reason_unsupported)
 def test_attribute_defined_with_correct_types(capsys):
-    @mc_config(ef_pp_prod)
+    @mc_config(ef_pp_prod, load_now=True)
     def config(_):
         with ItemWithIntAA() as cr:
             cr.setattr('aa', prod=1, pp=2)
@@ -60,7 +60,7 @@ def test_attribute_defined_with_wrong_type(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef_pp_prod)
+        @mc_config(ef_pp_prod, load_now=True)
         def config(_):
             with ItemWithIntAA() as cr:
                 errorline[0] = next_line_num()
@@ -79,12 +79,14 @@ def test_attribute_defined_with_wrong_type(capsys):
 def test_attribute_defined_with_wrong_type_explicit_typecheck_enable(capsys):
     errorline = [None]
 
+    @mc_config(ef_pp_prod)
+    def config(_):
+        with ItemWithIntAA() as cr:
+            errorline[0] = next_line_num()
+            cr.setattr('aa', prod=1, pp="hello")
+
     with raises(ConfigException) as exinfo:
-        @mc_config(ef_pp_prod, do_type_check=True)
-        def config(_):
-            with ItemWithIntAA() as cr:
-                errorline[0] = next_line_num()
-                cr.setattr('aa', prod=1, pp="hello")
+        config.load(do_type_check=True)
 
     _sout, serr = capsys.readouterr()
     assert lines_in(
@@ -97,11 +99,12 @@ def test_attribute_defined_with_wrong_type_explicit_typecheck_enable(capsys):
 
 @pytest.mark.skipif(not vcheck(), reason=skip_version_reason_unsupported)
 def test_attribute_defined_with_wrong_type_typecheck_disable(capsys):
-    @mc_config(ef_pp_prod, do_type_check=False)
+    @mc_config(ef_pp_prod)
     def config(_):
         with ItemWithIntAA() as cr:
             cr.setattr('aa', prod=1, pp="hello")
 
+    config.load(do_type_check=False)
     assert config(pp).ItemWithIntAA.aa == "hello"  # Don't do this at home
 
     sout, serr = capsys.readouterr()
@@ -114,7 +117,7 @@ def test_attribute_defined_with_wrong_type_default(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef_pp_prod)
+        @mc_config(ef_pp_prod, load_now=True)
         def config(_):
             with ItemWithIntAA() as cr:
                 errorline[0] = next_line_num()
@@ -134,7 +137,7 @@ def test_attribute_defined_with_wrong_type_init_none(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef_pp_prod)
+        @mc_config(ef_pp_prod, load_now=True)
         def config(_):
             with ItemWithStrAA() as cr:
                 errorline[0] = next_line_num()

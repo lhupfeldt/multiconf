@@ -25,7 +25,7 @@ def ce(line_num, *lines):
 _access_undefined_attribute_expected_repr = "'ConfigItem' object has no attribute 'b'"
 
 def test_access_undefined_attribute():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         ConfigItem()
 
@@ -40,7 +40,7 @@ def test_access_undefined_attribute():
 _t2_expected_repr = "'ConfigItem' object has no attribute 'b'"
 
 def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_name_plus_s():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ConfigItem() as cr:
             cr.setattr('bs', pprd=1, prod=4, mc_set_unknown=True)
@@ -54,7 +54,7 @@ def test_access_undefined_attribute_but_has_repeatable_attribute_with_attribute_
 
 
 def test_access_undefined_attribute_json_single_level():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithAA(17):
             with ConfigItem():
@@ -73,7 +73,7 @@ def test_access_undefined_attribute_json_single_level():
 _access_undefined_private_attribute_expected_repr = "'ConfigItem' object has no attribute '_b'"
 
 def test_access_undefined_private_attribute():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         ConfigItem()
 

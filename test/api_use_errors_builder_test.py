@@ -33,7 +33,7 @@ def test_setattr_to_attribute_underscore_attribute_builder(capsys):
             pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with CB() as ci:
                 errorline[0] = next_line_num()

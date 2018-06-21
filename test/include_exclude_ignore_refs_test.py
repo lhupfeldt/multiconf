@@ -88,7 +88,7 @@ _include_exclude_for_configitem_expected_json = """{
 }"""
 
 def test_exclude_refs_for_nested_configitem1():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root() as cr:
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
@@ -111,7 +111,7 @@ def test_exclude_refs_for_nested_configitem1():
 
 
 def test_exclude_refs_for_nested_configitem_with_mc_required():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def conf(_):
         with root() as cr:
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
@@ -149,7 +149,7 @@ def test_exclude_refs_for_nested_configitem_with_mc_required():
 
 def test_exclude_refs_for_multilevel_excluded_configitem():
     with raises(ConfigExcludedKeyError) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with decorated_root() as cr:
                 with ritem(mc_key='a', mc_exclude=[dev2, prod]) as rit:
@@ -175,7 +175,7 @@ def test_exclude_refs_for_multilevel_excluded_configitem():
 
 
 def test_exclude_refs_for_repeatable_nested_configitem():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with decorated_root() as cr:
             cr.a = 1
@@ -245,7 +245,7 @@ def test_exclude_refs_for_repeatable_nested_configitem():
 
 
 def test_exclude_refs_for_repeatable_nested_configitem_required_items():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with decorated_root() as cr:
             cr.a = 1
@@ -317,7 +317,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_required_items():
 
 
 def test_exclude_refs_for_nested_configitem_before_exit_with_mc_required_refs():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root() as cr:
             with item(mc_exclude=[dev2, dev3, prod]) as it1:
@@ -354,7 +354,7 @@ def test_exclude_refs_for_nested_configitem_before_exit_with_mc_required_refs():
 
 def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
     xfail('TODO')
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with decorated_root() as cr:
             cr.a = 1
@@ -425,7 +425,7 @@ def test_exclude_refs_for_repeatable_nested_configitem_before_exit():
 
 
 def test_exclude_refs_for_repeatable_nested_configitem_before_exit_skip_block():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with decorated_root() as cr:
             cr.a = 1

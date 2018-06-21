@@ -7,8 +7,10 @@ import sys
 import re
 import keyword
 
-from .config_errors import ConfigDefinitionException, _line_msg, _error_msg, _warning_msg
+from .envs import EnvFactory
+from .config_errors import ConfigException, ConfigDefinitionException, _line_msg, _error_msg, _warning_msg
 from .repeatable import RepeatableDict
+from .multiconf import _McConfig
 from . import ConfigBuilder, RepeatableConfigItem
 
 
@@ -146,5 +148,67 @@ def repeatable_key(**name_value):
         msg = "Decorator '@" + repeatable_key.__name__ + "' takes exactly one key-value pair."
         print(_error_msg(msg), file=sys.stderr)
         raise ConfigDefinitionException(msg)
+
+    return deco
+
+
+
+
+def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, mc_5_migration=False, load_now=False):
+    """Function decorator for ConfigItem hierarchy for all Envs defined in 'env_factory'.
+
+       This decorator creates a wrapped config in a object which is then used for loading the config (for all envs) and
+       retrieving the configuration for a specific env. The name of the object will be the name of the wrapped function.
+
+       The class will have two public methods, `load` and `get`, see `_McConfig` for details.
+
+       E.g.::
+
+           @mc_config(envf)
+           def conf(root):
+               with someitem() as it:
+                   it.setattr('aa', default=1, tst=2, prod=3)
+
+           # Load the configuration for all envs
+           conf.load()
+
+           # Get the cfg instantiated for 'prod'
+           prod_cfg = conf.get(prod)
+
+       NOTE, There can only be one current config env!
+       It is possible to get the config multiple times for different envs, but storing references to items in the configuration, and accessing attributes
+       at a later time, will return the value from the last env specified in 'get'.
+
+    Arguments:
+        env_factory (EnvFactory): The EnvFactory defining the envs for which we instantiate the configuration.
+
+        mc_json_filter (func(obj, key, value)): User defined function for filtering objects in json output.
+            - filter_callable is called for each key/value pair of attributes on each ConfigItem obj.
+            - It must return a tuple of (key, value). If key is False, the key/value pair is removed from the json output
+
+        mc_json_fallback (func(obj)): User defined function for handling objects not otherwise encoded in json output.
+            - fallback_callable is called for objects that are not handled by the builtin encoder.
+            - It must return a tuple (object, handled). If handled is True, the object must be encodable by the standard json encoder.
+
+        mc_5_migration (bool): This changes the attribute overwriting rule to me more compatible with version 5. Do not use this in any new configurations.
+
+        load_now (bool): Load the configuration now instead of calling `load` later. Note: this is only for simple cases, to get more control use `load`.
+    """
+
+    if not isinstance(env_factory, EnvFactory):
+        msg = "'env_factory' arg must be instance of {ef_typ!r}; found type {got_typ!r}: {val!r}"
+        raise ConfigException(msg.format(ef_typ=EnvFactory.__name__, got_typ=env_factory.__class__.__name__, val=env_factory))
+
+    for _ in env_factory.envs:
+        # There is at least one env
+        break
+    else:
+        raise ConfigException("The specified 'env_factory' is empty. It must have at least one Env.")
+
+    def deco(conf_func):
+        conf = _McConfig(env_factory, conf_func, mc_json_filter, mc_json_fallback, mc_5_migration)
+        if load_now:
+            conf.load()
+        return conf
 
     return deco

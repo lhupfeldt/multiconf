@@ -47,16 +47,17 @@ def test_env_factories_ef1():
     pp = ef.Env('pp')
     prod = ef.Env('prod')
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with item() as it:
             it.setattr('aa', default=13)
+
     cfg = config(prod)
     assert cfg.item.aa == 13
     cfg = config(dev1)
     assert cfg.item.aa == 13
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with item() as it:
             it.setattr('aa', dev1=1, dev2=2, pp=3, prod=4)
@@ -88,7 +89,7 @@ def test_env_factories_ef1_errors(capsys):
 
     errorline = [None]
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(root_conf):
             with item() as it:
                 errorline[0] = next_line_num()
@@ -103,7 +104,7 @@ def test_env_factories_ef1_errors(capsys):
     assert replace_ids(str(exinfo.value), False) == _env_factories_ef1_errors_expected_ex
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(root_conf):
             with item() as it:
                 errorline[0] = next_line_num()
@@ -129,7 +130,7 @@ def test_env_factories_ef2():
     prod = ef.Env('prod')
     g_prod = ef.EnvGroup('g_prod', pp, prod)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with item() as it:
             it.setattr('aa', default=13)
@@ -142,6 +143,8 @@ def test_env_factories_ef2():
         with ConfigItem():
             with item() as it:
                 it.setattr('aa', dev1=1, g_dev=7, g_prod=17)
+
+    config.load()
 
     conf = config(prod)
     it = conf.ConfigItem.item

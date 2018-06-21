@@ -28,12 +28,14 @@ prod = ef_prod_pp_tst_dev.Env('prod')
 def test_attribute_mc_required_error_next_env(capsys):
     errorline = [None]
 
+    @mc_config(ef_prod_pp_tst_dev)
+    def config(root):
+        with ItemWithAA() as cr:
+            errorline[0] = next_line_num()
+            cr.setattr('aa', dev=MC_REQUIRED, tst="hello", pp=MC_REQUIRED, prod=MC_REQUIRED)
+
     with raises(ConfigException) as exinfo:
-        @mc_config(ef_prod_pp_tst_dev, error_next_env=True)
-        def config(root):
-            with ItemWithAA() as cr:
-                errorline[0] = next_line_num()
-                cr.setattr('aa', dev=MC_REQUIRED, tst="hello", pp=MC_REQUIRED, prod=MC_REQUIRED)
+        config.load(error_next_env=True)
 
     # config(prod3)
     sout, serr = capsys.readouterr()
@@ -57,14 +59,16 @@ def test_attribute_mc_required_mc_select_envs_error_next_env(capsys):
     errorline_mc_select_envs = [None]
     errorline_setattr = [None]
 
+    @mc_config(ef_prod_pp_tst_dev)
+    def config(root):
+        with ItemWithAA() as cr:
+            errorline_mc_select_envs[0] = next_line_num()
+            cr.mc_select_envs(exclude=[pp], include=[dev, tst, prod, pp])
+            errorline_setattr[0] = next_line_num()
+            cr.setattr('aa', dev=MC_REQUIRED, tst="hello", prod=MC_REQUIRED)
+
     with raises(ConfigException) as exinfo:
-        @mc_config(ef_prod_pp_tst_dev, error_next_env=True)
-        def config(root):
-            with ItemWithAA() as cr:
-                errorline_mc_select_envs[0] = next_line_num()
-                cr.mc_select_envs(exclude=[pp], include=[dev, tst, prod, pp])
-                errorline_setattr[0] = next_line_num()
-                cr.setattr('aa', dev=MC_REQUIRED, tst="hello", prod=MC_REQUIRED)
+        config.load(error_next_env=True)
 
     # config(prod3)
     sout, serr = capsys.readouterr()
@@ -95,15 +99,17 @@ def test_stacktrace_error_next_env(capsys):
     errorline_setattr = [None]
     errorline_repeated_obj = [None]
 
+    @mc_config(ef_prod_pp_tst_dev)
+    def config(root):
+        with ItemWithAA() as cr:
+            cr.mc_select_envs(exclude=[pp])
+            errorline_setattr[0] = next_line_num()
+            cr.setattr('aa', dev=MC_REQUIRED, tst="hello", prod=MC_REQUIRED)
+        errorline_repeated_obj[0] = next_line_num()
+        ItemWithAA()
+
     with raises(ConfigException) as exinfo:
-        @mc_config(ef_prod_pp_tst_dev, error_next_env=True)
-        def config(root):
-            with ItemWithAA() as cr:
-                cr.mc_select_envs(exclude=[pp])
-                errorline_setattr[0] = next_line_num()
-                cr.setattr('aa', dev=MC_REQUIRED, tst="hello", prod=MC_REQUIRED)
-            errorline_repeated_obj[0] = next_line_num()
-            ItemWithAA()
+        config.load(error_next_env=True)
 
     # config(prod3)
     sout, serr = capsys.readouterr()

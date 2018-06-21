@@ -159,7 +159,7 @@ def test_repr_configbuilder2():
             self.name = mc_key
             self.a = a
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithYs() as cr:
             with YBuilder() as yb1:
@@ -218,7 +218,7 @@ def test_repr_attr_ref_configbuilder():
             super(Y, self).__init__(mc_key=mc_key)
             self.aa = 777
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ItemWithYs() as cr:
             with YBuilder() as yb1:

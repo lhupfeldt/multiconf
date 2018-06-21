@@ -91,7 +91,7 @@ class _ConfigBase(object):
         msg = "Attribute: '{attr}'{value_msg} did not receive a value for env {env}".format(attr=attr_name, value_msg=value_msg, env=current_env)
         if value == MC_TODO:
             cr._mc_todo_msgs[current_env].append((msg, mc_caller_file_name, mc_caller_line_num))
-            todo_handling =  cr._mc_todo_handling_allowed if current_env.allow_todo else cr._mc_todo_handling_other
+            todo_handling = cr._mc_todo_handling_allowed if current_env.allow_todo else cr._mc_todo_handling_other
             if todo_handling is McTodoHandling.SILENT:
                 return
             if todo_handling is McTodoHandling.WARNING:
@@ -1324,13 +1324,10 @@ def _mc_item_parent_proxy_factory(ci, item):
 class _ConfigRoot(_ConfigBase, _RealConfigItemMixin):
     _mc_cls_dir_entries = ()
 
-    def __init__(self, env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, mc_do_type_check, mc_5_migration):
+    def __init__(self, env_factory, mc_json_filter, mc_json_fallback, mc_5_migration):
         self._mc_env_factory = env_factory
-        self._mc_todo_handling_other = mc_todo_handling_other
-        self._mc_todo_handling_allowed = mc_todo_handling_allowed
         self._mc_json_filter = mc_json_filter
         self._mc_json_fallback = mc_json_fallback
-        self._mc_do_type_check = mc_do_type_check
         self._mc_5_migration = mc_5_migration
 
         self._mc_where = Where.IN_INIT
@@ -1384,103 +1381,31 @@ class _RootEnvProxy(object):
         return repr(self._mc_root)
 
 
-def mc_config(
-        env_factory, error_next_env=False, validate_properties=True,
-        mc_todo_handling_other=McTodoHandling.ERROR, mc_todo_handling_allowed=McTodoHandling.WARNING,
-        mc_json_filter=None, mc_json_fallback=None, do_type_check=None, do_post_validate=True, lazy_load=False, mc_5_migration=False):
-    """Function decorator for instantiating ConfigItem hierarchy for all Envs defined in 'env_factory'.
+class _McConfig(object):
+    """Base for config classes dynamically created by the 'mc_config' decorator"""
 
-       This decorator creates a wrapped config function which is then used for retrieving the configuration for a specific env.
+    def __init__(self, env_factory, conf_func, mc_json_filter, mc_json_fallback, mc_5_migration):
+        self.env_factory = env_factory
+        self.conf_func = conf_func
 
-       The wrapped function signature is:
-           Arguments:
-               env (Env): The environment for which to retrieve the config.
-               allow_todo (bool): If true, then retrieving a configuration for an env which contains `MC_TODO` values will not raise an error.
+        env_factory._mc_calc_env_group_order()  # TODO: Only calculate once if load is called multiple times
 
-           Return (Root ConfigItem proxy): Reference to the config with the current env set to env.
+        # Create root object
+        self.cr = _ConfigRoot(env_factory, mc_json_filter, mc_json_fallback, mc_5_migration)
+        self.cr._mc_check_unknown = True
 
-       E.g.::
+        # Make sure _mc_setattr is the real one if decorator is used multiple times
+        _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
 
-           @mc_config(envf)
-           def conf(root):
-               with someitem() as it:
-                   it.setattr('aa', default=1, tst=2, prod=3)
+        self.lazy_load = False
+        self._loaded = False
+        self.root_proxies = {}
+        self.error_envs = []
 
-           # Get the cfg instantiated for 'prod'
-           prod_cfg = conf(prod)
-
-       NOTE, There can only be one current config!
-       It is possible to instantiate the config multiple times, but storing references to items in the configuration, and accessing attributes
-       at a later time, will return the value from the last env.
-
-    Arguments:
-        env_factory (EnvFactory): The EnvFactory defining the envs for which we instantiate the configuration.
-        error_next_env (bool): If this is False, then no more envs will be instantiated after errors are found in an env.
-            If True, then instantiation is attempted for all envs, but an exception is raised at the end in any envs could not
-            be instantiated.
-
-        mc_todo_handling_other (McTodoHandling): This specifies how to handle attributes set to MC_TODO for envs with 'allow_todo' False.
-            The default is McTodoHandling.ERROR, causing an error message to be printed and the configuration to be considered invalid.
-        mc_todo_handling_allowed (McTodoHandling): This specifies how to handle attributes set to MC_TODO for envs with 'allow_todo' True.
-            The default is McTodoHandling.WARNING, causing a warning message to be printed but the configuration to be considered valid.
-
-        mc_json_filter (func(obj, key, value)): User defined function for filtering objects in json output.
-            - filter_callable is called for each key/value pair of attributes on each ConfigItem obj.
-            - It must return a tuple of (key, value). If key is False, the key/value pair is removed from the json output
-
-        mc_json_fallback (func(obj)): User defined function for handling objects not otherwise encoded in json output.
-            - fallback_callable is called for objects that are not handled by the builtin encoder.
-            - It must return a tuple (object, handled). If handled is True, the object must be encodable by the standard json encoder.
-
-        do_type_check (bool): Do type checking of attributes based on typing annotations. Default is True for Python 3.6.1+. Attempting
-            to enable this for earlier Python versions will raise an exception.
-
-            Type checking of attributes is done based on typing information from the __init__ signature. If an attribute exists with the same
-            name as an __init__ argument with typing information, then the attribute must conform to that type. E.g.::
-
-                class X(ConfigItem):
-                    def __init__(self, a:int = MC_REQUIRED):
-                        super(X).__init__()
-                        self.a = a
-
-            It will be checked that x.a is instance of int.
-
-        do_post_validate (bool): Allow skipping the mc_post_validate call. I.e. if set to False the user defined call backs are not called.
-
-        lazy_load (bool): Allow loading config only for envs for which is instantiated by calling the wrapped config method. If False the config is
-            pre-instantiated for all envs in order to validate correctness of the configuration for all envs. Enabling lazy_load also disables
-            `mc_post_validate` calls and other checking which cannot be done with lazy loading.
-
-        mc_5_migration (bool): This changes the attribute overwriting rule to me more compatible with version 5. Do not use this in any new configurations.
-    """
-
-    if not isinstance(env_factory, EnvFactory):
-        msg = "'env_factory' arg must be instance of {ef_typ!r}; found type {got_typ!r}: {val!r}"
-        raise ConfigException(msg.format(ef_typ=EnvFactory.__name__, got_typ=env_factory.__class__.__name__, val=env_factory))
-
-    for _ in env_factory.envs:
-        # There is at least one env
-        break
-    else:
-        raise ConfigException("The specified 'env_factory' is empty. It must have at least one Env.")
-
-    if not isinstance(mc_todo_handling_other, McTodoHandling):
-        msg = "'mc_todo_handling_other' arg must be instance of {th_typ!r}; found type {got_typ!r}: {val!r}"
-        raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=mc_todo_handling_other.__class__.__name__, val=mc_todo_handling_other))
-
-    if not isinstance(mc_todo_handling_allowed, McTodoHandling):
-        msg = "'mc_todo_handling_allowed' arg must be instance of {th_typ!r}; found type {got_typ!r}: {val!r}"
-        raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=mc_todo_handling_allowed.__class__.__name__, val=mc_todo_handling_allowed))
-
-    allow_type_check = major_version >= 3 and typecheck.typing_vcheck()
-    if do_type_check:
-        if not allow_type_check:
-            raise ConfigException(typecheck.unsup_version_msg)
-    else:
-        do_type_check = do_type_check is None and allow_type_check
-
-    def load_one_env(env, conf_func, cr, root_proxies, error_envs):
+    def _load_one_env(self, env):
         _mc_debug("\n==== Loading", env, "====")
+        cr = self.cr
+
         rp = _RootEnvProxy(env, cr)
         thread_local.env = env
         del cr.__class__._mc_hierarchy[:]
@@ -1489,10 +1414,10 @@ def mc_config(
 
         try:
             with cr:
-                res = conf_func(cr)
+                res = self.conf_func(self.cr)
             cr._mc_handled_env_bits |= env.mask
             cr._mc_call_mc_validate_recursively(env)
-            if validate_properties:
+            if self.validate_properties:
                 _mc_debug("\n==== Validating @properties", env, "====")
                 cr._mc_validate_properties_recursively(env)
                 if cr._mc_num_property_errors:
@@ -1500,9 +1425,9 @@ def mc_config(
 
             cr._mc_check_unknown = False
             cr._mc_config_result[env] = res
-            root_proxies[env] = rp
+            self.root_proxies[env] = rp
         except ConfigException as ex:
-            if not error_next_env or ex.is_fatal:
+            if not self.error_next_env or ex.is_fatal:
                 raise
 
             if not ex.is_summary:
@@ -1511,76 +1436,139 @@ def mc_config(
                 print(ex.__class__.__name__ + ':', ex, file=sys.stderr)
             print("Error in config for {} above.\n".format(env), file=sys.stderr)
 
-            error_envs.append(env)
+            self.error_envs.append(env)
 
-    def deco(conf_func):
-        env_factory._mc_calc_env_group_order()
-        # Create root object
-        cr = _ConfigRoot(env_factory, mc_todo_handling_other, mc_todo_handling_allowed, mc_json_filter, mc_json_fallback, do_type_check, mc_5_migration)
-        cr._mc_check_unknown = True
+    def load(
+            self,
+            error_next_env=False, validate_properties=True,
+            todo_handling_other=McTodoHandling.ERROR, todo_handling_allowed=McTodoHandling.WARNING,
+            do_type_check=None, do_post_validate=True, lazy_load=False):
 
-        # Make sure _mc_setattr is the real one if decorator is used multiple times
-        _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
+        """Load configuration (execute the function which was decorated using `mc_config` for each env defined in the env_factory).
 
+        Arguments:
+            error_next_env (bool): If this is False, then no more envs will be instantiated after errors are found in an env.
+                If True, then instantiation is attempted for all envs, but an exception is raised at the end in any envs could not
+                be instantiated.
+
+            todo_handling_other (McTodoHandling): This specifies how to handle attributes set to MC_TODO for envs with 'allow_todo' False.
+                The default is McTodoHandling.ERROR, causing an error message to be printed and the configuration to be considered invalid.
+            todo_handling_allowed (McTodoHandling): This specifies how to handle attributes set to MC_TODO for envs with 'allow_todo' True.
+                The default is McTodoHandling.WARNING, causing a warning message to be printed but the configuration to be considered valid.
+
+            do_type_check (bool): Do type checking of attributes based on typing annotations. Default is True for Python 3.6.1+. Attempting
+                to enable this for earlier Python versions will raise an exception.
+
+                Type checking of attributes is done based on typing information from the __init__ signature. If an attribute exists with the same
+                name as an __init__ argument with typing information, then the attribute must conform to that type. E.g.::
+
+                    class X(ConfigItem):
+                        def __init__(self, a:int = MC_REQUIRED):
+                            super(X).__init__()
+                            self.a = a
+
+                It will be checked that x.a is instance of int.
+
+            do_post_validate (bool): Allow skipping the mc_post_validate call. I.e. if set to False the user defined call backs are not called.
+
+            lazy_load (bool): Allow loading config only for envs for which it is instantiated by calling the wrapped config method. If False the config is
+                pre-instantiated for all envs in order to validate correctness of the configuration for all envs. Enabling lazy_load also disables
+                `mc_post_validate` calls and other checking which cannot be done with lazy loading.
+
+        Returns self: This makes it possible to load add get an instantion in a one liner, e.g.::
+
+            config.load()(prod)
+        """
+
+        if self._loaded:
+            raise ConfigApiException("Configuration can only be loaded once.")
+
+        self.error_next_env = error_next_env
+        self.validate_properties = validate_properties
+
+        if not isinstance(todo_handling_other, McTodoHandling):
+            msg = "'todo_handling_other' arg must be instance of {th_typ!r}; found type {got_typ!r}: {val!r}"
+            raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=todo_handling_other.__class__.__name__, val=todo_handling_other))
+        self.cr._mc_todo_handling_other = todo_handling_other
+
+        if not isinstance(todo_handling_allowed, McTodoHandling):
+            msg = "'todo_handling_allowed' arg must be instance of {th_typ!r}; found type {got_typ!r}: {val!r}"
+            raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=todo_handling_allowed.__class__.__name__, val=todo_handling_allowed))
+        self.cr._mc_todo_handling_allowed = todo_handling_allowed
+
+        allow_type_check = major_version >= 3 and typecheck.typing_vcheck()
+        if do_type_check:
+            if not allow_type_check:
+                raise ConfigException(typecheck.unsup_version_msg)
+            self.cr._mc_do_type_check = True
+        else:
+            self.cr._mc_do_type_check = do_type_check is None and allow_type_check
+
+        self.lazy_load |= lazy_load
         # Load envs
-        root_proxies = {}
-        error_envs = []
+        if not self.lazy_load:
+            self.root_proxies[MC_NO_ENV] = self.cr
+            for env in self.env_factory.envs.values():
+                self._load_one_env(env)
 
-        if not lazy_load:
-            root_proxies[MC_NO_ENV] = cr
-            for env in env_factory.envs.values():
-                load_one_env(env, conf_func, cr, root_proxies, error_envs)
-
-            if error_envs:
-                raise ConfigException("The following envs had errors {}".format(error_envs))
+            if self.error_envs:
+                raise ConfigException("The following envs had errors {}".format(self.error_envs))
 
             # No modifications are allowed after this
-            cr._mc_config_loaded = True
+            self.cr._mc_config_loaded = True
             _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
 
             if do_post_validate:
-                cr._mc_in_post_validate = True
+                self.cr._mc_in_post_validate = True
                 # Call mc_post_validate
                 thread_local.env = MC_NO_ENV
                 _mc_debug("\n==== Calling 'mc_post_validate' ====")
-                cr._mc_call_mc_post_validate_recursively()
-                cr._mc_in_post_validate = False
+                self.cr._mc_call_mc_post_validate_recursively()
+                self.cr._mc_in_post_validate = False
 
-            cr._mc_config_post_validated = True
+            self.cr._mc_config_post_validated = True
 
-        def config_wrapper(env, allow_todo=False):
-            try:
-                rp = root_proxies[env]
-            except KeyError:
-                if not isinstance(env, Env):
-                    msg = "{ef_cls}: env must be instance of {env_cls!r}; found type '{got_typ}': {val!r}"
-                    raise ConfigException(msg.format(ef_cls=env_factory.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
+        self._loaded = True
+        return self
 
-                if lazy_load and env is MC_NO_ENV:
-                    raise ConfigException("{} cannot be used with 'lazy_load'.".format(env))
+    def __call__(self, env, allow_todo=False):
+        """Get the configuration instantiated for the specified env.
 
-                if env.factory != env_factory:
-                    raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
+        Arguments:
+            env (Env): The environment for which to retrieve the config.
+            allow_todo (bool): If true, then retrieving a configuration for an env which contains `MC_TODO` values will not raise an error.
 
-                if lazy_load:
-                    cr._mc_check_unknown = True
+        Return (Root ConfigItem proxy): Reference to the config with the current env set to env.
+        """
 
-                    # Make sure _mc_setattr is the real one if decorator is used multiple times
-                    _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
+        try:
+            rp = self.root_proxies[env]
+        except KeyError:
+            if not isinstance(env, Env):
+                msg = "{ef_cls}: env must be instance of {env_cls!r}; found type '{got_typ}': {val!r}"
+                raise ConfigException(msg.format(ef_cls=self.env_factory.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
 
-                    load_one_env(env, conf_func, cr, root_proxies, error_envs)
-                    rp = _RootEnvProxy(env, cr)
-                else:
-                    raise  # Should not happen
+            if self.lazy_load and env is MC_NO_ENV:
+                raise ConfigException("{} cannot be used with 'lazy_load'.".format(env))
 
-            if env is not MC_NO_ENV and not allow_todo and rp._mc_todo_msgs[env]:
-                for msg, fname, line in rp._mc_todo_msgs[env]:
-                    print(_line_msg(file_name=fname, line_num=line), file=sys.stderr)
-                    print(msg, file=sys.stderr)
-                raise ConfigException("Trying to get invalid configuration containing MC_TODO")
+            if env.factory != self.env_factory:
+                raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
 
-            return rp
+            if self.lazy_load:
+                self.cr._mc_check_unknown = True
 
-        return config_wrapper
+                # Make sure _mc_setattr is the real one if decorator is used multiple times
+                _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
 
-    return deco
+                self._load_one_env(env)
+                rp = _RootEnvProxy(env, self.cr)
+            else:
+                raise  # Should not happen
+
+        if env is not MC_NO_ENV and not allow_todo and rp._mc_todo_msgs[env]:
+            for msg, fname, line in rp._mc_todo_msgs[env]:
+                print(_line_msg(file_name=fname, line_num=line), file=sys.stderr)
+                print(msg, file=sys.stderr)
+            raise ConfigException("Trying to get invalid configuration containing MC_TODO")
+
+        return rp

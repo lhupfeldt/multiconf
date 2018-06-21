@@ -33,7 +33,7 @@ def test_value_not_assigned_to_all_envs_in_builder(capsys):
             pass
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with B() as bb:
                 errorline[0] = next_line_num()
@@ -52,7 +52,7 @@ def test_exception_in___exit___must_print_ex_info_and_raise_original_exception_i
             def mc_build(self):
                 raise Exception("in build")
 
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with root():
                 with inner():
@@ -71,7 +71,7 @@ def test_error_freezing_previous_sibling__build(capsys):
             raise Exception("Error in build")
 
     with raises(Exception) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             errorline[0] = next_line_num()
             inner(1)
@@ -104,7 +104,7 @@ def test_build_override_underscore_mc_error(capsys):
             self.setattr("_mca", default="Hello", mc_force=True)
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             B()
 
@@ -133,7 +133,7 @@ def test_setattr_no_envs(capsys):
     errorline = [None]
         
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with B() as ci:
                 errorline[0] = next_line_num()
@@ -142,7 +142,7 @@ def test_setattr_no_envs(capsys):
     check(errorline[0])
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with B() as ci:
                 errorline[0] = next_line_num()
@@ -172,7 +172,7 @@ def test_setattr_no_envs_set_unknown(capsys):
     errorline = [None]
         
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with B() as ci:
                 errorline[0] = next_line_num()
@@ -181,7 +181,7 @@ def test_setattr_no_envs_set_unknown(capsys):
     check(errorline[0])
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with B() as ci:
                 errorline[0] = next_line_num()

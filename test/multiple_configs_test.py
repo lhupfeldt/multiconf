@@ -19,12 +19,12 @@ prod = ef.Env('prod')
 def test_multiple_configs_same_env_factory():
     # Check that getting a config for another env does not change other configs current env
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config1(_):
         with ItemWithAABB() as ci:
             ci.setattr('aa', default=1, prod=2)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config2(_):
         with ItemWithAABB() as ci:
             ci.setattr('aa', default=1, prod=3)

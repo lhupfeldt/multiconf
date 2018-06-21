@@ -27,7 +27,7 @@ class root(ConfigItem):
 
 def test_manual_insert_in_repeatable_not_allowed():
     with raises(TypeError):
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with root() as cr:
                 cr.children['hello'] = 1
@@ -38,7 +38,7 @@ def test_get_dict_with_all_items_including_excluded_ones():
     class Child(RepeatableItemWithAA):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root() as cr:
             Child(mc_key=0, aa=1)

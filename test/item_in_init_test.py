@@ -25,7 +25,7 @@ def test_item_in_init_goes_to_parent():
             self.bb = bb
             self.cc = None
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with ConfigItem():
             with ConfigItem():

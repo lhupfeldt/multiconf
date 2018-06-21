@@ -39,7 +39,7 @@ ef5_a_dev1_pp_prod.EnvGroup('g_prod_like', _a, g_prod5, pp5)
 
 
 def test_contained_in_root_conf():
-    @mc_config(ef2_pp_prod)
+    @mc_config(ef2_pp_prod, load_now=True)
     def config(root):
         with ConfigItem() as conf:
             assert conf.root_conf == root

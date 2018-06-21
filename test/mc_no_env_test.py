@@ -31,7 +31,7 @@ class rchild(RepeatableItemWithAA):
 
 
 def test_repeatable_items_mc_select_envs_excluded_no_env():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with nc_aa_root(1) as cr:
             with rchild("first") as ci:
@@ -95,7 +95,7 @@ def test_repeatable_items_mc_select_envs_excluded_no_env():
 
 
 def test_repeatable_items_skipped_in_envs():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with nc_aa_root(1) as cr:
             cr.setattr('num_children', pp=2, prod=4, mc_set_unknown=True)
@@ -122,7 +122,7 @@ def test_repeatable_items_bool():
     class HasRepeatables(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with HasRepeatables() as y:
             with X(mc_key='aa') as xx:
@@ -143,12 +143,12 @@ def test_repeatable_items_bool():
 
 
 def test_lazy_load_no_env():
-    @mc_config(ef, lazy_load=True)
+    @mc_config(ef)
     def config(_):
         pass
 
     with raises(ConfigException) as exinfo:
-        config(MC_NO_ENV)
+        config.load(lazy_load=True)(MC_NO_ENV)
 
     exp_ex = "Env('MC_NO_ENV') cannot be used with 'lazy_load'."
     assert exp_ex in str(exinfo.value)
@@ -165,7 +165,7 @@ def test_mc_env_loop():
         def aa_special(self):
             return self.aa_alternate + self.aa
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with item(aa=1) as it:
             it.setattr('aa_alternate', default=1, prod=7)

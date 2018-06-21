@@ -28,7 +28,7 @@ def test_required_attributes_inherited_ok():
             self.someattr2 = MC_REQUIRED
             self.someotherattr2 = MC_REQUIRED
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root2() as cr:
             cr.anattr = 1
@@ -62,17 +62,19 @@ def test_required_attributes_inherited_missing(capsys):
             self.someattr2  = MC_REQUIRED
             self.someotherattr2 = MC_REQUIRED
 
-    with raises(ConfigException) as exinfo:
-        @mc_config(ef, error_next_env=True)
-        def config(_):
-            with root2() as cr:
-                errorline1[0] = next_line_num()
-                cr.setattr('anattr', prod=1)
-                errorline2[0] = next_line_num()
-                cr.setattr('someattr2', prod=3)
-                errorline3[0] = next_line_num()
-                cr.setattr('someotherattr2', pp=4)
-                errorline_exit[0] = line_num()
+    @mc_config(ef)
+    def config(_):
+        with root2() as cr:
+            errorline1[0] = next_line_num()
+            cr.setattr('anattr', prod=1)
+            errorline2[0] = next_line_num()
+            cr.setattr('someattr2', prod=3)
+            errorline3[0] = next_line_num()
+            cr.setattr('someotherattr2', pp=4)
+            errorline_exit[0] = line_num()
+
+    with raises(ConfigException):
+        config.load(error_next_env=True)
 
     _sout, serr = capsys.readouterr()
     assert lines_in(
@@ -103,7 +105,7 @@ def test_multiple_required_attributes_missing_for_configitem(capsys):
             self.ijkl = MC_REQUIRED
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with root():
                 with item() as ii:
@@ -127,7 +129,7 @@ def test_error_freezing_previous_sibling__validation(capsys):
             self.a = MC_REQUIRED
 
     with raises(Exception) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with ConfigItem():
                 inner()

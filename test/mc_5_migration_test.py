@@ -30,7 +30,7 @@ def test_attribute_partial_set_in_init_overridden_in_mc_init_mc_5_migration():
             self.cc = 8
             self.setattr('dd', g_pap=8)
 
-    @mc_config(ef_prod_pp, mc_5_migration=True)
+    @mc_config(ef_prod_pp, mc_5_migration=True, load_now=True)
     def config(_):
         with Requires() as rq:
             rq.cc = 7

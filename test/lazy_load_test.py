@@ -17,10 +17,10 @@ prod = ef.Env('prod')
 
 
 def test_lazy_load():
-    @mc_config(ef, lazy_load=True)
+    @mc_config(ef)
     def config(_):
         with ItemWithAABB() as ci:
             ci.setattr('aa', default=1, prod=2)
 
-    cr1 = config(prod)
+    cr1 = config.load(lazy_load=True)(prod)
     assert cr1.ItemWithAABB.aa == 2

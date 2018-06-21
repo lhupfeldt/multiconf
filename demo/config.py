@@ -22,13 +22,17 @@ g_dev = ef.EnvGroup('g_dev', devlocal, devi, devs)
 g_prod = ef.EnvGroup('g_prod', preprod, prod)
 
 
-# This function is used to describe all environments and return an instantiated environment
-# configuration for environment with name 'env_name', which is passed as parameter
+# This function is used to describe configuration all environments. An object is created with the same name as the function.
+# The values for a specific environment are retrieved by first loading the the configuration with `config.load(...)`and then getting
+# The environment specific instantiation by calling the object with an environmen, see demo.py.
+# E.g:
+#
+#  config.load()
+#  cfg = config(prod)
+#
 @mc_config(ef)
 def config(_):
     # This will define a weblogic configuration for all environments defined above
-    # But the result of execution of conf() will be the setting for environment
-    # passed as argument 'env_name'
     # Use EnvFactory 'ef' to define the required/allowed environments
     # The 'weblogic_config' class is defined in framework.py
     with weblogic_config() as dc:

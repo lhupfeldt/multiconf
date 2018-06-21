@@ -51,7 +51,7 @@ class NestedRepeatable(RepeatableConfigItem):
 
 
 def test_nested_repeatable_items():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with nc_aa_root() as cr:
             with rchild(name="first", aa=1, bb=1) as ci:
@@ -77,7 +77,7 @@ def test_nested_repeatable_items():
 
 
 def test_empty_nested_repeatable_items():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         nc_aa_root()
 
@@ -92,7 +92,7 @@ def test_automatic_contained_item_freeze_on_exit():
     class root2(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with root2():
             NestedRepeatable(mc_key='aa')
@@ -140,7 +140,7 @@ def test_mc_init_repeatable_items():
             X(mc_key='bb', aa=1, bb=2)
             X(mc_key='cc', aa=1, bb=1)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with Y() as y:
             y.aa = 3
@@ -168,7 +168,7 @@ def test_repeatable_items_get():
     class Y(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with Y() as y:
             X(mc_key='aa')
@@ -197,7 +197,7 @@ def test_repeatable_items_equal():
     class HasRepeatables(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with HasRepeatables() as y:
             X(mc_key='aa')
@@ -223,7 +223,7 @@ def test_repeatable_items_iter():
     class HasRepeatables(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with HasRepeatables() as y:
             X(mc_key='aa')

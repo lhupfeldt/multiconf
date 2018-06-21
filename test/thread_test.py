@@ -22,7 +22,7 @@ def test_property_attribute_access_threads():
             return 1
 
     def test0():
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config0(_):
             with Nested() as nn:
                 nn.setattr('m', default=7, mc_overwrite_property=True)
@@ -34,7 +34,7 @@ def test_property_attribute_access_threads():
     t0 = threading.Thread(target=test0, name='test0')
 
     def test1():
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config1(_):
             with Nested() as nn:
                 nn.setattr('m', prod=7, mc_overwrite_property=True)
@@ -45,7 +45,7 @@ def test_property_attribute_access_threads():
 
     t1 = threading.Thread(target=test1, name='test1')
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config2(_):
         with Nested() as nn:
             nn.setattr('m', pprd=7, mc_overwrite_property=True)

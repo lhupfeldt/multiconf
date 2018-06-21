@@ -59,7 +59,7 @@ class anotheritem(ConfigItem):
 
 
 def test_automatic_freeze_of_child_on_exit():
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(root):
         with ItemWithAA() as ci:
             ci.aa = 1
@@ -68,11 +68,12 @@ def test_automatic_freeze_of_child_on_exit():
 
 
 def test_automatic_freeze_of_previous_sibling():
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(root):
         with nc_aa_root() as rt:
             rchild(mc_key='aa', aa=18)
             assert rt.children['aa'].aa == 18
+    xfail("TODO: What is this testing?")
 
 
 def test_frozen_attribute_attempted_set_in_mc_init():
@@ -87,7 +88,7 @@ def test_frozen_attribute_attempted_set_in_mc_init():
             xfail("TODO: strict freeze should not allow this?")
             self.aa = 2
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def _(_):
         with Xx() as rt:
             rt.bb = rt.aa
@@ -245,7 +246,7 @@ def test_required_items_not_required_on_imtermediate_freeze_configroot():
     class root(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(rr):
         with root() as cr:
             anitem()
@@ -262,7 +263,7 @@ def test_mc_required_attributes_not_required_on_imtermediate_freeze_configroot()
             self.anattr = MC_REQUIRED
             self.anotherattr = MC_REQUIRED
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(rr):
         with root() as cr:
             cr.setattr('anattr', prod=1)
@@ -280,7 +281,7 @@ def test_required_items_not_required_on_imtermediate_freeze_configitem():
     class item(ConfigItem):
         pass
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(rr):
         with root() as cr:
             with item() as ii:
@@ -300,7 +301,7 @@ def test_mc_required_attributes_not_required_on_imtermediate_freeze_configitem()
             self.aa = MC_REQUIRED
             self.bb = MC_REQUIRED
 
-    @mc_config(ef1_prod)
+    @mc_config(ef1_prod, load_now=True)
     def config(rr):
         with root() as cr:
             with item() as ii:

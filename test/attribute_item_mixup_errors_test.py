@@ -65,7 +65,7 @@ _nested_item_overrides_simple_attribute_expected_ex = """'ConfigItem' is defined
 
 def test_nested_item_overrides_simple_attribute():
     with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod)
+        @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 cr.setattr('ConfigItem', default="hello", mc_set_unknown=True)
@@ -76,7 +76,7 @@ def test_nested_item_overrides_simple_attribute():
 
 def test_nested_repeatable_item_overrides_simple_attribute_not_contained_in_repeatable():
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 # cr.RepeatableItems is just an attribute named like an item
@@ -93,7 +93,7 @@ def test_attempt_to_replace_empty_nested_repeatable_by_attribute_assignment(caps
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             # RepeatableItems is just an attribute named like an item
             with project() as cr:
@@ -110,7 +110,7 @@ def test_attempt_to_replace_non_empty_nested_repeatable_by_attribute_assignment(
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             # RepeatableItems is just an attribute named like an item
             with project() as cr:
@@ -147,7 +147,7 @@ def test_simple_attribute_attempt_to_override_contained_item(capsys):
     msg = "'ConfigItem' <class 'multiconf.multiconf.ConfigItem'> is already defined and may not be replaced with an attribute."
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 with ConfigItem():
@@ -159,7 +159,7 @@ def test_simple_attribute_attempt_to_override_contained_item(capsys):
     assert serr == ce(errorline[0], msg)
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef1_prod)
+        @mc_config(ef1_prod, load_now=True)
         def config(_):
             with ConfigItem() as cr:
                 ConfigItem()

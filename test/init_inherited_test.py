@@ -24,7 +24,7 @@ def test_init_inherited():
             super(X2, self).__init__()
             self.setattr('version', prod=version)
 
-    @mc_config(efac)
+    @mc_config(efac, load_now=True)
     def config(_):
         with ConfigItem():
             X1(version=1)
@@ -34,7 +34,7 @@ def test_init_inherited():
     assert project.X1.version == 1
     assert project.X2.version == 1
 
-    @mc_config(efac)
+    @mc_config(efac, load_now=True)
     def config(_):
         with ConfigItem():
             X1(version=1)

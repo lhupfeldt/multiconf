@@ -35,7 +35,7 @@ def test_mc_validate_assignment():
         def mc_validate(self):
             self.aa = 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root():
             pass
@@ -50,7 +50,7 @@ def test_mc_validate_mc_set_unknown():
         def mc_validate(self):
             self.setattr('y', default=7, mc_set_unknown=True)
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with root():
             pass
@@ -68,7 +68,7 @@ def test_mc_validate_assign_attribute_not_defined_in_init(capsys):
             self.aa = 7
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with ConfigItem():
                 item()
@@ -83,7 +83,7 @@ def test_user_mc_validate_error():
             raise Exception("Error in item mc_validate")
 
     with raises(Exception) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with ConfigItem():
                 item()
@@ -107,7 +107,7 @@ def test_mc_required_attribute_resolved_after_mc_validate(capsys):
             super(item, self).mc_validate()
             self.ijkl = 7
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item() as ii:
             ii.setattr('efgh', default=7)
@@ -139,7 +139,7 @@ def test_mc_required_attribute_missing_after_mc_validate(capsys):
             self.ijkl = 7
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with item() as ii:
                 ii.setattr('efgh', default=7)

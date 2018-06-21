@@ -31,7 +31,7 @@ def test():
     pp = ef.Env('pp')
     prod = ef.Env('prod')
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(root):
         with ConfigItem() as cr:
             with X() as x:
@@ -72,7 +72,6 @@ def test():
 
         return aa, bb, paa, pbb, oaa, obb, opaa, opbb, yaa, ybb, ypaa, ypbb
 
-
     prod_cfg = config(prod)
     pp_cfg = config(pp)
 
@@ -97,7 +96,7 @@ def test():
         print(ex)
 
     try:
-        @mc_config(ef, ConfigItem)
+        @mc_config(ef, ConfigItem, load_now=True)
         def config(root):
             with root as cr:
                 print("in config method - loading:", cr)

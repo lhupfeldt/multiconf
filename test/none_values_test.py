@@ -27,7 +27,7 @@ def test_attribute_none_args_partial_set_in_init_overridden_in_mc_init():
             self.a = 7
             self.b = 7
 
-    @mc_config(ef1_prod_pp)
+    @mc_config(ef1_prod_pp, load_now=True)
     def config(_):
         Requires()
 
@@ -57,7 +57,7 @@ def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
 
     with raises(ConfigException):
         errorline_exit[0] = next_line_num()
-        @mc_config(ef1_prod_pp)
+        @mc_config(ef1_prod_pp, load_now=True)
         def config(_):
             Requires()
         # Unresolved partial assignments from __init__

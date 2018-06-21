@@ -62,7 +62,7 @@ _include_exclude_for_configitem_expected_json = """{
 
 
 def test_exclude_include_overlapping_groups_excluded_resolved_with_mc_required():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         """Covers exclude resolve branch"""
         with item(mc_include=[g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34, dev3]) as it:
@@ -110,7 +110,7 @@ def test_exclude_include_overlapping_groups_excluded_resolved_with_required_deco
     class anitem(ConfigItem):
         xx = 222
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         """Covers exclude resolve branch"""
         with decorated_item(mc_include=[g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34, dev3]) as it:
@@ -140,7 +140,7 @@ def test_exclude_include_overlapping_groups_excluded_resolved_with_required_deco
 
 
 def test_exclude_include_overlapping_groups_included_resolved():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         """Covers include resolve branch"""
         with item(mc_include=[dev3, g_dev12, g_dev12_3, pp, dev2], mc_exclude=[g_dev34, g_dev2_34]) as it:
@@ -207,11 +207,12 @@ Error in config for Env('dev3') above.
 def test_exclude_include_overlapping_groups_excluded_unresolved_init(capsys):
     errorline = [None]
 
-    with raises(ConfigException) as exinfo:
-        @mc_config(ef, error_next_env=True)
-        def config(_):
-            errorline[0] = next_line_num()
-            item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
+    @mc_config(ef)
+    def config(_):
+        errorline[0] = next_line_num()
+        item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34])
+    with raises(ConfigException):
+        config.load(error_next_env=True)
 
     _sout, serr = capsys.readouterr()
     assert _exclude_include_overlapping_groups_excluded_unresolved_expected_ex1 in serr
@@ -239,7 +240,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_init_reversed():
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             errorline[0] = next_line_num()
             item(anattr=1, mc_include=[g_dev34, g_dev2_34], mc_exclude=[g_dev12_3, pp])
@@ -269,7 +270,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs(c
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with item(anattr=1) as it:
                 errorline[0] = next_line_num()
@@ -303,7 +304,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_r
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with item(anattr=1) as it:
                 errorline[0] = next_line_num()
@@ -316,7 +317,7 @@ def test_exclude_include_overlapping_groups_excluded_unresolved_mc_select_envs_r
 
 def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolved():
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             item(anattr=1, mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3])
 
@@ -325,7 +326,7 @@ def test_exclude_include_overlapping_groups_dev3_finally_resolved_dev2_unresolve
 
 
 def test_exclude_include_overlapping_groups_dev3_dev2_finally_resolved():
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item(mc_include=[g_dev12_3, pp], mc_exclude=[g_dev34, g_dev2_34, dev3, dev2]) as it:
             it.setattr('anattr', g_dev12_3=123, pp=1)
@@ -335,7 +336,7 @@ def test_exclude_include_error_before_exclude(capsys):
     errorline = [None]
 
     with raises(ConfigException) as exinfo:
-        @mc_config(ef)
+        @mc_config(ef, load_now=True)
         def config(_):
             with item() as it:
                 errorline[0] = next_line_num()
@@ -352,7 +353,7 @@ def test_exclude_include_iter_all(capsys):
     class item(ConfigItem):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item():
             with RepeatableItemWithAA(mc_key=1, aa=1) as r1:
@@ -401,7 +402,7 @@ def test_exclude_include_iter_2_level_all_env_attr_items(capsys):
     class RepItemsInner(RepeatableItemWithAA):
         pass
 
-    @mc_config(ef)
+    @mc_config(ef, load_now=True)
     def config(_):
         with item():
             with RepItemsOuter(mc_key=1, aa=11) as r2:
