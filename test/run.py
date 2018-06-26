@@ -24,7 +24,7 @@ def main(args):
     # Note: This naming is duplicated in .travis.yml
     cov_rc_file_name = jp(here, '.coverage_rc_' +  str(os.environ.get('TRAVIS_PYTHON_VERSION', major_version)))
     with open(cov_rc_file_name, 'w') as cov_rc_file:
-        cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(major_version=major_version, do_type_check=type_check.vcheck())))
+        cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(major_version=major_version, type_check_supported=type_check.vcheck())))
 
     rc = pytest.main(['--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else []))
 
