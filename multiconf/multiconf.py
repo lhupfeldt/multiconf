@@ -1496,13 +1496,12 @@ class _McConfig(object):
             raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=todo_handling_allowed.__class__.__name__, val=todo_handling_allowed))
         self.cr._mc_todo_handling_allowed = todo_handling_allowed
 
-        allow_type_check = major_version >= 3 and typecheck.typing_vcheck()
-        if do_type_check:
-            if not allow_type_check:
-                raise ConfigException(typecheck.unsup_version_msg)
-            self.cr._mc_do_type_check = True
-        else:
-            self.cr._mc_do_type_check = do_type_check is None and allow_type_check
+        self.cr._mc_do_type_check = typecheck.typing_vcheck()
+        if self.cr._mc_do_type_check:
+            self.cr._mc_do_type_check = do_type_check is None or do_type_check
+        elif do_type_check:
+            # User requested type checking, but it is not available
+            raise ConfigException(typecheck.unsup_version_msg)
 
         self.lazy_load |= lazy_load
         # Load envs
