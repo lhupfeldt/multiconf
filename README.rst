@@ -83,6 +83,7 @@ beforehand and Multiconf will ensure that all of them get a value.
 
 After instantiating your config for the *prod* env you can then access
 properties on the host object:
+
 .. code-block:: none
 
     cfg.host.name -> web1
