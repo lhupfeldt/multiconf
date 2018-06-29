@@ -1,4 +1,5 @@
 |Build Status| |Coverage| |Documentation Status| |PyPi Package|
+ ..highlight:: python
 
 What
 ====
@@ -55,9 +56,9 @@ new environments by adding them to a group and only override the values
 that differ from the group values.
 
 You have to define your configuration data model as classes derived from
-Multiconf base classes, one of which is `ConfigItem`. E.g:
+Multiconf base classes, one of which is ``ConfigItem``.
 
-In your config data model (your framework) you define::
+E.g, in your config data model (your framework) you define::
 
     class Host(ConfigItem):
         def __init__(name=MC_REQUIRED, mem=MC_REQUIRED):
@@ -76,22 +77,22 @@ with different attribute values for different environments::
     with Host("web1") as host:
         host.setattr('mem', dev="1G", tst="2G", preprod="4G", prod="4G")
 
-Above uses the Multiconf `setattr` method to assign different values to different
+Above uses the Multiconf ``setattr`` method to assign different values to different
 envs. Note that the envs dev, tst, preprod and prod must have been declare
 beforehand and Multiconf will ensure that all of them get a value.
 
-After instantiating your config for the `prod` env you can then access
+After instantiating your config for the *prod* env you can then access
 properties on the host object::
 
     cfg.host.name -> web1
     cfg.host.mem -> 4G
-    cfg.host.fwd -> web1.prod.my.organisation
+    cfg.host.fqd -> web1.prod.my.organisation
 
 Note that classes derived from the Multiconf classes (e.g: ConfigItem) do not
 allow on the fly creation of attributes. Configuration items are not meant for
 general programming, but for strictly validated configurations.
 
-See the documentation and the `demo` project for details about nested objects,
+See the documentation and the *demo* project for details about nested objects,
 repeatable objects, instantiation, environment definitions, environment groups,
 default values and other details.
     
