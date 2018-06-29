@@ -90,7 +90,7 @@ properties on the host object:
     cfg.host.mem -> 4G
     cfg.host.fqd -> web1.prod.my.organisation
 
-Note that classes derived from the Multiconf classes (e.g: ConfigItem) do not
+Note that classes derived from the Multiconf classes (e.g: ``ConfigItem``) do not
 allow on the fly creation of attributes. Configuration items are not meant for
 general programming, but for strictly validated configurations.
 
