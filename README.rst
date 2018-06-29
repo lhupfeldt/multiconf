@@ -78,11 +78,12 @@ with different attribute values for different environments::
         host.setattr('mem', dev="1G", tst="2G", preprod="4G", prod="4G")
 
 Above uses the Multiconf ``setattr`` method to assign different values to different
-envs. Note that the envs dev, tst, preprod and prod must have been declare
+envs. Note that the envs *dev*, *tst*, *preprod* and *prod* must have been declared
 beforehand and Multiconf will ensure that all of them get a value.
 
 After instantiating your config for the *prod* env you can then access
-properties on the host object::
+properties on the host object:
+.. code-block:: none
 
     cfg.host.name -> web1
     cfg.host.mem -> 4G
