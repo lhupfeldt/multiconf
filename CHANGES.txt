@@ -32,3 +32,14 @@ The argument name for 'find_attribute...' was changed from 'attribute_name' to '
 The semantics of mc_build (previously build) has changed. Attributes set on the builder will no longer be set on the items created in mc_build. The rationale being that this was surprising, and actually unnecessary, especially with the 'strict' model of only setting attributes already defined in __init__. Simply ensure that all attributes are set inside the mc_build method.
 
 Multiconf will now validate (i.e. tchack that the do not raise en exception) @property methods for all envs by default. This is much faster than calling 'json'. This can be disabled so that you need not do this on every config load.
+
+
+FROM v6 to v7
+
+The mc_config decorator now wraps the config method which is decorated, so you must call that instead of EnvFactory.config() to get the instantiated configuration.
+This fixes an issue with not allowing multiple configuration using the same EnvFactory.
+
+
+FROM v7 to v8
+
+The mc_config decorator now wraps the config method which is decorated in an object, so you must call the new object.load(...) method to instantiate the configuration. You then call the object to get the env specific instantiation. This provides more flexibility in providing arguments to load(...) without having to wrap the entire configuration in an extra function level.
