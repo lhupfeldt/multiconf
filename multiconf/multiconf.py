@@ -1382,13 +1382,13 @@ class _RootEnvProxy(object):
 
 
 class _McConfig(object):
-    """Base for config classes dynamically created by the 'mc_config' decorator"""
+    """Class of root objects allocated by the 'mc_config' decorator"""
 
     def __init__(self, env_factory, conf_func, mc_json_filter, mc_json_fallback, mc_5_migration):
         self.env_factory = env_factory
         self.conf_func = conf_func
 
-        env_factory._mc_calc_env_group_order()  # TODO: Only calculate once if load is called multiple times
+        env_factory._mc_calc_env_group_order()
 
         # Create root object
         self.cr = _ConfigRoot(env_factory, mc_json_filter, mc_json_fallback, mc_5_migration)
@@ -1475,7 +1475,7 @@ class _McConfig(object):
                 pre-instantiated for all envs in order to validate correctness of the configuration for all envs. Enabling lazy_load also disables
                 `mc_post_validate` calls and other checking which cannot be done with lazy loading.
 
-        Returns self: This makes it possible to load add get an instantion in a one liner, e.g.::
+        Returns self: This makes it possible to load and get an instantion in a one liner, e.g.::
 
             config.load()(prod)
         """
