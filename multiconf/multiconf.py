@@ -1385,8 +1385,8 @@ class _McConfig(object):
     """Class of root objects allocated by the 'mc_config' decorator"""
 
     def __init__(self, env_factory, conf_func, mc_json_filter, mc_json_fallback, mc_5_migration):
-        self.env_factory = env_factory
-        self.conf_func = conf_func
+        self._mc_env_factory = env_factory
+        self._mc_conf_func = conf_func
 
         env_factory._mc_calc_env_group_order()
 
@@ -1397,10 +1397,10 @@ class _McConfig(object):
         # Make sure _mc_setattr is the real one if decorator is used multiple times
         _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
 
-        self.lazy_load = False
-        self._loaded = False
-        self.root_proxies = {}
-        self.error_envs = []
+        self._mc_lazy_load = False
+        self._mc_loaded = False
+        self._mc_root_proxies = {}
+        self._mc_error_envs = []
 
     def _load_one_env(self, env):
         _mc_debug("\n==== Loading", env, "====")
@@ -1414,7 +1414,7 @@ class _McConfig(object):
 
         try:
             with cr:
-                res = self.conf_func(self.cr)
+                res = self._mc_conf_func(self.cr)
             cr._mc_handled_env_bits |= env.mask
             cr._mc_call_mc_validate_recursively(env)
             if self.validate_properties:
@@ -1425,7 +1425,7 @@ class _McConfig(object):
 
             cr._mc_check_unknown = False
             cr._mc_config_result[env] = res
-            self.root_proxies[env] = rp
+            self._mc_root_proxies[env] = rp
         except ConfigException as ex:
             if not self.error_next_env or ex.is_fatal:
                 raise
@@ -1436,7 +1436,7 @@ class _McConfig(object):
                 print(ex.__class__.__name__ + ':', ex, file=sys.stderr)
             print("Error in config for {} above.\n".format(env), file=sys.stderr)
 
-            self.error_envs.append(env)
+            self._mc_error_envs.append(env)
 
     def load(
             self,
@@ -1480,7 +1480,7 @@ class _McConfig(object):
             config.load()(prod)
         """
 
-        if self._loaded:
+        if self._mc_loaded:
             raise ConfigApiException("Configuration can only be loaded once.")
 
         self.error_next_env = error_next_env
@@ -1503,15 +1503,15 @@ class _McConfig(object):
             # User requested type checking, but it is not available
             raise ConfigException(typecheck.unsup_version_msg)
 
-        self.lazy_load |= lazy_load
+        self._mc_lazy_load |= lazy_load
         # Load envs
-        if not self.lazy_load:
-            self.root_proxies[MC_NO_ENV] = self.cr
-            for env in self.env_factory.envs.values():
+        if not self._mc_lazy_load:
+            self._mc_root_proxies[MC_NO_ENV] = self.cr
+            for env in self._mc_env_factory.envs.values():
                 self._load_one_env(env)
 
-            if self.error_envs:
-                raise ConfigException("The following envs had errors {}".format(self.error_envs))
+            if self._mc_error_envs:
+                raise ConfigException("The following envs had errors {}".format(self._mc_error_envs))
 
             # No modifications are allowed after this
             self.cr._mc_config_loaded = True
@@ -1527,7 +1527,7 @@ class _McConfig(object):
 
             self.cr._mc_config_post_validated = True
 
-        self._loaded = True
+        self._mc_loaded = True
         return self
 
     def __call__(self, env, allow_todo=False):
@@ -1541,19 +1541,19 @@ class _McConfig(object):
         """
 
         try:
-            rp = self.root_proxies[env]
+            rp = self._mc_root_proxies[env]
         except KeyError:
             if not isinstance(env, Env):
                 msg = "{ef_cls}: env must be instance of {env_cls!r}; found type '{got_typ}': {val!r}"
-                raise ConfigException(msg.format(ef_cls=self.env_factory.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
+                raise ConfigException(msg.format(ef_cls=self._mc_env_factory.__class__.__name__, env_cls=Env.__name__, got_typ=type(env).__name__, val=env))
 
-            if self.lazy_load and env is MC_NO_ENV:
+            if self._mc_lazy_load and env is MC_NO_ENV:
                 raise ConfigException("{} cannot be used with 'lazy_load'.".format(env))
 
-            if env.factory != self.env_factory:
+            if env.factory != self._mc_env_factory:
                 raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
 
-            if self.lazy_load:
+            if self._mc_lazy_load:
                 self.cr._mc_check_unknown = True
 
                 # Make sure _mc_setattr is the real one if decorator is used multiple times
