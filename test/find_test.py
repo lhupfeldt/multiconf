@@ -149,7 +149,7 @@ def test_find_attribute_or_none():
     assert cr.KwargsItem.KwargsItem.find_attribute_or_none('ConfigItem') == exp_item[0]
 
 
-_find_contained_in_named_as_not_found_expected = """Searching from: <class 'test.find_test.%(py3_local)sY'>: Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root', '_McConfigRoot']"""
+_find_contained_in_named_as_not_found_expected = """Searching from: <class 'test.find_test.%(py3_local)sY'>: Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root', 'McConfigRoot']"""
 
 def test_find_contained_in_named_as_not_found():
     @named_as('someitems')
@@ -196,7 +196,7 @@ def test_find_contained_in_named_as_not_found():
     assert replace_ids(str(exinfo.value)) == _find_contained_in_named_as_not_found_expected % dict(py3_local=py3_local())
 
 
-_find_attribute_with_attribute_name_not_found = """Searching from: <class 'test.find_test.%(py3_local)sX'>: Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root', '_McConfigRoot']"""
+_find_attribute_with_attribute_name_not_found = """Searching from: <class 'test.find_test.%(py3_local)sX'>: Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root', 'McConfigRoot']"""
 
 def test_find_attribute_with_attribute_name_not_found():
     @named_as('someitems')

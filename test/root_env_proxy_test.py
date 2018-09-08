@@ -57,7 +57,7 @@ def test_env_root():
 
 
 _repr_root_expected = """{
-    "__class__": "_McConfigRoot #as: '_McConfigRoot', id: 0000",
+    "__class__": "McConfigRoot #as: 'McConfigRoot', id: 0000",
     "env": {
         "__class__": "Env",
         "name": "prod"

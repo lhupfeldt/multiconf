@@ -10,7 +10,7 @@ import keyword
 from .envs import EnvFactory
 from .config_errors import ConfigException, ConfigDefinitionException, _line_msg, _error_msg, _warning_msg
 from .repeatable import RepeatableDict
-from .multiconf import _McConfigRoot
+from .multiconf import McConfigRoot
 from . import ConfigBuilder, RepeatableConfigItem
 
 
@@ -160,7 +160,7 @@ def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, mc_5_migr
        This decorator creates a wrapped config in a object which is then used for loading the config (for all envs) and
        retrieving the configuration for a specific env. The name of the object will be the name of the wrapped function.
 
-       The class will have two public methods, `load` and `__call__`, see `_McConfigRoot` for details.
+       The class will have two public methods, `load` and `__call__`, see `McConfigRoot` for details.
 
        E.g.::
 
@@ -206,7 +206,7 @@ def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, mc_5_migr
         raise ConfigException("The specified 'env_factory' is empty. It must have at least one Env.")
 
     def deco(conf_func):
-        conf = _McConfigRoot(env_factory, conf_func, mc_json_filter, mc_json_fallback, mc_5_migration)
+        conf = McConfigRoot(env_factory, conf_func, mc_json_filter, mc_json_fallback, mc_5_migration)
         if load_now:
             conf.load()
         return conf

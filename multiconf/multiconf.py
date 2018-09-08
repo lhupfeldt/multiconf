@@ -1321,7 +1321,7 @@ def _mc_item_parent_proxy_factory(ci, item):
     return ItemParentProxy(ci, item)
 
 
-class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
+class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
     """Class of root object allocated by the 'mc_config' decorator"""
     _mc_cls_dir_entries = ()
 
