@@ -50,7 +50,7 @@ class decorated_item(ConfigItem):
 
 
 _include_exclude_for_configitem_expected_json = """{
-    "__class__": "_ConfigRoot",
+    "__class__": "_McConfigRoot",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -95,7 +95,7 @@ def test_exclude_include_overlapping_groups_excluded_resolved_with_mc_required()
 
 
 _include_exclude_for_configitem_required_decorator_expected_json = """{
-    "__class__": "_ConfigRoot",
+    "__class__": "_McConfigRoot",
     "__id__": 0000,
     "env": {
         "__class__": "Env",

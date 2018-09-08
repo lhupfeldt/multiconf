@@ -1585,7 +1585,7 @@ def test_static_member_direct():
 
 
 _static_member_inherited_mc_expected_json = """{
-    "__class__": "_ConfigRoot",
+    "__class__": "_McConfigRoot",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -1652,7 +1652,7 @@ def test_static_member_inherited_mc():
 
 
 _env_ref_expected_json = """{
-    "__class__": "_ConfigRoot",
+    "__class__": "_McConfigRoot",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
@@ -1682,7 +1682,7 @@ def test_env_ref():
 
 
 _envgroup_ref_expected_json = """{
-    "__class__": "_ConfigRoot",
+    "__class__": "_McConfigRoot",
     "__id__": 0000,
     "env": {
         "__class__": "Env",
