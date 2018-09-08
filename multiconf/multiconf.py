@@ -1351,7 +1351,6 @@ class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         self._mc_num_invalid_property_usage = 0
         self._mc_in_json = False
 
-        self._mc_cr = self
         self._mc_check_unknown = True
         self._mc_lazy_load = False
         self._mc_loaded = False
@@ -1374,27 +1373,27 @@ class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
 
     def _mc_load_one_env(self, env):
         _mc_debug("\n==== Loading", env, "====")
-        cr = self._mc_cr
+        cr = self
 
-        rp = _RootEnvProxy(env, cr)
+        rp = _RootEnvProxy(env, self)
         thread_local.env = env
-        del cr.__class__._mc_hierarchy[:]
+        del self.__class__._mc_hierarchy[:]
         _ConfigBase._mc_last_item = None
         _ConfigBase._mc_in_build = None
 
         try:
-            with cr:
-                res = self._mc_conf_func(cr)
-            cr._mc_handled_env_bits |= env.mask
-            cr._mc_call_mc_validate_recursively(env)
+            with self:
+                res = self._mc_conf_func(self)
+            self._mc_handled_env_bits |= env.mask
+            self._mc_call_mc_validate_recursively(env)
             if self._mc_do_validate_properties:
                 _mc_debug("\n==== Validating @properties", env, "====")
-                cr._mc_validate_properties_recursively(env)
-                if cr._mc_num_property_errors:
+                self._mc_validate_properties_recursively(env)
+                if self._mc_num_property_errors:
                     raise ConfigException("Error validating @property methods for {}".format(env))
 
-            cr._mc_check_unknown = False
-            cr._mc_config_result[env] = res
+            self._mc_check_unknown = False
+            self._mc_config_result[env] = res
             self._mc_root_proxies[env] = rp
         except ConfigException as ex:
             if not self._mc_error_next_env or ex.is_fatal:
@@ -1460,17 +1459,16 @@ class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
             msg = "'todo_handling_other' arg must be instance of {th_typ!r}; found type {got_typ!r}: {val!r}"
             raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=todo_handling_other.__class__.__name__, val=todo_handling_other))
 
-        cr = self._mc_cr
-        cr._mc_todo_handling_other = todo_handling_other
+        self._mc_todo_handling_other = todo_handling_other
 
         if not isinstance(todo_handling_allowed, McTodoHandling):
             msg = "'todo_handling_allowed' arg must be instance of {th_typ!r}; found type {got_typ!r}: {val!r}"
             raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=todo_handling_allowed.__class__.__name__, val=todo_handling_allowed))
-        cr._mc_todo_handling_allowed = todo_handling_allowed
+        self._mc_todo_handling_allowed = todo_handling_allowed
 
-        cr._mc_do_type_check = typecheck.typing_vcheck()
-        if cr._mc_do_type_check:
-            cr._mc_do_type_check = do_type_check is None or do_type_check
+        self._mc_do_type_check = typecheck.typing_vcheck()
+        if self._mc_do_type_check:
+            self._mc_do_type_check = do_type_check is None or do_type_check
         elif do_type_check:
             # User requested type checking, but it is not available
             raise ConfigException(typecheck.unsup_version_msg)
@@ -1478,7 +1476,7 @@ class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         self._mc_lazy_load |= lazy_load
         # Load envs
         if not self._mc_lazy_load:
-            self._mc_root_proxies[MC_NO_ENV] = cr
+            self._mc_root_proxies[MC_NO_ENV] = self
             for env in self._mc_env_factory.envs.values():
                 self._mc_load_one_env(env)
 
@@ -1486,18 +1484,18 @@ class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
                 raise ConfigException("The following envs had errors {}".format(self._mc_error_envs))
 
             # No modifications are allowed after this
-            cr._mc_config_loaded = True
+            self._mc_config_loaded = True
             _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_disabled
 
             if do_post_validate:
-                cr._mc_in_post_validate = True
+                self._mc_in_post_validate = True
                 # Call mc_post_validate
                 thread_local.env = MC_NO_ENV
                 _mc_debug("\n==== Calling 'mc_post_validate' ====")
-                cr._mc_call_mc_post_validate_recursively()
-                cr._mc_in_post_validate = False
+                self._mc_call_mc_post_validate_recursively()
+                self._mc_in_post_validate = False
 
-            cr._mc_config_post_validated = True
+            self._mc_config_post_validated = True
 
         self._mc_loaded = True
         return self
@@ -1526,14 +1524,13 @@ class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
                 raise ConfigException("The selected env {} must be from the 'env_factory' specified for 'mc_config'.".format(env))
 
             if self._mc_lazy_load:
-                cr = self._mc_cr
-                cr._mc_check_unknown = True
+                self._mc_check_unknown = True
 
                 # Make sure _mc_setattr is the real one if decorator is used multiple times
                 _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
 
                 self._mc_load_one_env(env)
-                rp = _RootEnvProxy(env, cr)
+                rp = _RootEnvProxy(env, self)
             else:
                 raise  # Should not happen
 
@@ -1566,4 +1563,3 @@ class _RootEnvProxy(object):
 
     def __repr__(self):
         return repr(self._mc_root)
-    
