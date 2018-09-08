@@ -160,7 +160,7 @@ def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, mc_5_migr
        This decorator creates a wrapped config in a object which is then used for loading the config (for all envs) and
        retrieving the configuration for a specific env. The name of the object will be the name of the wrapped function.
 
-       The class will have two public methods, `load` and `get`, see `_McConfig` for details.
+       The class will have two public methods, `load` and `__call__`, see `_McConfig` for details.
 
        E.g.::
 
@@ -173,11 +173,11 @@ def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, mc_5_migr
            conf.load()
 
            # Get the cfg instantiated for 'prod'
-           prod_cfg = conf.get(prod)
+           prod_cfg = conf(prod)
 
        NOTE, There can only be one current config env!
        It is possible to get the config multiple times for different envs, but storing references to items in the configuration, and accessing attributes
-       at a later time, will return the value from the last env specified in 'get'.
+       at a later time, will return the value from the last env specified in '__call__'.
 
     Arguments:
         env_factory (EnvFactory): The EnvFactory defining the envs for which we instantiate the configuration.

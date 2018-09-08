@@ -2,7 +2,7 @@ multiconf package
 =================
 
 .. automodule:: multiconf
-    :members: mc_config, McInvalidValue, McTodoHandling, caller_file_line
+    :members: McInvalidValue, McTodoHandling, caller_file_line
     :show-inheritance:
 
 .. autoclass:: ConfigItem
