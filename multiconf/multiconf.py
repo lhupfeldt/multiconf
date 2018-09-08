@@ -1353,7 +1353,6 @@ class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
 
         self._mc_check_unknown = True
         self._mc_lazy_load = False
-        self._mc_loaded = False
         self._mc_root_proxies = {}
         self._mc_error_envs = []
 
@@ -1449,7 +1448,7 @@ class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
             config.load()(prod)
         """
 
-        if self._mc_loaded:
+        if self._mc_config_loaded:
             raise ConfigApiException("Configuration can only be loaded once.")
 
         self._mc_error_next_env = error_next_env
@@ -1497,7 +1496,7 @@ class _McConfigRoot(_ConfigBase, _RealConfigItemMixin):
 
             self._mc_config_post_validated = True
 
-        self._mc_loaded = True
+        self._mc_config_loaded = True
         return self
 
     def __call__(self, env, allow_todo=False):
