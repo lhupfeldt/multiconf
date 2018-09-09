@@ -1321,7 +1321,7 @@ def _mc_item_parent_proxy_factory(ci, item):
     return ItemParentProxy(ci, item)
 
 
-class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
+class McConfigRoot(AbstractConfigItem, _RealConfigItemMixin):
     """Class of root object allocated by the 'mc_config' decorator.
 
     May also be used directly for a single env configuration.

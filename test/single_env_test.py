@@ -167,3 +167,15 @@ def test_hasattr():
 
     with raises(AttributeError) as exinfo:
         print(ii.dd)
+
+
+def test_inherited_root_with_nested_repeatable_item():
+    @nested_repeatables('children')
+    class NewRoot(McConfigRoot):
+        pass
+
+    with NewRoot() as cr:
+        with rchild(mc_key=1, aa=1, bb=1) as ci:
+            ci.aa = 3
+
+    assert cr.children[1].aa == 3
