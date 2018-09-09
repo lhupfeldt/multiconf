@@ -1362,21 +1362,22 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         self._mc_do_type_check = typecheck.typing_vcheck()
         self._mc_do_validate_properties = True
 
-        if env_factory is None and conf_func is None:
-            # Single environment config, create a dummy env named 'single' a
+        if env_factory is None:
+            # Single environment config, create a dummy env named 'single'
             self._mc_env_factory = EnvFactory()
             single = self._mc_env_factory.Env('single')
-            self._mc_env_factory._mc_calc_env_group_order()
-            self._mc_conf_func = lambda x: 0
-            self._mc_todo_msgs = OrderedDict([(env, []) for env in self._mc_env_factory.envs.values()])
-            self._mc_pre_load_one_env(single)
             self._mc_is_single_env = single
         else:
             self._mc_env_factory = env_factory
-            self._mc_env_factory._mc_calc_env_group_order()
-            self._mc_conf_func = conf_func
-            self._mc_todo_msgs = OrderedDict([(env, []) for env in self._mc_env_factory.envs.values()])
             self._mc_is_single_env = False
+
+        self._mc_env_factory._mc_calc_env_group_order()
+        self._mc_todo_msgs = OrderedDict([(env, []) for env in self._mc_env_factory.envs.values()])
+
+        if env_factory is None:
+            self._mc_pre_load_one_env(single)
+
+        self._mc_conf_func = conf_func
 
     def __exit__(self, exc_type, value, traceback):
         super(McConfigRoot, self).__exit__(exc_type, value, traceback)
