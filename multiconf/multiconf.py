@@ -1322,44 +1322,66 @@ def _mc_item_parent_proxy_factory(ci, item):
 
 
 class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
-    """Class of root object allocated by the 'mc_config' decorator"""
+    """Class of root object allocated by the 'mc_config' decorator.
+
+    May also be used directly for a single env configuration.
+    """
+
     _mc_cls_dir_entries = ()
 
-    def __init__(self, env_factory, conf_func, mc_json_filter, mc_json_fallback, mc_5_migration):
-        self._mc_env_factory = env_factory
-        self._mc_conf_func = conf_func
+    def __init__(self, mc_json_filter=None, mc_json_fallback=None, mc_5_migration=None, env_factory=None, conf_func=None):
         self._mc_json_filter = mc_json_filter
         self._mc_json_fallback = mc_json_fallback
         self._mc_5_migration = mc_5_migration
 
-        self._mc_where = Where.IN_INIT
         self._mc_num_errors = 0
+        self._mc_num_warnings = 0
+        self._mc_num_property_errors = 0
+        self._mc_num_invalid_property_usage = 0
 
-        self._mc_todo_msgs = OrderedDict([(env, []) for env in env_factory.envs.values()])
+        self._mc_where = Where.IN_INIT
         self._mc_attributes = OrderedDict()
         self._mc_attributes_to_check = None
         self._mc_items = OrderedDict()
         self._mc_contained_in = None
         self._mc_root = self
         self._mc_handled_env_bits = 0
-        self._mc_num_warnings = 0
         self._mc_config_result = {}
         self._mc_config_loaded = False
         self._mc_in_post_validate = False
         self._mc_config_post_validated = False
-        self._mc_num_property_errors = 0
-        self._mc_num_invalid_property_usage = 0
         self._mc_in_json = False
-
         self._mc_check_unknown = True
         self._mc_lazy_load = False
         self._mc_root_proxies = {}
         self._mc_error_envs = []
 
-        env_factory._mc_calc_env_group_order()
-
         # Make sure _mc_setattr is the real one if decorator is used multiple times
         _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
+
+        self._mc_do_type_check = typecheck.typing_vcheck()
+        self._mc_do_validate_properties = True
+
+        if env_factory is None and conf_func is None:
+            # Single environment config, create a dummy env named 'single' a
+            self._mc_env_factory = EnvFactory()
+            single = self._mc_env_factory.Env('single')
+            self._mc_env_factory._mc_calc_env_group_order()
+            self._mc_conf_func = lambda x: 0
+            self._mc_todo_msgs = OrderedDict([(env, []) for env in self._mc_env_factory.envs.values()])
+            self._mc_pre_load_one_env(single)
+            self._mc_is_single_env = single
+        else:
+            self._mc_env_factory = env_factory
+            self._mc_env_factory._mc_calc_env_group_order()
+            self._mc_conf_func = conf_func
+            self._mc_todo_msgs = OrderedDict([(env, []) for env in self._mc_env_factory.envs.values()])
+            self._mc_is_single_env = False
+
+    def __exit__(self, exc_type, value, traceback):
+        super(McConfigRoot, self).__exit__(exc_type, value, traceback)
+        if self._mc_is_single_env:
+            self._mc_post_successful_load_one_env(self._mc_is_single_env, None, self)
 
     @property
     def mc_config_result(self):
@@ -1370,30 +1392,35 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
 
     __nonzero__ = __bool__
 
-    def _mc_load_one_env(self, env):
+    def _mc_pre_load_one_env(self, env):
         _mc_debug("\n==== Loading", env, "====")
-        cr = self
-
         rp = _RootEnvProxy(env, self)
         thread_local.env = env
         del self.__class__._mc_hierarchy[:]
         _ConfigBase._mc_last_item = None
         _ConfigBase._mc_in_build = None
 
+        return rp
+
+    def _mc_post_successful_load_one_env(self, env, result, root_proxy):
+        self._mc_handled_env_bits |= env.mask
+        self._mc_call_mc_validate_recursively(env)
+        if self._mc_do_validate_properties:
+            _mc_debug("\n==== Validating @properties", env, "====")
+            self._mc_validate_properties_recursively(env)
+            if self._mc_num_property_errors:
+                raise ConfigException("Error validating @property methods for {}".format(env))
+
+        self._mc_check_unknown = False
+        self._mc_config_result[env] = result
+        self._mc_root_proxies[env] = root_proxy
+
+    def _mc_load_one_env(self, env):
+        rp = self._mc_pre_load_one_env(env)
         try:
             with self:
                 res = self._mc_conf_func(self)
-            self._mc_handled_env_bits |= env.mask
-            self._mc_call_mc_validate_recursively(env)
-            if self._mc_do_validate_properties:
-                _mc_debug("\n==== Validating @properties", env, "====")
-                self._mc_validate_properties_recursively(env)
-                if self._mc_num_property_errors:
-                    raise ConfigException("Error validating @property methods for {}".format(env))
-
-            self._mc_check_unknown = False
-            self._mc_config_result[env] = res
-            self._mc_root_proxies[env] = rp
+            self._mc_post_successful_load_one_env(env, res, rp)
         except ConfigException as ex:
             if not self._mc_error_next_env or ex.is_fatal:
                 raise
@@ -1465,7 +1492,6 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
             raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=todo_handling_allowed.__class__.__name__, val=todo_handling_allowed))
         self._mc_todo_handling_allowed = todo_handling_allowed
 
-        self._mc_do_type_check = typecheck.typing_vcheck()
         if self._mc_do_type_check:
             self._mc_do_type_check = do_type_check is None or do_type_check
         elif do_type_check:

@@ -206,7 +206,7 @@ def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, mc_5_migr
         raise ConfigException("The specified 'env_factory' is empty. It must have at least one Env.")
 
     def deco(conf_func):
-        conf = McConfigRoot(env_factory, conf_func, mc_json_filter, mc_json_fallback, mc_5_migration)
+        conf = McConfigRoot(mc_json_filter, mc_json_fallback, mc_5_migration, env_factory, conf_func)
         if load_now:
             conf.load()
         return conf
