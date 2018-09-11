@@ -864,6 +864,21 @@ class _ConfigBase(object):
         msg = ': Could not find an attribute named: ' + repr(name) + ' in hieracy with names: ' + repr(contained_in_names)
         raise ConfigException("Searching from: " + repr(type(self)) + msg)
 
+    def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
+        """Return repeatable if item has repeatable with 'repeatable_class_key', if not raise an exception."""
+        if repeatable_class_key in self.__class__._mc_deco_nested_repeatables:
+            return object.__getattribute__(self, repeatable_class_key)
+
+        if isinstance(repeatable_cls_or_dict, RepeatableDict):
+            # Get class of first item for error message. TODO: muliple types can be in the same repeatable
+            for item in repeatable_cls_or_dict._all_items.values():  # pragma: no branch
+                repeatable_cls_or_dict = type(item)
+                break
+
+        msg = not_repeatable_in_parent_msg.format(
+            repeatable_cls_key=repeatable_class_key, repeatable_cls=repeatable_cls_or_dict, ci_named_as=self.named_as(), ci_cls=type(self))
+        raise ConfigException(msg)
+
 
 class AbstractConfigItem(_ConfigBase):
     """This may be used as the base of classes which will be basis for both Repeatable and non-repeatable ConfigItem.
@@ -946,21 +961,6 @@ class AbstractConfigItem(_ConfigBase):
                 raise _McExcludedException()
         except ConfigException as ex:
             self._mc_print_error_caller(str(ex), mc_error_info_up_level)
-
-    def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
-        """Return repeatable if item has repeatable with 'repeatable_class_key', if not raise an exception."""
-        if repeatable_class_key in self.__class__._mc_deco_nested_repeatables:
-            return object.__getattribute__(self, repeatable_class_key)
-
-        if isinstance(repeatable_cls_or_dict, RepeatableDict):
-            # Get class of first item for error message. TODO: muliple types can be in the same repeatable
-            for item in repeatable_cls_or_dict._all_items.values():  # pragma: no branch
-                repeatable_cls_or_dict = type(item)
-                break
-
-        msg = not_repeatable_in_parent_msg.format(
-            repeatable_cls_key=repeatable_class_key, repeatable_cls=repeatable_cls_or_dict, ci_named_as=self.named_as(), ci_cls=type(self))
-        raise ConfigException(msg)
 
 
 class _RealConfigItemMixin(object):
@@ -1321,7 +1321,7 @@ def _mc_item_parent_proxy_factory(ci, item):
     return ItemParentProxy(ci, item)
 
 
-class McConfigRoot(AbstractConfigItem, _RealConfigItemMixin):
+class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
     """Class of root object allocated by the 'mc_config' decorator.
 
     May also be used directly for a single env configuration.

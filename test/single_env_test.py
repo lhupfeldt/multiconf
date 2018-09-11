@@ -179,3 +179,13 @@ def test_inherited_root_with_nested_repeatable_item():
             ci.aa = 3
 
     assert cr.children[1].aa == 3
+
+
+def test_mc_config_root_no_mc_select_envs():
+    """Test that root does not have mc_select_envs (it does not make sense to exclude everything)"""
+
+    with raises(AttributeError) as exinfo:
+        with McConfigRoot() as rt:
+            rt.mc_select_envs()
+
+    assert "'McConfigRoot' object has no attribute 'mc_select_envs'" in str(exinfo.value)

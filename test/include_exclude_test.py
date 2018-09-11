@@ -778,3 +778,14 @@ def test_exclude_during_load__getattr__():
                         it.anotherattr = 2
 
             assert cr.item.item.anattr
+
+
+def test_root_no_mc_select_envs():
+    """Test that root does not have mc_select_envs (it does not make sense to exclude everything)"""
+
+    with raises(AttributeError) as exinfo:
+        @mc_config(ef, load_now=True)
+        def config(rt):
+            rt.mc_select_envs(exclude=[dev1])
+
+    assert "'McConfigRoot' object has no attribute 'mc_select_envs'" in str(exinfo.value)
