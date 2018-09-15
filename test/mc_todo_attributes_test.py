@@ -7,7 +7,7 @@ import os.path
 
 from pytest import raises, mark, xfail  # pylint: disable=no-name-in-module
 
-from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED, MC_TODO, McTodoHandling
+from multiconf import mc_config, ConfigItem, ConfigException, ConfigAttributeError, MC_REQUIRED, MC_TODO, McTodoHandling
 from multiconf.envs import EnvFactory
 
 from .utils.utils import config_error, config_warning, next_line_num, replace_ids, lines_in, start_file_line, py3_tc
@@ -240,22 +240,41 @@ def test_attribute_mc_todo_allowed_all_envs_set_in_with_get_config_not_allowed_a
 _continuing_with_invalid_conf = ". Continuing with invalid configuration!"
 _attribute_mc_current_env_todo_allowed_expected = _attribute_mc_todo_not_allowed_env_expected + _continuing_with_invalid_conf
 
-@mark.parametrize("todo_handling_allowed", [McTodoHandling.SILENT, McTodoHandling.WARNING, McTodoHandling.ERROR])
+@mark.parametrize("todo_handling_allowed", [McTodoHandling.SILENT, McTodoHandling.WARNING])
 def test_attribute_mc_todo_env_allowed_current_env_access_error(capsys, todo_handling_allowed):
-    xfail("TODO implement test")
-    errorline = [None]
     """Test that accessing an MC_TODO value after loading results in an exception"""
-    with ItemWithAA(prod1, ef1_prod_pp, mc_allow_current_env_todo=True, todo_handling_allowed=todo_handling_allowed) as cr:
-        errorline[0] = next_line_num()
-        cr.setattr('aa', prod=MC_TODO, pp="hello")
+    errorline = [None]
+
+    ef = EnvFactory()
+    pprd = ef.Env('pprd', allow_todo=True)
+    prod = ef.Env('prod', allow_todo=True)
+
+    @mc_config(ef)
+    def config(_):
+        with ItemWithAA() as cr:
+            errorline[0] = next_line_num()
+            cr.setattr('aa', prod=MC_TODO, pprd="hello")
+
+    config.load(todo_handling_allowed=todo_handling_allowed)
 
     _sout, serr = capsys.readouterr()
-    assert serr == cw(errorline[0], _attribute_mc_current_env_todo_allowed_expected)
 
-    with raises(AttributeError) as exinfo:
+    if todo_handling_allowed == McTodoHandling.SILENT:
+        assert serr == ''
+    elif todo_handling_allowed == McTodoHandling.WARNING:
+        assert serr == cw(errorline[0], _attribute_mc_todo_allowed_env_expected)
+    else:
+        raise Exception("Error in test implementation")
+
+    cr = config(pprd).ItemWithAA
+    assert cr.aa == "hello"
+
+    cr = config(prod, allow_todo=True).ItemWithAA
+    with raises(ConfigAttributeError) as exinfo:
         print(cr.aa)
 
-    assert "Attribute 'aa' MC_TODO is undefined for current env " + repr(prod1) in str(exinfo.value)
+    assert "has no attribute 'aa'" in str(exinfo.value)
+    assert "Trying got get MC_TODO" in str(exinfo.value)
 
 
 def test_bad_handling_arg_allowed():

@@ -5,6 +5,7 @@ from enum import Enum
 
 from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigApiException
 from .envs import MC_NO_ENV, thread_local
+from .values import MC_TODO
 
 
 class Where(Enum):
@@ -53,9 +54,12 @@ class _McAttributeAccessor(object):
 
         try:
             mc_attribute = obj._mc_attributes[self.attr_name]
+            val = mc_attribute.env_values[current_env]
             if not cr._mc_in_json:
                 mc_attribute.where_from = Where.FROZEN
-            return mc_attribute.env_values[current_env]
+                if val == MC_TODO:
+                    raise ConfigAttributeError(obj, self.attr_name, 'Trying got get {}.'.format(MC_TODO.name))
+            return val
         except KeyError as ex:
             # mc attribute does not exist for current instance or current env
             if current_env is MC_NO_ENV:
