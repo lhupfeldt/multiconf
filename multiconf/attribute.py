@@ -64,7 +64,7 @@ class _McAttributeAccessor(object):
                     msg += "Item.attribute access is not allowed in 'mc_post_validate' as there is no current env. "
                 else:
                     msg += "Item.attribute access is not allowed when config is instantiated with 'MC_NO_ENV'. "
-                msg +=  "Use: item.attr_env_items('{attr_name}') or item.getattr('{attr_name}', <env>)"
+                msg += "Use: item.attr_env_items('{attr_name}') or item.getattr('{attr_name}', <env>)"
                 raise ConfigApiException(msg.format(attr_name=self.attr_name))
 
             if not obj:
