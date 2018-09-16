@@ -4,9 +4,16 @@
 from __future__ import print_function
 
 import sys, os, threading, traceback
-from collections import Mapping, OrderedDict
 import types
+from collections import OrderedDict
 
+major_version = sys.version_info[0]
+if major_version >= 3:
+    from collections.abc import Mapping
+else:
+    from collections import Mapping
+
+# pylint: disable=wrong-import-position
 from . import envs
 from .envs import thread_local
 from .values import McInvalidValue

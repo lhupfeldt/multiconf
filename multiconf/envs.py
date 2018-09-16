@@ -2,16 +2,22 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
-from collections import namedtuple
 
 import sys
-from collections import Container, OrderedDict
+from collections import OrderedDict
+
+major_version = sys.version_info[0]
+if major_version >= 3:
+    from collections.abc import Container
+else:
+    from collections import Container
+
+# pylint: disable=wrong-import-position
 import itertools
 import json
 import threading
 
 from .bits import int_to_bin_str
-from .config_errors import ConfigException, _line_msg
 
 
 class EnvException(Exception):
