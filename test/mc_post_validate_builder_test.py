@@ -61,7 +61,7 @@ def test_builder_user_mc_post_validate_error():
 
 
 def test_builder_mc_post_validate_child_item_only_called_once():
-    num_calls_builder =  [0]
+    num_calls_builder = [0]
     num_calls_built = [0]
     num_calls_child = [0]
 

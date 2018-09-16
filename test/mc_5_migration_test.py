@@ -42,7 +42,7 @@ def test_attribute_partial_set_in_init_overridden_in_mc_init_mc_5_migration():
     assert cr.Requires.dd == 7
 
     cr = config(pprd)
-    assert cr.Requires.aa == 7 # Value for pp was not set in __init__ so it will get the value from mc_init 
+    assert cr.Requires.aa == 7 # Value for pp was not set in __init__ so it will get the value from mc_init
     assert cr.Requires.bb == 7 # Note: wihout mc_5_migration this whould be None
     assert cr.Requires.cc == 7
     assert cr.Requires.dd == 8

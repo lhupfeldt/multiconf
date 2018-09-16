@@ -50,7 +50,7 @@ def test_contained_in_root_conf():
             with ConfigItem() as c1:
                 assert c1.root_conf == root
                 assert c1.contained_in == conf
-            
+
                 with ConfigItem() as c2:
                     assert c2.root_conf == root
                     assert c2.contained_in == c1
@@ -60,7 +60,7 @@ def test_contained_in_root_conf():
     conf = config(prod2)
     c1, c2 = conf.mc_config_result
 
-    assert conf.contained_in is None        
+    assert conf.contained_in is None
     # assert c1.root_conf == conf
     # assert c1.contained_in == conf
     # assert c2.root_conf == conf

@@ -406,7 +406,7 @@ def test_attribute_overrides_property_method_raising_attribute_error():
     assert "Attribute 'm' is defined as a multiconf attribute and as a @property method" in ex_msg
     assert "value is undefined for Env('prod') and @property method call failed" in ex_msg
     assert "AttributeError: 'Nested' object has no attribute 'i_dont_have_this_attribute'" in ex_msg
-    
+
 
 def test_attribute_overrides_property_method_using_mc_set_unknown_repeated_env(capsys):
     errorline = [None]

@@ -161,7 +161,7 @@ def test_env_factories_ef2():
 
     conf = config(dev3)
     assert conf.ConfigItem.item.aa == 7
-    
+
 
 _env_factories_ef2_errors_expected_ex = """There was 1 error when defining item: {
     "__class__": "item #as: 'item', id: 0000",

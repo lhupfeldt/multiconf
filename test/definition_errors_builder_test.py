@@ -131,7 +131,7 @@ def test_setattr_no_envs(capsys):
             pass
 
     errorline = [None]
-        
+
     with raises(ConfigException) as exinfo:
         @mc_config(ef, load_now=True)
         def config(_):
@@ -170,7 +170,7 @@ def test_setattr_no_envs_set_unknown(capsys):
             pass
 
     errorline = [None]
-        
+
     with raises(ConfigException) as exinfo:
         @mc_config(ef, load_now=True)
         def config(_):

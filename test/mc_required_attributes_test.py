@@ -59,7 +59,7 @@ def test_required_attributes_inherited_missing(capsys):
     class root2(root):
         def __init__(self):
             super(root2, self).__init__()
-            self.someattr2  = MC_REQUIRED
+            self.someattr2 = MC_REQUIRED
             self.someotherattr2 = MC_REQUIRED
 
     @mc_config(ef)

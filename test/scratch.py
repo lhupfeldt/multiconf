@@ -37,4 +37,3 @@ def config(_):
 print("here4")
 cr = config(prod).ItemWithAA
 assert cr.aa == 1
-        

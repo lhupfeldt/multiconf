@@ -57,6 +57,6 @@ def test_builder_validate_properties_child_item_only_called_once_per_env():
     assert num_calls_built[pprd] == 1
     assert num_calls_child[prod] == 1
     assert num_calls_child[pprd] == 1
-    
+
     assert cr.Built.mm == 14
     assert cr.Built.Child.mm == 15

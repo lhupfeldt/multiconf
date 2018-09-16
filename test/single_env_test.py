@@ -129,19 +129,6 @@ def test_attribute_is_an_ordereddict():
     assert cr.KwargsItem.aa == od
 
 
-# 'dd' is set at class level, resulting in the long exception message 
-_hasattr_expected_ex = """{
-    "__class__": "KwargsItem #as: 'xxxx', id: 0000",
-    "env": {
-        "__class__": "Env",
-        "name": "prod"
-    },
-    "aa": 1,
-    "bb": 2,
-    "cc": 3
-}, object of type: <class 'test.core_test.KwargsItem'> has no attribute 'dd'."""
-
-
 def test_hasattr():
     ii_exp = [None]
 

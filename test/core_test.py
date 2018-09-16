@@ -299,7 +299,7 @@ def test_get_factory():
     assert cr.ConfigItem.ConfigItem.env_factory == ef2_pp_prod
 
 
-# 'dd' is set at class level, resulting in the long exception message 
+# 'dd' is set at class level, resulting in the long exception message
 _hasattr_expected_ex = """{
     "__class__": "KwargsItem #as: 'xxxx', id: 0000",
     "env": {

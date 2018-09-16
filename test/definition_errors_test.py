@@ -954,4 +954,3 @@ def test_mc_init_redefine_item_errors_default(capsys):
     print(serr)
     assert serr.startswith(ce(errorline[0], _fully_defined).strip())
     assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_item_expected_ex % ('prod', 1)
-    

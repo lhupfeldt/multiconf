@@ -79,7 +79,7 @@ def test_override_setattr_error2(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
         @mc_config(ef, load_now=True)
-        def config(root):        
+        def config(root):
             with MeSetterItem() as ci:
                 errorline[0] = next_line_num()
                 ci.setme('aa', prod="hello")

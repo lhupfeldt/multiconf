@@ -50,7 +50,7 @@ def test_required_items_for_configroot_as_args():
             anitem(1)
             anotheritem(2)
 
-    cr = config(prod).root            
+    cr = config(prod).root
     assert cr.anitem.val == 1
     assert cr.anotheritem.val == 2
 

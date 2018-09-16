@@ -40,7 +40,7 @@ def test_env_not_in_list(capsys):
     sout, serr = capsys.readouterr()
     assert sout == ""
     assert serr == ""
-    
+
 
 def test_env_in_list_through_group(capsys):
     assert ef._mc_select_env_list(dev1, [g_dev12_3, g_dev12], [g_dev23, dev2, dev3]) == 1

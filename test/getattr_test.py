@@ -28,7 +28,7 @@ def test_getattr_env():
         root()
 
     exp_indexed = [7, 8]
-    exp_envs = { pp2: 7, prod2: 8 }
+    exp_envs = {pp2: 7, prod2: 8}
 
     rt = config(prod2).root
     assert rt.aa == 8
@@ -246,7 +246,7 @@ def test_attr_env_items_excluded_env():
             it.mc_select_envs(exclude=[prod2])
 
     exp_indexed = [7, McInvalidValue.MC_NO_VALUE]
-    exp_envs = { pp2: 7, prod2: McInvalidValue.MC_NO_VALUE }
+    exp_envs = {pp2: 7, prod2: McInvalidValue.MC_NO_VALUE}
 
     it = config(prod2).item
 
@@ -296,7 +296,7 @@ def test_attr_env_items_excluded_multiple_envs():
             it.mc_select_envs(exclude=[tst3, prod3])
 
     exp_indexed = [McInvalidValue.MC_NO_VALUE, 7, McInvalidValue.MC_NO_VALUE]
-    exp_envs = { tst3: McInvalidValue.MC_NO_VALUE, pprd3: 7, prod3: McInvalidValue.MC_NO_VALUE }
+    exp_envs = {tst3: McInvalidValue.MC_NO_VALUE, pprd3: 7, prod3: McInvalidValue.MC_NO_VALUE}
 
     it = config(prod3).item
 
