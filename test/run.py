@@ -11,7 +11,7 @@ from tenjin.helpers import *
 from . import type_check
 
 
-here = os.path.abspath(os.path.dirname(__file__))
+_here = os.path.abspath(os.path.dirname(__file__))
 
 
 def main(args):
@@ -22,20 +22,23 @@ def main(args):
     engine = tenjin.Engine(cache=False)
     major_version = sys.version_info[0]
     # Note: This naming is duplicated in .travis.yml
-    cov_rc_file_name = jp(here, '.coverage_rc_' +  str(os.environ.get('TRAVIS_PYTHON_VERSION', major_version)))
+    cov_rc_file_name = jp(_here, '.coverage_rc_' +  str(os.environ.get('TRAVIS_PYTHON_VERSION', major_version)))
     with open(cov_rc_file_name, 'w') as cov_rc_file:
-        cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(major_version=major_version, type_check_supported=type_check.vcheck())))
+        cov_rc_file.write(engine.render(jp(_here, "coverage_rc.tenjin"), dict(major_version=major_version, type_check_supported=type_check.vcheck())))
 
-    rc = pytest.main(['--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else []))
+    rc = pytest.main(['--capture=sys', '--cov=' + _here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else []))
 
-    print("Validating demo for all envs")
+    print()
     try:
         del os.environ['PYTHONPATH']
     except KeyError:
         pass
     for env_name in 'prod', 'preprod', 'devlocal', 'devs', 'devi':
-        print()
+        demo_out = jp(_here, env_name + '.demo_out')
+        print("Validating demo for env {env} - output in {out}".format(env=env_name, out=demo_out))
         osenv = {'PYTHONPATH': ':'.join(sys.path)}
-        rc |= subprocess.check_call((sys.executable, here + '/../demo/demo.py', '--env', env_name), env=osenv)
+        with open(demo_out, 'w') as outf:
+            rc |= subprocess.check_call((sys.executable, _here + '/../demo/demo.py', '--env', env_name), env=osenv, stdout=outf)
+    print()
 
     return rc

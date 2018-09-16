@@ -17,6 +17,7 @@ dist
 build
 test/perf/*.profile
 test/perf/times.txt
+*.demo_out
 
 # Sphinx
 doc/_build/*
