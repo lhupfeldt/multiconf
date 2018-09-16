@@ -21,10 +21,12 @@ def main(args):
 
     engine = tenjin.Engine(cache=False)
     major_version = sys.version_info[0]
+    minor_version = sys.version_info[1]
     # Note: This naming is duplicated in .travis.yml
-    cov_rc_file_name = jp(_here, '.coverage_rc_' +  str(os.environ.get('TRAVIS_PYTHON_VERSION', major_version)))
+    cov_rc_file_name = jp(_here, '.coverage_rc_' +  str(os.environ.get('TRAVIS_PYTHON_VERSION', str(major_version) + '.' + str(minor_version))))
     with open(cov_rc_file_name, 'w') as cov_rc_file:
-        cov_rc_file.write(engine.render(jp(_here, "coverage_rc.tenjin"), dict(major_version=major_version, type_check_supported=type_check.vcheck())))
+        cov_rc_file.write(engine.render(jp(_here, "coverage_rc.tenjin"), dict(
+            major_version=major_version, minor_version=minor_version, type_check_supported=type_check.vcheck())))
 
     rc = pytest.main(['--capture=sys', '--cov=' + _here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else []))
 

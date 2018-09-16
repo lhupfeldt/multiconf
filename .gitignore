@@ -7,8 +7,8 @@ __pycache__
 *.egg
 *.egg-info
 TAGS
-.coverage_rc_2
-.coverage_rc_3
+.coverage_rc_2*
+.coverage_rc_3*
 coverage_rc.tenjin.cache
 *.class
 .eggs
