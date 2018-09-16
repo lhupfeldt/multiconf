@@ -100,7 +100,7 @@ def config(validate_properties=True, lazy_load=False):
     global hp
     global conf
 
-    @mc_config(ef, validate_properties=validate_properties, lazy_load=lazy_load)
+    @mc_config(ef)
     def conf_func(_):
         with root() as cr:
             for ii in range(0, first_range):
@@ -148,6 +148,7 @@ def config(validate_properties=True, lazy_load=False):
     if hp:
         print(hp.heap())
 
+    conf_func.load(validate_properties=validate_properties, lazy_load=lazy_load)
     conf = conf_func
 
 
