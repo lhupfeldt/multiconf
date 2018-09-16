@@ -25,8 +25,6 @@ matrix:
           dist: xenial
           sudo: true
           env: REQUIREMENTS=release
-    allow_failures:
-        - python: 3.8-dev
 script: tox
 os:
   - linux
