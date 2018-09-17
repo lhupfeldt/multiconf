@@ -141,8 +141,7 @@ class EnvGroup(BaseEnv, Container):
     def _groups_recursive(self):
         for member in self.members:
             if isinstance(member, EnvGroup):
-                for member in member.groups:
-                    yield member
+                yield from member.groups
 
 
 class EnvFactory(object):

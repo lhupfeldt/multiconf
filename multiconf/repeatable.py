@@ -46,8 +46,7 @@ class RepeatableDict(object):
         return not self.__eq__(other)
 
     def __iter__(self):
-        for key in self.keys():
-            yield key
+        yield from self.keys()
 
     def items(self):
         for key, val in self._all_items.items():
