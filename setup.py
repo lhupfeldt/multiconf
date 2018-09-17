@@ -6,7 +6,7 @@ from setuptools.command.test import test as TestCommand
 
 PROJECT_ROOT, _ = os.path.split(__file__)
 PROJECT_NAME = 'multiconf'
-COPYRIGHT = u"Copyright (c) 2012 - 2016 Lars Hupfeldt Nielsen, Hupfeldt IT"
+COPYRIGHT = u"Copyright (c) 2012 - 2018 Lars Hupfeldt Nielsen, Hupfeldt IT"
 PROJECT_AUTHORS = u"Lars Hupfeldt Nielsen"
 PROJECT_EMAILS = 'lhn@hupfeldtit.dk'
 PROJECT_URL = "https://github.com/lhupfeldt/multiconf"
@@ -29,13 +29,6 @@ class Test(TestCommand):
         sys.exit(test.run.main(self.test_args))
 
 
-major_version = sys.version_info[0]
-if major_version < 3:
-    py_version_requires = ['enum34>=1.1']
-else:
-    py_version_requires = ['typing-inspect>=0.2.0']
-
-
 if __name__ == "__main__":
     setup(
         name=PROJECT_NAME.lower(),
@@ -46,7 +39,8 @@ if __name__ == "__main__":
         package_dir={'multiconf': 'multiconf'},
         zip_safe=True,
         include_package_data=False,
-        install_requires=[] + py_version_requires,
+        python_requires='>=3.6.1',
+        install_requires=['typing-inspect>=0.2.0'],
         setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
         tests_require=['pytest>=3.0.5', 'pytest-cov>=2.4.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
@@ -62,9 +56,6 @@ if __name__ == "__main__":
             'License :: OSI Approved :: BSD License',
             'Natural Language :: English',
             'Operating System :: OS Independent',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             # 'Programming Language :: Python :: 3.8',

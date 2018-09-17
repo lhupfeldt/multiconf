@@ -14,9 +14,6 @@ from multiconf.envs import EnvFactory
 from utils.utils import py37_no_exc_comma, replace_ids
 
 
-major_version = sys.version_info[0]
-
-
 ef = EnvFactory()
 pp = ef.Env('pp')
 prod = ef.Env('prod')

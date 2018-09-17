@@ -127,7 +127,7 @@ suite, the demo and build the documentation.
 Requirements
 ============
 
-Multiconf: Python 2.7.3+, Python 3.4+ Test Suite: pytest, pytest-cov,
+Multiconf: Python 3.6.1+ Test Suite: pytest, pytest-cov (for older Python versions use multiconf 8.x)
 demjson (optional) - pip install -U pytest pytest-cov demjson
 
 .. |Build Status| image:: https://api.travis-ci.org/lhupfeldt/multiconf.svg?branch=master

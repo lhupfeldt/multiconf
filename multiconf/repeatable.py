@@ -54,24 +54,15 @@ class RepeatableDict(object):
             if val._mc_exists_in_env():
                 yield key, val
 
-    # Python2 compatibility
-    iteritems = items
-
     def keys(self):
         for key, val in self._all_items.items():
             if val._mc_exists_in_env():
                 yield key
 
-    # Python2 compatibility
-    iterkeys = keys
-
     def values(self):
         for _, val in self._all_items.items():
             if val._mc_exists_in_env():
                 yield val
-
-    # Python2 compatibility
-    itervalues = values
 
     def __len__(self):
         count = 0
@@ -86,9 +77,6 @@ class RepeatableDict(object):
                 return True
 
         return False
-
-    # Python2 compatibility
-    __nonzero__ = __bool__
 
     def __repr__(self):
         return repr(OrderedDict(((key, val) for (key, val) in self._all_items.items() if val._mc_exists_in_env())))

@@ -14,8 +14,6 @@ from multiconf.envs import EnvFactory
 from .utils.tstclasses import ItemWithAABB
 
 
-major_version = sys.version_info[0]
-
 ef = EnvFactory()
 pp = ef.Env('pp')
 prod = ef.Env('prod')

@@ -6,14 +6,8 @@ from __future__ import print_function
 import sys, os, threading, traceback
 import types
 from collections import OrderedDict
+from collections.abc import Mapping
 
-major_version = sys.version_info[0]
-if major_version >= 3:
-    from collections.abc import Mapping
-else:
-    from collections import Mapping
-
-# pylint: disable=wrong-import-position
 from . import envs
 from .envs import thread_local
 from .values import McInvalidValue
@@ -22,10 +16,6 @@ from .bases import get_bases
 from .attribute import Where, _McAttributeAccessor
 from .repeatable import RepeatableDict
 
-
-major_version = sys.version_info[0]
-if major_version > 2:
-    long = int
 
 _calculated_value = ' #calculated'
 _static_value = ' #static'
@@ -113,12 +103,6 @@ class ConfigItemEncoder(object):
             return _mc_identification_msg_str(obj)
 
         return ref_id(obj)
-
-    if major_version < 3:
-        def _class_dict(self, obj):
-            if self.compact:
-                return OrderedDict((_class_tuple(obj, ' #id: ' + str(self.ref_repr(obj))),))
-            return OrderedDict((_class_tuple(obj), ('__id__', self.ref_repr(obj))))
 
     def _mc_class_dict(self, obj):
         not_frozen_msg = "" if obj._mc_where == Where.FROZEN else ", not-frozen"
@@ -306,7 +290,7 @@ class ConfigItemEncoder(object):
 
         val = self._check_nesting(obj, val)
 
-        if isinstance(val, (str, int, long, float)):
+        if isinstance(val, (str, int, float)):
             if overridden_property:
                 return key, [(overridden_property + calc_or_static + ' value was', val)] + property_inf
             if self.compact:
@@ -503,15 +487,6 @@ class ConfigItemEncoder(object):
                 obj, handled = self.user_fallback_callable(obj)
                 if handled:
                     return obj
-
-            if major_version < 3 and isinstance(obj, types.InstanceType):
-                # print "# Handle instances of old style classes", type(obj)
-                # Note that new style class instances are practically indistinguishable from other types of objects
-                dd = self._class_dict(obj)
-                for key, val in obj.__dict__.items():
-                    if key[0] != '_':
-                        dd[key] = self._ref_earlier_str(val) if self.seen.get(ref_id(val)) else val
-                return dd
 
             self.num_errors += 1
             return "__json_error__ # don't know how to handle obj of type: " + repr(type(obj))

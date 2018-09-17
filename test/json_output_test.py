@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, os
+import sys, os, abc
 from collections import OrderedDict
 import pytest
 from pytest import raises, xfail
@@ -897,25 +897,6 @@ _json_dump_non_conf_item_expected_json = """{
     }
 }"""
 
-@pytest.mark.skipif(sys.version_info[0] >= 3, reason="Python3 does not have old style classes.")
-def test_json_dump_non_conf_item():
-    # This is an old style class
-    class SomeClass():
-        def __init__(self):
-            self.a = 187
-            self._x = 7
-
-    @mc_config(ef, load_now=True)
-    def config(rt):
-        with ItemWithAA(aa=0):
-            SimpleItem(a=SomeClass())
-
-    cr = config(prod).ItemWithAA
-    assert replace_ids(cr.json()) == _json_dump_non_conf_item_expected_json
-    # to_compact will not handle conversion of non-multiconf object representation, an extra '#as...' is inserted,
-    # we remove it again
-    assert replace_ids(cr.json(compact=True)) == to_compact(_json_dump_non_conf_item_expected_json).replace("SomeClass #as: 'xxxx', id", 'SomeClass #id')
-
 
 _json_dump_unhandled_item_function_ref_expected_json = """{
     "__class__": "ConfigItem",
@@ -1088,12 +1069,6 @@ def test_json_dump_dir_error(capsys):
     assert compare_json(cr, _json_dump_dir_error_expected_json)
 
 
-if sys.version_info[0] < 3:
-    from .json_output_test_py2 import _NamedNestedRepeatable
-else:
-    from .json_output_test_py3 import _NamedNestedRepeatable
-
-
 # TODO: Not absolutely correct output (not outside ref)
 _json_dump_property_method_returns_later_confitem_same_level_expected_json = """{
     "__class__": "root",
@@ -1124,6 +1099,23 @@ _json_dump_property_method_returns_later_confitem_same_level_expected_json = """
         }
     }
 }"""
+
+
+@named_as('someitems')
+@nested_repeatables('someitems')
+class _NamedNestedRepeatable(RepeatableConfigItem, metaclass=abc.ABCMeta):
+    def __new__(cls, name):
+        return super(_NamedNestedRepeatable, cls).__new__(cls, mc_key=name)
+
+    def __init__(self, name):
+        super(_NamedNestedRepeatable, self).__init__(mc_key=name)
+        self.name = name
+        self.x = 3
+
+    @abc.abstractproperty
+    def m(self):
+        pass
+
 
 def test_json_dump_property_method_returns_later_confitem_same_level():
     class NamedNestedRepeatable(_NamedNestedRepeatable):

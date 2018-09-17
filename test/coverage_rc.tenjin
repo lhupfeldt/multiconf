@@ -16,31 +16,6 @@ exclude_lines =
 
     def _mc_debug\(
     def _mc_debug_hierarchy\(
-    long = int
-
-    <?py if type_check_supported: ?>
-    elif do_type_check:
-    ConfigException\(typecheck.unsup_version_msg\)
-    <?py else: ?>
-    type_msg
-    if typing_vcheck\(\):
-    do_type_check is None or do_type_check
-    <?py #endif ?>
-
-    <?py if major_version == 2: ?>
-    _py3 import
-    long = int
-    if major_version >= 3:
-    self.cr._mc_do_type_check = True
-    from collections.abc import Mapping
-    from collections.abc import Container
-    <?py else: ?>
-    _py2 import
-    if major_version < 3:
-    if major_version < 3 and isinstance\(obj, types.InstanceType\):
-    from collections import Mapping
-    from collections import Container
-    <?py #endif ?>
 
     disable=bare-except
 
@@ -48,19 +23,8 @@ partial_branches =
     # Have to re-enable the standard pragma
     pragma: no branch
 
-    <?py if type_check_supported: ?>
-    if typing_vcheck\(\):
-    <?py #endif ?>
-
-    <?py if major_version < 3: ?>
-    if major_version < 3:
-    if major_version < 3 and isinstance\(obj, types.InstanceType\):
-    <?py else: ?>
-    if major_version >= 3:
-    if self.cr._mc_do_type_check:
     <?py if major_version == 3 and minor_version == 8: ?>
     thread_local.env = orig_env
-    <?py #endif ?>
     <?py #endif ?>
 
     # We always have base classes, so these loops will alvays be entered
@@ -74,8 +38,3 @@ omit =
     .tox/*
     .eggs/*
     *.egg/*
-    <?py if major_version == 2: ?>
-    *_py3.py
-    <?py else: ?>
-    *_py2.py
-    <?py #endif ?>

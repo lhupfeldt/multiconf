@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, os, traceback
+import sys, os, abc, traceback
 from collections import OrderedDict
 import json
 import threading
@@ -17,9 +17,6 @@ from .config_errors import ConfigException, ConfigApiException, InvalidUsageExce
 from .config_errors import caller_file_line, find_user_file_line, _line_msg, _error_msg, _warning_msg, not_repeatable_in_parent_msg, repeatable_in_parent_msg
 from .json_output import ConfigItemEncoder, _mc_filter_out_keys, _mc_identification_msg_str
 from . import typecheck
-
-
-major_version = sys.version_info[0]
 
 
 class _McExcludedException(Exception):
@@ -145,7 +142,7 @@ class _ConfigBase(object):
             filter_callable=filter_callable, fallback_callable=fallback_callable,
             compact=compact, sort_attributes=sort_attributes, property_methods=property_methods,
             builders=builders, warn_nesting=warn_nesting,
-            multiconf_base_type=_ConfigBase, multiconf_builder_type=_ConfigBuilder,
+            multiconf_base_type=_ConfigBase, multiconf_builder_type=ConfigBuilder,
             multiconf_property_wrapper_type=_McPropertyWrapper,
             show_all_envs=show_all_envs,
             depth=depth,
@@ -225,13 +222,9 @@ class _ConfigBase(object):
     def __bool__(self):
         return bool(self._mc_exists_in_env())
 
-    # Python2 compatibility
-    __nonzero__ = __bool__
-
-    if major_version >= 3:  # This should have been an else, but that makes it difficult to do the coverage
-        def __dir__(self):
-            return [name for name in object.__dir__(self)
-                    if not isinstance(getattr(self.__class__, name, None), _McAttributeAccessor) or name in self._mc_attributes]
+    def __dir__(self):
+        return [name for name in object.__dir__(self)
+                if not isinstance(getattr(self.__class__, name, None), _McAttributeAccessor) or name in self._mc_attributes]
 
     def _mc_exists_in_given_env(self, env):
         return self._mc_handled_env_bits & env.mask
@@ -260,7 +253,7 @@ class _ConfigBase(object):
         if self._mc_attributes_to_check and self.mc_validate.__code__ is _ConfigBase.mc_validate.__code__:
             self._mc_print_no_proper_value_error_msg(mc_error_info_up_level)
 
-        if isinstance(self, _ConfigBuilder):
+        if isinstance(self, ConfigBuilder):
             self._mc_builder_freeze()
 
         # New items may have been created in mc_init
@@ -769,7 +762,7 @@ class _ConfigBase(object):
         """
 
         for key, item in self._mc_items.items():
-            if not item or isinstance(item, _ConfigBuilder):
+            if not item or isinstance(item, ConfigBuilder):
                 continue
             yield key, item
 
@@ -789,7 +782,7 @@ class _ConfigBase(object):
     def contained_in(self):
         mc_contained_in = self._mc_contained_in
         child = self
-        while isinstance(mc_contained_in, _ConfigBuilder):
+        while isinstance(mc_contained_in, ConfigBuilder):
             if mc_contained_in._mc_where == Where.IN_WITH and not child._mc_where == Where.IN_MC_BUILD:
                 msg = "Use of 'contained_in' in not allowed in object while under the 'with' statement of a ConfigBuilder. The final containment is still unknown."
                 self._mc_print_error_caller(msg, mc_error_info_up_level=2)
@@ -880,11 +873,8 @@ class _ConfigBase(object):
         raise ConfigException(msg)
 
 
-class AbstractConfigItem(_ConfigBase):
+class AbstractConfigItem(_ConfigBase):  # TODO metaclass=abc.ABCMeta
     """This may be used as the base of classes which will be basis for both Repeatable and non-repeatable ConfigItem.
-
-    Note: This is an Abstract class even though it it not Abstract in the Python sense, because of the complexity of maintaining Python 2 and 3
-          compatibility with abstract classes.
 
     Inheriting from this class makes it possible to use the decorators on a your base class and then later in the hierarchy split into Repeatable and
     non repeatable.
@@ -1153,11 +1143,11 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
         return cls._mc_deco_named_as or (cls.__name__ + 's')
 
 
-class _ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin):
+class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMeta):
     """Base class for 'builder' items which can create (a collection of) other items."""
 
     def __new__(cls, mc_key='default-builder', *init_args, **init_kwargs):
-        # cls._mc_debug_hierarchy('_ConfigBuilder.__new__')
+        # cls._mc_debug_hierarchy('ConfigBuilder.__new__')
         contained_in = cls._mc_hierarchy[-1]
         built_by = None
 
@@ -1185,7 +1175,7 @@ class _ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin):
             self._mc_num_errors = 0
             return self
         except KeyError:
-            self = super(_ConfigBuilder, cls).__new__(cls)
+            self = super(ConfigBuilder, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
 
@@ -1203,7 +1193,7 @@ class _ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin):
 
     def __init__(self, mc_key='default-builder', mc_include=None, mc_exclude=None):
         # Overridden to accept 'mc_key'
-        super(_ConfigBuilder, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        super(ConfigBuilder, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
     @classmethod
     def named_as(cls):
@@ -1262,6 +1252,10 @@ class _ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin):
         self._mc_freeze_previous(mc_error_info_up_level=1)
         self._mc_where = Where.NOWHERE
 
+    @abc.abstractmethod
+    def mc_build(self):
+        """Override this in derived classes. This is where child ConfigItems are declared"""
+
 
 class _ItemParentProxy(object):
     """The purpose of this is to set the current '_mc_contained_in' when accessing an item created by a builder and assigned under multiple parent items"""
@@ -1307,9 +1301,6 @@ class _ItemParentProxy(object):
 
     def __bool__(self):
         return self._mc_contained_in.__bool__() and self._mc_proxied_item.__bool__()
-
-    # Python2 compatibility
-    __nonzero__ = __bool__
 
     def __eq__(self, other):
         return self is other or self._mc_proxied_item is other
@@ -1359,7 +1350,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         # Make sure _mc_setattr is the real one if decorator is used multiple times
         _ConfigBase._mc_setattr = _ConfigBase._mc_setattr_real
 
-        self._mc_do_type_check = typecheck.typing_vcheck()
+        self._mc_do_type_check = True
         self._mc_do_validate_properties = True
 
         if env_factory is None:
@@ -1390,8 +1381,6 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
 
     def __bool__(self):
         return True
-
-    __nonzero__ = __bool__
 
     def _mc_pre_load_one_env(self, env):
         _mc_debug("\n==== Loading", env, "====")
@@ -1438,7 +1427,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
             self,
             error_next_env=False, validate_properties=True,
             todo_handling_other=McTodoHandling.ERROR, todo_handling_allowed=McTodoHandling.WARNING,
-            do_type_check=None, do_post_validate=True, lazy_load=False):
+            do_type_check=True, do_post_validate=True, lazy_load=False):
 
         """Load configuration (execute the function which was decorated using `mc_config` for each env defined in the env_factory).
 
@@ -1452,8 +1441,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
             todo_handling_allowed (McTodoHandling): This specifies how to handle attributes set to MC_TODO for envs with 'allow_todo' True.
                 The default is McTodoHandling.WARNING, causing a warning message to be printed but the configuration to be considered valid.
 
-            do_type_check (bool): Do type checking of attributes based on typing annotations. Default is True for Python 3.6.1+. Attempting
-                to enable this for earlier Python versions will raise an exception.
+            do_type_check (bool): Do type checking of attributes based on typing annotations.
 
                 Type checking of attributes is done based on typing information from the __init__ signature. If an attribute exists with the same
                 name as an __init__ argument with typing information, then the attribute must conform to that type. E.g.::
@@ -1493,11 +1481,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
             raise ConfigException(msg.format(th_typ=McTodoHandling.__name__, got_typ=todo_handling_allowed.__class__.__name__, val=todo_handling_allowed))
         self._mc_todo_handling_allowed = todo_handling_allowed
 
-        if self._mc_do_type_check:
-            self._mc_do_type_check = do_type_check is None or do_type_check
-        elif do_type_check:
-            # User requested type checking, but it is not available
-            raise ConfigException(typecheck.unsup_version_msg)
+        self._mc_do_type_check = do_type_check
 
         self._mc_lazy_load |= lazy_load
         # Load envs

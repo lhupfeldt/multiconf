@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
@@ -23,7 +23,6 @@ from multiconf.envs import EnvFactory
 
 ef = None
 prod = None
-hp = None
 conf = None
 
 
@@ -145,9 +144,6 @@ def config(validate_properties=True, lazy_load=False):
                         ci.setattr('qq' + repr(ii), default=7, g_dev=8, tst=9, pp=18, prod=5, mc_set_unknown=True)
                         ci.setattr('rr' + repr(ii), g_dev=8, tst=9, pp=19, prod=3, mc_set_unknown=True)
 
-    if hp:
-        print(hp.heap())
-
     conf_func.load(validate_properties=validate_properties, lazy_load=lazy_load)
     conf = conf_func
 
@@ -168,10 +164,7 @@ def use():
 @click.command()
 @click.option("--time/--no-time", default=True)
 @click.option("--profile/--no-profile", default=False)
-@click.option("--heap-check/--no-heap-check", default=False)
-def cli(time, profile, heap_check):
-    global hp
-
+def cli(time, profile):
     if time:
         def _test(name, ff, test, setup, repeat, number):
             times = sorted(timeit.repeat(test, setup=setup, repeat=repeat, number=number))
@@ -194,13 +187,6 @@ def cli(time, profile, heap_check):
             _test("load - no @props", ff, "config(validate_properties=False)", setup="from __main__ import config", repeat=10, number=10)
             _test("load - @props", ff, "config(validate_properties=True)", setup="from __main__ import config", repeat=10, number=10)
             _test("use", ff, "use()", setup="from __main__ import use", repeat=10, number=300)
-
-    if sys.version_info.major < 3 and heap_check:
-        from guppy import hpy
-        hp = hpy()
-        envs_setup()
-        config()
-        use()
 
     if profile:
         cProfile.run("envs_setup()", jp(here, "envs_setup.profile"))

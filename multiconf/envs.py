@@ -3,16 +3,8 @@
 
 from __future__ import print_function
 
-import sys
 from collections import OrderedDict
-
-major_version = sys.version_info[0]
-if major_version >= 3:
-    from collections.abc import Container
-else:
-    from collections import Container
-
-# pylint: disable=wrong-import-position
+from collections.abc import Container
 import itertools
 import json
 import threading

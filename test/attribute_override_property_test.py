@@ -14,10 +14,6 @@ from multiconf.envs import EnvFactory
 from .utils.utils import py3_local, py37_no_exc_comma, config_error, next_line_num, replace_ids
 
 
-major_version = sys.version_info[0]
-minor_version = sys.version_info[1]
-
-
 def ce(line_num, *lines):
     return config_error(__file__, line_num, *lines)
 
@@ -175,13 +171,9 @@ def test_attribute_overrides_property_method_is_regular_method(capsys):
                 nn.setattr('m', default=7, mc_overwrite_property=True)
 
     _sout, serr = capsys.readouterr()
-    if major_version >= 3:
-        msg = re.sub(r"m at [^>]*>", "m at 1234>", str(serr))
-        expected = "'mc_overwrite_property' specified but existing attribute 'm' with value '<function %(py3_local)sNested.m at 1234>' is not a @property." % \
-                   dict(py3_local=py3_local())
-    else:
-        msg = serr
-        expected = "'mc_overwrite_property' specified but existing attribute 'm' with value '<unbound method Nested.m>' is not a @property."
+    msg = re.sub(r"m at [^>]*>", "m at 1234>", str(serr))
+    expected = "'mc_overwrite_property' specified but existing attribute 'm' with value '<function %(py3_local)sNested.m at 1234>' is not a @property." % \
+               dict(py3_local=py3_local())
     assert msg == ce(errorline[0], expected)
 
 
@@ -340,28 +332,26 @@ def test_attribute_overrides_failing_property_method():
 
     origin_line_exp = 'raise Exception("bad property method")'
 
-    if major_version >= 3:
-        # TODO
-        # print('XXX __context__', dir(exinfo.value.__context__))
-        # print('XXX __cause__', dir(exinfo.value.__cause__))
+    # TODO
+    # print('XXX __context__', dir(exinfo.value.__context__))
+    # print('XXX __cause__', dir(exinfo.value.__cause__))
 
-        # ctx = exinfo.value.__context__
-        # while True:
-        #     if not ctx.__context__:
-        #         break
-        #     ctx = ctx.__context__
-        #     print('ctx:', ctx.__traceback__)
+    # ctx = exinfo.value.__context__
+    # while True:
+    #     if not ctx.__context__:
+    #         break
+    #     ctx = ctx.__context__
+    #     print('ctx:', ctx.__traceback__)
 
-        # tb = traceback.extract_tb(ctx.__traceback__)
-        # for origin in tb:
-        #     print(origin)
-        # origin = tb[-1]
-        # filename, lineno, function_name, line = origin
-        # assert filename == __file__
-        # assert lineno == errorline[0]
-        # assert function_name == 'm'
-        # assert line == origin_line_exp
-        pass
+    # tb = traceback.extract_tb(ctx.__traceback__)
+    # for origin in tb:
+    #     print(origin)
+    # origin = tb[-1]
+    # filename, lineno, function_name, line = origin
+    # assert filename == __file__
+    # assert lineno == errorline[0]
+    # assert function_name == 'm'
+    # assert line == origin_line_exp
 
     exp = _attribute_overrides_failing_property_method_exp % dict(py3_local=py3_local(), comma=py37_no_exc_comma)
     exp += " Attribute 'm' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception: bad property method"

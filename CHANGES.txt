@@ -43,3 +43,8 @@ This fixes an issue with not allowing multiple configuration using the same EnvF
 FROM v7 to v8
 
 The mc_config decorator now wraps the config method which is decorated in an object, so you must call the new object.load(...) method to instantiate the configuration. You then call the object to get the env specific instantiation. This provides more flexibility in providing arguments to load(...) without having to wrap the entire configuration in an extra function level.
+
+FROM v8 to V9
+
+Dropped support for Python versions older then 3.6.1
+Taking advantage of Python 3 features
