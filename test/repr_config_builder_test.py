@@ -6,7 +6,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.compare_repr import compare_repr
-from .utils.utils import py3_local
+from .utils.utils import local_func
 
 
 ef = EnvFactory()
@@ -184,7 +184,7 @@ _repr_attr_ref_configbuilder_expected_repr = """{
         "__class__": "Env",
         "name": "prod"
     },
-    "yb_ref": "#ref later builder <class 'test.repr_config_builder_test.%(py3_local)sYBuilder'>",
+    "yb_ref": "#ref later builder <class 'test.repr_config_builder_test.%(local_func)sYBuilder'>",
     "ys": {
         "server1": {
             "__class__": "Y #as: 'xxxx', id: 0000",
@@ -227,4 +227,4 @@ def test_repr_attr_ref_configbuilder():
 
     cr = config(prod).ItemWithYs
 
-    assert compare_repr(cr, _repr_attr_ref_configbuilder_expected_repr % dict(py3_local=py3_local()))
+    assert compare_repr(cr, _repr_attr_ref_configbuilder_expected_repr % dict(local_func=local_func()))

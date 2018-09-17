@@ -6,7 +6,7 @@ from pytest import raises
 from multiconf import mc_config, ConfigItem, MC_REQUIRED, ConfigException
 from multiconf.envs import EnvFactory
 
-from .utils.utils import next_line_num, line_num, lines_in, start_file_line, py3_local
+from .utils.utils import next_line_num, line_num, lines_in, start_file_line, local_func
 from .utils.messages import config_error_mc_required_expected
 
 
@@ -137,4 +137,4 @@ def test_error_freezing_previous_sibling__validation(capsys):
 
     # This error is generated before the MC_REQUIRED check, ok as long as we get en error
     exp = "Repeated non repeatable conf item: 'inner': <class 'test.mc_required_attributes_test.{}inner'>"
-    assert str(exinfo.value) == exp.format(py3_local())
+    assert str(exinfo.value) == exp.format(local_func())

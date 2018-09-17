@@ -10,7 +10,7 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, replace_ids, replace_ids_builder, py3_local, next_line_num
+from .utils.utils import config_error, replace_ids, replace_ids_builder, local_func, next_line_num
 from .utils.tstclasses import ItemWithName, ItemWithAA
 from .utils.messages import not_repeatable_in_parent_msg
 
@@ -120,7 +120,7 @@ def test_unexpected_repeatable_child_builder():
                 UnexpectedRepeatableChildBuilder()
 
     exp = not_repeatable_in_parent_msg.format(
-        repeatable_cls_key='r', repeatable_cls="<class 'test.builder_definition_errors_test.%(py3_local)sRepeatableChild'>" % dict(py3_local=py3_local()),
+        repeatable_cls_key='r', repeatable_cls="<class 'test.builder_definition_errors_test.%(local_func)sRepeatableChild'>" % dict(local_func=local_func()),
         ci_named_as='ConfigItem', ci_cls="<class 'multiconf.multiconf.ConfigItem'>")
     assert replace_ids(str(exinfo.value), False) == exp
 
@@ -167,7 +167,7 @@ def test_unexpected_repeatable_child_nested_builders_with():
         repeatable_cls_key='arepeatable',
         repeatable_cls="<class 'test.builder_definition_errors_test.RepItem'>",
         ci_named_as='ItemWithoutARepeatable',
-        ci_cls="<class 'test.builder_definition_errors_test.%(py3_local)sItemWithoutARepeatable'>" % dict(py3_local=py3_local()))
+        ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sItemWithoutARepeatable'>" % dict(local_func=local_func()))
     assert replace_ids(str(exinfo.value), False) == exp
 
 
@@ -200,7 +200,7 @@ def test_unexpected_repeatable_child_nested_builders_no_with():
         repeatable_cls_key='arepeatable',
         repeatable_cls="<class 'test.builder_definition_errors_test.RepItem'>",
         ci_named_as='ItemWithoutARepeatable',
-        ci_cls="<class 'test.builder_definition_errors_test.%(py3_local)sItemWithoutARepeatable'>" % dict(py3_local=py3_local()))
+        ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sItemWithoutARepeatable'>" % dict(local_func=local_func()))
     assert replace_ids(str(exinfo.value), False) == exp
 
 
@@ -270,7 +270,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
     class OuterItem(ConfigItem):
         pass
 
-    exp = "Repeated non repeatable conf item: 'MiddleItem': <class 'test.builder_definition_errors_test.%(py3_local)sMiddleItem'>" % dict(py3_local=py3_local())
+    exp = "Repeated non repeatable conf item: 'MiddleItem': <class 'test.builder_definition_errors_test.%(local_func)sMiddleItem'>" % dict(local_func=local_func())
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod, load_now=True)
@@ -324,13 +324,13 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
                     YChild(mc_key=None, a=10)
 
     exp = not_repeatable_in_parent_msg.format(
-        repeatable_cls_key='y_children', repeatable_cls="<class 'test.builder_definition_errors_test.%(py3_local)sYChild'>" % dict(py3_local=py3_local()),
-        ci_named_as='ys', ci_cls="<class 'test.builder_definition_errors_test.%(py3_local)sY'>"% dict(py3_local=py3_local()))
+        repeatable_cls_key='y_children', repeatable_cls="<class 'test.builder_definition_errors_test.%(local_func)sYChild'>" % dict(local_func=local_func()),
+        ci_named_as='ys', ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sY'>"% dict(local_func=local_func()))
 
     assert replace_ids(str(exinfo.value), False) == exp
 
 
-_configbuilder_repeated = """Re-used key 'aa' in repeated item <class 'test.builder_definition_errors_test.%(py3_local)sXBuilder'> overwrites existing entry in parent:
+_configbuilder_repeated = """Re-used key 'aa' in repeated item <class 'test.builder_definition_errors_test.%(local_func)sXBuilder'> overwrites existing entry in parent:
 {
     "__class__": "Root #as: 'Root', id: 0000, not-frozen",
     "env": {
@@ -361,7 +361,7 @@ def test_configbuilder_repeated():
                 XBuilder('aa')
 
     print(str(exinfo.value))
-    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_repeated % dict(py3_local=py3_local())
+    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_repeated % dict(local_func=local_func())
 
 
 def test_configbuilder_repeated_in_mc_init():

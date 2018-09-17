@@ -9,7 +9,7 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigExcepti
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import replace_ids, py3_local
+from .utils.utils import replace_ids, local_func
 from .utils.tstclasses import ItemWithAA
 
 
@@ -149,7 +149,7 @@ def test_find_attribute_or_none():
     assert cr.KwargsItem.KwargsItem.find_attribute_or_none('ConfigItem') == exp_item[0]
 
 
-_find_contained_in_named_as_not_found_expected = """Searching from: <class 'test.find_test.%(py3_local)sY'>: Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root', 'McConfigRoot']"""
+_find_contained_in_named_as_not_found_expected = """Searching from: <class 'test.find_test.%(local_func)sY'>: Could not find a parent container named as: 'notthere' in hieracy with names: ['someitems', 'x', 'someitems', 'x', 'root', 'McConfigRoot']"""
 
 def test_find_contained_in_named_as_not_found():
     @named_as('someitems')
@@ -193,10 +193,10 @@ def test_find_contained_in_named_as_not_found():
     with raises(ConfigException) as exinfo:
         cr.x.someitems['b'].x.someitems['d'].y.find_contained_in(named_as='notthere').a
 
-    assert replace_ids(str(exinfo.value)) == _find_contained_in_named_as_not_found_expected % dict(py3_local=py3_local())
+    assert replace_ids(str(exinfo.value)) == _find_contained_in_named_as_not_found_expected % dict(local_func=local_func())
 
 
-_find_attribute_with_attribute_name_not_found = """Searching from: <class 'test.find_test.%(py3_local)sX'>: Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root', 'McConfigRoot']"""
+_find_attribute_with_attribute_name_not_found = """Searching from: <class 'test.find_test.%(local_func)sX'>: Could not find an attribute named: 'e' in hieracy with names: ['x', 'someitems', 'x', 'someitems', 'x', 'root', 'McConfigRoot']"""
 
 def test_find_attribute_with_attribute_name_not_found():
     @named_as('someitems')
@@ -241,4 +241,4 @@ def test_find_attribute_with_attribute_name_not_found():
     with raises(ConfigException) as exinfo:
         assert cr.x.someitems['b'].x.someitems['d'].x.find_attribute('e') == 3
 
-    assert replace_ids(str(exinfo.value)) == _find_attribute_with_attribute_name_not_found % dict(py3_local=py3_local())
+    assert replace_ids(str(exinfo.value)) == _find_attribute_with_attribute_name_not_found % dict(local_func=local_func())

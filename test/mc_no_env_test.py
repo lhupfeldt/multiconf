@@ -11,7 +11,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory, MC_NO_ENV
 
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
-from .utils.utils import py3_local
+from .utils.utils import local_func
 
 
 ef = EnvFactory()

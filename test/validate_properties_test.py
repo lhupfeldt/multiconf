@@ -10,7 +10,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import next_line_num, replace_multiconf_file_line_msg, config_error, file_line, lines_in
-from .utils.utils import py3_local
+from .utils.utils import local_func
 from .utils.tstclasses import ItemWithAA
 
 
@@ -78,7 +78,7 @@ def test_validate_properties_property_method_raises_InvalidUsageException():
 
 
 _validate_properties_property_method_raises_exception_expected_stderr = """
-ConfigError: Exception validating @property 'm' on item <class 'test.validate_properties_test.%(py3_local)sNested'> in Env('pp').
+ConfigError: Exception validating @property 'm' on item <class 'test.validate_properties_test.%(local_func)sNested'> in Env('pp').
 Traceback (most recent call last):
   File "fake_multiconf_dir/multiconf.py", line 999, in _mc_validate_properties
     val = getattr(self, key)
@@ -106,7 +106,7 @@ def test_validate_properties_property_method_raises_exception(capsys):
 
     _sout, serr = capsys.readouterr()
     assert replace_multiconf_file_line_msg(serr) == _validate_properties_property_method_raises_exception_expected_stderr % (
-        dict(py3_local=py3_local(), file_line=file_line(__file__, errorline[0])))
+        dict(local_func=local_func(), file_line=file_line(__file__, errorline[0])))
     assert str(exinfo.value) == "Error validating @property methods for Env('pp')"
 
 

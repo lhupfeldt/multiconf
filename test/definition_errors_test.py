@@ -10,7 +10,7 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigExcepti
 from multiconf.decorators import nested_repeatables, required
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, next_line_num, replace_ids, lines_in, py3_local, start_file_line, file_line
+from .utils.utils import config_error, next_line_num, replace_ids, lines_in, local_func, start_file_line, file_line
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
 from .utils.messages import already_printed_msg, mc_required_expected, config_error_mc_required_expected, not_repeatable_in_parent_msg
 
@@ -365,7 +365,7 @@ def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class(
     assert replace_ids(str(exinfo.value), named_as=False) == exp
 
 
-_non_repeatable_but_container_expects_repeatable_expected = """'RepeatableItems': <class 'test.definition_errors_test.%(py3_local)sRepeatableItems'> is not defined as repeatable, but this is defined as a repeatable item in the containing class: {
+_non_repeatable_but_container_expects_repeatable_expected = """'RepeatableItems': <class 'test.definition_errors_test.%(local_func)sRepeatableItems'> is not defined as repeatable, but this is defined as a repeatable item in the containing class: {
     "__class__": "project #as: 'project', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
@@ -385,7 +385,7 @@ def test_non_repeatable_but_container_expects_repeatable():
             with project():
                 RepeatableItems()
 
-    assert replace_ids(str(exinfo.value), named_as=False) == _non_repeatable_but_container_expects_repeatable_expected % dict(py3_local=py3_local())
+    assert replace_ids(str(exinfo.value), named_as=False) == _non_repeatable_but_container_expects_repeatable_expected % dict(local_func=local_func())
 
 
 def test_attempt_to_call_contained_item():

@@ -14,7 +14,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import replace_ids, next_line_num, to_compact
-from .utils.utils import py3_local, py37_no_exc_comma
+from .utils.utils import local_func, py37_no_exc_comma
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
@@ -788,8 +788,8 @@ _json_dump_property_method_calls_json_expected_json = """{
 }"""
 
 _json_dump_property_method_calls_json_expected_stderr = """Warning: Nested json calls, disabling @property method value dump:
-outer object type: <class 'test.json_output_test.%(py3_local)sNested'>
-inner object type: <class 'test.json_output_test.%(py3_local)sNested'>, inner obj: {
+outer object type: <class 'test.json_output_test.%(local_func)sNested'>
+inner object type: <class 'test.json_output_test.%(local_func)sNested'>, inner obj: {
     "__class__": "Nested #as: 'xxxx', id: 0000",
     "env": {
         "__class__": "Env",
@@ -817,7 +817,7 @@ def test_json_dump_property_method_calls_json(capsys):
         assert compare_json(cr, _json_dump_property_method_calls_json_expected_json, warn_nesting=True)
         sout, serr = capsys.readouterr()
         assert not sout
-        exp = _json_dump_property_method_calls_json_expected_stderr % dict(py3_local=py3_local())
+        exp = _json_dump_property_method_calls_json_expected_stderr % dict(local_func=local_func())
         assert exp in replace_ids(serr)
     finally:
         os.environ['MULTICONF_WARN_JSON_NESTING'] = warn_nesting
@@ -855,7 +855,7 @@ _json_dump_non_conf_item_used_as_key_expected_json = """{
         "__class__": "SimpleItem",
         "__id__": 0000,
         "b": {
-            "<test.json_output_test.%(py3_local)sKey object at 0x0000>": 2
+            "<test.json_output_test.%(local_func)sKey object at 0x0000>": 2
         }
     }
 }"""
@@ -875,7 +875,7 @@ def test_json_dump_non_conf_item_used_as_key(capsys):
     assert not sout
     assert not serr
 
-    assert compare_json(cr, _json_dump_non_conf_item_used_as_key_expected_json % dict(py3_local=py3_local()), replace_address=True)
+    assert compare_json(cr, _json_dump_non_conf_item_used_as_key_expected_json % dict(local_func=local_func()), replace_address=True)
 
 
 _json_dump_non_conf_item_expected_json = """{
@@ -1292,7 +1292,7 @@ _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 = """{
     "McWithNestedClass": {
         "__class__": "McWithNestedClass",
         "__id__": 0000,
-        "TTT": "<class 'test.json_output_test.%(py3_local)sMcWithNestedClass.TTT'>"
+        "TTT": "<class 'test.json_output_test.%(local_func)sMcWithNestedClass.TTT'>"
     }
 }"""
 
@@ -1308,7 +1308,7 @@ _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 = """{
     "ItemWithAA": {
         "__class__": "ItemWithAA",
         "__id__": 0000,
-        "aa": "<class 'test.json_output_test.%(py3_local)sNonMcWithNestedClass'>"
+        "aa": "<class 'test.json_output_test.%(local_func)sNonMcWithNestedClass'>"
     }
 }"""
 
@@ -1323,7 +1323,7 @@ def test_json_dump_nested_class_non_mc():
             McWithNestedClass()
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(py3_local=py3_local()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(local_func=local_func()))
 
     class NonMcWithNestedClass(object):
         class TTT(object):
@@ -1336,7 +1336,7 @@ def test_json_dump_nested_class_non_mc():
                 ci.aa = NonMcWithNestedClass
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_local=py3_local()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(local_func=local_func()))
 
 
 def test_json_dump_nested_class_with_json_equiv_non_mc():
@@ -1351,7 +1351,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
             McWithNestedClass()
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(py3_local=py3_local()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(local_func=local_func()))
 
     class NonMcWithNestedClass(object):
         class TTT(object):
@@ -1365,7 +1365,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
                 ci.aa = NonMcWithNestedClass
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_local=py3_local()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(local_func=local_func()))
 
 
 _json_dump_multiple_errors_expected_json = """{

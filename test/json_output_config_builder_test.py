@@ -6,7 +6,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.compare_json import compare_json
-from .utils.utils import py3_local
+from .utils.utils import local_func
 from .utils.tstclasses import ItemWithName
 
 
@@ -600,7 +600,7 @@ _json_dump_attr_ref_configbuilder_expected_json = """{
         "__class__": "Env",
         "name": "prod"
     },
-    "yb_ref": "#ref later builder <class 'test.json_output_config_builder_test.%(py3_local)sYBuilder'>",
+    "yb_ref": "#ref later builder <class 'test.json_output_config_builder_test.%(local_func)sYBuilder'>",
     "ys": {
         "server1": {
             "__class__": "Y",
@@ -676,6 +676,6 @@ def test_json_dump_attr_ref_configbuilder():
 
     cr = config(prod).ItemWithYs
 
-    assert compare_json(cr, _json_dump_attr_ref_configbuilder_expected_json % dict(py3_local=py3_local()),
+    assert compare_json(cr, _json_dump_attr_ref_configbuilder_expected_json % dict(local_func=local_func()),
                         replace_builders=False, dump_builders=False, test_decode=True)
     assert compare_json(cr, _json_dump_attr_ref_configbuilder_expected_json_with_builders, replace_builders=True)

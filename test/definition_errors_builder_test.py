@@ -10,7 +10,7 @@ from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException, Con
 from multiconf.decorators import nested_repeatables
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, line_num, next_line_num, lines_in, py3_local, start_file_line, file_line
+from .utils.utils import config_error, line_num, next_line_num, lines_in, local_func, start_file_line, file_line
 from .utils.messages import exception_previous_object_expected_stderr
 from .utils.messages import mc_required_expected
 from .utils.tstclasses import BuilderWithAA
@@ -78,7 +78,7 @@ def test_error_freezing_previous_sibling__build(capsys):
             inner(2)
 
     _sout, serr = capsys.readouterr()
-    exp = exception_previous_object_expected_stderr % dict(module='definition_errors_builder_test', py3_local=py3_local())
+    exp = exception_previous_object_expected_stderr % dict(module='definition_errors_builder_test', local_func=local_func())
     assert serr == exp
     assert str(exinfo.value) == "Error in build"
 

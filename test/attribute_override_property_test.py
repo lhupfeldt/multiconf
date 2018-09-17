@@ -11,7 +11,7 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigExcepti
 from multiconf.decorators import named_as, nested_repeatables
 from multiconf.envs import EnvFactory
 
-from .utils.utils import py3_local, py37_no_exc_comma, config_error, next_line_num, replace_ids
+from .utils.utils import local_func, py37_no_exc_comma, config_error, next_line_num, replace_ids
 
 
 def ce(line_num, *lines):
@@ -172,8 +172,8 @@ def test_attribute_overrides_property_method_is_regular_method(capsys):
 
     _sout, serr = capsys.readouterr()
     msg = re.sub(r"m at [^>]*>", "m at 1234>", str(serr))
-    expected = "'mc_overwrite_property' specified but existing attribute 'm' with value '<function %(py3_local)sNested.m at 1234>' is not a @property." % \
-               dict(py3_local=py3_local())
+    expected = "'mc_overwrite_property' specified but existing attribute 'm' with value '<function %(local_func)sNested.m at 1234>' is not a @property." % \
+               dict(local_func=local_func())
     assert msg == ce(errorline[0], expected)
 
 
@@ -300,7 +300,7 @@ _attribute_overrides_failing_property_method_exp = """{
     },
     "m #no value for Env('prod')": true,
     "m #json_error trying to handle property method": "Exception('bad property method'%(comma)s)"
-}, object of type: <class 'test.attribute_override_property_test.%(py3_local)sNestedBadM'> has no attribute 'm'.
+}, object of type: <class 'test.attribute_override_property_test.%(local_func)sNestedBadM'> has no attribute 'm'.
 """.strip()
 
 def test_attribute_overrides_failing_property_method():
@@ -353,7 +353,7 @@ def test_attribute_overrides_failing_property_method():
     # assert function_name == 'm'
     # assert line == origin_line_exp
 
-    exp = _attribute_overrides_failing_property_method_exp % dict(py3_local=py3_local(), comma=py37_no_exc_comma)
+    exp = _attribute_overrides_failing_property_method_exp % dict(local_func=local_func(), comma=py37_no_exc_comma)
     exp += " Attribute 'm' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception: bad property method"
 
     print('exp:', exp)

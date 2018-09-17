@@ -7,7 +7,7 @@ from multiconf import mc_config, ConfigItem, MC_REQUIRED
 from multiconf.decorators import named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import py3_local, py37_no_exc_comma, lines_in, file_line, next_line_num
+from .utils.utils import local_func, py37_no_exc_comma, lines_in, file_line, next_line_num
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
@@ -148,7 +148,7 @@ _json_fallback_handler_expected_json = """{
         1,
         2
     ],
-    "unhandled_non_item": "__json_error__ # don't know how to handle obj of type: <class 'test.json_output_callbacks_test.%(py3_local)sUnHandledNonItem'>",
+    "unhandled_non_item": "__json_error__ # don't know how to handle obj of type: <class 'test.json_output_callbacks_test.%(local_func)sUnHandledNonItem'>",
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
@@ -190,7 +190,7 @@ def test_json_fallback_handler():
             Nested(b=2)
 
     cr = config(prod).ItemWithAA
-    assert compare_json(cr, _json_fallback_handler_expected_json % dict(py3_local=py3_local()), expect_num_errors=1)
+    assert compare_json(cr, _json_fallback_handler_expected_json % dict(local_func=local_func()), expect_num_errors=1)
 
 
 _json_fallback_handler_iterable_expected_json = """{

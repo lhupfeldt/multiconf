@@ -11,7 +11,7 @@ major_version = sys.version_info[0]
 minor_version = sys.version_info[1]
 
 
-def py3_local():
+def local_func():
     """Return extra string for representation of a test-funtion-local function or class.
 
     This allows for easy renaming of test functions with no impact on expected result string.

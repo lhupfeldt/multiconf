@@ -11,7 +11,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
-from .utils.utils import py3_local
+from .utils.utils import local_func
 
 
 ef2_pp_prod = EnvFactory()
@@ -98,7 +98,7 @@ def test_mc_post_validate_excluded_item():
             with root() as rt:
                 rt.mc_select_envs(exclude=[pp2])
 
-    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(py3_local)sroot'>" % dict(py3_local=py3_local())
+    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(local_func)sroot'>" % dict(local_func=local_func())
     exp = "Accessing attribute 'aa' for Env('pp') on an excluded config item: " + exp_class
     assert exp in str(exinfo.value)
 
@@ -124,7 +124,7 @@ def test_mc_post_validate_excluded_repeatable_item():
                 with Rep(2) as r2:
                     r2.mc_select_envs(exclude=[pp2])
 
-    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(py3_local)sRep'>" % dict(py3_local=py3_local())
+    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(local_func)sRep'>" % dict(local_func=local_func())
     exp = "Accessing attribute 'aa' for Env('pp') on an excluded config item: " + exp_class
     assert exp in str(exinfo.value)
 
