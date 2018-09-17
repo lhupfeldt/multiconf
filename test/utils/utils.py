@@ -11,23 +11,16 @@ major_version = sys.version_info[0]
 minor_version = sys.version_info[1]
 
 
-def py3_local(extra_class_levels=''):
-    """Return extra string for python 3 representation of a test-funtion-local function or class.
+def py3_local():
+    """Return extra string for representation of a test-funtion-local function or class.
 
-    This is different from the python 2 representation which has no information about parent classes or functions.
-
-    Arguments:
-        extra_class_levels (str): If the function or class is nested inside a class inside the test function
+    This allows for easy renaming of test functions with no impact on expected result string.
     """
-    if sys.version_info[0] < 3:
-        return ''
 
     frame = sys._getframe(1)
-    return frame.f_code.co_name + '.<locals>.' + extra_class_levels
+    return frame.f_code.co_name + '.<locals>.'
 
 
-py3_tc = 'type' if sys.version_info[0] < 3 else 'class'
-py3_oi = 'object' if sys.version_info[0] >= 3 else 'instance'
 py37_no_exc_comma = ',' if str(major_version) + '.' + str(minor_version) < '3.7' else ''
 
 

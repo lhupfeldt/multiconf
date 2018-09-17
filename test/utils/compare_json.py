@@ -12,7 +12,6 @@ except ImportError:
 
 
 from .utils import replace_ids as _replace_ids, replace_ids_builder, to_compact, to_compact_excluded
-from .utils import py3_tc
 from .check_containment import check_containment
 
 
@@ -41,7 +40,6 @@ def _compare_json(
             compact_json_replaced = compact_json
             full_json_replaced = full_json
 
-        expected_json %= {'type_or_class': py3_tc}
         compact_expected_json = None
 
         assert full_json_replaced == expected_json, "Error: full json differs"

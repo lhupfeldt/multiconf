@@ -10,7 +10,7 @@ from pytest import raises, mark
 from multiconf import mc_config, ConfigItem, ConfigException, ConfigAttributeError, MC_REQUIRED, MC_TODO, McTodoHandling
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, config_warning, next_line_num, replace_ids, lines_in, start_file_line, py3_tc
+from .utils.utils import config_error, config_warning, next_line_num, replace_ids, lines_in, start_file_line
 from .utils.messages import already_printed_msg
 from .utils.messages import mc_todo_expected, config_error_mc_todo_expected
 from .utils.tstclasses import ItemWithAA

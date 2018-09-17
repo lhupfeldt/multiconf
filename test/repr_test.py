@@ -9,7 +9,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import replace_ids
-from .utils.utils import py3_local, py3_oi
+from .utils.utils import py3_local
 from .utils.compare_repr import compare_repr
 from .utils.tstclasses import ItemWithAA
 
@@ -316,7 +316,7 @@ _repr_non_conf_item_used_as_key_expected_json = """{
     "someitem": {
         "__class__": "SimpleItem #as: 'xxxx', id: 0000",
         "b": {
-            "<test.repr_test.%(py3_local)sKey %(py3_oi)s at 0x0000>": 2
+            "<test.repr_test.%(py3_local)sKey object at 0x0000>": 2
         }
     }
 }"""
@@ -336,7 +336,7 @@ def test_repr_non_conf_item_used_as_key(capsys):
     assert not sout
     assert not serr
 
-    assert compare_repr(cr, _repr_non_conf_item_used_as_key_expected_json % dict(py3_local=py3_local(), py3_oi=py3_oi), replace_address=True)
+    assert compare_repr(cr, _repr_non_conf_item_used_as_key_expected_json % dict(py3_local=py3_local()), replace_address=True)
 
 
 _repr_iterable_expected_repr = """{
