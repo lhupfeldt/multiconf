@@ -113,18 +113,19 @@ def test_build_override_underscore_mc_error(capsys):
     assert serr == ce(errorline, msg)
 
 
-def test_setattr_no_envs(capsys):
-    def check(errorline):
-        _sout, serr = capsys.readouterr()
-        assert lines_in(
-            serr,
-            start_file_line(__file__, errorline),
-            "^ConfigError: No Env or EnvGroup names specified.",
-            # TODO, should we expect multiple errors here?
-            # start_file_line(__file__, errorline),
-            # config_error_mc_required_expected.format(attr='aa', env=pprd),
-        )
+def _check_no_env(errorline, capsys):
+    _sout, serr = capsys.readouterr()
+    assert lines_in(
+        serr,
+        start_file_line(__file__, errorline),
+        "^ConfigError: No Env or EnvGroup names specified.",
+        # TODO, should we expect multiple errors here?
+        # start_file_line(__file__, errorline),
+        # config_error_mc_required_expected.format(attr='aa', env=pprd),
+    )
 
+
+def test_setattr_no_envs(capsys):
     # ConfigBuilder
     class B(BuilderWithAA):
         def mc_build(self):
@@ -139,31 +140,10 @@ def test_setattr_no_envs(capsys):
                 errorline[0] = next_line_num()
                 ci.setattr('aa')
 
-    check(errorline[0])
-
-    with raises(ConfigException) as exinfo:
-        @mc_config(ef, load_now=True)
-        def config(_):
-            with B() as ci:
-                errorline[0] = next_line_num()
-                ci.setattr('aa', 1)
-
-    check(errorline[0])
+    _check_no_env(errorline[0], capsys)
 
 
 def test_setattr_no_envs_set_unknown(capsys):
-    def check(errorline):
-        _sout, serr = capsys.readouterr()
-        print("serr:", serr)
-        assert lines_in(
-            serr,
-            start_file_line(__file__, errorline),
-            "^ConfigError: No Env or EnvGroup names specified.",
-            # TODO, should we expect multiple errors here?
-            # start_file_line(__file__, errorline),
-            # config_error_no_value_expected.format(attr='aa', env=pprd),
-        )
-
     # ConfigBuilder
     class B(ConfigBuilder):
         def mc_build(self):
@@ -176,15 +156,21 @@ def test_setattr_no_envs_set_unknown(capsys):
         def config(_):
             with B() as ci:
                 errorline[0] = next_line_num()
-                ci.setattr('aa?')
+                ci.setattr('aa', mc_set_unknown=True)
 
-    check(errorline[0])
+    _check_no_env(errorline[0], capsys)
 
-    with raises(ConfigException) as exinfo:
+
+def test_setattr_mc_keyword_call_only():
+    # ConfigBuilder
+    class B(ConfigBuilder):
+        def mc_build(self):
+            pass
+
+    with raises(TypeError) as exinfo:
         @mc_config(ef, load_now=True)
         def config(_):
             with B() as ci:
-                errorline[0] = next_line_num()
-                ci.setattr('aa?', 1)
+                ci.setattr('aa', True, default=1)
 
-    check(errorline[0])
+    assert "setattr() takes 2 positional arguments but 3 were given" in str(exinfo.value)

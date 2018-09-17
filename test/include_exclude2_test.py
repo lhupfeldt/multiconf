@@ -340,7 +340,7 @@ def test_exclude_include_error_before_exclude(capsys):
         def config(_):
             with item() as it:
                 errorline[0] = next_line_num()
-                it.setattr('_a', 7)
+                it.setattr('_a', default=7)
                 it.mc_select_envs(exclude=[prod])
 
     _sout, serr = capsys.readouterr()

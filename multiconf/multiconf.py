@@ -578,7 +578,7 @@ class _ConfigBase(object):
             thread_local.env, attr_name, value, cr.env_factory.default, False, False, False, mc_error_info_up_level=3,
             mc_5_migration=cr._mc_5_migration, is_assign=True)
 
-    def setattr(self, attr_name, mc_overwrite_property=False, mc_set_unknown=False, mc_force=False, mc_error_info_up_level=2, **env_values):
+    def setattr(self, attr_name, *, mc_overwrite_property=False, mc_set_unknown=False, mc_force=False, mc_error_info_up_level=2, **env_values):
         """Set env specific values for an attribute.
 
         Arguments:
