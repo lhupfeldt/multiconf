@@ -601,11 +601,6 @@ class _ConfigBase(object):
             self._mc_print_error_caller(msg, mc_error_info_up_level)
             return
 
-        if not env_values:
-            msg = "No Env or EnvGroup names specified."
-            self._mc_print_error_caller(msg, mc_error_info_up_level)
-            return
-
         cr = self._mc_root
         env_factory = cr.env_factory
 
@@ -628,6 +623,11 @@ class _ConfigBase(object):
                 current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level + 1, cr._mc_5_migration)
             return
         except MissingValueEnvException:
+            if not env_values:
+                msg = "No Env or EnvGroup names specified."
+                self._mc_print_error_caller(msg, mc_error_info_up_level)
+                return
+
             self._mc_setattr(
                 current_env, attr_name, MC_NO_VALUE, env_factory.eg_none, mc_overwrite_property, mc_set_unknown, False, mc_error_info_up_level + 1, cr._mc_5_migration)
             return
