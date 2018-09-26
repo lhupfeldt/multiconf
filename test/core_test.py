@@ -105,11 +105,8 @@ def test_iteritems_root_attributes():
             cr.bb = 2
 
     cr = config(prod2).aabb_root
-    for exp, actual in zip([('aa', 1), ('bb', 2)], list(cr.items())):
-        exp_key, exp_value = exp
-        key, value = actual
-        assert exp_key == key
-        assert exp_value == value
+    for _, _ in cr.items():
+        fail("items() yielded something, but there should be no items!")
 
 
 def test_iteritems_item_attributes():
@@ -128,8 +125,7 @@ def test_iteritems_item_attributes():
     ci = config(prod2).myitem
     for key, value in ci.items():
         if key == 'aa':
-            assert value == 1
-            continue
+            fail("items() returned attribute!")
         if key == 'anitem':
             assert value.xx == 1
             continue
