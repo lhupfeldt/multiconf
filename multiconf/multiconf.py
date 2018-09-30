@@ -57,7 +57,7 @@ class _ConfigBase(object):
         nerr = self._mc_num_errors
         ww, err = ('were', 'errors') if nerr > 1 else ('was', 'error')
         msg = "There {ww} {nerr} {err} when defining item: {self}{already}.".format(ww=ww, nerr=nerr, err=err, self=self, already=already)
-        raise ConfigException(msg, is_summary = True)
+        raise ConfigException(msg, is_summary=True)
 
     def _mc_print_error(self, message, file_name, line_num):
         """Print a single message preceded by file:line"""
