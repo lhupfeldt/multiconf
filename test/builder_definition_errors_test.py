@@ -58,8 +58,8 @@ _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expe
             "something": null
         }
     },
-    "_mc_ConfigBuilder_XBuilder default-builder": {
-        "__class__": "XBuilder #as: '_mc_ConfigBuilder_XBuilder', id: 0000, not-frozen",
+    "mc_ConfigBuilder_XBuilder default-builder": {
+        "__class__": "XBuilder #as: 'mc_ConfigBuilder_XBuilder', id: 0000, not-frozen",
         "num_servers": 2
     }
 }"""
@@ -337,8 +337,8 @@ _configbuilder_repeated = """Re-used key 'aa' in repeated item <class 'test.buil
         "__class__": "Env",
         "name": "pp"
     },
-    "_mc_ConfigBuilder_XBuilder aa": {
-        "__class__": "XBuilder #as: '_mc_ConfigBuilder_XBuilder', id: 0000, not-frozen"
+    "mc_ConfigBuilder_XBuilder aa": {
+        "__class__": "XBuilder #as: 'mc_ConfigBuilder_XBuilder', id: 0000, not-frozen"
     }
 }"""
 

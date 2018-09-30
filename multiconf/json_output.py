@@ -217,7 +217,7 @@ class ConfigItemEncoder(object):
         return key, [('', new_val)] + attr_inf
 
     def _handle_one_dir_entry_one_env(self, obj, key, _val, env, attributes_overriding_property, _dir_entries, names_only):
-        if key.startswith('_') or key in obj._mc_items or key in _mc_filter_out_keys:
+        if key.startswith('_') or isinstance(obj.__dict__.get(key, None), (self.multiconf_base_type, RepeatableDict)) or key in _mc_filter_out_keys:
             return key, ()
 
         overridden_property = ''
@@ -407,7 +407,7 @@ class ConfigItemEncoder(object):
                         dd[key] = attr_dict[key]
 
                 # --- Handle child items ---
-                for key, item in obj._mc_items.items():
+                for key, item in obj.items_with_builders_and_excluded():
                     if not self.builders and isinstance(item, self.multiconf_builder_type):
                         continue
 

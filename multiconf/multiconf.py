@@ -264,7 +264,7 @@ class _ConfigBase(object):
 
         missing_req = []
         for req in self._mc_deco_required:
-            if not req in self._mc_items:
+            if req not in self.__dict__:
                 missing_req.append(req)
         if missing_req:
             if mc_error_info_up_level is not None:
@@ -310,7 +310,7 @@ class _ConfigBase(object):
             return
 
         for key in self.__class__._mc_cls_dir_entries:
-            if key.startswith('_') or key in self._mc_attributes or key in self._mc_items or key in _mc_filter_out_keys:
+            if key.startswith('_') or key in self._mc_attributes or key in self.__dict__ or key in _mc_filter_out_keys:
                 continue
 
             try:
@@ -442,9 +442,9 @@ class _ConfigBase(object):
         self._mc_print_value_error_msg(attr_name, value, mc_caller_file_name, mc_caller_line_num)
 
     def _mc_check_no_existing_attr(self, attr_name, mc_overwrite_property, mc_set_unknown, mc_error_info_up_level):
-        if attr_name in self._mc_items:
-            # Non-Repeatable ConfigItems are not defined at the class level, only at instance level and in _mc_items
-            item = self._mc_items[attr_name]
+        if attr_name in self.__dict__:
+            # Non-Repeatable ConfigItems are not defined at the class level, only at instance level
+            item = self.__dict__[attr_name]
             msg = "'{name}' {typ} is already defined and may not be replaced with an attribute.".format(name=attr_name, typ=type(item))
             self._mc_print_error_caller(msg, mc_error_info_up_level)
             return True
@@ -744,16 +744,26 @@ class _ConfigBase(object):
             thread_local.env = orig_env
 
     def items(self):
-        """Iterate all nested items.
+        """Iterate all nested regular and repeatable items.
 
         Yields:
             item (ConfigItem or RepeatableDict): Nested items.
         """
 
-        for key, item in self._mc_items.items():
-            if not item or isinstance(item, ConfigBuilder):
-                continue
-            yield key, item
+        for key, item in self.__dict__.items():
+            if not key.startswith('_') and isinstance(item, (ConfigItem, RepeatableDict)) and item and not key in self._mc_attributes:
+                yield key, item
+
+    def items_with_builders_and_excluded(self):
+        """Iterate all nested items, incl. builders and excluded.
+
+        Yields:
+            item (ConfigItem or RepeatableDict): Nested items.
+        """
+
+        for key, item in self.__dict__.items():
+            if not key.startswith('_') and isinstance(item, (_ConfigBase, RepeatableDict)) and not key in self._mc_attributes:
+                yield key, item
 
     @property
     def env(self):
@@ -813,26 +823,28 @@ class _ConfigBase(object):
 
     def find_attribute_or_none(self, name):
         """Find first occurrence of attribute or child item 'name', by searching backwards towards root_conf, starting with self."""
+
         contained_in = self
         while contained_in:
             attr = contained_in._mc_attributes.get(name)
             if attr:
                 return getattr(contained_in, name)
-            item = contained_in._mc_items.get(name)
-            if item:
+            item = contained_in.__dict__.get(name)
+            if item and isinstance(item, (ConfigItem, RepeatableDict)):
                 return item
             contained_in = contained_in.contained_in
         return None
 
     def find_attribute(self, name):
         """Find first occurrence of attribute or child item 'name', by searching backwards towards root_conf, starting with self."""
+
         contained_in = self
         while contained_in:
             attr = contained_in._mc_attributes.get(name)
             if attr:
                 return getattr(contained_in, name)
-            item = contained_in._mc_items.get(name)
-            if item:
+            item = contained_in.__dict__.get(name)
+            if item and isinstance(item, (ConfigItem, RepeatableDict)):
                 return item
             contained_in = contained_in.contained_in
 
@@ -949,21 +961,21 @@ class _RealConfigItemMixin(object):
         """Call the user defined 'mc_validate' methods on item and child items"""
         self._mc_call_mc_validate(env)
 
-        for child_item in self._mc_items.values():
+        for _, child_item in self.items_with_builders_and_excluded():
             child_item._mc_call_mc_validate_recursively(env)
 
     def _mc_call_mc_post_validate_recursively(self):
         """Call the user defined 'mc_post_validate' methods on all items"""
         self._mc_call_mc_post_validate()
 
-        for child_item in self._mc_items.values():
+        for _, child_item in self.items_with_builders_and_excluded():
             child_item._mc_call_mc_post_validate_recursively()
 
     def _mc_validate_properties_recursively(self, env):
         """Call _mc_validate_properties recursively"""
         self._mc_validate_properties(env)
 
-        for child_item in self._mc_items.values():
+        for _, child_item in self.items_with_builders_and_excluded():
             child_item._mc_validate_properties_recursively(env)
 
 
@@ -1004,8 +1016,12 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
         name = cls.named_as()
 
         try:
-            self = object.__getattribute__(contained_in, name)
+            self = contained_in.__dict__[name]
             if self._mc_handled_env_bits & thread_local.env.mask:
+                if name in contained_in.__class__._mc_deco_nested_repeatables:
+                    msg = repeatable_in_parent_msg.format(named_as=name, cls=cls, ci_item=contained_in)
+                    raise ConfigException(msg, is_fatal=True)
+
                 # We are trying to replace a non-repeatable object. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
                     self._mc_where = Where.IN_RE_INIT
@@ -1022,14 +1038,13 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
             return self
-        except AttributeError:
+        except KeyError:
             self = super(ConfigItem, cls).__new__(cls)
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
 
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = None
-            self._mc_items = OrderedDict()
             self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
@@ -1037,20 +1052,14 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict()
-                self._mc_items[key] = od  # Needed to implement reliable 'items' method
                 object.__setattr__(self, key, od)
 
             # Insert self in parent
-            if name in contained_in.__class__._mc_deco_nested_repeatables:
-                msg = repeatable_in_parent_msg.format(named_as=name, cls=cls, ci_item=contained_in)
-                raise ConfigException(msg, is_fatal=True)
-
             if name in contained_in._mc_attributes:
                 msg = "'{name}' is defined both as simple value and a contained item: {self}".format(name=name, self=self)
                 raise ConfigException(msg, is_fatal=True)
 
             object.__setattr__(contained_in, name, self)
-            contained_in._mc_items[name] = self  # Needed to implement reliable 'items' method
 
             return self
 
@@ -1111,7 +1120,6 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
 
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = None
-            self._mc_items = OrderedDict()
             self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
@@ -1119,7 +1127,6 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict()
-                self._mc_items[key] = od  # Needed to implement reliable 'items' method
                 object.__setattr__(self, key, od)
 
             # Insert self in repeatable
@@ -1149,7 +1156,7 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
         private_key = cls.named_as() + ' ' + str(mc_key)
 
         try:
-            self = contained_in._mc_items[private_key]
+            self = contained_in.__dict__[private_key]
             if self._mc_handled_env_bits & thread_local.env.mask:
                 # We are trying to replace an object with the same mc_key. In mc_init we ignore this.
                 if contained_in._mc_where == Where.IN_MC_INIT:
@@ -1170,13 +1177,12 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
 
             self._mc_attributes = OrderedDict()
             self._mc_attributes_to_check = None
-            self._mc_items = OrderedDict()
             self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
             self._mc_handled_env_bits = thread_local.env.mask
 
-            contained_in._mc_items[private_key] = self
+            object.__setattr__(contained_in, private_key, self)
 
             return self
 
@@ -1187,7 +1193,7 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
     @classmethod
     def named_as(cls):
         """Try to generate a unique name"""
-        return '_mc_ConfigBuilder_' + cls.__name__
+        return 'mc_ConfigBuilder_' + cls.__name__
 
     def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
         """ConfigBuilder allows any nested repeatable without previous declaration."""
@@ -1196,7 +1202,6 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
             return repeatable
 
         repeatable = RepeatableDict()
-        self._mc_items[repeatable_class_key] = repeatable
         object.__setattr__(self, repeatable_class_key, repeatable)
         return repeatable
 
@@ -1223,7 +1228,6 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
                 return
 
             pp = _mc_item_parent_proxy_factory(from_build, from_with)
-            from_build._mc_items[from_with_key] = pp
             object.__setattr__(from_build, from_with_key, pp)
 
         # Now set all items created in the 'with' block of the builder on the items created in the 'mc_build' method
@@ -1320,7 +1324,6 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         self._mc_where = Where.IN_INIT
         self._mc_attributes = OrderedDict()
         self._mc_attributes_to_check = None
-        self._mc_items = OrderedDict()
         self._mc_contained_in = None
         self._mc_root = self
         self._mc_handled_env_bits = 0
@@ -1329,6 +1332,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         self._mc_in_post_validate = False
         self._mc_config_post_validated = False
         self._mc_in_json = False
+        self._mc_json_errors = 0
         self._mc_check_unknown = True
         self._mc_lazy_load = False
         self._mc_root_proxies = {}

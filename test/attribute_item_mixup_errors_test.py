@@ -103,6 +103,8 @@ def test_attempt_to_replace_empty_nested_repeatable_by_attribute_assignment(caps
     _sout, serr = capsys.readouterr()
     msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
     assert serr == ce(errorline[0], msg)
+    print(_single_error_on_project_expected_ex % '"RepeatableItems": {}')
+    print(replace_ids(str(exinfo.value), named_as=False))
     assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_project_expected_ex % '"RepeatableItems": {}'
 
 

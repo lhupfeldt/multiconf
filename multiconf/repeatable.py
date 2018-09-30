@@ -8,12 +8,19 @@ from collections import OrderedDict
 from .config_errors import ConfigExcludedKeyError
 
 
+class AndTrue():
+    def __and__(self, other):
+        return True
+
+
 class RepeatableDict(object):
     """Dictionary dedicated for holding RepeatableConfigItem.
 
     A ConfigItem may be excluded from some envs. This class works as a simplified OrderedDict, but behaves in an env specific manner
     excluding items which are excluded in the current env.
     """
+
+    _mc_handled_env_bits = AndTrue()
 
     __slots__ = ('_all_items',)  # Referenced in multiconf.py
     __class__ = OrderedDict

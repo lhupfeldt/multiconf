@@ -42,7 +42,7 @@ _json_dump_configbuilder1_all_envs_expected_json_full = """{
             "ys": {}
         }
     },
-    "_mc_ConfigBuilder_YBuilder default-builder": {
+    "mc_ConfigBuilder_YBuilder default-builder": {
         "__class__": "YBuilder",
         "__id__": 0000,
         "b": 27,
@@ -170,7 +170,7 @@ _json_dump_configbuilder2_expected_json_full = """{
             }
         }
     },
-    "_mc_ConfigBuilder_YBuilder default-builder": {
+    "mc_ConfigBuilder_YBuilder default-builder": {
         "__class__": "YBuilder",
         "__id__": 0000,
         "b": 27,
@@ -178,7 +178,7 @@ _json_dump_configbuilder2_expected_json_full = """{
         "y_children": {
             "Hugo": "#ref, id: 0000"
         },
-        "_mc_ConfigBuilder_YBuilder default-builder": {
+        "mc_ConfigBuilder_YBuilder default-builder": {
             "__class__": "YBuilder",
             "__id__": 0000,
             "c": 28,
@@ -327,7 +327,7 @@ _json_dump_configbuilder2_all_envs_expected_json_full = """{
             }
         }
     },
-    "_mc_ConfigBuilder_YBuilder default-builder": {
+    "mc_ConfigBuilder_YBuilder default-builder": {
         "__class__": "YBuilder",
         "__id__": 0000,
         "b": 27,
@@ -335,7 +335,7 @@ _json_dump_configbuilder2_all_envs_expected_json_full = """{
         "y_children": {
             "Hugo": "#ref, id: 0000"
         },
-        "_mc_ConfigBuilder_YBuilder default-builder": {
+        "mc_ConfigBuilder_YBuilder default-builder": {
             "__class__": "YBuilder",
             "__id__": 0000,
             "c": 28,
@@ -637,7 +637,7 @@ _json_dump_attr_ref_configbuilder_expected_json_with_builders = """{
             "aa": 777
         }
     },
-    "_mc_ConfigBuilder_YBuilder default-builder": {
+    "mc_ConfigBuilder_YBuilder default-builder": {
         "__class__": "YBuilder",
         "__id__": 0000,
         "b": 27,
