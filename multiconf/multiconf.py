@@ -8,7 +8,7 @@ from collections import OrderedDict
 import json
 import threading
 
-from .envs import EnvFactory, Env, MissingValueEnvException, AmbiguousEnvException, EnvException, MC_NO_ENV, thread_local
+from .envs import EnvFactory, Env, AmbiguousEnvException, EnvException, MC_NO_ENV, thread_local
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, _McAttributeAccessor, Where
 from .property_wrapper import _McPropertyWrapper
@@ -608,10 +608,11 @@ class _ConfigBase(object):
         current_env = thread_local.env
         try:
             value, eg = env_factory._mc_resolve_env_group_value(current_env, env_values)
-            self._mc_setattr(
-                current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level + 1)
-            return
-        except MissingValueEnvException:
+            if eg is not None:
+                self._mc_setattr(
+                    current_env, attr_name, value, eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level + 1)
+                return
+
             if not env_values:
                 msg = "No Env or EnvGroup names specified."
                 self._mc_print_error_caller(msg, mc_error_info_up_level)

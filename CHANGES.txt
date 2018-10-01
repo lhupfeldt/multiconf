@@ -48,3 +48,5 @@ FROM v8 to V9
 
 Dropped support for Python versions older then 3.6.1
 Taking advantage of Python 3 features
+Some optimization
+Removed mc5_migration option

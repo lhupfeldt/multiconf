@@ -22,10 +22,6 @@ class AmbiguousEnvException(EnvException):
         self.ambiguous = ambiguous
 
 
-class MissingValueEnvException(EnvException):
-    pass
-
-
 class BaseEnv(object):
     def __init__(self, name, factory, mask):
         """ Private, use EnvFactory.Env() """
@@ -261,7 +257,7 @@ class EnvFactory(object):
                     if found_ambiguous:
                         raise AmbiguousEnvException("Ambiguous values for: " + str(env), [gg] + found_ambiguous)
                     return env_values[gg.name], gg
-        raise MissingValueEnvException("No value for: " + str(env))
+        return None, None
 
     def _mc_select_env_list(self, env, eg_list1, eg_list2):
         """Resolve in which lists env is most specific, if in any.

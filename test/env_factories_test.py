@@ -7,7 +7,7 @@ from __future__ import print_function
 # pylint: disable=E0611
 from pytest import raises
 
-from multiconf.envs import EnvFactory, MissingValueEnvException, AmbiguousEnvException
+from multiconf.envs import EnvFactory, AmbiguousEnvException
 
 
 def _names(groups):
@@ -257,15 +257,15 @@ def test_mc_resolve_env_group_value_missing():
 
     ef._mc_calc_env_group_order()
 
-    with raises(MissingValueEnvException) as exinfo:
-        ef._mc_resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))
-    assert str(exinfo.value) == "No value for: Env('prod')"
+    val, gg = ef._mc_resolve_env_group_value(prod, dict(d0=1, g_d1ab_d2a=3, g_d13_overlap1=7))
+    assert gg is None
 
-    with raises(MissingValueEnvException) as exinfo:
-        ef._mc_resolve_env_group_value(pp, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_d1b_d2ab=9))
+    val, gg = ef._mc_resolve_env_group_value(pp, dict(d0=1, g_d1ab_d2a=17, g_d1ab_d2a_d1cd2c=3, g_d1b_d2ab=9))
+    assert gg is None
 
-    with raises(MissingValueEnvException) as exinfo:
-        ef._mc_resolve_env_group_value(prod, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=1, g_d1_overlap1=1, g_d1_overlap2=1, g_d13_overlap1=1, g_d13_overlap3=1, pp=9))
+    val, gg = ef._mc_resolve_env_group_value(
+        prod, dict(g_d1ab_d2a_d1cd2c=3, d0=1, g_d1ab_d2a=1, g_d1_overlap1=1, g_d1_overlap2=1, g_d13_overlap1=1, g_d13_overlap3=1, pp=9))
+    assert gg is None
 
 
 def test_mc_resolve_env_group_value_ambiguous():
