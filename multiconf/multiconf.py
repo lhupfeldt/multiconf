@@ -595,15 +595,10 @@ class _ConfigBase(object):
 
         if cr._mc_check_unknown:
             # Check that there are no undefined eg names specified
-            undefined = []
-            for eg_name in env_values:
-                try:
-                    env_factory.env_or_group_from_name(eg_name)
-                except EnvException:
-                    undefined.append(eg_name)
-            if undefined:
-                msg = "No such Env or EnvGroup: " + repr(undefined[0])  # TODO list
-                self._mc_print_error_caller(msg, mc_error_info_up_level)
+            try:
+                env_factory.validate_env_group_names(env_values)
+            except EnvException as ex:
+                self._mc_print_error_caller(str(ex), mc_error_info_up_level)
 
         current_env = thread_local.env
         try:

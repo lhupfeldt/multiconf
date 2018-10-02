@@ -199,6 +199,21 @@ def test_assign_to_undefine_env(capsys):
     assert replace_ids(str(exinfo.value), False) == _single_error_on_item_expected_ex % ('pp', '"hi"')
 
 
+def test_assign_to_multiple_undefine_envs(capsys):
+    errorline = [None]
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef2_pp_prod, load_now=True)
+        def config(_):
+            with ItemWithAA() as cr:
+                errorline[0] = next_line_num()
+                cr.setattr('aa', pros="hello", peculiar="hej", default="hi")
+
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline[0], "No such Envs or EnvGroups: ['pros', 'peculiar']")
+    assert replace_ids(str(exinfo.value), False) == _single_error_on_item_expected_ex % ('pp', '"hi"')
+
+
 def test_value_not_assigned_to_all_envs(capsys):
     errorline = [None]
 

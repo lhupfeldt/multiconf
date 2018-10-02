@@ -199,6 +199,22 @@ class EnvFactory(object):
 
         raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(name))
 
+    def validate_env_group_names(self, eg_names):
+        """Check that all names in eg_names are defined Envs or Groups"""
+        undefined = []
+
+        for eg_name in eg_names:
+            if eg_name in self.envs:
+                continue
+            if eg_name in self.groups:
+                continue
+            undefined.append(eg_name)
+
+        if undefined:
+            if len(undefined) > 1:
+                raise EnvException("No such " + Env.__name__ + "s or " + EnvGroup.__name__ + "s: " + repr(undefined))
+            raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(undefined[0]))
+
     def _mc_calc_env_group_order(self):
         """
         Must be called after all user defined envs and groups are defined.
