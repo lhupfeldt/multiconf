@@ -1,8 +1,6 @@
 # Copyright (c) 2012-2016 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 import sys, os, abc, traceback
 from collections import OrderedDict
 import json

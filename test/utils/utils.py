@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 import sys, re
 
 from .lines_in import lines_in as generic_lines_in

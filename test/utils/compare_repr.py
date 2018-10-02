@@ -1,8 +1,6 @@
 # Copyright (c) 2018 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from .utils import replace_ids as _replace_ids, replace_ids_builder, to_compact
 
 

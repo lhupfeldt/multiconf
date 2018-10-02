@@ -10,8 +10,6 @@
 # environment is configured using Multiconf
 #
 
-from __future__ import print_function
-
 import argparse
 import config
 

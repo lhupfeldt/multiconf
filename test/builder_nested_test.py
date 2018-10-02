@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from multiconf import mc_config, ConfigItem, ConfigBuilder
 from multiconf.decorators import named_as
 from multiconf.envs import EnvFactory
