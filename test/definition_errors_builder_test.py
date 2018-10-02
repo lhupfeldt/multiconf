@@ -3,6 +3,8 @@
 
 from __future__ import print_function
 
+import sys
+
 # pylint: disable=E0611
 from pytest import raises
 
@@ -19,6 +21,10 @@ from .utils.tstclasses import BuilderWithAA
 ef = EnvFactory()
 pprd = ef.Env('pprd')
 prod = ef.Env('prod')
+
+
+major_version = sys.version_info[0]
+minor_version = sys.version_info[1]
 
 
 def ce(line_num, *lines):
@@ -85,7 +91,7 @@ def test_error_freezing_previous_sibling__build(capsys):
 
 def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
     with raises(ConfigDefinitionException) as exinfo:
-        errorline = line_num() + 2
+        errorline = line_num() + (1 if major_version > 3 or minor_version > 7 else 2)
         @nested_repeatables('a')
         class _inner(ConfigBuilder):
             def mc_build(self):
