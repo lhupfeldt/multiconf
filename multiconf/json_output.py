@@ -3,7 +3,6 @@
 
 import sys, os, threading, traceback
 import types
-from collections import OrderedDict
 from collections.abc import Mapping
 
 from . import envs
@@ -24,7 +23,7 @@ _mc_filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attri
 
 
 def _class_tuple(obj, obj_info=""):
-    return ('__class__', obj.__class__.__name__ + obj_info)
+    return {'__class__': obj.__class__.__name__ + obj_info}
 
 
 def _attr_ref_msg(obj, attr_name):
@@ -106,8 +105,8 @@ class ConfigItemEncoder(object):
         not_frozen_msg = "" if obj._mc_where == Where.FROZEN else ", not-frozen"
         if self.compact:
             msg = " #as: '" + obj.named_as() + "', id: " + str(self.ref_repr(obj)) + not_frozen_msg
-            return OrderedDict((_class_tuple(obj, msg),))
-        return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', self.ref_repr(obj))))
+            return _class_tuple(obj, msg)
+        return {**_class_tuple(obj, not_frozen_msg), '__id__': self.ref_repr(obj)}
 
     def _excl_and_builder_str(self, objval):
         excl = ' excluded' if not objval else ''
@@ -189,7 +188,7 @@ class ConfigItemEncoder(object):
             return key, [(' #no value for {env}'.format(env=env), True)]
 
         if isinstance(val, Mapping):
-            new_val = OrderedDict()
+            new_val = {}
             for inner_key, maybeitem in val.items():
                 if not isinstance(maybeitem, self.multiconf_base_type):
                     new_val[str(inner_key)] = maybeitem
@@ -302,7 +301,7 @@ class ConfigItemEncoder(object):
             return key, [(overridden_property, new_list), (calc_or_static, True)] + property_inf
 
         if isinstance(val, Mapping):
-            new_dict = OrderedDict()
+            new_dict = {}
             for item_key, item in val.items():
                 new_dict[item_key] = self._check_nesting(obj, item)
             return key, [(overridden_property, new_dict), (calc_or_static, True)] + property_inf
@@ -317,7 +316,7 @@ class ConfigItemEncoder(object):
                 dd[attr_key + meta_key] = val
             return
 
-        env_values = OrderedDict()
+        env_values = {}
         prev_key_property_inf = None
         multiple_values = False
         for env in obj.env_factory.envs.values():
@@ -415,7 +414,7 @@ class ConfigItemEncoder(object):
                             continue
 
                         if self.current_depth == self.depth -1 and isinstance(item, RepeatableDict):
-                            shallow_item = OrderedDict()
+                            shallow_item = {}
                             for child_key, child_item in item.items():
                                 shallow_item[child_key] = _mc_identification_msg_str(child_item)
                             dd[key] = shallow_item
@@ -456,7 +455,7 @@ class ConfigItemEncoder(object):
 
             if isinstance(obj, envs.BaseEnv):
                 # print "# Handle Env objects", type(obj)
-                dd = OrderedDict((_class_tuple(obj),))
+                dd = _class_tuple(obj)
                 dd['name'] = obj.name
                 return dd
 

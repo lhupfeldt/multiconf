@@ -2,7 +2,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import sys, os, abc, traceback
-from collections import OrderedDict
 import json
 import threading
 
@@ -428,7 +427,7 @@ class _ConfigBase(object):
             # to postpone check until after 'mc_init', but we must remember to test later if the attribute has been set.
             mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
             if self._mc_attributes_to_check is None:
-                self._mc_attributes_to_check = OrderedDict()
+                self._mc_attributes_to_check = {}
             self._mc_attributes_to_check[attr_name] = (self._mc_where, mc_caller_file_name, mc_caller_line_num)
             return
 
@@ -1037,7 +1036,7 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
 
-            self._mc_attributes = OrderedDict()
+            self._mc_attributes = {}
             self._mc_attributes_to_check = None
             self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
@@ -1064,7 +1063,7 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
 class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
     """Base class for config items which may be repeated.
 
-    RepeatableConfigItems will be stored in an OrderedDict using the key 'mc_key'.
+    RepeatableConfigItems will be stored in a dict using the key 'mc_key'.
 
     Args:
         mc_key (hashable): The key used to lookup the config item.
@@ -1112,7 +1111,7 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
 
-            self._mc_attributes = OrderedDict()
+            self._mc_attributes = {}
             self._mc_attributes_to_check = None
             self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
@@ -1169,7 +1168,7 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
 
-            self._mc_attributes = OrderedDict()
+            self._mc_attributes = {}
             self._mc_attributes_to_check = None
             self._mc_contained_in = contained_in
             self._mc_root = contained_in._mc_root
@@ -1316,7 +1315,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         self._mc_num_invalid_property_usage = 0
 
         self._mc_where = Where.IN_INIT
-        self._mc_attributes = OrderedDict()
+        self._mc_attributes = {}
         self._mc_attributes_to_check = None
         self._mc_contained_in = None
         self._mc_root = self
@@ -1348,7 +1347,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
             self._mc_is_single_env = False
 
         self._mc_env_factory._mc_calc_env_group_order()
-        self._mc_todo_msgs = OrderedDict([(env, []) for env in self._mc_env_factory.envs.values()])
+        self._mc_todo_msgs = dict([(env, []) for env in self._mc_env_factory.envs.values()])
 
         if env_factory is None:
             self._mc_pre_load_one_env(single)

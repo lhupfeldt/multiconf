@@ -711,7 +711,7 @@ def test_configbuilder_child_with_declared_but_not_defined_nested_repeatables():
     cr = config(prod2).Root
     assert len(cr.xses) == 1
     for x in cr.xses.values():
-        assert isinstance(x.x_children, OrderedDict)
+        assert isinstance(x.x_children, dict)
         assert len(x.x_children) == 0
     check_containment(cr)
 

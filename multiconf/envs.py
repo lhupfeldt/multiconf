@@ -1,7 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from collections import OrderedDict
 from collections.abc import Container
 import itertools
 import json
@@ -51,13 +50,13 @@ class BaseEnv(object):
         return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=True, sort_keys=False, indent=4, separators=(',', ': '))
 
     def json_equivalent(self):
-        return OrderedDict((
-            ("type", repr(self.__class__)),
-            ("name", self.name),
-            ("bit", self.bit),
-            ("mask", int_to_bin_str(self.mask)),
-            # ("hash", self.__hash__()),
-            ("members", self.members))
+        return dict(
+            type=repr(self.__class__),
+            name=self.name,
+            bit=self.bit,
+            mask=int_to_bin_str(self.mask),
+            # hash=self.__hash__(),
+            members=self.members,
         )
 
     def irepr(self, _indent_level):
@@ -111,7 +110,7 @@ class EnvGroup(BaseEnv, Container):
         for member_group in self._groups_recursive():
             self.groups.append(member_group)
 
-        envs = OrderedDict()
+        envs = {}
         for member in self.members:
             if not isinstance(member, EnvGroup):
                 envs[member.name] = member
@@ -140,8 +139,8 @@ class EnvGroup(BaseEnv, Container):
 
 class EnvFactory(object):
     def __init__(self):
-        self.envs = OrderedDict()
-        self.groups = OrderedDict()
+        self.envs = {}
+        self.groups = {}
         self._index = 1  # bit zero reserved to be set for all groups, so that a Group mask will never be equal to an env mask
         self._mc_frozen = False
 

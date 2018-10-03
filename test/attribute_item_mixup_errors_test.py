@@ -136,7 +136,7 @@ def test_attempt_to_replace_non_empty_nested_repeatable_by_attribute_assignment(
 #             pass
 #
 #         with root(prod1, ef1_prod) as cr:
-# TODO: 'cr' is an OrderedDict, so this call is not possible, which is fine, but the error message is not good
+# TODO: 'cr' is a dict, so this call is not possible, which is fine, but the error message is not good
 #             cr.children(prod="hello")
 #             rchild()
 #     assert str(exinfo.value) == "'children' is defined both as simple value and a contained item: children {\n}"
