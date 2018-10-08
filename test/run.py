@@ -23,7 +23,9 @@ def main(args):
     with open(cov_rc_file_name, 'w') as cov_rc_file:
         cov_rc_file.write(engine.render(jp(_here, "coverage_rc.tenjin"), dict(major_version=major_version, minor_version=minor_version)))
 
-    rc = pytest.main(['--capture=sys', '--cov=' + _here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else []))
+    pytest_args = ['--capture=sys', '--cov=' + _here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else [])
+    print('Running: pytest.main(' + ' '.join(pytest_args) + ')')
+    rc = pytest.main(pytest_args)
 
     print()
     try:
