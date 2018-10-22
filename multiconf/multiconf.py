@@ -648,7 +648,7 @@ class _ConfigBase(object):
                 it's dependencies may not be setup correctly.
 
         Yields:
-            env (Env), value (any): The (env, attribute value) for each env or `MC_NO_VALUE` is there is no value for a specific
+            env (Env), value (any): The (env, attribute value) for each env or `MC_NO_VALUE` if there is no value for a specific
                env (e.g. the item is excluded). If an exception was raised for all envs the last exception will propagate.
         """
 
