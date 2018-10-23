@@ -354,7 +354,7 @@ def test_attribute_overrides_failing_property_method():
     # assert line == origin_line_exp
 
     exp = _attribute_overrides_failing_property_method_exp % dict(local_func=local_func(), comma=py37_no_exc_comma)
-    exp += " Attribute 'm' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception: bad property method"
+    exp += " Attribute 'm' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception('bad property method'{comma})".format(comma=py37_no_exc_comma)
 
     print('exp:', exp)
     got = replace_ids(str(exinfo.value), named_as=False)
@@ -395,7 +395,7 @@ def test_attribute_overrides_property_method_raising_attribute_error():
     print(ex_msg)
     assert "Attribute 'm' is defined as a multiconf attribute and as a @property method" in ex_msg
     assert "value is undefined for Env('prod') and @property method call failed" in ex_msg
-    assert "AttributeError: 'Nested' object has no attribute 'i_dont_have_this_attribute'" in ex_msg
+    assert """AttributeError("'Nested' object has no attribute 'i_dont_have_this_attribute'"%(comma)s)""" % dict(comma=py37_no_exc_comma) in ex_msg
 
 
 def test_attribute_overrides_property_method_using_mc_set_unknown_repeated_env(capsys):

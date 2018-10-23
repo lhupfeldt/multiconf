@@ -6,7 +6,7 @@ from collections import OrderedDict
 import pytest
 from pytest import raises, xfail
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageException, ConfigException, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageException, ConfigException, ConfigAttributeError, MC_REQUIRED
 
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
@@ -1701,34 +1701,6 @@ def test_envgroup_ref():
     assert compare_json(cr, _envgroup_ref_expected_json)
 
 
-def test_exception_generating_json():
-    class BadException(Exception):
-        def __repr__(self):
-            raise Exception("BadException bad __repr__")
-
-    class X(object):
-        def json_equivalent(self):
-            raise BadException()
-
-    class Xx(ConfigItem):
-        def mc_init(self):
-            self.setattr('egref', default=X(), mc_set_unknown=True)
-
-    @mc_config(ef, load_now=True)
-    def config(root):
-        Xx()
-
-    cr = config(prod)
-
-    # Accessing a completey undefind attribute does not invoke multiconf exception, so the bad __repr__ is no called
-    with raises(AttributeError) as exinfo:
-        cr.Xx.xxx
-
-    assert str(exinfo.value) == "'Xx' object has no attribute 'xxx'"
-
-    xfail('TODO: provoke bad __repr__')
-
-
 _json_dump_depth_expected_json_d1 = """{
     "__class__": "root",
     "__id__": 0000,
@@ -1929,3 +1901,44 @@ def test_json_dump_during_load():
     cr = config(prod).root
     assert replace_ids(jsons[0]) == _json_dump_during_load_json0_exp
     assert replace_ids(jsons[1]) == _json_dump_during_load_json1_exp
+
+
+_exception_in_property_exception_exc_ex = """{
+    "__class__": "Xx #as: 'xxxx', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "xxx #no value for Env('prod')": true,
+    "xxx #json_error trying to handle property method": "Error gettting repr of obj, type: <class 'test.json_output_test.test_exception_in_property_exception.<locals>.BadException'>, exception: BadException: BadException bad __repr__"
+}, object of type: <class 'test.json_output_test.test_exception_in_property_exception.<locals>.Xx'> has no attribute 'xxx'. Attribute 'xxx' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: <class 'test.json_output_test.test_exception_in_property_exception.<locals>.BadException'>
+"""
+
+def test_exception_in_property_exception():
+    class BadException(Exception):
+        def __repr__(self):
+            raise BadException("BadException bad __repr__")
+
+    class Xx(ConfigItem):
+        @property
+        def xxx(self):
+            raise BadException("Error in 'xxx' property impl.")
+
+    @mc_config(ef)
+    def config(root):
+        with Xx() as xx:
+            xx.setattr('xxx', pp=1, mc_overwrite_property=True)
+
+    config.load(validate_properties=False)
+    cr = config(prod).Xx
+
+    with raises(ConfigAttributeError) as exinfo:
+        print(cr.xxx)
+
+    print(str(exinfo.value))
+    print()
+    print("--- exp ---")
+    print(_exception_in_property_exception_exc_ex.strip())
+    print("--- exc ---")
+    print(replace_ids(str(exinfo.value).strip()))
+    assert replace_ids(str(exinfo.value).strip()) == _exception_in_property_exception_exc_ex.strip()

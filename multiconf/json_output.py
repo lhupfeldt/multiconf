@@ -101,6 +101,18 @@ class ConfigItemEncoder(object):
 
         return ref_id(obj)
 
+    def safe_repr(self, obj):
+        """This catches exceptions from calling repr(obj) and embeds the message in the returned str."""
+
+        try:
+            return repr(obj)
+        except Exception as ex:
+            traceback.print_exception(*sys.exc_info())
+            self.num_errors += 1
+            msg = "Error gettting repr of obj, type: {ot}, exception: {extyp}: {exmsg}".format(ot=type(obj), extyp=type(ex).__name__, exmsg=str(ex))
+            print(msg, file=sys.stderr)
+            return msg
+
     def _mc_class_dict(self, obj):
         not_frozen_msg = "" if obj._mc_where == Where.FROZEN else ", not-frozen"
         if self.compact:
@@ -181,7 +193,7 @@ class ConfigItemEncoder(object):
             except Exception as ex:
                 self.num_errors += 1
                 traceback.print_exception(*sys.exc_info())
-                attr_inf.append((' #json_error calling filter', repr(ex)),)
+                attr_inf.append((' #json_error calling filter', self.safe_repr(ex)),)
 
         val = self._check_nesting(obj, val)
         if val == McInvalidValue.MC_NO_VALUE:
@@ -251,11 +263,11 @@ class ConfigItemEncoder(object):
                     val = getattr(obj, key)
                 except InvalidUsageException as ex:
                     self.num_invalid_usages += 1
-                    return key, [(overridden_property + ' #invalid usage context', repr(ex))]
+                    return key, [(overridden_property + ' #invalid usage context', self.safe_repr(ex))]
                 except Exception as ex:
                     self.num_errors += 1
                     traceback.print_exception(*sys.exc_info())
-                    return key, [(overridden_property + ' #json_error trying to handle property method', repr(ex))]
+                    return key, [(overridden_property + ' #json_error trying to handle property method', self.safe_repr(ex))]
                 finally:
                     thread_local.env = orig_env
                 break
@@ -280,10 +292,10 @@ class ConfigItemEncoder(object):
             except Exception as ex:
                 self.num_errors += 1
                 traceback.print_exception(*sys.exc_info())
-                property_inf = [(' #json_error calling filter', repr(ex))]
+                property_inf = [(' #json_error calling filter', self.safe_repr(ex))]
 
         if type(val) == type:
-            return key, [(overridden_property, repr(val))] + property_inf
+            return key, [(overridden_property, self.safe_repr(val))] + property_inf
 
         val = self._check_nesting(obj, val)
 
@@ -347,7 +359,7 @@ class ConfigItemEncoder(object):
             if self.recursion_check.warn_nesting:
                 print("Warning: Nested json calls, disabling @property method value dump:", file=sys.stderr)
                 print("outer object type:", type(in_default), file=sys.stderr)
-                print("inner object type:", repr(type(obj)) + ", inner obj:", obj.json(compact=True, property_methods=False), file=sys.stderr)
+                print("inner object type:", self.safe_repr(type(obj)) + ", inner obj:", obj.json(compact=True, property_methods=False), file=sys.stderr)
 
         try:
             ConfigItemEncoder.recursion_check.in_default = obj
@@ -460,17 +472,16 @@ class ConfigItemEncoder(object):
                 return dd
 
             if type(obj) == type:
-                return repr(obj)
+                return self.safe_repr(obj)
 
             # If obj defines json_equivalent, then return the result of that
-            try:
-                return obj.json_equivalent()
-            except AttributeError:
-                pass
-            except Exception as ex:
-                self.num_errors += 1
-                traceback.print_exception(*sys.exc_info())
-                return "__json_error__ calling 'json_equivalent': " + repr(ex)
+            if hasattr(obj, "json_equivalent"):
+                try:
+                    return obj.json_equivalent()
+                except Exception as ex:
+                    self.num_errors += 1
+                    traceback.print_exception(*sys.exc_info())
+                    return "__json_error__ calling 'json_equivalent': " + self.safe_repr(ex)
 
             try:
                 iterable = iter(obj)
@@ -486,7 +497,7 @@ class ConfigItemEncoder(object):
                     return obj
 
             self.num_errors += 1
-            return "__json_error__ # don't know how to handle obj of type: " + repr(type(obj))
+            return "__json_error__ # don't know how to handle obj of type: " + self.safe_repr(type(obj))
 
         finally:
             self.property_methods = property_methods_orig

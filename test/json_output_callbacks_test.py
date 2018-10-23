@@ -3,10 +3,13 @@
 
 from collections import OrderedDict
 
+from pytest import raises
+
 from multiconf import mc_config, ConfigItem, MC_REQUIRED
 from multiconf.decorators import named_as
 from multiconf.envs import EnvFactory
 
+from .utils.utils import replace_ids
 from .utils.utils import local_func, py37_no_exc_comma, lines_in, file_line, next_line_num
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
@@ -322,4 +325,97 @@ def test_json_equivalent_bad(capsys):
         "Traceback (most recent call last):",
         file_line(__file__, errorline[0]),
         "Exception: bad json_equivalent",
+    )
+
+
+_attribute_error_exception_generating_json_bad_json_equivalent_exc_ex = """{
+    "__class__": "Xx #as: 'xxxx', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "xxx #no value for Env('prod')": true,
+    "egref": "__json_error__ calling 'json_equivalent': Error gettting repr of obj, type: <class 'test.json_output_callbacks_test.test_attribute_error_exception_generating_json_bad_json_equivalent.<locals>.BadException'>, exception: Exception: BadException bad __repr__",
+    "xxx #json_error trying to handle property method": "Exception(\\"Error in 'xxx' property impl.\\"%(comma)s)"
+}, object of type: <class 'test.json_output_callbacks_test.test_attribute_error_exception_generating_json_bad_json_equivalent.<locals>.Xx'> has no attribute 'xxx'. Attribute 'xxx' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception("Error in 'xxx' property impl."%(comma)s)
+""" % dict(comma=py37_no_exc_comma)
+
+def test_attribute_error_exception_generating_json_bad_json_equivalent():
+    class BadException(Exception):
+        def __repr__(self):
+            raise Exception("BadException bad __repr__")
+
+    class X(object):
+        def json_equivalent(self):
+            raise BadException()
+
+    class Xx(ConfigItem):
+        @property
+        def xxx(self):
+            raise Exception("Error in 'xxx' property impl.")
+
+        def mc_init(self):
+            self.setattr('egref', default=X(), mc_set_unknown=True)
+
+    @mc_config(ef, load_now=True)
+    def config(root):
+        with Xx() as xx:
+            xx.setattr('xxx', pp=1, mc_overwrite_property=True)
+
+    cr = config(prod)
+
+    with raises(AttributeError) as exinfo:
+        cr.Xx.xxx
+
+    assert replace_ids(str(exinfo.value).strip()) == _attribute_error_exception_generating_json_bad_json_equivalent_exc_ex.strip()
+
+
+_json_equivalent_attribute_error_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": 0,
+    "handled_non_item": "__json_error__ calling 'json_equivalent': AttributeError('attribute error in json_equivalent'%(comma)s)",
+    "someitem": {
+        "__class__": "Item",
+        "__id__": 0000,
+        "a": 7
+    }
+}
+""" % dict(comma=py37_no_exc_comma)
+
+def test_json_equivalent_attribute_error(capsys):
+    errorline = [None]
+
+    class NonItemWithEquiv(object):
+        def json_equivalent(self):
+            errorline[0] = next_line_num()
+            raise AttributeError("attribute error in json_equivalent")
+
+    @named_as('someitem')
+    class Item(ConfigItem):
+        def __init__(self):
+            super(Item, self).__init__()
+            self.a = 7
+
+    @mc_config(ef, load_now=True)
+    def config(root):
+        with ItemWithAA() as cr:
+            cr.aa = 0
+            cr.setattr('handled_non_item', mc_set_unknown=True, default=NonItemWithEquiv())
+            Item()
+
+    cr = config(prod).ItemWithAA
+    assert compare_json(cr, _json_equivalent_attribute_error_expected_json.strip(), expect_num_errors=1)
+
+    _sout, serr = capsys.readouterr()
+
+    assert lines_in(
+        serr,
+        "Traceback (most recent call last):",
+        file_line(__file__, errorline[0]),
+        "AttributeError: attribute error in json_equivalent",
     )
