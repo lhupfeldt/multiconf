@@ -122,7 +122,7 @@ def repeatable_key(**name_value):
                 @repeatable_key(name='xxx')
                 class X2(X1):
                     def __init__(...)  # No 'name' argument
-                        super(X2, self)._init__(name=None, ...)
+                        super()._init__(name=None, ...)
 
             Only a single item of the following class can be created in the 'ys' repeatable.
             Use value 'nicekey' as the mc_key.::
@@ -131,7 +131,7 @@ def repeatable_key(**name_value):
                 @repeatable_key(mc_key='nicekey')
                 class X2(X1):
                     def __init__(...)  # No 'mc_key' argument
-                        super(X2, self)._init__(...)
+                        super()._init__(...)
 
     """
 

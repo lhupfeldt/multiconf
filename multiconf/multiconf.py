@@ -701,7 +701,7 @@ class _ConfigBase(object):
 
             class item(ConfigItem):
                 def __init__(self, aa):
-                    super(item, self).__init__()
+                    super().__init__()
                     self.aa = aa
                     self.aa_alternate = MC_REQUIRED
 
@@ -881,7 +881,7 @@ class AbstractConfigItem(_ConfigBase):  # TODO metaclass=abc.ABCMeta
             # Get dir list before attributes are added, but attributes may have been added to a base class, so filter those out
             # Assume that dir(cls) will never fail
             cls._mc_cls_dir_entries = [dd for dd in dir(cls) if not isinstance(getattr(cls, dd), _McAttributeAccessor)]
-        return super(AbstractConfigItem, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, mc_key=None, mc_include=None, mc_exclude=None):
         previous_item = _ConfigBase._mc_last_item
@@ -1032,7 +1032,7 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
             self._mc_num_errors = 0
             return self
         except KeyError:
-            self = super(ConfigItem, cls).__new__(cls)
+            self = super().__new__(cls)
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
 
@@ -1057,7 +1057,7 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
             return self
 
     def __init__(self, mc_include=None, mc_exclude=None):
-        super(ConfigItem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        super().__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
 
 class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
@@ -1107,7 +1107,7 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
             self._mc_num_errors = 0
             return self
         except KeyError:
-            self = super(RepeatableConfigItem, cls).__new__(cls)
+            self = super().__new__(cls)
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
 
@@ -1164,7 +1164,7 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
             self._mc_num_errors = 0
             return self
         except KeyError:
-            self = super(ConfigBuilder, cls).__new__(cls)
+            self = super().__new__(cls)
             self._mc_where = Where.IN_INIT
             self._mc_num_errors = 0
 
@@ -1181,7 +1181,7 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
 
     def __init__(self, mc_key='default-builder', mc_include=None, mc_exclude=None):
         # Overridden to accept 'mc_key'
-        super(ConfigBuilder, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        super().__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
     @classmethod
     def named_as(cls):
@@ -1355,7 +1355,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         self._mc_conf_func = conf_func
 
     def __exit__(self, exc_type, value, traceback):
-        super(McConfigRoot, self).__exit__(exc_type, value, traceback)
+        super().__exit__(exc_type, value, traceback)
         if self._mc_is_single_env:
             self._mc_post_successful_load_one_env(self._mc_is_single_env, None, self)
 
@@ -1432,7 +1432,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
 
                     class X(ConfigItem):
                         def __init__(self, a:int = MC_REQUIRED):
-                            super(X).__init__()
+                            super().__init__()
                             self.a = a
 
                 It will be checked that x.a is instance of int.

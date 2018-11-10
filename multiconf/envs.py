@@ -15,7 +15,7 @@ class EnvException(Exception):
 
 class AmbiguousEnvException(EnvException):
     def __init__(self, msg, ambiguous):
-        super(AmbiguousEnvException, self).__init__(msg)
+        super().__init__(msg)
         self.ambiguous = ambiguous
 
 
@@ -74,7 +74,7 @@ class BaseEnv(object):
 
 class Env(BaseEnv):
     def __init__(self, name, factory, allow_todo):
-        super(Env, self).__init__(name=name, factory=factory, mask=0)
+        super().__init__(name=name, factory=factory, mask=0)
         self.envs = [self]
         self.lookup_order = None
         self.allow_todo = allow_todo
@@ -94,7 +94,7 @@ class EnvGroup(BaseEnv, Container):
                                    repr(Env.__name__) + ' or ' + repr(EnvGroup.__name__) + ' found: ' + repr(eg))
             mask |= eg.mask
 
-        super(EnvGroup, self).__init__(name=name, factory=factory, mask=mask)
+        super().__init__(name=name, factory=factory, mask=mask)
 
         # Check for doublets
         seen_envs = set()
