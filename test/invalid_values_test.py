@@ -136,7 +136,7 @@ def test_attribute_mc_required_default_all_overridden():
 def test_attribute_mc_required_init_args_all_overridden():
     class Requires(ConfigItem):
         def __init__(self, aa=MC_REQUIRED):
-            super(Requires, self).__init__()
+            super().__init__()
             self.aa = aa
 
     @mc_config(ef1_prod_pp, load_now=True)
@@ -160,7 +160,7 @@ def test_attribute_mc_required_init_args_all_overridden():
 def test_attribute_mc_required_args_all_overridden_in_mc_init():
     class Requires(ConfigItem):
         def __init__(self, aa=MC_REQUIRED):
-            super(Requires, self).__init__()
+            super().__init__()
             self.aa = aa
 
         def mc_init(self):
@@ -177,7 +177,7 @@ def test_attribute_mc_required_args_all_overridden_in_mc_init():
 def test_attribute_mc_required_args_partial_set_in_init_overridden_in_mc_init():
     class Requires(ConfigItem):
         def __init__(self, aa=MC_REQUIRED):
-            super(Requires, self).__init__()
+            super().__init__()
             # Partial assignment is allowed in init
             self.setattr('aa', prod=aa)
             self.setattr('b', default=MC_REQUIRED, prod=2)
@@ -202,7 +202,7 @@ def test_attribute_mc_required_args_partial_set_in_init_overridden_in_mc_init():
 def test_attribute_mc_required_args_partial_set_in_init_overridden_in_with():
     class Requires(ConfigItem):
         def __init__(self, aa=MC_REQUIRED):
-            super(Requires, self).__init__()
+            super().__init__()
             # Partial assignment is allowed in init
             self.setattr('aa', prod=aa)
             self.setattr('b', default=MC_REQUIRED, prod=2)
@@ -225,7 +225,7 @@ def test_attribute_mc_required_args_partial_set_in_init_overridden_in_with():
 def test_attribute_mc_required_args_set_in_init_overridden_in_with():
     class Requires(ConfigItem):
         def __init__(self, aa=MC_REQUIRED):
-            super(Requires, self).__init__()
+            super().__init__()
             self.aa = aa
 
     @mc_config(ef1_prod_pp, load_now=True)
@@ -254,7 +254,7 @@ def test_attribute_mc_required_init_args_missing_env_value(capsys):
     errorline = [None]
     class Requires(ConfigItem):
         def __init__(self, aa=MC_REQUIRED):
-            super(Requires, self).__init__()
+            super().__init__()
             self.aa = aa
 
     with raises(ConfigException) as exinfo:
@@ -375,7 +375,7 @@ def test_attribute_mc_required_init_args_missing_previous_item(capsys):
 def test_attribute_mc_required_init_assign_all_overridden():
     class Requires(ConfigItem):
         def __init__(self, aa=MC_REQUIRED):
-            super(Requires, self).__init__()
+            super().__init__()
             self.aa = aa
 
     @mc_config(ef1_prod_pp, load_now=True)
@@ -410,7 +410,7 @@ def test_attribute_setattr_mc_required_force_in_init(capsys):
 
     class MyRoot(ConfigItem):
         def __init__(self):
-            super(MyRoot, self).__init__()
+            super().__init__()
             errorline[0] = next_line_num()
             self.setattr('aa', default=MC_REQUIRED, mc_force=True)
             self.setattr('bb', default=MC_REQUIRED, mc_force=True)
@@ -435,7 +435,7 @@ def test_multiple_attributes_mc_required_init_not_set(capsys):
     errorline = [None]
     class ItemWithAAABBCC(ConfigItem):
         def __init__(self):
-            super(ItemWithAAABBCC, self).__init__()
+            super().__init__()
             self.aa = MC_REQUIRED
             self.bb = MC_REQUIRED
             self.cc = MC_REQUIRED
@@ -472,7 +472,7 @@ def test_multiple_attributes_mc_required_env(capsys):
 
     class MyRoot(ConfigItem):
         def __init__(self):
-            super(MyRoot, self).__init__()
+            super().__init__()
             self.aa = MC_REQUIRED
             self.bb = MC_REQUIRED
 

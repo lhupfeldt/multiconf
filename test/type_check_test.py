@@ -43,12 +43,12 @@ _single_error_on_item_expected_ex = r"""There was 1 error when defining item: {{
 
 class ItemWithIntAA(ItemWithAA):
     def __init__(self, aa: int = MC_REQUIRED):
-        super(ItemWithIntAA, self).__init__(aa=aa)
+        super().__init__(aa=aa)
 
 
 class ItemWithStrAA(ItemWithAA):
     def __init__(self, aa: str = None):
-        super(ItemWithStrAA, self).__init__(aa=aa)
+        super().__init__(aa=aa)
 
 
 def test_attribute_defined_with_correct_types(capsys):

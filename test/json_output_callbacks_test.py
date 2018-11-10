@@ -44,13 +44,13 @@ def test_json_dump_user_defined_attribute_filter():
 
     class RootWithHideMe1(ItemWithAA):
         def __init__(self, aa=MC_REQUIRED):
-            super(RootWithHideMe1, self).__init__(aa=aa)
+            super().__init__(aa=aa)
             self.hide_me1 = MC_REQUIRED
 
     @named_as('someitem')
     class Nested(ConfigItem):
         def __init__(self, b, hide_me1):
-            super(Nested, self).__init__()
+            super().__init__()
             self.b = b
             self.hide_me1 = hide_me1
 
@@ -106,13 +106,13 @@ def test_json_dump_user_defined_attribute_filter_exception(capsys):
 
     class RootWithHideMe1(ItemWithAA):
         def __init__(self, aa=MC_REQUIRED):
-            super(RootWithHideMe1, self).__init__(aa=aa)
+            super().__init__(aa=aa)
             self.hide_me1 = MC_REQUIRED
 
     @named_as('someitem')
     class Nested(ConfigItem):
         def __init__(self, b, hide_me1):
-            super(Nested, self).__init__()
+            super().__init__()
             self.b = b
             self.hide_me1 = hide_me1
 
@@ -172,7 +172,7 @@ def test_json_fallback_handler():
     @named_as('someitem')
     class Nested(ConfigItem):
         def __init__(self, b):
-            super(Nested, self).__init__()
+            super().__init__()
             self.b = b
 
         @property
@@ -264,7 +264,7 @@ def test_json_equivalent():
     @named_as('someitem')
     class Item(ConfigItem):
         def __init__(self):
-            super(Item, self).__init__()
+            super().__init__()
             self.a = 7
 
     @mc_config(ef, load_now=True)
@@ -305,7 +305,7 @@ def test_json_equivalent_bad(capsys):
     @named_as('someitem')
     class Item(ConfigItem):
         def __init__(self):
-            super(Item, self).__init__()
+            super().__init__()
             self.a = 7
 
     @mc_config(ef, load_now=True)
@@ -398,7 +398,7 @@ def test_json_equivalent_attribute_error(capsys):
     @named_as('someitem')
     class Item(ConfigItem):
         def __init__(self):
-            super(Item, self).__init__()
+            super().__init__()
             self.a = 7
 
     @mc_config(ef, load_now=True)

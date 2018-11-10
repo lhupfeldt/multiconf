@@ -41,18 +41,18 @@ ef5_a_dev1_pp_prod.EnvGroup('g_prod_like', _a, g_prod5, pp5)
 @nested_repeatables('children')
 class nc_aa_root(ItemWithAA):
     def __init__(self, aa=None):
-        super(nc_aa_root, self).__init__(aa)
+        super().__init__(aa)
 
 
 class aabb_root(ItemWithAABB):
     def __init__(self, aa=None, bb=None):
-        super(aabb_root, self).__init__(aa, bb)
+        super().__init__(aa, bb)
 
 
 @named_as('children')
 class rchild(RepeatableConfigItem):
     def __init__(self, mc_key, aa=None, bb=None):
-        super(rchild, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.aa = aa
         self.bb = bb
@@ -62,14 +62,14 @@ class rchild(RepeatableConfigItem):
 @nested_repeatables('recursive_items')
 class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key, aa=None):
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.id = mc_key
         self.aa = aa
 
 
 class KwargsItem(ConfigItem):
     def __init__(self, **kwargs):
-        super(KwargsItem, self).__init__()
+        super().__init__()
         for key, val in sorted(kwargs.items()):
             setattr(self, key, val)
 
@@ -111,7 +111,7 @@ def test_iteritems_item_attributes():
     @required('anitem')
     class myitem(ConfigItem):
         def __init__(self):
-            super(myitem, self).__init__()
+            super().__init__()
             self.aa = MC_REQUIRED
 
     @mc_config(ef2_pp_prod, load_now=True)
@@ -529,7 +529,7 @@ def test_nested_mc_init_simple_items():
 def test_override_attr_in_init():
     class X(ConfigItem):
         def __init__(self, aa=1):
-            super(X, self).__init__()
+            super().__init__()
             self.aa = aa
             self.setattr('aa', default=17, mc_force=True)
 
@@ -552,7 +552,7 @@ def test_override_attr_in_init():
 def test_mc_init_override_change_type():
     class X(ConfigItem):
         def __init__(self, aa=1):
-            super(X, self).__init__()
+            super().__init__()
             self.aa = aa
 
         def mc_init(self):
@@ -591,7 +591,7 @@ def test_override_repeated_unknown_attr():
 def test_mc_init_setattr_ref_env_value():
     class X(ConfigItem):
         def __init__(self, aa=1):
-            super(X, self).__init__()
+            super().__init__()
             self.aa = aa
 
         def mc_init(self):
@@ -611,7 +611,7 @@ def test_mc_init_setattr_ref_env_value():
 def test_mc_init_setattr_ref_env_value_from_with():
     class X(ConfigItem):
         def __init__(self, aa=1):
-            super(X, self).__init__()
+            super().__init__()
             self.aa = aa
 
         def mc_init(self):
@@ -648,7 +648,7 @@ def test_mc_init_setattr_ref_env_value_from_with():
 def test_attribute_args_partial_set_in_init_overridden_or_finished_in_mc_init():
     class Requires(ConfigItem):
         def __init__(self, aa=13):
-            super(Requires, self).__init__()
+            super().__init__()
             # Partial assignment is allowed in init
             self.setattr('aa', prod=aa)
             self.setattr('bb', default=17, prod=2)

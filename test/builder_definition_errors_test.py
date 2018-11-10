@@ -28,7 +28,7 @@ prod2 = ef2_prod_pp.Env('prod')
 @named_as('xses')
 class X(RepeatableConfigItem):
     def __init__(self, mc_key):
-        super(X, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.server_num = None
         self.something = None
@@ -37,7 +37,7 @@ class X(RepeatableConfigItem):
 @named_as('x_children')
 class XChild(RepeatableConfigItem):
     def __init__(self, mc_key, a=None):
-        super(XChild, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.a = a
 
 
@@ -65,7 +65,7 @@ _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expe
 def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item():
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers=2):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.num_servers = num_servers
 
         def mc_build(self):
@@ -126,10 +126,10 @@ def test_unexpected_repeatable_child_builder():
 @named_as('arepeatable')
 class RepItem(RepeatableConfigItem):
     def __new__(cls):
-        super(RepItem, cls).__new__(cls, mc_key='a')
+        super().__new__(cls, mc_key='a')
 
     def __init__(self):
-        super(RepItem, self).__init__(mc_key='a')
+        super().__init__(mc_key='a')
         self.name = 'a'
 
 
@@ -207,7 +207,7 @@ _configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex = "
 def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             with X('tada'):
@@ -229,7 +229,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
 def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             X('tada')
@@ -252,12 +252,12 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
 def test_configbuilders_repeated_non_repeatable_in_build():
     class MiddleItem(ConfigItem):
         def __init__(self, name):
-            super(MiddleItem, self).__init__()
+            super().__init__()
             self.id = name
 
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MiddleBuilder, self).__init__()
+            super().__init__()
             self.name = name
 
         def mc_build(self):
@@ -294,7 +294,7 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
     """Test that a repeatable declared in 'with' raises an error when assigned under an item from 'mc_build' which has not declared the repeatable."""
     class YBuilder(ConfigBuilder):
         def __init__(self):
-            super(YBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             Y('y1')
@@ -306,12 +306,12 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
     @named_as('ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
         def __init__(self, mc_key, a):
-            super(YChild, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.a = a
 
     with raises(ConfigException) as exinfo:
@@ -343,7 +343,7 @@ _configbuilder_repeated = """Re-used key 'aa' in repeated item <class 'test.buil
 def test_configbuilder_repeated():
     class XBuilder(ConfigBuilder):
         def __init__(self, mc_key):
-            super(XBuilder, self).__init__(mc_key)
+            super().__init__(mc_key)
 
         def mc_build(self):
             pass
@@ -365,7 +365,7 @@ def test_configbuilder_repeated():
 def test_configbuilder_repeated_in_mc_init():
     class XBuilder(ConfigBuilder):
         def __init__(self, mc_key):
-            super(XBuilder, self).__init__(mc_key)
+            super().__init__(mc_key)
 
         def mc_build(self):
             pass
@@ -398,7 +398,7 @@ def test_assign_on_built_item_after_it_is_built(capsys):
 
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             Y()
@@ -406,7 +406,7 @@ def test_assign_on_built_item_after_it_is_built(capsys):
     @named_as('y')
     class Y(ConfigItem):
         def __init__(self):
-            super(Y, self).__init__()
+            super().__init__()
             self.something = None
 
     with raises(ConfigException) as exinfo:
@@ -440,7 +440,7 @@ def test_assign_and_assign_on_proxied_built_item_child_after_freeze(capsys):
 
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             Y()
@@ -448,7 +448,7 @@ def test_assign_and_assign_on_proxied_built_item_child_after_freeze(capsys):
     @named_as('y')
     class Y(ConfigItem):
         def __init__(self):
-            super(Y, self).__init__()
+            super().__init__()
             self.something = None
 
     # Test assignment error

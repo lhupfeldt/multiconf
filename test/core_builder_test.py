@@ -20,7 +20,7 @@ def test_builder_ref_env_attr_and_override():
 
     class XBuilder(ConfigBuilder):
         def __init__(self, aa=17):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.aa = aa
 
         def mc_init(self):

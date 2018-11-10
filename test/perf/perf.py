@@ -50,7 +50,7 @@ class root(ConfigItem):
 @named_as('children_init')
 class rchild_init(RepeatableConfigItem):
     def __init__(self, mc_key, aa, bb, xx, yy):
-        super(rchild_init, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.aa = aa
         self.bb = bb
@@ -61,12 +61,12 @@ class rchild_init(RepeatableConfigItem):
 @named_as('children_mc_init')
 class rchild_mc_init(RepeatableConfigItem):
     def __init__(self, mc_key, xx):
-        super(rchild_mc_init, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.xx = xx
 
     def mc_init(self):
-        super(rchild_mc_init, self).mc_init()
+        super().mc_init()
         self.setattr('xx', default=17, mc_force=True)
         self.setattr('yy', default=18, mc_set_unknown=True, mc_force=True)
         self.setattr('zz', default=19, mc_set_unknown=True, mc_force=True)
@@ -75,7 +75,7 @@ class rchild_mc_init(RepeatableConfigItem):
 @named_as('children_default')
 class rchild_default(RepeatableConfigItem):
     def __init__(self, mc_key, aa):
-        super(rchild_default, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.aa = aa
 
@@ -84,7 +84,7 @@ class rchild_default(RepeatableConfigItem):
 @nested_repeatables('children_init', 'children_default', 'children_env', 'children_mc_init')
 class rchild_env(RepeatableConfigItem):
     def __init__(self, name):
-        super(rchild_env, self).__init__(mc_key=name)
+        super().__init__(mc_key=name)
         self.name = name
 
 

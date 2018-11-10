@@ -23,7 +23,7 @@ def ce(line_num, *lines):
 
 class MeSetterItem(ItemWithAA):
     def setme(self, name, mc_overwrite_property=False, mc_set_unknown=False, mc_force=False, **mevalues):
-        super(MeSetterItem, self).setattr(
+        super().setattr(
             name, mc_overwrite_property=mc_overwrite_property, mc_set_unknown=mc_set_unknown, mc_force=mc_force,
             mc_error_info_up_level=3, **mevalues)
 

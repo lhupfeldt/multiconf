@@ -14,14 +14,14 @@ def test_item_in_init_goes_to_parent():
 
     class X(ConfigItem):
         def __init__(self, aa=1):
-            super(X, self).__init__()
+            super().__init__()
             self.aa = aa
 
     class Y(X):
         def __init__(self, aa=37):
             parent[0] = self.contained_in
             bb = X()  # X is created in parent and ref assigned to bb
-            super(Y, self).__init__(aa)
+            super().__init__(aa)
             self.bb = bb
             self.cc = None
 

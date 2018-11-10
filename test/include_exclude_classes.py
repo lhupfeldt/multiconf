@@ -7,10 +7,10 @@ from multiconf import ConfigItem
 # This is defined in a separate file to ensure the test of the file:line message handling is valid
 class McSelectOverrideItem(ConfigItem):
     def mc_select_envs(self, include=None, exclude=None, mc_error_info_up_level=3):
-        super(McSelectOverrideItem, self).mc_select_envs(include, exclude, mc_error_info_up_level=mc_error_info_up_level)
+        super().mc_select_envs(include, exclude, mc_error_info_up_level=mc_error_info_up_level)
 
 
 # This is defined in a separate file to ensure the test of the file:line message handling is valid
 class McSelectOverrideItem2(McSelectOverrideItem):
     def mc_select_envs(self, include=None, exclude=None):
-        super(McSelectOverrideItem2, self).mc_select_envs(include, exclude, mc_error_info_up_level=4)
+        super().mc_select_envs(include, exclude, mc_error_info_up_level=4)

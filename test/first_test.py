@@ -10,7 +10,7 @@ def test():
     @named_as('x')
     class X(ConfigItem):
         def __init__(self):
-            super(X, self).__init__()
+            super().__init__()
             self.aa = 0
             self.bb = 0
             self.ttt = 1

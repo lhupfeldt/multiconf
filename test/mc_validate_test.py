@@ -92,17 +92,17 @@ def test_user_mc_validate_error():
 def test_mc_required_attribute_resolved_after_mc_validate(capsys):
     class item(ConfigItem):
         def __init__(self):
-            super(item, self).__init__()
+            super().__init__()
             self.abcd = MC_REQUIRED
             self.efgh = MC_REQUIRED
             self.ijkl = MC_REQUIRED
 
         def mc_init(self):
-            super(item, self).mc_init()
+            super().mc_init()
             self.abcd = 7
 
         def mc_validate(self):
-            super(item, self).mc_validate()
+            super().mc_validate()
             self.ijkl = 7
 
     @mc_config(ef, load_now=True)
@@ -121,7 +121,7 @@ def test_mc_required_attribute_missing_after_mc_validate(capsys):
 
     class item(ConfigItem):
         def __init__(self):
-            super(item, self).__init__()
+            super().__init__()
             self.abcd = MC_REQUIRED
             self.efgh = MC_REQUIRED
             self.ijkl = MC_REQUIRED
@@ -129,11 +129,11 @@ def test_mc_required_attribute_missing_after_mc_validate(capsys):
             self.mnop = MC_REQUIRED
 
         def mc_init(self):
-            super(item, self).mc_init()
+            super().mc_init()
             self.abcd = 7
 
         def mc_validate(self):
-            super(item, self).mc_validate()
+            super().mc_validate()
             self.ijkl = 7
 
     with raises(ConfigException) as exinfo:

@@ -133,7 +133,7 @@ _repr_configbuilder2_dont_dump_expected_repr_full = """{
 def test_repr_configbuilder2():
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
             self.start = start
 
         def mc_build(self):
@@ -148,14 +148,14 @@ def test_repr_configbuilder2():
     @nested_repeatables('y_children', 'ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key, server_num):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
             self.server_num = server_num
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
         def __init__(self, mc_key, a):
-            super(YChild, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
             self.a = a
 
@@ -201,7 +201,7 @@ _repr_attr_ref_configbuilder_expected_repr = """{
 def test_repr_attr_ref_configbuilder():
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
             self.start = start
 
         def mc_build(self):
@@ -215,7 +215,7 @@ def test_repr_attr_ref_configbuilder():
     @named_as('ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.aa = 777
 
     @mc_config(ef, load_now=True)

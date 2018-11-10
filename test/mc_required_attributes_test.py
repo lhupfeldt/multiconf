@@ -18,13 +18,13 @@ prod = ef.Env('prod')
 def test_required_attributes_inherited_ok():
     class root(ConfigItem):
         def __init__(self):
-            super(root, self).__init__()
+            super().__init__()
             self.anattr = MC_REQUIRED
             self.anotherattr = MC_REQUIRED
 
     class root2(root):
         def __init__(self):
-            super(root2, self).__init__()
+            super().__init__()
             self.someattr2 = MC_REQUIRED
             self.someotherattr2 = MC_REQUIRED
 
@@ -52,13 +52,13 @@ def test_required_attributes_inherited_missing(capsys):
 
     class root(ConfigItem):
         def __init__(self):
-            super(root, self).__init__()
+            super().__init__()
             self.anattr = MC_REQUIRED
             self.anotherattr = MC_REQUIRED
 
     class root2(root):
         def __init__(self):
-            super(root2, self).__init__()
+            super().__init__()
             self.someattr2 = MC_REQUIRED
             self.someotherattr2 = MC_REQUIRED
 
@@ -99,7 +99,7 @@ def test_multiple_required_attributes_missing_for_configitem(capsys):
 
     class item(ConfigItem):
         def __init__(self):
-            super(item, self).__init__()
+            super().__init__()
             self.abcd = MC_REQUIRED
             self.efgh = MC_REQUIRED
             self.ijkl = MC_REQUIRED
@@ -125,7 +125,7 @@ def test_multiple_required_attributes_missing_for_configitem(capsys):
 def test_error_freezing_previous_sibling__validation(capsys):
     class inner(ConfigItem):
         def __init__(self):
-            super(inner, self).__init__()
+            super().__init__()
             self.a = MC_REQUIRED
 
     with raises(Exception) as exinfo:

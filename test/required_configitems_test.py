@@ -32,7 +32,7 @@ def cw(line_num, *lines):
 
 class _BaseItem(ConfigItem):
     def __init__(self, val):
-        super(_BaseItem, self).__init__()
+        super().__init__()
         self.val = val
 
 
@@ -88,12 +88,12 @@ def test_required_items_accept_override_of_default():
     @required('aa', 'bb')
     class item(ConfigItem):
         def __init__(self, a, b):
-            super(item, self).__init__()
+            super().__init__()
             self.a = a
             self.b = b
 
         def mc_init(self):
-            super(item, self).mc_init()
+            super().mc_init()
             aa(self.a)
             bb(self.b)
 

@@ -18,7 +18,7 @@ prod = ef.Env('prod')
 @nested_repeatables('someitems')
 class root(ConfigItem):
     def __init__(self, aa=None):
-        super(root, self).__init__()
+        super().__init__()
         if aa is not None:
             self.aa = aa
 
@@ -27,7 +27,7 @@ class root(ConfigItem):
 @nested_repeatables('someitems')
 class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key, **kwargs):
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.id = mc_key
 
         # Not an example of good coding!

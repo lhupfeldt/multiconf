@@ -183,7 +183,7 @@ def test_setattr_replace_property_in_with_not_allowed(capsys):
     @named_as('someitem')
     class Nested(ConfigItem):
         def __init__(self):
-            super(Nested, self).__init__()
+            super().__init__()
 
         @property
         def m(self):
@@ -207,7 +207,7 @@ def test_assigment_replace_property_in_init_not_allowed(capsys):
     @named_as('someitem')
     class Nested(ConfigItem):
         def __init__(self, m=None):
-            super(Nested, self).__init__()
+            super().__init__()
             errorline[0] = next_line_num()
             self.m = m
 

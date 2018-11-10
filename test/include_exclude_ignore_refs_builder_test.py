@@ -16,21 +16,21 @@ prod = ef.Env('prod')
 @nested_repeatables('reps')
 class HasRepeatables(ConfigItem):
     def __init__(self, name, mc_exclude):
-        super(HasRepeatables, self).__init__(mc_exclude=mc_exclude)
+        super().__init__(mc_exclude=mc_exclude)
         self.name = name
 
 
 @named_as('reps')
 class RepeatableItem(RepeatableConfigItem):
     def __init__(self, mc_key, mc_exclude=None):
-        super(RepeatableItem, self).__init__(mc_key=mc_key, mc_exclude=mc_exclude)
+        super().__init__(mc_key=mc_key, mc_exclude=mc_exclude)
         self.name = mc_key
         self.aa = None
 
 
 class BB(ConfigBuilder):
     def __init__(self, aa):
-        super(BB, self).__init__()
+        super().__init__()
         self.aa = aa
 
     def mc_build(self):
@@ -99,7 +99,7 @@ def test_exclude_with_builder_repeated():
 
 class ExclInBuild1(ConfigBuilder):
     def __init__(self):
-        super(ExclInBuild1, self).__init__()
+        super().__init__()
 
     def mc_build(self):
         RepeatableItem('aaa', mc_exclude=[prod])
@@ -108,7 +108,7 @@ class ExclInBuild1(ConfigBuilder):
 
 class ExclInBuild2(ConfigBuilder):
     def __init__(self):
-        super(ExclInBuild2, self).__init__()
+        super().__init__()
 
     def mc_build(self):
         RepeatableItem('ccc', mc_exclude=None)
@@ -149,7 +149,7 @@ def test_mc_select_envs_with_builder():
     @nested_repeatables('reps')
     class HasRepeatables2(ConfigItem):
         def __init__(self, name):
-            super(HasRepeatables2, self).__init__()
+            super().__init__()
             self.name = name
 
     @mc_config(ef, load_now=True)

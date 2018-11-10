@@ -33,7 +33,7 @@ g_ppr = ef.EnvGroup('g_ppr', pp, prod)
 
 class item(ConfigItem):
     def __init__(self, anattr=MC_REQUIRED, mc_include=None, mc_exclude=None):
-        super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        super().__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         self.anattr = anattr
         self.anotherattr = None
         self.b = None
@@ -45,7 +45,7 @@ class decorated_item(ConfigItem):
     xx = 3
 
     def __init__(self, mc_include=None, mc_exclude=None):
-        super(decorated_item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        super().__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         self.anotherattr = MC_REQUIRED
 
 

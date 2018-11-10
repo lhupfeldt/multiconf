@@ -65,13 +65,13 @@ def test_mc_key_value():
     @named_as('ritem')
     class Rr(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(Rr, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.aa = 0
 
     @repeatable_key(mc_key='single')
     class SingularRr(Rr):
         def __init__(self):
-            super(SingularRr, self).__init__(mc_key=None)
+            super().__init__(mc_key=None)
             self.aa = 0
 
     @named_as('ritem')
@@ -102,24 +102,24 @@ def test_repeatable_key():
     @named_as('ritem')
     class Rr(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(Rr, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.aa = 0
 
     @repeatable_key(base_name='xxx')
     class AlternateKeyRr(Rr):
         def __init__(self, base_name='xxx'):
-            super(AlternateKeyRr, self).__init__(mc_key=None)
+            super().__init__(mc_key=None)
             self.base_name = base_name
 
     @repeatable_key(base_name='zzz')
     class FixedKeyRr(Rr):
         def __init__(self):
-            super(FixedKeyRr, self).__init__(mc_key=None)
+            super().__init__(mc_key=None)
 
     @repeatable_key(base_name='qqq')
     class FixedKey2(AlternateKeyRr):
         def __init__(self):
-            super(FixedKey2, self).__init__(base_name='qqq')
+            super().__init__(base_name='qqq')
 
     @nested_repeatables('ritem')
     class root(ConfigItem):
@@ -153,7 +153,7 @@ def test_repeatable_key_not_repeatable_error():
         @repeatable_key(base_name='xxx')
         class Xx(ConfigItem):
             def __init__(self):
-                super(Xx, self).__init__()
+                super().__init__()
                 self.aa = 0
 
     exp_ex = "Decorator '@repeatable_key' is only allowed on instance of RepeatableConfigItem."
@@ -166,7 +166,7 @@ def test_repeatable_key_no_name_value_error():
         @repeatable_key()
         class Xx(RepeatableConfigItem):
             def __init__(self):
-                super(Xx, self).__init__()
+                super().__init__()
                 self.aa = 0
 
     exp_ex = "Decorator '@repeatable_key' takes exactly one key-value pair."

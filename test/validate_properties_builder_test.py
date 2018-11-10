@@ -31,7 +31,7 @@ def test_builder_validate_properties_child_item_only_called_once_per_env():
 
     class builder(ConfigBuilder):
         def __init__(self):
-            super(builder, self).__init__()
+            super().__init__()
 
         @property
         def mm(self):

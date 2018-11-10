@@ -17,14 +17,14 @@ from multiconf.decorators import nested_repeatables
 class weblogic_config(ConfigItem):
     """This is just a simple holder of managed_servers and datasources."""
     def __init__(self):
-        super(weblogic_config, self).__init__()
+        super().__init__()
         self.base_port = MC_REQUIRED
 
 
 # Weblogic's standalone administration server. Used to control domain.
 class admin_server(ConfigItem):
     def __init__(self, host, port):
-        super(admin_server, self).__init__()
+        super().__init__()
         self.host = host
         self.port = port
         self.name = 'admin'
@@ -34,7 +34,7 @@ class admin_server(ConfigItem):
 # Here specify that a managed_server can be repeated within it's parent (domain)
 class managed_server(RepeatableConfigItem):
     def __init__(self, mc_key, host, port):
-        super(managed_server, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.host = host
         self.port = port
         self.name = mc_key
@@ -49,7 +49,7 @@ class managed_servers(ConfigBuilder):
     """
 
     def __init__(self, num_servers, host_pattern, base_port):
-        super(managed_servers, self).__init__()
+        super().__init__()
         self.num_servers = num_servers
         self.host_pattern = host_pattern
         self.base_port = base_port
@@ -64,6 +64,6 @@ class managed_servers(ConfigBuilder):
 
 class datasource(RepeatableConfigItem):
     def __init__(self, mc_key, database_type):
-        super(datasource, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.database_type = database_type

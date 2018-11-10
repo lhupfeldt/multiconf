@@ -13,7 +13,7 @@ prod = ef.Env('prod')
 @named_as('outer')
 class Outer(ConfigItem):
     def __init__(self, name):
-        super(Outer, self).__init__()
+        super().__init__()
         self.name = name
 
 
@@ -33,7 +33,7 @@ class OuterChild(ConfigItem):
 @named_as('middle_child')
 class MiddleChild(ConfigItem):
     def mc_init(self):
-        super(MiddleChild, self).mc_init()
+        super().mc_init()
         assert isinstance(self.contained_in, OuterChild)
 
     @property
@@ -52,7 +52,7 @@ class MiddleChild(ConfigItem):
 @named_as('inner_child')
 class InnerChild(ConfigItem):
     def mc_init(self):
-        super(InnerChild, self).mc_init()
+        super().mc_init()
         assert isinstance(self.contained_in, MiddleChild)
 
     @property

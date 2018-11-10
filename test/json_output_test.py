@@ -29,7 +29,7 @@ prod2 = ef2_prod.Env('prod')
 @nested_repeatables('someitems')
 class root(ConfigItem):
     def __init__(self, aa=None):
-        super(root, self).__init__()
+        super().__init__()
         if aa is not None:
             self.aa = aa
 
@@ -38,7 +38,7 @@ class root(ConfigItem):
 @nested_repeatables('someitems')
 class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key, **kwargs):
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.id = mc_key
 
         # Not an example of good coding!
@@ -49,7 +49,7 @@ class NestedRepeatable(RepeatableConfigItem):
 @named_as('someitem')
 class SimpleItem(ConfigItem):
     def __init__(self, **kwargs):
-        super(SimpleItem, self).__init__()
+        super().__init__()
         for key, val in kwargs.items():
             setattr(self, key, val)
 
@@ -299,7 +299,7 @@ def test_json_dump_cyclic_references_in_conf_items():
     @named_as('anitem')
     class AnXItem(ConfigItem):
         def __init__(self):
-            super(AnXItem, self).__init__()
+            super().__init__()
             self.something = MC_REQUIRED
             self.ref = MC_REQUIRED
 
@@ -756,7 +756,7 @@ def test_json_dump_property_method_returns_already_seen_conf_item():
     @named_as('referenced')
     class X(ConfigItem):
         def __init__(self, a):
-            super(X, self).__init__()
+            super().__init__()
             self.a = a
 
     @mc_config(ef, load_now=True)
@@ -1103,10 +1103,10 @@ _json_dump_property_method_returns_later_confitem_same_level_expected_json = """
 @nested_repeatables('someitems')
 class _NamedNestedRepeatable(RepeatableConfigItem, metaclass=abc.ABCMeta):
     def __new__(cls, name):
-        return super(_NamedNestedRepeatable, cls).__new__(cls, mc_key=name)
+        return super().__new__(cls, mc_key=name)
 
     def __init__(self, name):
-        super(_NamedNestedRepeatable, self).__init__(mc_key=name)
+        super().__init__(mc_key=name)
         self.name = name
         self.x = 3
 
@@ -1428,13 +1428,13 @@ _iterable_attr_forward_item_ref = """{
 def test_iterable_attr_forward_item_ref():
     class ItemWithAnXRef(ItemWithAA):
         def __init__(self):
-            super(ItemWithAnXRef, self).__init__()
+            super().__init__()
             self.item_refs = []
 
     @named_as('xx')
     class Xx(ConfigItem):
         def __init__(self):
-            super(Xx, self).__init__()
+            super().__init__()
             self.a = 1
 
     @mc_config(ef, load_now=True)
@@ -1476,13 +1476,13 @@ _iterable_tuple_attr_forward_item_ref = """{
 def test_iterable_tuple_attr_forward_item_ref():
     class ItemWithAnXRef(ItemWithAA):
         def __init__(self):
-            super(ItemWithAnXRef, self).__init__()
+            super().__init__()
             self.item_refs = MC_REQUIRED
 
     @named_as('xx')
     class Xx(ConfigItem):
         def __init__(self):
-            super(Xx, self).__init__()
+            super().__init__()
             self.a = 1
 
     @mc_config(ef, load_now=True)
@@ -1524,13 +1524,13 @@ _dict_attr_forward_item_ref = """{
 def test_dict_attr_forward_item_ref():
     class ItemWithAnXRef(ItemWithAA):
         def __init__(self):
-            super(ItemWithAnXRef, self).__init__()
+            super().__init__()
             self.item_refs = {}
 
     @named_as('xx')
     class Xx(ConfigItem):
         def __init__(self):
-            super(Xx, self).__init__()
+            super().__init__()
             self.a = 1
 
     @mc_config(ef, load_now=True)

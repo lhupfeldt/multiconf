@@ -24,14 +24,14 @@ ef2_pp_prod.EnvGroup('g_prod_like', prod2, pp2)
 @nested_repeatables('recursive_items')
 class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key, aa=None):
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.id = mc_key
         self.aa = aa
 
 
 class KwargsItem(ConfigItem):
     def __init__(self, **kwargs):
-        super(KwargsItem, self).__init__()
+        super().__init__()
         for key, val in kwargs.items():
             setattr(self, key, val)
 
@@ -154,7 +154,7 @@ def test_find_contained_in_named_as_not_found():
     @nested_repeatables('someitems')
     class NestedRepeatable(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(NestedRepeatable, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.id = mc_key
             self.a = None
 
@@ -201,7 +201,7 @@ def test_find_attribute_with_attribute_name_not_found():
     @nested_repeatables('someitems')
     class NestedRepeatable(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(NestedRepeatable, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.id = mc_key
             self.a = None
 
@@ -213,7 +213,7 @@ def test_find_attribute_with_attribute_name_not_found():
     @nested_repeatables('someitems')
     class root(ItemWithAA):
         def __init__(self, aa):
-            super(root, self).__init__(aa=aa)
+            super().__init__(aa=aa)
             self.q = None
 
     @mc_config(ef1_prod, load_now=True)

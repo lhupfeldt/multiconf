@@ -21,17 +21,17 @@ ef.EnvGroup('g_prod_like', prod, pp)
 @nested_repeatables('children')
 class nc_aa_root(ConfigItem):
     def __init__(self, aa=None):
-        super(nc_aa_root, self).__init__()
+        super().__init__()
         self.aa = aa
 
 
 @named_as('children')
 class rchild(RepeatableConfigItem):
     def __new__(cls, name, *args, **kwargs):
-        return super(rchild, cls).__new__(cls, mc_key=name, *args, **kwargs)
+        return super().__new__(cls, mc_key=name, *args, **kwargs)
 
     def __init__(self, name, aa=None, bb=None):
-        super(rchild, self).__init__(mc_key=name)
+        super().__init__(mc_key=name)
         self.name = name
         self.aa = aa
         self.bb = bb
@@ -41,7 +41,7 @@ class rchild(RepeatableConfigItem):
 @nested_repeatables('recursive_items')
 class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key, aa=None):
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.id = mc_key
         self.aa = aa
 
@@ -121,7 +121,7 @@ def test_automatic_contained_item_freeze_on_exit():
 def test_mc_init_repeatable_items():
     class X(RepeatableConfigItem):
         def __init__(self, mc_key, aa, bb=None):
-            super(X, self).__init__(mc_key)
+            super().__init__(mc_key)
             self.aa = aa
             if bb is not None:
                 self.bb = bb

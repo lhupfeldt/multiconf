@@ -18,7 +18,7 @@ prod1 = ef1_prod_pp.Env('prod')
 def test_attribute_none_args_partial_set_in_init_overridden_in_mc_init():
     class Requires(ConfigItem):
         def __init__(self, a=None):
-            super(Requires, self).__init__()
+            super().__init__()
             # Partial assignment is allowed in init
             self.setattr('a', prod=a)
             self.setattr('b', default=None, prod=2)
@@ -46,7 +46,7 @@ def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
 
     class Requires(ConfigItem):
         def __init__(self, a=None):
-            super(Requires, self).__init__()
+            super().__init__()
             # Partial assignment is allowed in init
             errorline_setattr[0] = next_line_num()
             self.setattr('a', prod=a)

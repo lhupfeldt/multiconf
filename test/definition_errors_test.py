@@ -622,7 +622,7 @@ def test_using_group_for_selected_env():
 def test_double_error_for_configroot_mc_required_missing(capsys):
     class root(ConfigItem):
         def __init__(self):
-            super(root, self).__init__()
+            super().__init__()
             self.someattr1 = MC_REQUIRED
 
     with raises(Exception) as exinfo:
@@ -641,7 +641,7 @@ def test_double_error_for_configroot_required_item_missing(capsys):
     @required('someitem')
     class root(ConfigItem):
         def __init__(self):
-            super(root, self).__init__()
+            super().__init__()
 
     with raises(Exception) as exinfo:
         @mc_config(ef1_prod, load_now=True)
@@ -720,7 +720,7 @@ def test_attribute_mc_required_args_partial_set_in_init_unfinished(capsys):
 
     class Requires(ConfigItem):
         def __init__(self, a=13):
-            super(Requires, self).__init__()
+            super().__init__()
             # Partial assignment is allowed in init
             errorline_setattr[0] = next_line_num()
             self.setattr('a', prod=a)
@@ -841,7 +841,7 @@ def test_init_line_num(capsys):
 
     class init_overidden1(ConfigItem):
         def __init__(self):
-            super(init_overidden1, self).__init__()
+            super().__init__()
             self.a = MC_REQUIRED
 
     with raises(Exception) as exinfo:
@@ -879,7 +879,7 @@ def test_init_line_num(capsys):
 
     class init_overidden2(intermediate):
         def __init__(self):
-            super(init_overidden2, self).__init__()
+            super().__init__()
             self.b = MC_REQUIRED
 
     with raises(Exception) as exinfo:

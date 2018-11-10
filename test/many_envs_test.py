@@ -25,7 +25,7 @@ for ii in range(0, num_groups):
 
 class ItemWithManyAttributes(ItemWithAA):
     def __init__(self, aa=MC_REQUIRED):
-        super(ItemWithManyAttributes, self).__init__(aa=aa)
+        super().__init__(aa=aa)
         self.b = MC_REQUIRED
         self.c = None
         self.d = None

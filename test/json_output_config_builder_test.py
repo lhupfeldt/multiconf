@@ -58,7 +58,7 @@ _json_dump_configbuilder1_all_envs_expected_json_full = """{
 def test_json_dump_configbuilder1():
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
             self.start = start
 
         def mc_build(self):
@@ -73,14 +73,14 @@ def test_json_dump_configbuilder1():
     @nested_repeatables('y_children', 'ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key, server_num):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
             self.server_num = server_num
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
         def __init__(self, mc_key, a):
-            super(YChild, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
             self.a = a
 
@@ -491,7 +491,7 @@ _json_dump_configbuilder2_dont_dump_expected_json_full = """{
 def test_json_dump_configbuilder2():
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
             self.start = start
 
         def mc_build(self):
@@ -506,14 +506,14 @@ def test_json_dump_configbuilder2():
     @nested_repeatables('y_children', 'ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key, server_num):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
             self.server_num = server_num
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
         def __init__(self, mc_key, a):
-            super(YChild, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
             self.a = a
 
@@ -543,12 +543,12 @@ def test_json_dump_with_builders_containment_check():
     @named_as('inners')
     class InnerItem(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(InnerItem, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
 
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
-            super(InnerBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             InnerItem('innermost')
@@ -556,12 +556,12 @@ def test_json_dump_with_builders_containment_check():
     @nested_repeatables('inners')
     class MiddleItem(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(MiddleItem, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
 
     class MyMiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MyMiddleBuilder, self).__init__()
+            super().__init__()
             self.name = name
 
         def mc_build(self):
@@ -570,7 +570,7 @@ def test_json_dump_with_builders_containment_check():
 
     class MyOuterBuilder(ConfigBuilder):
         def __init__(self):
-            super(MyOuterBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             with MyMiddleBuilder('base'):
@@ -650,7 +650,7 @@ _json_dump_attr_ref_configbuilder_expected_json_with_builders = """{
 def test_json_dump_attr_ref_configbuilder():
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
             self.start = start
 
         def mc_build(self):
@@ -664,7 +664,7 @@ def test_json_dump_attr_ref_configbuilder():
     @named_as('ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.aa = 777
 
     @mc_config(ef, load_now=True)

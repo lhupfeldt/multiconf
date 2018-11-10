@@ -40,7 +40,7 @@ exp_dev1_ambiguous = """Env('dev1') is specified in both include and exclude, wi
 
 class item(ConfigItem):
     def __init__(self, mc_include=None, mc_exclude=None):
-        super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        super().__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         self.anattr = MC_REQUIRED
         self.anotherattr = MC_REQUIRED
         self.b = None
@@ -219,7 +219,7 @@ def test_exclude_for_configitem():
 
 class ritem(RepeatableConfigItem):
     def __init__(self, mc_key, mc_include=None, mc_exclude=None):
-        super(ritem, self).__init__(mc_key=mc_key, mc_include=mc_include, mc_exclude=mc_exclude)
+        super().__init__(mc_key=mc_key, mc_include=mc_include, mc_exclude=mc_exclude)
         self.name = mc_key
         self.anattr = MC_REQUIRED
         self.anotherattr = MC_REQUIRED
@@ -229,7 +229,7 @@ class ritem(RepeatableConfigItem):
 @required('anitem', 'anotheritem')
 class decorated_ritem(RepeatableConfigItem):
     def __init__(self, mc_key, mc_exclude=None, mc_include=None):
-        super(decorated_ritem, self).__init__(mc_key=mc_key, mc_exclude=mc_exclude, mc_include=mc_include)
+        super().__init__(mc_key=mc_key, mc_exclude=mc_exclude, mc_include=mc_include)
         self.name = mc_key
 
 
@@ -704,7 +704,7 @@ def test_exclude_include_overlapping_ambiguous_and_includes_excluded_init_overri
 
     class iitem(ConfigItem):
         def __init__(self, mc_include, mc_exclude):
-            super(iitem, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+            super().__init__(mc_include=mc_include, mc_exclude=mc_exclude)
 
     with raises(ConfigException) as exinfo:
         class X():

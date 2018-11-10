@@ -155,7 +155,7 @@ def test_lazy_load_no_env():
 def test_mc_env_loop():
     class item(ConfigItem):
         def __init__(self, aa):
-            super(item, self).__init__()
+            super().__init__()
             self.aa = aa
             self.aa_alternate = MC_REQUIRED
 
