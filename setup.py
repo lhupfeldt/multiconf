@@ -1,8 +1,7 @@
 import sys, os
-
+import warnings
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
-
 
 PROJECT_ROOT, _ = os.path.split(__file__)
 PROJECT_NAME = 'multiconf'
@@ -12,6 +11,9 @@ PROJECT_EMAILS = 'lhn@hupfeldtit.dk'
 PROJECT_URL = "https://github.com/lhupfeldt/multiconf"
 SHORT_DESCRIPTION = 'Python API providing a set of classes as basis for configuration objects with multiple values per attribute.'
 LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.rst")).read()
+
+if sys.version_info < (3,):
+    warnings.warn('You are installing `{0}` with Python 2. {0} will soon become Python 3 only.'.format(PROJECT_NAME), UserWarning)
 
 
 class Test(TestCommand):
