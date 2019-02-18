@@ -1,8 +1,6 @@
 # Copyright (c) 2016 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys
-
 from pytest import raises
 
 from multiconf import mc_config, ConfigItem, ConfigException, ConfigDefinitionException
@@ -11,10 +9,6 @@ from multiconf.envs import EnvFactory
 
 from .utils.utils import config_error, config_warning, next_line_num, line_num, total_msg, local_func
 from .utils.messages import exception_previous_object_expected_stderr
-
-
-major_version = sys.version_info[0]
-minor_version = sys.version_info[1]
 
 
 def ce(line_num, *lines):
@@ -223,7 +217,7 @@ def test_required_attributes_inherited_redefined(capsys):
     class root(ConfigItem):
         pass
 
-    errorline = line_num() + (1 if major_version > 3 or minor_version > 7 else 2)
+    errorline = next_line_num() + 1
     @required('anitem', 'someotheritem2')
     class root2(root):
         pass

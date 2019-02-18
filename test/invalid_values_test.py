@@ -1,6 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import sys
 import os.path
 
 from pytest import raises
@@ -15,6 +16,8 @@ from .utils.messages import mc_required_expected
 from .utils.tstclasses import ItemWithAA
 from .utils.invalid_values_classes import  McRequiredInInitL1, McRequiredInInitL3
 
+
+minor_version = sys.version_info[1]
 
 _utils = os.path.join(os.path.dirname(__file__), 'utils')
 
@@ -284,7 +287,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
 
     # If the error occures on the last object, and that is not under a with statement, then the line will be the @mc_config
     with raises(ConfigException) as exinfo:
-        errorline[0] = next_line_num()
+        errorline[0] = next_line_num() + (1 if minor_version > 7 else 0)
         @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             McRequiredInInitL1()
@@ -320,7 +323,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
 
     # If the error occures on the last object, and that is not under a with statement, then the line will be the @mc_config
     with raises(ConfigException) as exinfo:
-        errorline[0] = next_line_num()
+        errorline[0] = next_line_num() + (1 if minor_version > 7 else 0)
         @mc_config(ef1_prod_pp, load_now=True)
         def config1(root):
             McRequiredInInitL3()

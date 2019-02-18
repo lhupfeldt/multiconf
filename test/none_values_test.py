@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import sys
+
 from pytest import raises  # pylint: disable=no-name-in-module
 
 from multiconf import mc_config, ConfigItem, ConfigException
@@ -9,6 +11,8 @@ from multiconf.envs import EnvFactory
 from .utils.messages import config_error_no_value_expected, config_error_never_received_value_expected
 from .utils.utils import next_line_num, start_file_line, lines_in
 
+
+minor_version = sys.version_info[1]
 
 ef1_prod_pp = EnvFactory()
 pp1 = ef1_prod_pp.Env('pp')
@@ -56,7 +60,7 @@ def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
             self.b = 7
 
     with raises(ConfigException):
-        errorline_exit[0] = next_line_num()
+        errorline_exit[0] = next_line_num() + (1 if minor_version > 7 else 0)
         @mc_config(ef1_prod_pp, load_now=True)
         def config(_):
             Requires()
