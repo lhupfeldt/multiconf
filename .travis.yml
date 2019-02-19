@@ -17,14 +17,6 @@ matrix:
           dist: xenial
           sudo: true
           env: REQUIREMENTS=release
-        - python: 3.8-dev
-          dist: xenial
-          sudo: true
-          env: REQUIREMENTS=lowest
-        - python: 3.8-dev
-          dist: xenial
-          sudo: true
-          env: REQUIREMENTS=release
 script: tox
 os:
   - linux
