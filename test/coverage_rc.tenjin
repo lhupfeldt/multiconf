@@ -21,6 +21,7 @@ exclude_lines =
     def _mc_debug\(
     def _mc_debug_hierarchy\(
 
+    if sys.version_info < min_sup_version:
     disable=bare-except
 
 partial_branches =

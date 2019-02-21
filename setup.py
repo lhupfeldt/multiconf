@@ -6,12 +6,17 @@ from setuptools.command.test import test as TestCommand
 
 PROJECT_ROOT, _ = os.path.split(__file__)
 PROJECT_NAME = 'multiconf'
-COPYRIGHT = u"Copyright (c) 2012 - 2018 Lars Hupfeldt Nielsen, Hupfeldt IT"
+COPYRIGHT = u"Copyright (c) 2012 - 2019 Lars Hupfeldt Nielsen, Hupfeldt IT"
 PROJECT_AUTHORS = u"Lars Hupfeldt Nielsen"
 PROJECT_EMAILS = 'lhn@hupfeldtit.dk'
 PROJECT_URL = "https://github.com/lhupfeldt/multiconf"
 SHORT_DESCRIPTION = 'Python API providing a set of classes as basis for configuration objects with multiple values per attribute.'
 LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.rst")).read()
+
+
+_here = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(_here, PROJECT_NAME, 'py_version_check.py')) as ff:
+    exec(ff.read())
 
 
 class Test(TestCommand):
