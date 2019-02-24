@@ -138,3 +138,5 @@ demjson (optional) - pip install -U pytest pytest-cov demjson
    :target: https://badge.fury.io/py/multiconf
 .. |Coverage| image:: https://coveralls.io/repos/github/lhupfeldt/multiconf/badge.svg?branch=master
    :target: https://coveralls.io/github/lhupfeldt/multiconf?branch=master
+.. |License| image:: https://img.shields.io/github/license/lhupfeldt/multiconf.svg
+   :target: https://github.com/lhupfeldt/multiconf/blob/master/LICENSE.TXT
