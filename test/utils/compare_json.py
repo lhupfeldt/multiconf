@@ -71,7 +71,10 @@ def _compare_json(
             if replace_ids:
                 show('compact original', False, compact_json)
 
-        return False
+        import platform
+        if platform.python_implementation() != 'PyPy':
+            return False
+        # TODO PyPy is at Python 3.6 level and does not implement dict as ordered, continue with other checks
 
     if test_decode:
         try:
