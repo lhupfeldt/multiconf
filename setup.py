@@ -51,7 +51,7 @@ if __name__ == "__main__":
         install_requires=[] + py_version_requires,
         setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
-        tests_require=['pytest>=3.0.5', 'pytest-cov>=2.4.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
+        tests_require=['pytest>=3.0.5,<5.0.0', 'pytest-cov>=2.4.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
         cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
