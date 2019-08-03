@@ -1,5 +1,4 @@
 |Build Status| |Coverage| |Documentation Status| |PyPi Package|
- .. highlight:: python
 
 What
 ====
