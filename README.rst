@@ -57,7 +57,9 @@ that differ from the group values.
 You have to define your configuration data model as classes derived from
 Multiconf base classes, one of which is ``ConfigItem``.
 
-E.g, in your config data model (your framework) you define::
+E.g, in your config data model (your framework) you define:
+
+.. code:: python
 
     class Host(ConfigItem):
         def __init__(name=MC_REQUIRED, mem=MC_REQUIRED):
@@ -70,7 +72,9 @@ E.g, in your config data model (your framework) you define::
                 self.name, self.env.name)
 
 In you project configuration file you can then declare a configuration object
-with different attribute values for different environments::
+with different attribute values for different environments:
+
+.. code:: python
 
     ...
     with Host("web1") as host:
@@ -81,9 +85,7 @@ envs. Note that the envs *dev*, *tst*, *preprod* and *prod* must have been decla
 beforehand and Multiconf will ensure that all of them get a value.
 
 After instantiating your config for the *prod* env you can then access
-properties on the host object:
-
-.. code-block:: none
+properties on the host object::
 
     cfg.host.name -> web1
     cfg.host.mem -> 4G
