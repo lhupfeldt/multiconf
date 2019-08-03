@@ -4,7 +4,7 @@
 from multiconf import mc_config, ConfigItem
 from multiconf.envs import EnvFactory
 
-from .utils.utils import py3_local
+from .utils.utils import local_func
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA, ItemWithName
 
@@ -29,13 +29,13 @@ _json_dump_pprd_attr_dict_ref_item_expected_json = """{
             "a": "#ref, id: 0000"
         },
         "bb": {
-            "a": "<class 'test.json_output_complex_item_references_test.%(py3_local)sRef0'>"
+            "a": "<class 'test.json_output_complex_item_references_test.%(local_func)sRef0'>"
         },
         "a": 3,
         "a #static": true,
         "mm": "#ref self, id: 0000",
         "mm #calculated": true,
-        "nn": "<class 'test.json_output_complex_item_references_test.%(py3_local)sRef0'>"
+        "nn": "<class 'test.json_output_complex_item_references_test.%(local_func)sRef0'>"
     },
     "Ref2": {
         "__class__": "Ref2",
@@ -93,7 +93,7 @@ _json_dump_all_envs_attr_dict_ref_item_expected_json = """{
         },
         "bb": {
             "pprd": {
-                "a": "<class 'test.json_output_complex_item_references_test.%(py3_local)sRef0'>"
+                "a": "<class 'test.json_output_complex_item_references_test.%(local_func)sRef0'>"
             },
             "prod": {
                 "a": "#ref, id: 0000"
@@ -105,7 +105,7 @@ _json_dump_all_envs_attr_dict_ref_item_expected_json = """{
         "mm": "#ref self, id: 0000",
         "mm #calculated": true,
         "nn": {
-            "pprd": "<class 'test.json_output_complex_item_references_test.%(py3_local)sRef0'>",
+            "pprd": "<class 'test.json_output_complex_item_references_test.%(local_func)sRef0'>",
             "prod": "#ref self, id: 0000",
             "prod #calculated": true
         },
@@ -156,7 +156,7 @@ def test_json_dump_attr_dict_ref_item():
 
     cfg = config(pprd)
     ref1, ref2 = cfg.mc_config_result
-    assert compare_json(cfg.ItemWithAA, _json_dump_pprd_attr_dict_ref_item_expected_json % dict(py3_local=py3_local()))
+    assert compare_json(cfg.ItemWithAA, _json_dump_pprd_attr_dict_ref_item_expected_json % dict(local_func=local_func()))
     assert ref1.mm == ref1
     assert ref1.nn == Ref0
     assert ref2.r1mmnn == 1114
@@ -164,7 +164,7 @@ def test_json_dump_attr_dict_ref_item():
     cfg = config(prod)
     ref1, ref2 = cfg.mc_config_result
     assert compare_json(cfg.ItemWithAA, _json_dump_prod_attr_dict_ref_item_expected_json,
-                        expected_all_envs_json=_json_dump_all_envs_attr_dict_ref_item_expected_json % dict(py3_local=py3_local()))
+                        expected_all_envs_json=_json_dump_all_envs_attr_dict_ref_item_expected_json % dict(local_func=local_func()))
     assert ref1.mm == ref1
     assert ref1.nn == ref1
     assert ref2.r1mmnn == 6

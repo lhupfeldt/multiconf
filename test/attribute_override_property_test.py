@@ -11,11 +11,7 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigExcepti
 from multiconf.decorators import named_as, nested_repeatables
 from multiconf.envs import EnvFactory
 
-from .utils.utils import py3_local, py37_no_exc_comma, config_error, next_line_num, replace_ids
-
-
-major_version = sys.version_info[0]
-minor_version = sys.version_info[1]
+from .utils.utils import local_func, py37_no_exc_comma, config_error, next_line_num, replace_ids
 
 
 def ce(line_num, *lines):
@@ -175,13 +171,9 @@ def test_attribute_overrides_property_method_is_regular_method(capsys):
                 nn.setattr('m', default=7, mc_overwrite_property=True)
 
     _sout, serr = capsys.readouterr()
-    if major_version >= 3:
-        msg = re.sub(r"m at [^>]*>", "m at 1234>", str(serr))
-        expected = "'mc_overwrite_property' specified but existing attribute 'm' with value '<function %(py3_local)sNested.m at 1234>' is not a @property." % \
-                   dict(py3_local=py3_local())
-    else:
-        msg = serr
-        expected = "'mc_overwrite_property' specified but existing attribute 'm' with value '<unbound method Nested.m>' is not a @property."
+    msg = re.sub(r"m at [^>]*>", "m at 1234>", str(serr))
+    expected = "'mc_overwrite_property' specified but existing attribute 'm' with value '<function %(local_func)sNested.m at 1234>' is not a @property." % \
+               dict(local_func=local_func())
     assert msg == ce(errorline[0], expected)
 
 
@@ -191,7 +183,7 @@ def test_setattr_replace_property_in_with_not_allowed(capsys):
     @named_as('someitem')
     class Nested(ConfigItem):
         def __init__(self):
-            super(Nested, self).__init__()
+            super().__init__()
 
         @property
         def m(self):
@@ -215,7 +207,7 @@ def test_assigment_replace_property_in_init_not_allowed(capsys):
     @named_as('someitem')
     class Nested(ConfigItem):
         def __init__(self, m=None):
-            super(Nested, self).__init__()
+            super().__init__()
             errorline[0] = next_line_num()
             self.m = m
 
@@ -308,7 +300,7 @@ _attribute_overrides_failing_property_method_exp = """{
     },
     "m #no value for Env('prod')": true,
     "m #json_error trying to handle property method": "Exception('bad property method'%(comma)s)"
-}, object of type: <class 'test.attribute_override_property_test.%(py3_local)sNestedBadM'> has no attribute 'm'.
+}, object of type: <class 'test.attribute_override_property_test.%(local_func)sNestedBadM'> has no attribute 'm'.
 """.strip()
 
 def test_attribute_overrides_failing_property_method():
@@ -340,31 +332,29 @@ def test_attribute_overrides_failing_property_method():
 
     origin_line_exp = 'raise Exception("bad property method")'
 
-    if major_version >= 3:
-        # TODO
-        # print('XXX __context__', dir(exinfo.value.__context__))
-        # print('XXX __cause__', dir(exinfo.value.__cause__))
+    # TODO
+    # print('XXX __context__', dir(exinfo.value.__context__))
+    # print('XXX __cause__', dir(exinfo.value.__cause__))
 
-        # ctx = exinfo.value.__context__
-        # while True:
-        #     if not ctx.__context__:
-        #         break
-        #     ctx = ctx.__context__
-        #     print('ctx:', ctx.__traceback__)
+    # ctx = exinfo.value.__context__
+    # while True:
+    #     if not ctx.__context__:
+    #         break
+    #     ctx = ctx.__context__
+    #     print('ctx:', ctx.__traceback__)
 
-        # tb = traceback.extract_tb(ctx.__traceback__)
-        # for origin in tb:
-        #     print(origin)
-        # origin = tb[-1]
-        # filename, lineno, function_name, line = origin
-        # assert filename == __file__
-        # assert lineno == errorline[0]
-        # assert function_name == 'm'
-        # assert line == origin_line_exp
-        pass
+    # tb = traceback.extract_tb(ctx.__traceback__)
+    # for origin in tb:
+    #     print(origin)
+    # origin = tb[-1]
+    # filename, lineno, function_name, line = origin
+    # assert filename == __file__
+    # assert lineno == errorline[0]
+    # assert function_name == 'm'
+    # assert line == origin_line_exp
 
-    exp = _attribute_overrides_failing_property_method_exp % dict(py3_local=py3_local(), comma=py37_no_exc_comma)
-    exp += " Attribute 'm' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception: bad property method"
+    exp = _attribute_overrides_failing_property_method_exp % dict(local_func=local_func(), comma=py37_no_exc_comma)
+    exp += " Attribute 'm' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception('bad property method'{comma})".format(comma=py37_no_exc_comma)
 
     print('exp:', exp)
     got = replace_ids(str(exinfo.value), named_as=False)
@@ -405,7 +395,7 @@ def test_attribute_overrides_property_method_raising_attribute_error():
     print(ex_msg)
     assert "Attribute 'm' is defined as a multiconf attribute and as a @property method" in ex_msg
     assert "value is undefined for Env('prod') and @property method call failed" in ex_msg
-    assert "AttributeError: 'Nested' object has no attribute 'i_dont_have_this_attribute'" in ex_msg
+    assert """AttributeError("'Nested' object has no attribute 'i_dont_have_this_attribute'"%(comma)s)""" % dict(comma=py37_no_exc_comma) in ex_msg
 
 
 def test_attribute_overrides_property_method_using_mc_set_unknown_repeated_env(capsys):

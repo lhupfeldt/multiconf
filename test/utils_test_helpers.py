@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from multiconf import caller_file_line
 
 from .utils.utils import next_line_num

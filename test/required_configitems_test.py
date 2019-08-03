@@ -7,7 +7,7 @@ from multiconf import mc_config, ConfigItem, ConfigException, ConfigDefinitionEx
 from multiconf.decorators import required
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, config_warning, next_line_num, line_num, total_msg, py3_local
+from .utils.utils import config_error, config_warning, next_line_num, line_num, total_msg, local_func
 from .utils.messages import exception_previous_object_expected_stderr
 
 
@@ -26,7 +26,7 @@ def cw(line_num, *lines):
 
 class _BaseItem(ConfigItem):
     def __init__(self, val):
-        super(_BaseItem, self).__init__()
+        super().__init__()
         self.val = val
 
 
@@ -82,12 +82,12 @@ def test_required_items_accept_override_of_default():
     @required('aa', 'bb')
     class item(ConfigItem):
         def __init__(self, a, b):
-            super(item, self).__init__()
+            super().__init__()
             self.a = a
             self.b = b
 
         def mc_init(self):
-            super(item, self).mc_init()
+            super().mc_init()
             aa(self.a)
             bb(self.b)
 
@@ -208,7 +208,7 @@ def test_error_freezing_previous_sibling_missing_required(capsys):
     print(serr)
     assert "Missing '@required' items: ['a']" in serr
     assert serr.endswith(exception_previous_object_expected_stderr % dict(
-        module='required_configitems_test', py3_local=py3_local()))
+        module='required_configitems_test', local_func=local_func()))
     assert total_msg(1) in str(exinfo.value)
 
 
@@ -217,7 +217,7 @@ def test_required_attributes_inherited_redefined(capsys):
     class root(ConfigItem):
         pass
 
-    errorline = line_num() + 2
+    errorline = next_line_num() + 1
     @required('anitem', 'someotheritem2')
     class root2(root):
         pass

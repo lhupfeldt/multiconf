@@ -31,7 +31,7 @@ g_ppr = ef.EnvGroup('g_ppr', pp, prod)
 @nested_repeatables('ritems')
 class item(ConfigItem):
     def __init__(self, mc_include=None, mc_exclude=None):
-        super(item, self).__init__(mc_include=mc_include, mc_exclude=mc_exclude)
+        super().__init__(mc_include=mc_include, mc_exclude=mc_exclude)
         self.anattr = MC_REQUIRED
         self.anotherattr = None
         self.x = None
@@ -44,7 +44,7 @@ class anitem(ConfigItem):
 
 class ritem(RepeatableConfigItem):
     def __init__(self, mc_key, mc_include=None, mc_exclude=None):
-        super(ritem, self).__init__(mc_key=mc_key, mc_include=mc_include, mc_exclude=mc_exclude)
+        super().__init__(mc_key=mc_key, mc_include=mc_include, mc_exclude=mc_exclude)
         self.name = mc_key
         self.anattr = MC_REQUIRED
         self.anotherattr = MC_REQUIRED
@@ -52,7 +52,7 @@ class ritem(RepeatableConfigItem):
 
 class root(ConfigItem):
     def __init__(self):
-        super(root, self).__init__()
+        super().__init__()
         self.x = None
         self.y = None
         self.z = None
@@ -68,7 +68,7 @@ class decorated_ritem(ritem):
 @nested_repeatables('ritems', 'decorated_ritems')
 class decorated_root(ConfigItem):
     def __init__(self):
-        super(decorated_root, self).__init__()
+        super().__init__()
         self.a = None
         self.x = None
 

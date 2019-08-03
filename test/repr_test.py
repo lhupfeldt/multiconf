@@ -1,15 +1,13 @@
 # Copyright (c) 2018 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, MC_REQUIRED
 
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import replace_ids
-from .utils.utils import py3_local, py3_oi
+from .utils.utils import local_func
 from .utils.compare_repr import compare_repr
 from .utils.tstclasses import ItemWithAA
 
@@ -22,7 +20,7 @@ prod = ef.Env('prod')
 @nested_repeatables('someitems')
 class root(ConfigItem):
     def __init__(self, aa=None):
-        super(root, self).__init__()
+        super().__init__()
         if aa is not None:
             self.aa = aa
 
@@ -31,7 +29,7 @@ class root(ConfigItem):
 @nested_repeatables('someitems')
 class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key, **kwargs):
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.id = mc_key
 
         # Not an example of good coding!
@@ -42,7 +40,7 @@ class NestedRepeatable(RepeatableConfigItem):
 @named_as('someitem')
 class SimpleItem(ConfigItem):
     def __init__(self, **kwargs):
-        super(SimpleItem, self).__init__()
+        super().__init__()
         for key, val in kwargs.items():
             setattr(self, key, val)
 
@@ -191,7 +189,7 @@ def test_repr_cyclic_references_in_conf_items():
     @named_as('anitem')
     class AnXItem(ConfigItem):
         def __init__(self):
-            super(AnXItem, self).__init__()
+            super().__init__()
             self.something = MC_REQUIRED
             self.ref = MC_REQUIRED
 
@@ -316,7 +314,7 @@ _repr_non_conf_item_used_as_key_expected_json = """{
     "someitem": {
         "__class__": "SimpleItem #as: 'xxxx', id: 0000",
         "b": {
-            "<test.repr_test.%(py3_local)sKey %(py3_oi)s at 0x0000>": 2
+            "<test.repr_test.%(local_func)sKey object at 0x0000>": 2
         }
     }
 }"""
@@ -336,7 +334,7 @@ def test_repr_non_conf_item_used_as_key(capsys):
     assert not sout
     assert not serr
 
-    assert compare_repr(cr, _repr_non_conf_item_used_as_key_expected_json % dict(py3_local=py3_local(), py3_oi=py3_oi), replace_address=True)
+    assert compare_repr(cr, _repr_non_conf_item_used_as_key_expected_json % dict(local_func=local_func()), replace_address=True)
 
 
 _repr_iterable_expected_repr = """{

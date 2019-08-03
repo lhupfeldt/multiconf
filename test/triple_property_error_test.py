@@ -34,7 +34,7 @@ class GoodRoot(ConfigItem):
 @named_as('reps')
 class FaultyRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key):
-        super(FaultyRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
 
     @property
     def aa(self):

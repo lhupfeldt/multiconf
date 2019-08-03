@@ -6,7 +6,7 @@ from pytest import raises
 from multiconf import mc_config, ConfigItem, MC_REQUIRED, ConfigException
 from multiconf.envs import EnvFactory
 
-from .utils.utils import next_line_num, line_num, lines_in, start_file_line, py3_local
+from .utils.utils import next_line_num, line_num, lines_in, start_file_line, local_func
 from .utils.messages import config_error_mc_required_expected
 
 
@@ -18,13 +18,13 @@ prod = ef.Env('prod')
 def test_required_attributes_inherited_ok():
     class root(ConfigItem):
         def __init__(self):
-            super(root, self).__init__()
+            super().__init__()
             self.anattr = MC_REQUIRED
             self.anotherattr = MC_REQUIRED
 
     class root2(root):
         def __init__(self):
-            super(root2, self).__init__()
+            super().__init__()
             self.someattr2 = MC_REQUIRED
             self.someotherattr2 = MC_REQUIRED
 
@@ -52,13 +52,13 @@ def test_required_attributes_inherited_missing(capsys):
 
     class root(ConfigItem):
         def __init__(self):
-            super(root, self).__init__()
+            super().__init__()
             self.anattr = MC_REQUIRED
             self.anotherattr = MC_REQUIRED
 
     class root2(root):
         def __init__(self):
-            super(root2, self).__init__()
+            super().__init__()
             self.someattr2 = MC_REQUIRED
             self.someotherattr2 = MC_REQUIRED
 
@@ -99,7 +99,7 @@ def test_multiple_required_attributes_missing_for_configitem(capsys):
 
     class item(ConfigItem):
         def __init__(self):
-            super(item, self).__init__()
+            super().__init__()
             self.abcd = MC_REQUIRED
             self.efgh = MC_REQUIRED
             self.ijkl = MC_REQUIRED
@@ -125,7 +125,7 @@ def test_multiple_required_attributes_missing_for_configitem(capsys):
 def test_error_freezing_previous_sibling__validation(capsys):
     class inner(ConfigItem):
         def __init__(self):
-            super(inner, self).__init__()
+            super().__init__()
             self.a = MC_REQUIRED
 
     with raises(Exception) as exinfo:
@@ -137,4 +137,4 @@ def test_error_freezing_previous_sibling__validation(capsys):
 
     # This error is generated before the MC_REQUIRED check, ok as long as we get en error
     exp = "Repeated non repeatable conf item: 'inner': <class 'test.mc_required_attributes_test.{}inner'>"
-    assert str(exinfo.value) == exp.format(py3_local())
+    assert str(exinfo.value) == exp.format(local_func())

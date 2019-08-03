@@ -24,13 +24,13 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
     @named_as('inners')
     class InnerItem(RepeatableConfigItem):
         def __init__(self, name, some_attribute=MC_REQUIRED):
-            super(InnerItem, self).__init__(mc_key=name)
+            super().__init__(mc_key=name)
             self.name = name
             self.some_attribute = some_attribute
 
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
-            super(InnerBuilder, self).__init__()
+            super().__init__()
             self.some_attribute = MC_REQUIRED
 
         def mc_build(self):
@@ -40,13 +40,13 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
     @required('another_item')
     class MiddleItem(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(MiddleItem, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.id = mc_key
             self.another_attribute = MC_REQUIRED
 
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MiddleBuilder, self).__init__()
+            super().__init__()
             self.name = name
             self.builder_attribute = MC_REQUIRED
 
@@ -57,7 +57,7 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel_required():
 
     class OuterBuilder(ConfigBuilder):
         def __init__(self):
-            super(OuterBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             with MiddleBuilder('base') as mb:

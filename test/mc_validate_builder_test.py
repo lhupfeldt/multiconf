@@ -17,7 +17,7 @@ prod = ef_pprd_prod.Env('prod')
 def test_builder_mc_validate_set_attribute():
     class builder(ConfigBuilder):
         def __init__(self):
-            super(builder, self).__init__()
+            super().__init__()
             self.y = 1
 
         def mc_validate(self):
@@ -66,7 +66,7 @@ def test_builder_mc_validate_child_item_only_called_once_per_env():
 
     class builder(ConfigBuilder):
         def __init__(self):
-            super(builder, self).__init__()
+            super().__init__()
 
         def mc_validate(self):
             num_calls_builder[self.env] += 1

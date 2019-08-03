@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import sys
+
 from pytest import raises  # pylint: disable=no-name-in-module
 
 from multiconf import mc_config, ConfigItem, ConfigException
@@ -10,6 +12,8 @@ from .utils.messages import config_error_no_value_expected, config_error_never_r
 from .utils.utils import next_line_num, start_file_line, lines_in
 
 
+minor_version = sys.version_info[1]
+
 ef1_prod_pp = EnvFactory()
 pp1 = ef1_prod_pp.Env('pp')
 prod1 = ef1_prod_pp.Env('prod')
@@ -18,7 +22,7 @@ prod1 = ef1_prod_pp.Env('prod')
 def test_attribute_none_args_partial_set_in_init_overridden_in_mc_init():
     class Requires(ConfigItem):
         def __init__(self, a=None):
-            super(Requires, self).__init__()
+            super().__init__()
             # Partial assignment is allowed in init
             self.setattr('a', prod=a)
             self.setattr('b', default=None, prod=2)
@@ -46,7 +50,7 @@ def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
 
     class Requires(ConfigItem):
         def __init__(self, a=None):
-            super(Requires, self).__init__()
+            super().__init__()
             # Partial assignment is allowed in init
             errorline_setattr[0] = next_line_num()
             self.setattr('a', prod=a)
@@ -56,7 +60,7 @@ def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
             self.b = 7
 
     with raises(ConfigException):
-        errorline_exit[0] = next_line_num()
+        errorline_exit[0] = next_line_num() + (1 if minor_version > 7 else 0)
         @mc_config(ef1_prod_pp, load_now=True)
         def config(_):
             Requires()

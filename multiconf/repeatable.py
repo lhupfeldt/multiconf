@@ -1,25 +1,28 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
-from collections import OrderedDict
-
 from .config_errors import ConfigExcludedKeyError
+
+
+class AndTrue():
+    def __and__(self, other):
+        return True
 
 
 class RepeatableDict(object):
     """Dictionary dedicated for holding RepeatableConfigItem.
 
-    A ConfigItem may be excluded from some envs. This class works as a simplified OrderedDict, but behaves in an env specific manner
+    A ConfigItem may be excluded from some envs. This class works as a simplified dict, but behaves in an env specific manner
     excluding items which are excluded in the current env.
     """
 
+    _mc_handled_env_bits = AndTrue()
+
     __slots__ = ('_all_items',)  # Referenced in multiconf.py
-    __class__ = OrderedDict
+    __class__ = dict
 
     def __init__(self):
-        self._all_items = OrderedDict()
+        self._all_items = {}
 
     def __getitem__(self, key):
         val = self._all_items[key]
@@ -46,32 +49,22 @@ class RepeatableDict(object):
         return not self.__eq__(other)
 
     def __iter__(self):
-        for key in self.keys():
-            yield key
+        yield from self.keys()
 
     def items(self):
         for key, val in self._all_items.items():
             if val._mc_exists_in_env():
                 yield key, val
 
-    # Python2 compatibility
-    iteritems = items
-
     def keys(self):
         for key, val in self._all_items.items():
             if val._mc_exists_in_env():
                 yield key
 
-    # Python2 compatibility
-    iterkeys = keys
-
     def values(self):
         for _, val in self._all_items.items():
             if val._mc_exists_in_env():
                 yield val
-
-    # Python2 compatibility
-    itervalues = values
 
     def __len__(self):
         count = 0
@@ -87,11 +80,8 @@ class RepeatableDict(object):
 
         return False
 
-    # Python2 compatibility
-    __nonzero__ = __bool__
-
     def __repr__(self):
-        return repr(OrderedDict(((key, val) for (key, val) in self._all_items.items() if val._mc_exists_in_env())))
+        return repr(dict(((key, val) for (key, val) in self._all_items.items() if val._mc_exists_in_env())))
 
     def _mc_call_mc_validate_recursively(self, env):
         """Call the user defined 'mc_validate' methods on all items"""
@@ -115,7 +105,7 @@ class RepeatableDict(object):
 
     @property
     def all_items(self):
-        """Return the underlying OrderedDict holding all items, including items excluded from current env.
+        """Return the underlying dict holding all items, including items excluded from current env.
 
         This can be used in applications which need access to the ConfigItems from all envs.
         Modifications are not allowed!

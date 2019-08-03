@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 import sys
 import re
 import keyword
@@ -124,7 +122,7 @@ def repeatable_key(**name_value):
                 @repeatable_key(name='xxx')
                 class X2(X1):
                     def __init__(...)  # No 'name' argument
-                        super(X2, self)._init__(name=None, ...)
+                        super()._init__(name=None, ...)
 
             Only a single item of the following class can be created in the 'ys' repeatable.
             Use value 'nicekey' as the mc_key.::
@@ -133,7 +131,7 @@ def repeatable_key(**name_value):
                 @repeatable_key(mc_key='nicekey')
                 class X2(X1):
                     def __init__(...)  # No 'mc_key' argument
-                        super(X2, self)._init__(...)
+                        super()._init__(...)
 
     """
 
@@ -152,9 +150,7 @@ def repeatable_key(**name_value):
     return deco
 
 
-
-
-def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, mc_5_migration=False, load_now=False):
+def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, load_now=False):
     """Function decorator for ConfigItem hierarchy for all Envs defined in 'env_factory'.
 
        This decorator creates a wrapped config in a object which is then used for loading the config (for all envs) and
@@ -190,8 +186,6 @@ def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, mc_5_migr
             - fallback_callable is called for objects that are not handled by the builtin encoder.
             - It must return a tuple (object, handled). If handled is True, the object must be encodable by the standard json encoder.
 
-        mc_5_migration (bool): This changes the attribute overwriting rule to me more compatible with version 5. Do not use this in any new configurations.
-
         load_now (bool): Load the configuration now instead of calling `load` later. Note: this is only for simple cases, to get more control use `load`.
     """
 
@@ -206,7 +200,7 @@ def mc_config(env_factory, mc_json_filter=None, mc_json_fallback=None, mc_5_migr
         raise ConfigException("The specified 'env_factory' is empty. It must have at least one Env.")
 
     def deco(conf_func):
-        conf = McConfigRoot(mc_json_filter, mc_json_fallback, mc_5_migration, env_factory, conf_func)
+        conf = McConfigRoot(mc_json_filter, mc_json_fallback, env_factory, conf_func)
         if load_now:
             conf.load()
         return conf

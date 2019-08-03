@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 import sys
 
 from multiconf import mc_config, ConfigItem
@@ -10,9 +8,6 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
-
-
-major_version = sys.version_info[0]
 
 
 ef = EnvFactory()
@@ -42,27 +37,24 @@ def test_dir():
 
     iaa = cr.ItemWithAA
     dir_iaa = dir(iaa)
-    if major_version >= 3:
-        ojb_dir_iaa = object.__dir__(iaa)
-        ojb_dir_iaa = set(sorted(ojb_dir_iaa))
-        dir_iaa = set(sorted(dir_iaa))
-        assert ojb_dir_iaa >= dir_iaa
-        assert 'aa' in dir_iaa
-        assert 'bb' in dir_iaa
+    ojb_dir_iaa = object.__dir__(iaa)
+    ojb_dir_iaa = set(sorted(ojb_dir_iaa))
+    dir_iaa = set(sorted(dir_iaa))
+    assert ojb_dir_iaa >= dir_iaa
+    assert 'aa' in dir_iaa
+    assert 'bb' in dir_iaa
     assert 'someitem' in dir_iaa
 
     nested = iaa.someitem
     dir_nested = dir(nested)
-    if major_version >= 3:
-        assert set(object.__dir__(nested)) >= set(dir_nested)
-        assert 'cc' in dir_nested
+    assert set(object.__dir__(nested)) >= set(dir_nested)
+    assert 'cc' in dir_nested
     assert 'm' in dir_nested
     assert 'RepeatableItems' in dir_nested
 
     rep_iaas = nested.RepeatableItems
     for rep_iaa in rep_iaas.values():
         dir_rep_iaa = dir(rep_iaa)
-        if major_version >= 3:
-            assert set(object.__dir__(rep_iaa)) >= set(dir_rep_iaa)
-            assert 'aa' in dir_rep_iaa
-            assert 'bb' in dir_rep_iaa
+        assert set(object.__dir__(rep_iaa)) >= set(dir_rep_iaa)
+        assert 'aa' in dir_rep_iaa
+        assert 'bb' in dir_rep_iaa

@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 import sys
 
 
@@ -13,12 +11,12 @@ class ConfigBaseException(Exception):
 
 class ConfigDefinitionException(ConfigBaseException):
     def __init__(self, msg):
-        super(ConfigDefinitionException, self).__init__(msg)
+        super().__init__(msg)
 
 
 class ConfigException(ConfigBaseException):
     def __init__(self, msg, is_summary=False, is_fatal=False):
-        super(ConfigException, self).__init__(msg)
+        super().__init__(msg)
         self.is_summary = is_summary
         self.is_fatal = is_fatal
 
@@ -33,7 +31,7 @@ class ConfigApiException(ConfigBaseException):
 
 class ConfigAttributeError(AttributeError):
     def __init__(self, mc_object, attr_name, msg):
-        super(ConfigAttributeError, self).__init__("")
+        super().__init__("")
         self.mc_object = mc_object
         self.attr_name = attr_name
         self.msg = msg
@@ -55,7 +53,7 @@ class ConfigAttributeError(AttributeError):
 
 class ConfigExcludedAttributeError(ConfigAttributeError):
     def __init__(self, mc_object, attr_name, env):
-        super(ConfigExcludedAttributeError, self).__init__(mc_object, attr_name, None)
+        super().__init__(mc_object, attr_name, None)
         self.env = env
         try:
             self.value = mc_object._mc_attributes[attr_name].env_values[env]
@@ -70,7 +68,7 @@ class ConfigExcludedAttributeError(ConfigAttributeError):
 
 class ConfigExcludedKeyError(KeyError):
     def __init__(self, mc_object, key_name):
-        super(ConfigExcludedKeyError, self).__init__(key_name)
+        super().__init__(key_name)
         self.mc_object = mc_object
         self.key_name = key_name
 
@@ -120,7 +118,7 @@ def _warning_msg(message):
     return 'ConfigWarning: ' + message
 
 
-failed_property_call_msg = "Attribute '{attr}' is defined as a multiconf attribute and as a @property method but value is undefined for {env} and @property method call failed with: {ex_type}: {ex}"
+failed_property_call_msg = "Attribute '{attr}' is defined as a multiconf attribute and as a @property method but value is undefined for {env} and @property method call failed with: {ex}"
 
 not_repeatable_in_parent_msg = "'{repeatable_cls_key}': {repeatable_cls} is defined as repeatable, but this is not defined as a repeatable item in the containing class: '{ci_named_as}': {ci_cls}"
 repeatable_in_parent_msg = "'{named_as}': {cls} is not defined as repeatable, but this is defined as a repeatable item in the containing class: {ci_item}"

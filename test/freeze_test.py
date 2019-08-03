@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from pytest import xfail
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem, MC_REQUIRED
@@ -24,18 +22,18 @@ ef2_pp_prod.EnvGroup('g_prod_like', prod2, pp2)
 @nested_repeatables('children')
 class nc_aa_root(ItemWithAA):
     def __init__(self, aa=None):
-        super(nc_aa_root, self).__init__(aa)
+        super().__init__(aa)
 
 
 class aabb_root(ItemWithAABB):
     def __init__(self, aa=None, bb=None):
-        super(aabb_root, self).__init__(aa, bb)
+        super().__init__(aa, bb)
 
 
 @named_as('children')
 class rchild(RepeatableConfigItem):
     def __init__(self, mc_key, aa=None, bb=None):
-        super(rchild, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.aa = aa
         self.bb = bb
@@ -45,7 +43,7 @@ class rchild(RepeatableConfigItem):
 # @nested_repeatables('recursive_items')
 # class NestedRepeatable(RepeatableConfigItem):
 #     def __init__(self, id, aa=None):
-#         super(NestedRepeatable, self).__init__(mc_key=id)
+#         super().__init__(mc_key=id)
 #         self.id = id
 #         self.aa = aa
 
@@ -79,12 +77,12 @@ def test_automatic_freeze_of_previous_sibling():
 def test_frozen_attribute_attempted_set_in_mc_init():
     class Xx(ConfigItem):
         def __init__(self):
-            super(Xx, self).__init__()
+            super().__init__()
             self.aa = 1
             self.bb = MC_REQUIRED
 
         def mc_init(self):
-            super(Xx, self).mc_init()
+            super().mc_init()
             xfail("TODO: strict freeze should not allow this?")
             self.aa = 2
 
@@ -102,7 +100,7 @@ def test_frozen_attribute_attempted_set_in_mc_init():
 #         def __init__(self, mc_json_filter=None, mc_json_fallback=None,
 #                      mc_allow_todo=False, mc_allow_current_env_todo=False,
 #                      aa=None):
-#             super(root, self).__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
+#             super().__init__(mc_json_filter=mc_json_filter, mc_json_fallback=mc_json_fallback,
 #                 mc_allow_todo=mc_allow_todo, mc_allow_current_env_todo=mc_allow_current_env_todo)
 #             self.aa = aa
 #
@@ -128,7 +126,7 @@ def test_frozen_attribute_attempted_set_in_mc_init():
 # def test_automatic_freeze_call_of_validate_item():
 #     class item(ConfigItem):
 #         def __init__(self):
-#             super(item, self).__init__()
+#             super().__init__()
 #             self.aa = None
 #
 #         def validate(self):
@@ -259,7 +257,7 @@ def test_required_items_not_required_on_imtermediate_freeze_configroot():
 def test_mc_required_attributes_not_required_on_imtermediate_freeze_configroot():
     class root(ConfigItem):
         def __init__(self):
-            super(root, self).__init__()
+            super().__init__()
             self.anattr = MC_REQUIRED
             self.anotherattr = MC_REQUIRED
 
@@ -297,7 +295,7 @@ def test_mc_required_attributes_not_required_on_imtermediate_freeze_configitem()
 
     class item(ConfigItem):
         def __init__(self):
-            super(item, self).__init__()
+            super().__init__()
             self.aa = MC_REQUIRED
             self.bb = MC_REQUIRED
 

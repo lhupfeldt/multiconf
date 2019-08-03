@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 # pylint: disable=E0611
 from pytest import raises
 
@@ -125,7 +123,7 @@ def test_getattr_overwritten_property():
 def test_getattr_overwritten_property_ref_mc_attribute():
     class root(ConfigItem):
         def __init__(self, xx=MC_REQUIRED):
-            super(root, self).__init__()
+            super().__init__()
             self.xx = xx
 
         @property
@@ -160,7 +158,7 @@ def test_getattr_overwritten_property_ref_mc_attribute():
 def test_getattr_overwritten_property_error():
     class root(ConfigItem):
         def __init__(self, xx=MC_REQUIRED):
-            super(root, self).__init__()
+            super().__init__()
             self.xx = xx
 
         @property
@@ -331,7 +329,7 @@ def test_attr_env_items_excluded_multiple_envs():
 def test_getattr_overwritten_property_error_multiple_envs_first_ok():
     class root(ConfigItem):
         def __init__(self, xx=MC_REQUIRED):
-            super(root, self).__init__()
+            super().__init__()
             self.xx = xx
 
         @property

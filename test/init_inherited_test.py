@@ -9,19 +9,19 @@ prod = efac.Env('prod')
 def test_init_inherited():
     class XBase(ConfigItem):
         def __init__(self, version=None):
-            super(XBase, self).__init__()
+            super().__init__()
             self.version = version
 
     class X1(XBase):
         # Deliberatly leave out version from super __init__
         def __init__(self, version):
-            super(X1, self).__init__()
+            super().__init__()
             self.version = version
 
     class X2(XBase):
         # Deliberatly leave out version from super __init__
         def __init__(self, version):
-            super(X2, self).__init__()
+            super().__init__()
             self.setattr('version', prod=version)
 
     @mc_config(efac, load_now=True)

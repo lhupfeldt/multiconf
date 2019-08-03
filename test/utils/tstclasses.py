@@ -8,19 +8,19 @@ from multiconf.decorators import named_as
 
 class ItemWithName(ConfigItem):
     def __init__(self, name=MC_REQUIRED):
-        super(ItemWithName, self).__init__()
+        super().__init__()
         self.name = name
 
 
 class ItemWithAA(ConfigItem):
     def __init__(self, aa=MC_REQUIRED):
-        super(ItemWithAA, self).__init__()
+        super().__init__()
         self.aa = aa
 
 
 class ItemWithAABB(ConfigItem):
     def __init__(self, aa=MC_REQUIRED, bb=None):
-        super(ItemWithAABB, self).__init__()
+        super().__init__()
         self.aa = aa
         self.bb = bb
 
@@ -28,11 +28,11 @@ class ItemWithAABB(ConfigItem):
 @named_as('RepeatableItems')
 class RepeatableItemWithAA(RepeatableConfigItem):
     def __init__(self, mc_key, aa=MC_REQUIRED):
-        super(RepeatableItemWithAA, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.aa = aa
 
 
 class BuilderWithAA(ConfigBuilder):
     def __init__(self, aa=MC_REQUIRED):
-        super(BuilderWithAA, self).__init__()
+        super().__init__()
         self.aa = aa

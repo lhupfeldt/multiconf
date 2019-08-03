@@ -24,7 +24,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
 
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
             self.start = start
             self.number = self.contained_in.aaa
 
@@ -41,14 +41,14 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_in_wrong_s
     @nested_repeatables('y_children')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key, server_num):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.server_num = server_num
             self.something = None
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
         def __init__(self, mc_key, a):
-            super(YChild, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.a = a
 
     with raises(ConfigApiException) as exinfo:
@@ -71,7 +71,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_through_di
 
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
             self.start = start
 
         def mc_build(self):
@@ -85,14 +85,14 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in_through_di
     @nested_repeatables('y_children', 'ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key, name, server_num):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = name
             self.server_num = server_num
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(YChild, self).__init__(mc_key=None)
+            super().__init__(mc_key=None)
             self.a = mc_key
 
     @mc_config(ef, load_now=True)

@@ -1,19 +1,10 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 import sys, os, threading, traceback
 import types
-from collections import OrderedDict
+from collections.abc import Mapping
 
-major_version = sys.version_info[0]
-if major_version >= 3:
-    from collections.abc import Mapping
-else:
-    from collections import Mapping
-
-# pylint: disable=wrong-import-position
 from . import envs
 from .envs import thread_local
 from .values import McInvalidValue
@@ -22,10 +13,6 @@ from .bases import get_bases
 from .attribute import Where, _McAttributeAccessor
 from .repeatable import RepeatableDict
 
-
-major_version = sys.version_info[0]
-if major_version > 2:
-    long = int
 
 _calculated_value = ' #calculated'
 _static_value = ' #static'
@@ -36,7 +23,7 @@ _mc_filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attri
 
 
 def _class_tuple(obj, obj_info=""):
-    return ('__class__', obj.__class__.__name__ + obj_info)
+    return {'__class__': obj.__class__.__name__ + obj_info}
 
 
 def _attr_ref_msg(obj, attr_name):
@@ -114,18 +101,24 @@ class ConfigItemEncoder(object):
 
         return ref_id(obj)
 
-    if major_version < 3:
-        def _class_dict(self, obj):
-            if self.compact:
-                return OrderedDict((_class_tuple(obj, ' #id: ' + str(self.ref_repr(obj))),))
-            return OrderedDict((_class_tuple(obj), ('__id__', self.ref_repr(obj))))
+    def safe_repr(self, obj):
+        """This catches exceptions from calling repr(obj) and embeds the message in the returned str."""
+
+        try:
+            return repr(obj)
+        except Exception as ex:
+            traceback.print_exception(*sys.exc_info())
+            self.num_errors += 1
+            msg = "Error gettting repr of obj, type: {ot}, exception: {extyp}: {exmsg}".format(ot=type(obj), extyp=type(ex).__name__, exmsg=str(ex))
+            print(msg, file=sys.stderr)
+            return msg
 
     def _mc_class_dict(self, obj):
         not_frozen_msg = "" if obj._mc_where == Where.FROZEN else ", not-frozen"
         if self.compact:
             msg = " #as: '" + obj.named_as() + "', id: " + str(self.ref_repr(obj)) + not_frozen_msg
-            return OrderedDict((_class_tuple(obj, msg),))
-        return OrderedDict((_class_tuple(obj, not_frozen_msg), ('__id__', self.ref_repr(obj))))
+            return _class_tuple(obj, msg)
+        return {**_class_tuple(obj, not_frozen_msg), '__id__': self.ref_repr(obj)}
 
     def _excl_and_builder_str(self, objval):
         excl = ' excluded' if not objval else ''
@@ -200,14 +193,14 @@ class ConfigItemEncoder(object):
             except Exception as ex:
                 self.num_errors += 1
                 traceback.print_exception(*sys.exc_info())
-                attr_inf.append((' #json_error calling filter', repr(ex)),)
+                attr_inf.append((' #json_error calling filter', self.safe_repr(ex)),)
 
         val = self._check_nesting(obj, val)
         if val == McInvalidValue.MC_NO_VALUE:
             return key, [(' #no value for {env}'.format(env=env), True)]
 
         if isinstance(val, Mapping):
-            new_val = OrderedDict()
+            new_val = {}
             for inner_key, maybeitem in val.items():
                 if not isinstance(maybeitem, self.multiconf_base_type):
                     new_val[str(inner_key)] = maybeitem
@@ -233,7 +226,7 @@ class ConfigItemEncoder(object):
         return key, [('', new_val)] + attr_inf
 
     def _handle_one_dir_entry_one_env(self, obj, key, _val, env, attributes_overriding_property, _dir_entries, names_only):
-        if key.startswith('_') or key in obj._mc_items or key in _mc_filter_out_keys:
+        if key.startswith('_') or isinstance(obj.__dict__.get(key, None), (self.multiconf_base_type, RepeatableDict)) or key in _mc_filter_out_keys:
             return key, ()
 
         overridden_property = ''
@@ -270,11 +263,11 @@ class ConfigItemEncoder(object):
                     val = getattr(obj, key)
                 except InvalidUsageException as ex:
                     self.num_invalid_usages += 1
-                    return key, [(overridden_property + ' #invalid usage context', repr(ex))]
+                    return key, [(overridden_property + ' #invalid usage context', self.safe_repr(ex))]
                 except Exception as ex:
                     self.num_errors += 1
                     traceback.print_exception(*sys.exc_info())
-                    return key, [(overridden_property + ' #json_error trying to handle property method', repr(ex))]
+                    return key, [(overridden_property + ' #json_error trying to handle property method', self.safe_repr(ex))]
                 finally:
                     thread_local.env = orig_env
                 break
@@ -299,14 +292,14 @@ class ConfigItemEncoder(object):
             except Exception as ex:
                 self.num_errors += 1
                 traceback.print_exception(*sys.exc_info())
-                property_inf = [(' #json_error calling filter', repr(ex))]
+                property_inf = [(' #json_error calling filter', self.safe_repr(ex))]
 
         if type(val) == type:
-            return key, [(overridden_property, repr(val))] + property_inf
+            return key, [(overridden_property, self.safe_repr(val))] + property_inf
 
         val = self._check_nesting(obj, val)
 
-        if isinstance(val, (str, int, long, float)):
+        if isinstance(val, (str, int, float)):
             if overridden_property:
                 return key, [(overridden_property + calc_or_static + ' value was', val)] + property_inf
             if self.compact:
@@ -320,7 +313,7 @@ class ConfigItemEncoder(object):
             return key, [(overridden_property, new_list), (calc_or_static, True)] + property_inf
 
         if isinstance(val, Mapping):
-            new_dict = OrderedDict()
+            new_dict = {}
             for item_key, item in val.items():
                 new_dict[item_key] = self._check_nesting(obj, item)
             return key, [(overridden_property, new_dict), (calc_or_static, True)] + property_inf
@@ -335,7 +328,7 @@ class ConfigItemEncoder(object):
                 dd[attr_key + meta_key] = val
             return
 
-        env_values = OrderedDict()
+        env_values = {}
         prev_key_property_inf = None
         multiple_values = False
         for env in obj.env_factory.envs.values():
@@ -366,7 +359,7 @@ class ConfigItemEncoder(object):
             if self.recursion_check.warn_nesting:
                 print("Warning: Nested json calls, disabling @property method value dump:", file=sys.stderr)
                 print("outer object type:", type(in_default), file=sys.stderr)
-                print("inner object type:", repr(type(obj)) + ", inner obj:", obj.json(compact=True, property_methods=False), file=sys.stderr)
+                print("inner object type:", self.safe_repr(type(obj)) + ", inner obj:", obj.json(compact=True, property_methods=False), file=sys.stderr)
 
         try:
             ConfigItemEncoder.recursion_check.in_default = obj
@@ -423,7 +416,7 @@ class ConfigItemEncoder(object):
                         dd[key] = attr_dict[key]
 
                 # --- Handle child items ---
-                for key, item in obj._mc_items.items():
+                for key, item in obj.items_with_builders_and_excluded():
                     if not self.builders and isinstance(item, self.multiconf_builder_type):
                         continue
 
@@ -433,7 +426,7 @@ class ConfigItemEncoder(object):
                             continue
 
                         if self.current_depth == self.depth -1 and isinstance(item, RepeatableDict):
-                            shallow_item = OrderedDict()
+                            shallow_item = {}
                             for child_key, child_item in item.items():
                                 shallow_item[child_key] = _mc_identification_msg_str(child_item)
                             dd[key] = shallow_item
@@ -474,22 +467,21 @@ class ConfigItemEncoder(object):
 
             if isinstance(obj, envs.BaseEnv):
                 # print "# Handle Env objects", type(obj)
-                dd = OrderedDict((_class_tuple(obj),))
+                dd = _class_tuple(obj)
                 dd['name'] = obj.name
                 return dd
 
             if type(obj) == type:
-                return repr(obj)
+                return self.safe_repr(obj)
 
             # If obj defines json_equivalent, then return the result of that
-            try:
-                return obj.json_equivalent()
-            except AttributeError:
-                pass
-            except Exception as ex:
-                self.num_errors += 1
-                traceback.print_exception(*sys.exc_info())
-                return "__json_error__ calling 'json_equivalent': " + repr(ex)
+            if hasattr(obj, "json_equivalent"):
+                try:
+                    return obj.json_equivalent()
+                except Exception as ex:
+                    self.num_errors += 1
+                    traceback.print_exception(*sys.exc_info())
+                    return "__json_error__ calling 'json_equivalent': " + self.safe_repr(ex)
 
             try:
                 iterable = iter(obj)
@@ -504,17 +496,8 @@ class ConfigItemEncoder(object):
                 if handled:
                     return obj
 
-            if major_version < 3 and isinstance(obj, types.InstanceType):
-                # print "# Handle instances of old style classes", type(obj)
-                # Note that new style class instances are practically indistinguishable from other types of objects
-                dd = self._class_dict(obj)
-                for key, val in obj.__dict__.items():
-                    if key[0] != '_':
-                        dd[key] = self._ref_earlier_str(val) if self.seen.get(ref_id(val)) else val
-                return dd
-
             self.num_errors += 1
-            return "__json_error__ # don't know how to handle obj of type: " + repr(type(obj))
+            return "__json_error__ # don't know how to handle obj of type: " + self.safe_repr(type(obj))
 
         finally:
             self.property_methods = property_methods_orig

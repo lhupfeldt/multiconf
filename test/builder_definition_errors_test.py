@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 # pylint: disable=E0611
 from pytest import raises
 
@@ -10,7 +8,7 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigBuilder
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, replace_ids, replace_ids_builder, py3_local, next_line_num
+from .utils.utils import config_error, replace_ids, replace_ids_builder, local_func, next_line_num
 from .utils.tstclasses import ItemWithName, ItemWithAA
 from .utils.messages import not_repeatable_in_parent_msg
 
@@ -30,7 +28,7 @@ prod2 = ef2_prod_pp.Env('prod')
 @named_as('xses')
 class X(RepeatableConfigItem):
     def __init__(self, mc_key):
-        super(X, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.server_num = None
         self.something = None
@@ -39,7 +37,7 @@ class X(RepeatableConfigItem):
 @named_as('x_children')
 class XChild(RepeatableConfigItem):
     def __init__(self, mc_key, a=None):
-        super(XChild, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.a = a
 
 
@@ -58,8 +56,8 @@ _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expe
             "something": null
         }
     },
-    "_mc_ConfigBuilder_XBuilder default-builder": {
-        "__class__": "XBuilder #as: '_mc_ConfigBuilder_XBuilder', id: 0000, not-frozen",
+    "mc_ConfigBuilder_XBuilder default-builder": {
+        "__class__": "XBuilder #as: 'mc_ConfigBuilder_XBuilder', id: 0000, not-frozen",
         "num_servers": 2
     }
 }"""
@@ -67,7 +65,7 @@ _configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item_expe
 def test_configbuilder_override_nested_repeatable_overwrites_parent_repeatable_item():
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers=2):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.num_servers = num_servers
 
         def mc_build(self):
@@ -120,7 +118,7 @@ def test_unexpected_repeatable_child_builder():
                 UnexpectedRepeatableChildBuilder()
 
     exp = not_repeatable_in_parent_msg.format(
-        repeatable_cls_key='r', repeatable_cls="<class 'test.builder_definition_errors_test.%(py3_local)sRepeatableChild'>" % dict(py3_local=py3_local()),
+        repeatable_cls_key='r', repeatable_cls="<class 'test.builder_definition_errors_test.%(local_func)sRepeatableChild'>" % dict(local_func=local_func()),
         ci_named_as='ConfigItem', ci_cls="<class 'multiconf.multiconf.ConfigItem'>")
     assert replace_ids(str(exinfo.value), False) == exp
 
@@ -128,10 +126,10 @@ def test_unexpected_repeatable_child_builder():
 @named_as('arepeatable')
 class RepItem(RepeatableConfigItem):
     def __new__(cls):
-        super(RepItem, cls).__new__(cls, mc_key='a')
+        super().__new__(cls, mc_key='a')
 
     def __init__(self):
-        super(RepItem, self).__init__(mc_key='a')
+        super().__init__(mc_key='a')
         self.name = 'a'
 
 
@@ -167,7 +165,7 @@ def test_unexpected_repeatable_child_nested_builders_with():
         repeatable_cls_key='arepeatable',
         repeatable_cls="<class 'test.builder_definition_errors_test.RepItem'>",
         ci_named_as='ItemWithoutARepeatable',
-        ci_cls="<class 'test.builder_definition_errors_test.%(py3_local)sItemWithoutARepeatable'>" % dict(py3_local=py3_local()))
+        ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sItemWithoutARepeatable'>" % dict(local_func=local_func()))
     assert replace_ids(str(exinfo.value), False) == exp
 
 
@@ -200,7 +198,7 @@ def test_unexpected_repeatable_child_nested_builders_no_with():
         repeatable_cls_key='arepeatable',
         repeatable_cls="<class 'test.builder_definition_errors_test.RepItem'>",
         ci_named_as='ItemWithoutARepeatable',
-        ci_cls="<class 'test.builder_definition_errors_test.%(py3_local)sItemWithoutARepeatable'>" % dict(py3_local=py3_local()))
+        ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sItemWithoutARepeatable'>" % dict(local_func=local_func()))
     assert replace_ids(str(exinfo.value), False) == exp
 
 
@@ -209,7 +207,7 @@ _configbuilder_child_with_nested_repeatables_undeclared_in_build_expected_ex = "
 def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             with X('tada'):
@@ -231,7 +229,7 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_build():
 def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             X('tada')
@@ -254,12 +252,12 @@ def test_configbuilder_child_with_nested_repeatables_undeclared_in_with():
 def test_configbuilders_repeated_non_repeatable_in_build():
     class MiddleItem(ConfigItem):
         def __init__(self, name):
-            super(MiddleItem, self).__init__()
+            super().__init__()
             self.id = name
 
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MiddleBuilder, self).__init__()
+            super().__init__()
             self.name = name
 
         def mc_build(self):
@@ -270,7 +268,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
     class OuterItem(ConfigItem):
         pass
 
-    exp = "Repeated non repeatable conf item: 'MiddleItem': <class 'test.builder_definition_errors_test.%(py3_local)sMiddleItem'>" % dict(py3_local=py3_local())
+    exp = "Repeated non repeatable conf item: 'MiddleItem': <class 'test.builder_definition_errors_test.%(local_func)sMiddleItem'>" % dict(local_func=local_func())
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod, load_now=True)
@@ -296,7 +294,7 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
     """Test that a repeatable declared in 'with' raises an error when assigned under an item from 'mc_build' which has not declared the repeatable."""
     class YBuilder(ConfigBuilder):
         def __init__(self):
-            super(YBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             Y('y1')
@@ -308,12 +306,12 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
     @named_as('ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
         def __init__(self, mc_key, a):
-            super(YChild, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.a = a
 
     with raises(ConfigException) as exinfo:
@@ -324,28 +322,28 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
                     YChild(mc_key=None, a=10)
 
     exp = not_repeatable_in_parent_msg.format(
-        repeatable_cls_key='y_children', repeatable_cls="<class 'test.builder_definition_errors_test.%(py3_local)sYChild'>" % dict(py3_local=py3_local()),
-        ci_named_as='ys', ci_cls="<class 'test.builder_definition_errors_test.%(py3_local)sY'>"% dict(py3_local=py3_local()))
+        repeatable_cls_key='y_children', repeatable_cls="<class 'test.builder_definition_errors_test.%(local_func)sYChild'>" % dict(local_func=local_func()),
+        ci_named_as='ys', ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sY'>"% dict(local_func=local_func()))
 
     assert replace_ids(str(exinfo.value), False) == exp
 
 
-_configbuilder_repeated = """Re-used key 'aa' in repeated item <class 'test.builder_definition_errors_test.%(py3_local)sXBuilder'> overwrites existing entry in parent:
+_configbuilder_repeated = """Re-used key 'aa' in repeated item <class 'test.builder_definition_errors_test.%(local_func)sXBuilder'> overwrites existing entry in parent:
 {
     "__class__": "Root #as: 'Root', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
         "name": "pp"
     },
-    "_mc_ConfigBuilder_XBuilder aa": {
-        "__class__": "XBuilder #as: '_mc_ConfigBuilder_XBuilder', id: 0000, not-frozen"
+    "mc_ConfigBuilder_XBuilder aa": {
+        "__class__": "XBuilder #as: 'mc_ConfigBuilder_XBuilder', id: 0000, not-frozen"
     }
 }"""
 
 def test_configbuilder_repeated():
     class XBuilder(ConfigBuilder):
         def __init__(self, mc_key):
-            super(XBuilder, self).__init__(mc_key)
+            super().__init__(mc_key)
 
         def mc_build(self):
             pass
@@ -361,13 +359,13 @@ def test_configbuilder_repeated():
                 XBuilder('aa')
 
     print(str(exinfo.value))
-    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_repeated % dict(py3_local=py3_local())
+    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_repeated % dict(local_func=local_func())
 
 
 def test_configbuilder_repeated_in_mc_init():
     class XBuilder(ConfigBuilder):
         def __init__(self, mc_key):
-            super(XBuilder, self).__init__(mc_key)
+            super().__init__(mc_key)
 
         def mc_build(self):
             pass
@@ -400,7 +398,7 @@ def test_assign_on_built_item_after_it_is_built(capsys):
 
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             Y()
@@ -408,7 +406,7 @@ def test_assign_on_built_item_after_it_is_built(capsys):
     @named_as('y')
     class Y(ConfigItem):
         def __init__(self):
-            super(Y, self).__init__()
+            super().__init__()
             self.something = None
 
     with raises(ConfigException) as exinfo:
@@ -442,7 +440,7 @@ def test_assign_and_assign_on_proxied_built_item_child_after_freeze(capsys):
 
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             Y()
@@ -450,7 +448,7 @@ def test_assign_and_assign_on_proxied_built_item_child_after_freeze(capsys):
     @named_as('y')
     class Y(ConfigItem):
         def __init__(self):
-            super(Y, self).__init__()
+            super().__init__()
             self.something = None
 
     # Test assignment error

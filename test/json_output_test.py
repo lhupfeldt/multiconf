@@ -1,20 +1,18 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
-import sys, os
+import sys, os, abc
 from collections import OrderedDict
 import pytest
 from pytest import raises, xfail
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageException, ConfigException, MC_REQUIRED
+from multiconf import mc_config, ConfigItem, RepeatableConfigItem, InvalidUsageException, ConfigException, ConfigAttributeError, MC_REQUIRED
 
 from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import replace_ids, next_line_num, to_compact
-from .utils.utils import py3_local, py3_oi, py37_no_exc_comma
+from .utils.utils import local_func, py37_no_exc_comma
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
@@ -31,7 +29,7 @@ prod2 = ef2_prod.Env('prod')
 @nested_repeatables('someitems')
 class root(ConfigItem):
     def __init__(self, aa=None):
-        super(root, self).__init__()
+        super().__init__()
         if aa is not None:
             self.aa = aa
 
@@ -40,7 +38,7 @@ class root(ConfigItem):
 @nested_repeatables('someitems')
 class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key, **kwargs):
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.id = mc_key
 
         # Not an example of good coding!
@@ -51,7 +49,7 @@ class NestedRepeatable(RepeatableConfigItem):
 @named_as('someitem')
 class SimpleItem(ConfigItem):
     def __init__(self, **kwargs):
-        super(SimpleItem, self).__init__()
+        super().__init__()
         for key, val in kwargs.items():
             setattr(self, key, val)
 
@@ -301,7 +299,7 @@ def test_json_dump_cyclic_references_in_conf_items():
     @named_as('anitem')
     class AnXItem(ConfigItem):
         def __init__(self):
-            super(AnXItem, self).__init__()
+            super().__init__()
             self.something = MC_REQUIRED
             self.ref = MC_REQUIRED
 
@@ -758,7 +756,7 @@ def test_json_dump_property_method_returns_already_seen_conf_item():
     @named_as('referenced')
     class X(ConfigItem):
         def __init__(self, a):
-            super(X, self).__init__()
+            super().__init__()
             self.a = a
 
     @mc_config(ef, load_now=True)
@@ -788,8 +786,8 @@ _json_dump_property_method_calls_json_expected_json = """{
 }"""
 
 _json_dump_property_method_calls_json_expected_stderr = """Warning: Nested json calls, disabling @property method value dump:
-outer object type: <class 'test.json_output_test.%(py3_local)sNested'>
-inner object type: <class 'test.json_output_test.%(py3_local)sNested'>, inner obj: {
+outer object type: <class 'test.json_output_test.%(local_func)sNested'>
+inner object type: <class 'test.json_output_test.%(local_func)sNested'>, inner obj: {
     "__class__": "Nested #as: 'xxxx', id: 0000",
     "env": {
         "__class__": "Env",
@@ -817,7 +815,7 @@ def test_json_dump_property_method_calls_json(capsys):
         assert compare_json(cr, _json_dump_property_method_calls_json_expected_json, warn_nesting=True)
         sout, serr = capsys.readouterr()
         assert not sout
-        exp = _json_dump_property_method_calls_json_expected_stderr % dict(py3_local=py3_local())
+        exp = _json_dump_property_method_calls_json_expected_stderr % dict(local_func=local_func())
         assert exp in replace_ids(serr)
     finally:
         os.environ['MULTICONF_WARN_JSON_NESTING'] = warn_nesting
@@ -855,7 +853,7 @@ _json_dump_non_conf_item_used_as_key_expected_json = """{
         "__class__": "SimpleItem",
         "__id__": 0000,
         "b": {
-            "<test.json_output_test.%(py3_local)sKey %(py3_oi)s at 0x0000>": 2
+            "<test.json_output_test.%(local_func)sKey object at 0x0000>": 2
         }
     }
 }"""
@@ -875,7 +873,7 @@ def test_json_dump_non_conf_item_used_as_key(capsys):
     assert not sout
     assert not serr
 
-    assert compare_json(cr, _json_dump_non_conf_item_used_as_key_expected_json % dict(py3_local=py3_local(), py3_oi=py3_oi), replace_address=True)
+    assert compare_json(cr, _json_dump_non_conf_item_used_as_key_expected_json % dict(local_func=local_func()), replace_address=True)
 
 
 _json_dump_non_conf_item_expected_json = """{
@@ -897,25 +895,6 @@ _json_dump_non_conf_item_expected_json = """{
     }
 }"""
 
-@pytest.mark.skipif(sys.version_info[0] >= 3, reason="Python3 does not have old style classes.")
-def test_json_dump_non_conf_item():
-    # This is an old style class
-    class SomeClass():
-        def __init__(self):
-            self.a = 187
-            self._x = 7
-
-    @mc_config(ef, load_now=True)
-    def config(rt):
-        with ItemWithAA(aa=0):
-            SimpleItem(a=SomeClass())
-
-    cr = config(prod).ItemWithAA
-    assert replace_ids(cr.json()) == _json_dump_non_conf_item_expected_json
-    # to_compact will not handle conversion of non-multiconf object representation, an extra '#as...' is inserted,
-    # we remove it again
-    assert replace_ids(cr.json(compact=True)) == to_compact(_json_dump_non_conf_item_expected_json).replace("SomeClass #as: 'xxxx', id", 'SomeClass #id')
-
 
 _json_dump_unhandled_item_function_ref_expected_json = """{
     "__class__": "ConfigItem",
@@ -927,7 +906,7 @@ _json_dump_unhandled_item_function_ref_expected_json = """{
     "someitem": {
         "__class__": "SimpleItem",
         "__id__": 0000,
-        "func": "__json_error__ # don't know how to handle obj of type: <%(type_or_class)s 'function'>"
+        "func": "__json_error__ # don't know how to handle obj of type: <class 'function'>"
     }
 }"""
 
@@ -1088,12 +1067,6 @@ def test_json_dump_dir_error(capsys):
     assert compare_json(cr, _json_dump_dir_error_expected_json)
 
 
-if sys.version_info[0] < 3:
-    from .json_output_test_py2 import _NamedNestedRepeatable
-else:
-    from .json_output_test_py3 import _NamedNestedRepeatable
-
-
 # TODO: Not absolutely correct output (not outside ref)
 _json_dump_property_method_returns_later_confitem_same_level_expected_json = """{
     "__class__": "root",
@@ -1124,6 +1097,23 @@ _json_dump_property_method_returns_later_confitem_same_level_expected_json = """
         }
     }
 }"""
+
+
+@named_as('someitems')
+@nested_repeatables('someitems')
+class _NamedNestedRepeatable(RepeatableConfigItem, metaclass=abc.ABCMeta):
+    def __new__(cls, name):
+        return super().__new__(cls, mc_key=name)
+
+    def __init__(self, name):
+        super().__init__(mc_key=name)
+        self.name = name
+        self.x = 3
+
+    @abc.abstractproperty
+    def m(self):
+        pass
+
 
 def test_json_dump_property_method_returns_later_confitem_same_level():
     class NamedNestedRepeatable(_NamedNestedRepeatable):
@@ -1300,7 +1290,7 @@ _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 = """{
     "McWithNestedClass": {
         "__class__": "McWithNestedClass",
         "__id__": 0000,
-        "TTT": "<class 'test.json_output_test.%(py3_local)sTTT'>"
+        "TTT": "<class 'test.json_output_test.%(local_func)sMcWithNestedClass.TTT'>"
     }
 }"""
 
@@ -1316,7 +1306,7 @@ _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 = """{
     "ItemWithAA": {
         "__class__": "ItemWithAA",
         "__id__": 0000,
-        "aa": "<class 'test.json_output_test.%(py3_local)sNonMcWithNestedClass'>"
+        "aa": "<class 'test.json_output_test.%(local_func)sNonMcWithNestedClass'>"
     }
 }"""
 
@@ -1331,7 +1321,7 @@ def test_json_dump_nested_class_non_mc():
             McWithNestedClass()
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(py3_local=py3_local('McWithNestedClass.')))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(local_func=local_func()))
 
     class NonMcWithNestedClass(object):
         class TTT(object):
@@ -1344,7 +1334,7 @@ def test_json_dump_nested_class_non_mc():
                 ci.aa = NonMcWithNestedClass
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_local=py3_local()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(local_func=local_func()))
 
 
 def test_json_dump_nested_class_with_json_equiv_non_mc():
@@ -1359,7 +1349,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
             McWithNestedClass()
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(py3_local=py3_local('McWithNestedClass.')))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(local_func=local_func()))
 
     class NonMcWithNestedClass(object):
         class TTT(object):
@@ -1373,7 +1363,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
                 ci.aa = NonMcWithNestedClass
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(py3_local=py3_local()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(local_func=local_func()))
 
 
 _json_dump_multiple_errors_expected_json = """{
@@ -1386,11 +1376,11 @@ _json_dump_multiple_errors_expected_json = """{
     "someitem": {
         "__class__": "SimpleItem",
         "__id__": 0000,
-        "func": "__json_error__ # don't know how to handle obj of type: <%(type_or_class)s 'function'>",
+        "func": "__json_error__ # don't know how to handle obj of type: <class 'function'>",
         "someitem": {
             "__class__": "SimpleItem",
             "__id__": 0000,
-            "func": "__json_error__ # don't know how to handle obj of type: <%(type_or_class)s 'function'>"
+            "func": "__json_error__ # don't know how to handle obj of type: <class 'function'>"
         }
     }
 }"""
@@ -1438,13 +1428,13 @@ _iterable_attr_forward_item_ref = """{
 def test_iterable_attr_forward_item_ref():
     class ItemWithAnXRef(ItemWithAA):
         def __init__(self):
-            super(ItemWithAnXRef, self).__init__()
+            super().__init__()
             self.item_refs = []
 
     @named_as('xx')
     class Xx(ConfigItem):
         def __init__(self):
-            super(Xx, self).__init__()
+            super().__init__()
             self.a = 1
 
     @mc_config(ef, load_now=True)
@@ -1486,13 +1476,13 @@ _iterable_tuple_attr_forward_item_ref = """{
 def test_iterable_tuple_attr_forward_item_ref():
     class ItemWithAnXRef(ItemWithAA):
         def __init__(self):
-            super(ItemWithAnXRef, self).__init__()
+            super().__init__()
             self.item_refs = MC_REQUIRED
 
     @named_as('xx')
     class Xx(ConfigItem):
         def __init__(self):
-            super(Xx, self).__init__()
+            super().__init__()
             self.a = 1
 
     @mc_config(ef, load_now=True)
@@ -1534,13 +1524,13 @@ _dict_attr_forward_item_ref = """{
 def test_dict_attr_forward_item_ref():
     class ItemWithAnXRef(ItemWithAA):
         def __init__(self):
-            super(ItemWithAnXRef, self).__init__()
+            super().__init__()
             self.item_refs = {}
 
     @named_as('xx')
     class Xx(ConfigItem):
         def __init__(self):
-            super(Xx, self).__init__()
+            super().__init__()
             self.a = 1
 
     @mc_config(ef, load_now=True)
@@ -1709,34 +1699,6 @@ def test_envgroup_ref():
 
     cr = config(prod)
     assert compare_json(cr, _envgroup_ref_expected_json)
-
-
-def test_exception_generating_json():
-    class BadException(Exception):
-        def __repr__(self):
-            raise Exception("BadException bad __repr__")
-
-    class X(object):
-        def json_equivalent(self):
-            raise BadException()
-
-    class Xx(ConfigItem):
-        def mc_init(self):
-            self.setattr('egref', default=X(), mc_set_unknown=True)
-
-    @mc_config(ef, load_now=True)
-    def config(root):
-        Xx()
-
-    cr = config(prod)
-
-    # Accessing a completey undefind attribute does not invoke multiconf exception, so the bad __repr__ is no called
-    with raises(AttributeError) as exinfo:
-        cr.Xx.xxx
-
-    assert str(exinfo.value) == "'Xx' object has no attribute 'xxx'"
-
-    xfail('TODO: provoke bad __repr__')
 
 
 _json_dump_depth_expected_json_d1 = """{
@@ -1939,3 +1901,44 @@ def test_json_dump_during_load():
     cr = config(prod).root
     assert replace_ids(jsons[0]) == _json_dump_during_load_json0_exp
     assert replace_ids(jsons[1]) == _json_dump_during_load_json1_exp
+
+
+_exception_in_property_exception_exc_ex = """{
+    "__class__": "Xx #as: 'xxxx', id: 0000",
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "xxx #no value for Env('prod')": true,
+    "xxx #json_error trying to handle property method": "Error gettting repr of obj, type: <class 'test.json_output_test.test_exception_in_property_exception.<locals>.BadException'>, exception: BadException: BadException bad __repr__"
+}, object of type: <class 'test.json_output_test.test_exception_in_property_exception.<locals>.Xx'> has no attribute 'xxx'. Attribute 'xxx' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: <class 'test.json_output_test.test_exception_in_property_exception.<locals>.BadException'>
+"""
+
+def test_exception_in_property_exception():
+    class BadException(Exception):
+        def __repr__(self):
+            raise BadException("BadException bad __repr__")
+
+    class Xx(ConfigItem):
+        @property
+        def xxx(self):
+            raise BadException("Error in 'xxx' property impl.")
+
+    @mc_config(ef)
+    def config(root):
+        with Xx() as xx:
+            xx.setattr('xxx', pp=1, mc_overwrite_property=True)
+
+    config.load(validate_properties=False)
+    cr = config(prod).Xx
+
+    with raises(ConfigAttributeError) as exinfo:
+        print(cr.xxx)
+
+    print(str(exinfo.value))
+    print()
+    print("--- exp ---")
+    print(_exception_in_property_exception_exc_ex.strip())
+    print("--- exc ---")
+    print(replace_ids(str(exinfo.value).strip()))
+    assert replace_ids(str(exinfo.value).strip()) == _exception_in_property_exception_exc_ex.strip()

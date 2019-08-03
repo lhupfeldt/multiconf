@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from pytest import raises # pylint: disable=no-name-in-module
 
 from multiconf import mc_config, ConfigItem, ConfigBuilder, ConfigException, MC_REQUIRED
@@ -30,12 +28,12 @@ def test_attribute_mc_required_init_args_missing_env_values_builder(capsys):
     errorline = [None]
     class Requires(ConfigItem):
         def __init__(self, aa=MC_REQUIRED):
-            super(Requires, self).__init__()
+            super().__init__()
             self.aa = aa
 
     class Builder(ConfigBuilder):
         def __init__(self):
-            super(Builder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             Requires()

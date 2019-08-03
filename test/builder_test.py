@@ -24,7 +24,7 @@ prod2 = ef2_pp_prod.Env('prod')
 @nested_repeatables('x_children')
 class Xses(RepeatableConfigItem):
     def __init__(self, mc_key, server_num=None):
-        super(Xses, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.server_num = server_num
 
@@ -32,10 +32,10 @@ class Xses(RepeatableConfigItem):
 @named_as('x_children')
 class XChild(RepeatableConfigItem):
     def __new__(cls, mc_key):
-        return super(XChild, cls).__new__(cls, mc_key=mc_key)
+        return super().__new__(cls, mc_key=mc_key)
 
     def __init__(self, mc_key):
-        super(XChild, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.a = mc_key
 
 
@@ -47,7 +47,7 @@ def test_configbuilder_with_required_item_decorator():
     @required('b_item')
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers, aa):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.num_servers = num_servers
             self.aa = aa
 
@@ -92,7 +92,7 @@ def test_configbuilder_with_required_item_decorator():
 def test_configbuilder_build_with_mc_required():
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers=4, a=MC_REQUIRED, something=None):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.num_servers = num_servers
             self.a = a
             self.something = something
@@ -138,7 +138,7 @@ def test_configbuilder_override_with_required_item():
     @required('b')
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.num_servers = num_servers
 
         def mc_build(self):
@@ -170,7 +170,7 @@ def test_configbuilder_override_with_required_item():
 def test_configbuilder_build_at_root_freeze():
     class XBuilder(ConfigBuilder):
         def __init__(self, num_servers=4, a=MC_REQUIRED):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.num_servers = num_servers
             self.a = a
 
@@ -200,7 +200,7 @@ def test_configbuilder_access_to_contained_in_from_build():
     @named_as('y')
     class Y(ConfigItem):
         def __init__(self):
-            super(Y, self).__init__()
+            super().__init__()
             self.number = MC_REQUIRED
 
     class YBuilder(ConfigBuilder):
@@ -226,12 +226,12 @@ def test_configbuilder_access_to_contained_in_from___init__():
     @named_as('x')
     class X(ConfigItem):
         def __init__(self):
-            super(X, self).__init__()
+            super().__init__()
             self.number = MC_REQUIRED
 
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.number = self.contained_in.aaa
 
         def mc_build(self):
@@ -284,7 +284,7 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
     @named_as('x')
     class X(ConfigItem):
         def __init__(self, number):
-            super(X, self).__init__()
+            super().__init__()
             self.number = number
             self.init_parent = self.contained_in
             self.mc_init_parent = MC_REQUIRED
@@ -301,7 +301,7 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
 
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.number = self.contained_in.aaa
 
         def mc_build(self):
@@ -329,7 +329,7 @@ def test_configbuilder_access_to_contained_in_from_built_item_must_give_parent_o
 def test_configbuilder_nested_items():
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
             self.number = self.contained_in.aaa
             self.b = None
 
@@ -365,7 +365,7 @@ def test_configbuilder_nested_items():
 def test_configbuilder_nested_items_access_to_contained_in():
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
             # Access to contained_in is allowed here depending on where the object
             # is created, so it is discouraged to use contained_in from init
             self.number = self.contained_in.aaa
@@ -410,7 +410,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
 
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
             self.start = start
             self.b = MC_REQUIRED
 
@@ -429,14 +429,14 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
     @nested_repeatables('y_children', 'ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key, name, server_num):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = name
             self.server_num = server_num
 
     @named_as('y_children')
     class YChild(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(YChild, self).__init__(mc_key=None)
+            super().__init__(mc_key=None)
             self.a = mc_key
 
     @mc_config(ef2_pp_prod, load_now=True)
@@ -495,7 +495,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
 def test_configbuilder_multilevel_nested_items_bad_access_to_contained_in():
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             with Y(mc_key='hello') as c:
@@ -509,7 +509,7 @@ def test_configbuilder_multilevel_nested_items_bad_access_to_contained_in():
     @nested_repeatables('ys')
     class Y(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(Y, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             # invalid access to self.contained_in
             print(self.contained_in)
 
@@ -525,7 +525,7 @@ def test_configbuilder_multilevel_nested_items_bad_access_to_contained_in():
 def test_configbuilder_repeated():
     class XBuilder(ConfigBuilder):
         def __init__(self, mc_key=None, first=1, last=2):
-            super(XBuilder, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.first = first
             self.last = last
 
@@ -568,7 +568,7 @@ def test_configbuilder_repeated_what_built():
 
     class XBuilder(ConfigBuilder):
         def __init__(self, mc_key=None, first=1, last=2):
-            super(XBuilder, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.first = first
             self.last = last
 
@@ -645,7 +645,7 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder_w
 
     class builder(ConfigBuilder):
         def __init__(self):
-            super(builder, self).__init__()
+            super().__init__()
             self.a = MC_REQUIRED
             self.b = MC_REQUIRED
 
@@ -669,7 +669,7 @@ def test_required_attributes_not_required_on_imtermediate_freeze_configbuilder_w
 def test_configbuilder_child_with_nested_repeatables():
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             with Xses(1):
@@ -694,7 +694,7 @@ def test_configbuilder_child_with_nested_repeatables():
 def test_configbuilder_child_with_declared_but_not_defined_nested_repeatables():
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             Xses(1)
@@ -711,7 +711,7 @@ def test_configbuilder_child_with_declared_but_not_defined_nested_repeatables():
     cr = config(prod2).Root
     assert len(cr.xses) == 1
     for x in cr.xses.values():
-        assert isinstance(x.x_children, OrderedDict)
+        assert isinstance(x.x_children, dict)
         assert len(x.x_children) == 0
     check_containment(cr)
 
@@ -720,24 +720,24 @@ def test_configbuilders_alternating_with_items():
     @named_as('inners')
     class InnerItem(ConfigItem):
         def __init__(self, name):
-            super(InnerItem, self).__init__()
+            super().__init__()
             self.name = name
 
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
-            super(InnerBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             InnerItem('innermost')
 
     class MiddleItem(ConfigItem):
         def __init__(self, name):
-            super(MiddleItem, self).__init__()
+            super().__init__()
             self.id = name
 
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MiddleBuilder, self).__init__()
+            super().__init__()
             self.name = name
 
         def mc_build(self):
@@ -764,19 +764,19 @@ def test_configbuilders_alternating_with_items_repeatable_simple():
     @named_as('inners')
     class InnerItem(RepeatableConfigItem):
         def __init__(self, name):
-            super(InnerItem, self).__init__(mc_key=name)
+            super().__init__(mc_key=name)
             self.name = name
 
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
-            super(InnerBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             InnerItem('innermost')
 
     class OuterBuilder(ConfigBuilder):
         def __init__(self):
-            super(OuterBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             InnerBuilder()
@@ -801,12 +801,12 @@ def test_configbuilders_alternating_with_items_repeatable_many():
     @named_as('inners')
     class InnerItem(RepeatableConfigItem):
         def __init__(self, name):
-            super(InnerItem, self).__init__(mc_key=name)
+            super().__init__(mc_key=name)
             self.name = name
 
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
-            super(InnerBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             InnerItem('innermost1')
@@ -815,12 +815,12 @@ def test_configbuilders_alternating_with_items_repeatable_many():
     @nested_repeatables('inners')
     class MiddleItem(RepeatableConfigItem):
         def __init__(self, name):
-            super(MiddleItem, self).__init__(mc_key=name)
+            super().__init__(mc_key=name)
             self.id = name
 
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MiddleBuilder, self).__init__()
+            super().__init__()
             self.name = name
 
         def mc_build(self):
@@ -847,12 +847,12 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel():
     @named_as('inners')
     class InnerItem(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(InnerItem, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
 
     class InnerBuilder(ConfigBuilder):
         def __init__(self):
-            super(InnerBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             InnerItem('innermost')
@@ -860,12 +860,12 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel():
     @nested_repeatables('inners')
     class MiddleItem(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(MiddleItem, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.id = mc_key
 
     class MiddleBuilder(ConfigBuilder):
         def __init__(self, name):
-            super(MiddleBuilder, self).__init__()
+            super().__init__()
             self.name = name
 
         def mc_build(self):
@@ -874,7 +874,7 @@ def test_configbuilders_alternating_with_items_repeatable_multilevel():
 
     class OuterBuilder(ConfigBuilder):
         def __init__(self):
-            super(OuterBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             with MiddleBuilder('base'):
@@ -898,12 +898,12 @@ def test_item_parent_proxy_get_env():
     @named_as('inners')
     class InnerItem(RepeatableConfigItem):
         def __init__(self, mc_key):
-            super(InnerItem, self).__init__(mc_key=mc_key)
+            super().__init__(mc_key=mc_key)
             self.name = mc_key
 
     class Builder(ConfigBuilder):
         def __init__(self):
-            super(Builder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             InnerItem('innermost')
@@ -926,7 +926,7 @@ def test_assign_underscore_on_proxied_built_item_child_after_freeze():
     """This will go through the proxy object"""
     class YBuilder(ConfigBuilder):
         def __init__(self, start=1):
-            super(YBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             Y()
@@ -934,7 +934,7 @@ def test_assign_underscore_on_proxied_built_item_child_after_freeze():
     @named_as('y')
     class Y(ConfigItem):
         def __init__(self):
-            super(Y, self).__init__()
+            super().__init__()
             self.something = None
 
     # Test assignment '_xxx'ok
@@ -953,7 +953,7 @@ def test_configbuilder_child_with_child_merge_setattr_in_with():
     """Test that values of an item defined in the config 'with block' overwrites values from a nested item in created in builder"""
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             with Xses(1):
@@ -988,7 +988,7 @@ def test_configbuilder_child_with_child_merge_setattr_in_init_with():
     """Test that values of an item defined in the config 'with block' overwrites values from a nested item in created in builder"""
     class XBuilder(ConfigBuilder):
         def __init__(self):
-            super(XBuilder, self).__init__()
+            super().__init__()
 
         def mc_build(self):
             with Xses(1):

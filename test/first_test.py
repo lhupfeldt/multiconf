@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from multiconf import mc_config, ConfigItem
 from multiconf.envs import EnvFactory
 from multiconf.decorators import named_as
@@ -12,7 +10,7 @@ def test():
     @named_as('x')
     class X(ConfigItem):
         def __init__(self):
-            super(X, self).__init__()
+            super().__init__()
             self.aa = 0
             self.bb = 0
             self.ttt = 1

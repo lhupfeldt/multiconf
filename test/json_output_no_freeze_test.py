@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 import sys
 
 from pytest import raises
@@ -14,9 +12,6 @@ from multiconf.envs import EnvFactory
 from utils.utils import py37_no_exc_comma, replace_ids
 
 
-major_version = sys.version_info[0]
-
-
 ef = EnvFactory()
 pp = ef.Env('pp')
 prod = ef.Env('prod')
@@ -25,7 +20,7 @@ prod = ef.Env('prod')
 @nested_repeatables('someitems')
 class root(ConfigItem):
     def __init__(self, aa=None):
-        super(root, self).__init__()
+        super().__init__()
         if aa is not None:
             self.aa = aa
 
@@ -34,7 +29,7 @@ class root(ConfigItem):
 @nested_repeatables('someitems')
 class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key, aa=MC_REQUIRED):
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.aa = aa
 
     def mc_init(self):

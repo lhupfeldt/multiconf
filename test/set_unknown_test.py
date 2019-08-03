@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 # pylint: disable=E0611
 from pytest import raises
 
@@ -29,21 +27,21 @@ def ce(line_num, *lines):
 @nested_repeatables('RepeatableStrictItems')
 class strict_project(ConfigItem):
     def __init__(self):
-        super(strict_project, self).__init__()
+        super().__init__()
         self.a = None
         self.b = MC_REQUIRED
 
 
 class StrictItem(ConfigItem):
     def __init__(self):
-        super(StrictItem, self).__init__()
+        super().__init__()
         self.x = MC_REQUIRED
         self.y = None
 
 
 class RepeatableStrictItem(RepeatableConfigItem):
     def __init__(self, mc_key):
-        super(RepeatableStrictItem, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.x = None
         self.y = MC_REQUIRED
 

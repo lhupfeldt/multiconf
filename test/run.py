@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import sys, os, subprocess
 from os.path import join as jp
 
@@ -7,8 +5,6 @@ import pytest
 
 import tenjin
 from tenjin.helpers import *
-
-from . import type_check
 
 
 _here = os.path.abspath(os.path.dirname(__file__))
@@ -25,10 +21,11 @@ def main(args):
     # Note: This naming is duplicated in .travis.yml
     cov_rc_file_name = jp(_here, '.coverage_rc_' +  str(os.environ.get('TRAVIS_PYTHON_VERSION', str(major_version) + '.' + str(minor_version))))
     with open(cov_rc_file_name, 'w') as cov_rc_file:
-        cov_rc_file.write(engine.render(jp(_here, "coverage_rc.tenjin"), dict(
-            major_version=major_version, minor_version=minor_version, type_check_supported=type_check.vcheck())))
+        cov_rc_file.write(engine.render(jp(_here, "coverage_rc.tenjin"), dict(major_version=major_version, minor_version=minor_version)))
 
-    rc = pytest.main(['--capture=sys', '--cov=' + _here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else []))
+    pytest_args = ['--capture=sys', '--cov=' + _here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name] + (args if args == ['-v'] else [])
+    print('Running: pytest.main(' + ' '.join(pytest_args) + ')')
+    rc = pytest.main(pytest_args)
 
     print()
     try:

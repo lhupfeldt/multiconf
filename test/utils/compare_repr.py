@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from .utils import replace_ids as _replace_ids, replace_ids_builder, to_compact
-from .utils import py3_tc
 
 
 def compare_repr(item, expected_repr, replace_builders=False, replace_ids=True, replace_address=True):
@@ -19,7 +16,6 @@ def compare_repr(item, expected_repr, replace_builders=False, replace_ids=True, 
         else:
             got_repr_replaced = got_repr
 
-        expected_repr %= {'type_or_class': py3_tc}
         assert got_repr_replaced == expected_repr, "Error: repr differs"
 
     except AssertionError as ex:

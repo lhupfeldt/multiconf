@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 # pylint: disable=E0611
 from pytest import raises, xfail
 
@@ -10,7 +8,7 @@ from multiconf import mc_config, ConfigItem, RepeatableConfigItem, ConfigExcepti
 from multiconf.decorators import nested_repeatables, required
 from multiconf.envs import EnvFactory
 
-from .utils.utils import config_error, next_line_num, replace_ids, lines_in, py3_local, start_file_line, file_line
+from .utils.utils import config_error, next_line_num, replace_ids, lines_in, local_func, start_file_line, file_line
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
 from .utils.messages import already_printed_msg, mc_required_expected, config_error_mc_required_expected, not_repeatable_in_parent_msg
 
@@ -199,6 +197,21 @@ def test_assign_to_undefine_env(capsys):
     assert replace_ids(str(exinfo.value), False) == _single_error_on_item_expected_ex % ('pp', '"hi"')
 
 
+def test_assign_to_multiple_undefine_envs(capsys):
+    errorline = [None]
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef2_pp_prod, load_now=True)
+        def config(_):
+            with ItemWithAA() as cr:
+                errorline[0] = next_line_num()
+                cr.setattr('aa', pros="hello", peculiar="hej", default="hi")
+
+    _sout, serr = capsys.readouterr()
+    assert serr == ce(errorline[0], "No such Envs or EnvGroups: ['pros', 'peculiar']")
+    assert replace_ids(str(exinfo.value), False) == _single_error_on_item_expected_ex % ('pp', '"hi"')
+
+
 def test_value_not_assigned_to_all_envs(capsys):
     errorline = [None]
 
@@ -365,7 +378,7 @@ def test_nested_repeatable_item_not_defined_as_repeatable_in_contained_in_class(
     assert replace_ids(str(exinfo.value), named_as=False) == exp
 
 
-_non_repeatable_but_container_expects_repeatable_expected = """'RepeatableItems': <class 'test.definition_errors_test.%(py3_local)sRepeatableItems'> is not defined as repeatable, but this is defined as a repeatable item in the containing class: {
+_non_repeatable_but_container_expects_repeatable_expected = """'RepeatableItems': <class 'test.definition_errors_test.%(local_func)sRepeatableItems'> is not defined as repeatable, but this is defined as a repeatable item in the containing class: {
     "__class__": "project #as: 'project', id: 0000, not-frozen",
     "env": {
         "__class__": "Env",
@@ -385,7 +398,7 @@ def test_non_repeatable_but_container_expects_repeatable():
             with project():
                 RepeatableItems()
 
-    assert replace_ids(str(exinfo.value), named_as=False) == _non_repeatable_but_container_expects_repeatable_expected % dict(py3_local=py3_local())
+    assert replace_ids(str(exinfo.value), named_as=False) == _non_repeatable_but_container_expects_repeatable_expected % dict(local_func=local_func())
 
 
 def test_attempt_to_call_contained_item():
@@ -609,7 +622,7 @@ def test_using_group_for_selected_env():
 def test_double_error_for_configroot_mc_required_missing(capsys):
     class root(ConfigItem):
         def __init__(self):
-            super(root, self).__init__()
+            super().__init__()
             self.someattr1 = MC_REQUIRED
 
     with raises(Exception) as exinfo:
@@ -628,7 +641,7 @@ def test_double_error_for_configroot_required_item_missing(capsys):
     @required('someitem')
     class root(ConfigItem):
         def __init__(self):
-            super(root, self).__init__()
+            super().__init__()
 
     with raises(Exception) as exinfo:
         @mc_config(ef1_prod, load_now=True)
@@ -707,7 +720,7 @@ def test_attribute_mc_required_args_partial_set_in_init_unfinished(capsys):
 
     class Requires(ConfigItem):
         def __init__(self, a=13):
-            super(Requires, self).__init__()
+            super().__init__()
             # Partial assignment is allowed in init
             errorline_setattr[0] = next_line_num()
             self.setattr('a', prod=a)
@@ -735,19 +748,20 @@ def test_attribute_mc_required_args_partial_set_in_init_unfinished(capsys):
     assert replace_ids(str(exinfo.value), named_as=False) == _attribute_mc_required_args_partial_set_in_init_unfinished_expected_ex
 
 
+def _check_no_env(errorline, capsys):
+    _sout, serr = capsys.readouterr()
+    assert lines_in(
+        serr,
+        start_file_line(__file__, errorline),
+        "^ConfigError: No Env or EnvGroup names specified.",
+        # TODO, should we expect multiple errors here?
+        # start_file_line(__file__, errorline[0]),
+        # config_error_mc_required_expected.format(attr='aa', env=prod2),
+    )
+
+
 def test_setattr_no_envs(capsys):
     errorline = [None]
-
-    def check(errorline):
-        _sout, serr = capsys.readouterr()
-        assert lines_in(
-            serr,
-            start_file_line(__file__, errorline),
-            "^ConfigError: No Env or EnvGroup names specified.",
-            # TODO, should we expect multiple errors here?
-            # start_file_line(__file__, errorline[0]),
-            # config_error_mc_required_expected.format(attr='aa', env=prod2),
-        )
 
     # ConfigItem
     with raises(ConfigException) as exinfo:
@@ -757,16 +771,7 @@ def test_setattr_no_envs(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa')
 
-    check(errorline[0])
-
-    with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod, load_now=True)
-        def config(_):
-            with ItemWithAA() as cr:
-                errorline[0] = next_line_num()
-                cr.setattr('aa', 1)
-
-    check(errorline[0])
+    _check_no_env(errorline[0], capsys)
 
     # RepeatableItem
     with raises(ConfigException) as exinfo:
@@ -777,32 +782,11 @@ def test_setattr_no_envs(capsys):
                     errorline[0] = next_line_num()
                     ci.setattr('aa')
 
-    check(errorline[0])
-
-    with raises(ConfigException) as exinfo:
-        @mc_config(ef2_pp_prod, load_now=True)
-        def config(_):
-            with project():
-                with RepeatableItemWithAA(mc_key='a') as ci:
-                    errorline[0] = next_line_num()
-                    ci.setattr('aa', 1)
-
-    check(errorline[0])
+    _check_no_env(errorline[0], capsys)
 
 
 def test_setattr_no_envs_set_unknown(capsys):
     errorline = [None]
-
-    def check(errorline):
-        _sout, serr = capsys.readouterr()
-        assert lines_in(
-            serr,
-            start_file_line(__file__, errorline),
-            "^ConfigError: No Env or EnvGroup names specified.",
-            # TODO, should we expect multiple errors here?
-            # start_file_line(__file__, errorline[0]),
-            # config_error_mc_required_expected.format(attr='aa', env=prod2),
-        )
 
     # ConfigItem
     with raises(ConfigException) as exinfo:
@@ -812,16 +796,7 @@ def test_setattr_no_envs_set_unknown(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa', mc_set_unknown=True)
 
-    check(errorline[0])
-
-    with raises(Exception) as exinfo:
-        @mc_config(ef2_pp_prod, load_now=True)
-        def config1(_):
-            with ConfigItem() as cr:
-                errorline[0] = next_line_num()
-                cr.setattr('aa', 1, mc_set_unknown=True)
-
-    check(errorline[0])
+    _check_no_env(errorline[0], capsys)
 
     # RepeatableItem
     with raises(ConfigException) as exinfo:
@@ -832,17 +807,32 @@ def test_setattr_no_envs_set_unknown(capsys):
                     errorline[0] = next_line_num()
                     ci.setattr('aa', mc_set_unknown=True)
 
-    check(errorline[0])
+    _check_no_env(errorline[0], capsys)
 
-    with raises(ConfigException) as exinfo:
+
+def test_setattr_mc_keyword_call_only(capsys):
+    errorline = [None]
+
+    # ConfigItem
+    with raises(TypeError) as exinfo:
+        @mc_config(ef2_pp_prod, load_now=True)
+        def config(_):
+            with ItemWithAA() as cr:
+                errorline[0] = next_line_num()
+                cr.setattr('aa', 1, default=2, prod=3)
+
+    assert "setattr() takes 2 positional arguments but 3 were given" in str(exinfo.value)
+
+    # RepeatableItem
+    with raises(TypeError) as exinfo:
         @mc_config(ef2_pp_prod, load_now=True)
         def config3(_):
             with project():
                 with RepeatableItem(mc_key='a') as ci:
                     errorline[0] = next_line_num()
-                    ci.setattr('aa?', 1, mc_set_unknown=True)
+                    ci.setattr('aa', 1, mc_set_unknown=True, default=2, prod=3)
 
-    check(errorline[0])
+    assert "setattr() takes 2 positional arguments but 3" in str(exinfo.value)
 
 
 def test_init_line_num(capsys):
@@ -851,7 +841,7 @@ def test_init_line_num(capsys):
 
     class init_overidden1(ConfigItem):
         def __init__(self):
-            super(init_overidden1, self).__init__()
+            super().__init__()
             self.a = MC_REQUIRED
 
     with raises(Exception) as exinfo:
@@ -889,7 +879,7 @@ def test_init_line_num(capsys):
 
     class init_overidden2(intermediate):
         def __init__(self):
-            super(init_overidden2, self).__init__()
+            super().__init__()
             self.b = MC_REQUIRED
 
     with raises(Exception) as exinfo:

@@ -28,7 +28,7 @@ def _lookup_order(env):
 
 class item(ConfigItem):
     def __init__(self):
-        super(item, self).__init__()
+        super().__init__()
         self.aa = MC_REQUIRED
         self.bb = MC_REQUIRED
 

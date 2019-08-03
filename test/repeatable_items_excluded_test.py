@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from pytest import raises
 
 from multiconf import mc_config, ConfigItem, RepeatableConfigItem
@@ -10,7 +8,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
-from .utils.utils import py3_local
+from .utils.utils import local_func
 
 
 ef = EnvFactory()
@@ -123,7 +121,7 @@ def test_repeatable_items_mc_select_envs_excluded_key_error_property_exception()
         cr.children['first']
 
     ex_msg = str(exinfo.value)
-    exp = "'first'. 'Excluded: <class 'test.repeatable_items_excluded_test.%(py3_local)sbadchild'>' for Env('prod')." % dict(py3_local=py3_local())
+    exp = "'first'. 'Excluded: <class 'test.repeatable_items_excluded_test.%(local_func)sbadchild'>' for Env('prod')." % dict(local_func=local_func())
     assert exp in ex_msg
 
 
@@ -150,7 +148,7 @@ def test_repeatable_items_mc_select_envs_excluded_key_error_property_attributeer
         cr.children['first']
 
     ex_msg = str(exinfo.value)
-    exp = "'first'. 'Excluded: <class 'test.repeatable_items_excluded_test.%(py3_local)sbadchild'>' for Env('prod')." % dict(py3_local=py3_local())
+    exp = "'first'. 'Excluded: <class 'test.repeatable_items_excluded_test.%(local_func)sbadchild'>' for Env('prod')." % dict(local_func=local_func())
     assert exp in ex_msg
 
 

@@ -1,9 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
-
-from __future__ import print_function
 
 import sys
 import cProfile
@@ -23,7 +21,6 @@ from multiconf.envs import EnvFactory
 
 ef = None
 prod = None
-hp = None
 conf = None
 
 
@@ -53,7 +50,7 @@ class root(ConfigItem):
 @named_as('children_init')
 class rchild_init(RepeatableConfigItem):
     def __init__(self, mc_key, aa, bb, xx, yy):
-        super(rchild_init, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.aa = aa
         self.bb = bb
@@ -64,12 +61,12 @@ class rchild_init(RepeatableConfigItem):
 @named_as('children_mc_init')
 class rchild_mc_init(RepeatableConfigItem):
     def __init__(self, mc_key, xx):
-        super(rchild_mc_init, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.xx = xx
 
     def mc_init(self):
-        super(rchild_mc_init, self).mc_init()
+        super().mc_init()
         self.setattr('xx', default=17, mc_force=True)
         self.setattr('yy', default=18, mc_set_unknown=True, mc_force=True)
         self.setattr('zz', default=19, mc_set_unknown=True, mc_force=True)
@@ -78,7 +75,7 @@ class rchild_mc_init(RepeatableConfigItem):
 @named_as('children_default')
 class rchild_default(RepeatableConfigItem):
     def __init__(self, mc_key, aa):
-        super(rchild_default, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.aa = aa
 
@@ -87,7 +84,7 @@ class rchild_default(RepeatableConfigItem):
 @nested_repeatables('children_init', 'children_default', 'children_env', 'children_mc_init')
 class rchild_env(RepeatableConfigItem):
     def __init__(self, name):
-        super(rchild_env, self).__init__(mc_key=name)
+        super().__init__(mc_key=name)
         self.name = name
 
 
@@ -145,9 +142,6 @@ def config(validate_properties=True, lazy_load=False):
                         ci.setattr('qq' + repr(ii), default=7, g_dev=8, tst=9, pp=18, prod=5, mc_set_unknown=True)
                         ci.setattr('rr' + repr(ii), g_dev=8, tst=9, pp=19, prod=3, mc_set_unknown=True)
 
-    if hp:
-        print(hp.heap())
-
     conf_func.load(validate_properties=validate_properties, lazy_load=lazy_load)
     conf = conf_func
 
@@ -168,10 +162,7 @@ def use():
 @click.command()
 @click.option("--time/--no-time", default=True)
 @click.option("--profile/--no-profile", default=False)
-@click.option("--heap-check/--no-heap-check", default=False)
-def cli(time, profile, heap_check):
-    global hp
-
+def cli(time, profile):
     if time:
         def _test(name, ff, test, setup, repeat, number):
             times = sorted(timeit.repeat(test, setup=setup, repeat=repeat, number=number))
@@ -194,13 +185,6 @@ def cli(time, profile, heap_check):
             _test("load - no @props", ff, "config(validate_properties=False)", setup="from __main__ import config", repeat=10, number=10)
             _test("load - @props", ff, "config(validate_properties=True)", setup="from __main__ import config", repeat=10, number=10)
             _test("use", ff, "use()", setup="from __main__ import use", repeat=10, number=300)
-
-    if sys.version_info.major < 3 and heap_check:
-        from guppy import hpy
-        hp = hpy()
-        envs_setup()
-        config()
-        use()
 
     if profile:
         cProfile.run("envs_setup()", jp(here, "envs_setup.profile"))

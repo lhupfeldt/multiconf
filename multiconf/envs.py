@@ -1,18 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
-import sys
-from collections import OrderedDict
-
-major_version = sys.version_info[0]
-if major_version >= 3:
-    from collections.abc import Container
-else:
-    from collections import Container
-
-# pylint: disable=wrong-import-position
+from collections.abc import Container
 import itertools
 import json
 import threading
@@ -26,12 +15,8 @@ class EnvException(Exception):
 
 class AmbiguousEnvException(EnvException):
     def __init__(self, msg, ambiguous):
-        super(AmbiguousEnvException, self).__init__(msg)
+        super().__init__(msg)
         self.ambiguous = ambiguous
-
-
-class MissingValueEnvException(EnvException):
-    pass
 
 
 class BaseEnv(object):
@@ -65,13 +50,13 @@ class BaseEnv(object):
         return json.dumps(self, skipkeys=skipkeys, cls=Encoder, check_circular=True, sort_keys=False, indent=4, separators=(',', ': '))
 
     def json_equivalent(self):
-        return OrderedDict((
-            ("type", repr(self.__class__)),
-            ("name", self.name),
-            ("bit", self.bit),
-            ("mask", int_to_bin_str(self.mask)),
-            # ("hash", self.__hash__()),
-            ("members", self.members))
+        return dict(
+            type=repr(self.__class__),
+            name=self.name,
+            bit=self.bit,
+            mask=int_to_bin_str(self.mask),
+            # hash=self.__hash__(),
+            members=self.members,
         )
 
     def irepr(self, _indent_level):
@@ -89,7 +74,7 @@ class BaseEnv(object):
 
 class Env(BaseEnv):
     def __init__(self, name, factory, allow_todo):
-        super(Env, self).__init__(name=name, factory=factory, mask=0)
+        super().__init__(name=name, factory=factory, mask=0)
         self.envs = [self]
         self.lookup_order = None
         self.allow_todo = allow_todo
@@ -109,7 +94,7 @@ class EnvGroup(BaseEnv, Container):
                                    repr(Env.__name__) + ' or ' + repr(EnvGroup.__name__) + ' found: ' + repr(eg))
             mask |= eg.mask
 
-        super(EnvGroup, self).__init__(name=name, factory=factory, mask=mask)
+        super().__init__(name=name, factory=factory, mask=mask)
 
         # Check for doublets
         seen_envs = set()
@@ -125,7 +110,7 @@ class EnvGroup(BaseEnv, Container):
         for member_group in self._groups_recursive():
             self.groups.append(member_group)
 
-        envs = OrderedDict()
+        envs = {}
         for member in self.members:
             if not isinstance(member, EnvGroup):
                 envs[member.name] = member
@@ -149,14 +134,13 @@ class EnvGroup(BaseEnv, Container):
     def _groups_recursive(self):
         for member in self.members:
             if isinstance(member, EnvGroup):
-                for member in member.groups:
-                    yield member
+                yield from member.groups
 
 
 class EnvFactory(object):
     def __init__(self):
-        self.envs = OrderedDict()
-        self.groups = OrderedDict()
+        self.envs = {}
+        self.groups = {}
         self._index = 1  # bit zero reserved to be set for all groups, so that a Group mask will never be equal to an env mask
         self._mc_frozen = False
 
@@ -211,6 +195,22 @@ class EnvFactory(object):
             return _env_group
 
         raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(name))
+
+    def validate_env_group_names(self, eg_names):
+        """Check that all names in eg_names are defined Envs or Groups"""
+        undefined = []
+
+        for eg_name in eg_names:
+            if eg_name in self.envs:
+                continue
+            if eg_name in self.groups:
+                continue
+            undefined.append(eg_name)
+
+        if undefined:
+            if len(undefined) > 1:
+                raise EnvException("No such " + Env.__name__ + "s or " + EnvGroup.__name__ + "s: " + repr(undefined))
+            raise EnvException("No such " + Env.__name__ + " or " + EnvGroup.__name__ + ": " + repr(undefined[0]))
 
     def _mc_calc_env_group_order(self):
         """
@@ -270,7 +270,7 @@ class EnvFactory(object):
                     if found_ambiguous:
                         raise AmbiguousEnvException("Ambiguous values for: " + str(env), [gg] + found_ambiguous)
                     return env_values[gg.name], gg
-        raise MissingValueEnvException("No value for: " + str(env))
+        return None, None
 
     def _mc_select_env_list(self, env, eg_list1, eg_list2):
         """Resolve in which lists env is most specific, if in any.

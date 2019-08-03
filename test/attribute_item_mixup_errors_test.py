@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 # pylint: disable=E0611
 from pytest import raises
 
@@ -103,6 +101,8 @@ def test_attempt_to_replace_empty_nested_repeatable_by_attribute_assignment(caps
     _sout, serr = capsys.readouterr()
     msg = "'RepeatableItems' is already defined as a nested-repeatable and may not be replaced with an attribute."
     assert serr == ce(errorline[0], msg)
+    print(_single_error_on_project_expected_ex % '"RepeatableItems": {}')
+    print(replace_ids(str(exinfo.value), named_as=False))
     assert replace_ids(str(exinfo.value), named_as=False) == _single_error_on_project_expected_ex % '"RepeatableItems": {}'
 
 
@@ -136,7 +136,7 @@ def test_attempt_to_replace_non_empty_nested_repeatable_by_attribute_assignment(
 #             pass
 #
 #         with root(prod1, ef1_prod) as cr:
-# TODO: 'cr' is an OrderedDict, so this call is not possible, which is fine, but the error message is not good
+# TODO: 'cr' is a dict, so this call is not possible, which is fine, but the error message is not good
 #             cr.children(prod="hello")
 #             rchild()
 #     assert str(exinfo.value) == "'children' is defined both as simple value and a contained item: children {\n}"

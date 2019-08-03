@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from multiconf.envs import EnvFactory
 from multiconf import mc_config, ConfigItem, MC_REQUIRED
 
@@ -15,21 +13,21 @@ prod = efac.Env('prod')
 def test_mc_init_inherited():
     class XBase(ConfigItem):
         def __init__(self):
-            super(XBase, self).__init__()
+            super().__init__()
             self.version = MC_REQUIRED
 
         def mc_init(self):
-            super(XBase, self).mc_init()
+            super().mc_init()
             self.version = 1
 
     class X1(XBase):
         def mc_init(self):
-            super(X1, self).mc_init()
+            super().mc_init()
             self.version = 2
 
     class X2(XBase):
         def mc_init(self):
-            super(X2, self).mc_init()
+            super().mc_init()
             self.setattr('version', prod=3)
 
     @mc_config(efac, load_now=True)

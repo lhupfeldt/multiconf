@@ -1,19 +1,22 @@
 import sys, os
-import warnings
+
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
+
 PROJECT_ROOT, _ = os.path.split(__file__)
 PROJECT_NAME = 'multiconf'
-COPYRIGHT = u"Copyright (c) 2012 - 2016 Lars Hupfeldt Nielsen, Hupfeldt IT"
+COPYRIGHT = u"Copyright (c) 2012 - 2019 Lars Hupfeldt Nielsen, Hupfeldt IT"
 PROJECT_AUTHORS = u"Lars Hupfeldt Nielsen"
 PROJECT_EMAILS = 'lhn@hupfeldtit.dk'
 PROJECT_URL = "https://github.com/lhupfeldt/multiconf"
 SHORT_DESCRIPTION = 'Python API providing a set of classes as basis for configuration objects with multiple values per attribute.'
 LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.rst")).read()
 
-if sys.version_info < (3,):
-    warnings.warn('You are installing `{0}` with Python 2. {0} will soon become Python 3 only.'.format(PROJECT_NAME), UserWarning)
+
+_here = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(_here, PROJECT_NAME, 'py_version_check.py')) as ff:
+    exec(ff.read())
 
 
 class Test(TestCommand):
@@ -31,13 +34,6 @@ class Test(TestCommand):
         sys.exit(test.run.main(self.test_args))
 
 
-major_version = sys.version_info[0]
-if major_version < 3:
-    py_version_requires = ['enum34>=1.1']
-else:
-    py_version_requires = ['typing-inspect>=0.2.0']
-
-
 if __name__ == "__main__":
     setup(
         name=PROJECT_NAME.lower(),
@@ -48,7 +44,8 @@ if __name__ == "__main__":
         package_dir={'multiconf': 'multiconf'},
         zip_safe=True,
         include_package_data=False,
-        install_requires=[] + py_version_requires,
+        python_requires='>=3.6.1',
+        install_requires=['typing-inspect>=0.2.0'],
         setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
         tests_require=['pytest>=3.0.5,<5.0.0', 'pytest-cov>=2.4.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
@@ -65,9 +62,6 @@ if __name__ == "__main__":
             'License :: OSI Approved :: BSD License',
             'Natural Language :: English',
             'Operating System :: OS Independent',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             # 'Programming Language :: Python :: 3.8',

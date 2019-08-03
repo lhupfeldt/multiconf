@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from pytest import raises
 
 from multiconf import (
@@ -11,7 +9,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory, MC_NO_ENV
 
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
-from .utils.utils import py3_local
+from .utils.utils import local_func
 
 
 ef = EnvFactory()
@@ -157,7 +155,7 @@ def test_lazy_load_no_env():
 def test_mc_env_loop():
     class item(ConfigItem):
         def __init__(self, aa):
-            super(item, self).__init__()
+            super().__init__()
             self.aa = aa
             self.aa_alternate = MC_REQUIRED
 

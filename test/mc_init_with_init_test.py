@@ -21,7 +21,7 @@ g_prod_like = ef.EnvGroup('g_prod_like', prod, pp)
 def test_mc_init_ref_env_attr_and_override():
     class X(ConfigItem):
         def __init__(self, aa=1):
-            super(X, self).__init__()
+            super().__init__()
             self.aa = aa
 
         def mc_init(self):
@@ -29,13 +29,13 @@ def test_mc_init_ref_env_attr_and_override():
 
     class Y(X):
         def __init__(self, aa=37):
-            super(Y, self).__init__()
+            super().__init__()
             self.aa = aa
             self.bb = 1
             self.cc = None
 
         def mc_init(self):
-            super(Y, self).mc_init()
+            super().mc_init()
             self.setattr('aa', default=self.aa + 1, mc_force=True)
             self.setattr('bb', default=self.bb + 1, mc_force=True)
             self.setattr('cc', default=17, mc_force=True)

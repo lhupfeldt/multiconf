@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from multiconf import mc_config, ConfigItem, MC_REQUIRED
 
 from multiconf.envs import EnvFactory
@@ -25,7 +23,7 @@ ef.EnvGroup('g_prod', pp, prod)
 
 class item1(ConfigItem):
     def __init__(self):
-        super(item1, self).__init__()
+        super().__init__()
         self.aa = MC_REQUIRED
 
     def mc_init(self):
@@ -35,7 +33,7 @@ class item1(ConfigItem):
 
 class item2(ConfigItem):
     def __init__(self):
-        super(item2, self).__init__()
+        super().__init__()
         self.aa = MC_REQUIRED
 
     def mc_init(self):
@@ -94,19 +92,19 @@ def test_more_specific_group_in_with_overrides_mc_init():
 def test_children_in_mc_init_frozen():
     class X1(ItemWithAA):
         def __init__(self, aa):
-            super(X1, self).__init__(aa=aa)
+            super().__init__(aa=aa)
             self.bb = MC_REQUIRED
 
         def mc_init(self):
             print("X1.mc_init")
-            super(X1, self).mc_init()
+            super().mc_init()
             self.aa = 1
             self.bb = 30
 
     class X2(ItemWithAA):
         def mc_init(self):
             print("X2.mc_init")
-            super(X2, self).mc_init()
+            super().mc_init()
             self.aa = 1
             X1(aa=1)
 
@@ -125,12 +123,12 @@ def test_children_in_mc_init_frozen():
 def test_children_in_mc_init_only_frozen_once():
     class X1(ItemWithAABB):
         def __init__(self, aa, bb=None):
-            super(X1, self).__init__(aa=aa, bb=bb)
+            super().__init__(aa=aa, bb=bb)
             self.cc = MC_REQUIRED
 
         def mc_init(self):
             print("X1.mc_init")
-            super(X1, self).mc_init()
+            super().mc_init()
             self.aa = 1
             self.bb = 1
             # Access self.aa here, it should be settable again during next env initialization
@@ -139,7 +137,7 @@ def test_children_in_mc_init_only_frozen_once():
     class X2(ItemWithAABB):
         def mc_init(self):
             print("X2.mc_init")
-            super(X2, self).mc_init()
+            super().mc_init()
             self.aa = 1
             self.bb = 1
             X1(aa=1, bb=1)

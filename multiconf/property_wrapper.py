@@ -30,5 +30,8 @@ class _McPropertyWrapper(object):
         try:
             return self.prop.__get__(obj, objtype)
         except Exception as ex:
-            msg = failed_property_call_msg.format(attr=self.prop_name, env=current_env, ex_type=type(ex).__name__, ex=ex)
+            try:
+                msg = failed_property_call_msg.format(attr=self.prop_name, env=current_env, ex=repr(ex))
+            except:
+                msg = failed_property_call_msg.format(attr=self.prop_name, env=current_env, ex=repr(type(ex)))
             raise ConfigAttributeError(obj, self.prop_name, msg=msg)

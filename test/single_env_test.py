@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from collections import OrderedDict
 # pylint: disable=E0611
 from pytest import raises, fail
@@ -17,18 +15,18 @@ from .utils.tstclasses import ItemWithAA, ItemWithAABB
 @nested_repeatables('children')
 class nc_aa_root(ItemWithAA):
     def __init__(self, aa=None):
-        super(nc_aa_root, self).__init__(aa)
+        super().__init__(aa)
 
 
 class aabb_root(ItemWithAABB):
     def __init__(self, aa=None, bb=None):
-        super(aabb_root, self).__init__(aa, bb)
+        super().__init__(aa, bb)
 
 
 @named_as('children')
 class rchild(RepeatableConfigItem):
     def __init__(self, mc_key, aa=None, bb=None):
-        super(rchild, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.name = mc_key
         self.aa = aa
         self.bb = bb
@@ -38,14 +36,14 @@ class rchild(RepeatableConfigItem):
 @nested_repeatables('recursive_items')
 class NestedRepeatable(RepeatableConfigItem):
     def __init__(self, mc_key, aa=None):
-        super(NestedRepeatable, self).__init__(mc_key=mc_key)
+        super().__init__(mc_key=mc_key)
         self.id = mc_key
         self.aa = aa
 
 
 class KwargsItem(ConfigItem):
     def __init__(self, **kwargs):
-        super(KwargsItem, self).__init__()
+        super().__init__()
         for key, val in sorted(kwargs.items()):
             setattr(self, key, val)
 
@@ -73,18 +71,15 @@ def test_iteritems_root_attributes():
             cr.aa = 1
             cr.bb = 2
 
-    for exp, actual in zip([('aa', 1), ('bb', 2)], list(cr.items())):
-        exp_key, exp_value = exp
-        key, value = actual
-        assert exp_key == key
-        assert exp_value == value
+    for _, _ in cr.items():
+        fail("items() yielded something, but there should be no items!")
 
 
 def test_iteritems_item_attributes():
     @required('anitem')
     class myitem(ConfigItem):
         def __init__(self):
-            super(myitem, self).__init__()
+            super().__init__()
             self.aa = MC_REQUIRED
 
     with McConfigRoot():
@@ -94,8 +89,7 @@ def test_iteritems_item_attributes():
 
     for key, value in ci.items():
         if key == 'aa':
-            assert value == 1
-            continue
+            fail("items() returned attribute!")
         if key == 'anitem':
             assert value.xx == 1
             continue
