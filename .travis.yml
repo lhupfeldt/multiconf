@@ -2,21 +2,9 @@ language: python
 sudo: false
 python:
   - 3.6
+  - 3.7
+  - 3.8-dev
   - pypy3.6-7.0.0
-matrix:
-    include:
-        - python: 3.7
-          sudo: true
-          env: REQUIREMENTS=lowest
-        - python: 3.7
-          sudo: true
-          env: REQUIREMENTS=release
-        - python: 3.8-dev
-          sudo: true
-          env: REQUIREMENTS=lowest
-        - python: 3.8-dev
-          sudo: true
-          env: REQUIREMENTS=release
 script: tox
 os:
   - linux
