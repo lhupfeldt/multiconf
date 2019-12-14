@@ -157,7 +157,7 @@ def test_include_for_configitem_with_required_decorator():
     assert cr.item.anotheritem.xx == 2
 
 
-def test_exclude_in_init_and_mc_select_envs_reexclude(capsys):
+def test_exclude_in_init_and_mc_select_envs_reexclude():
     @mc_config(ef, load_now=True)
     def config(rt):
         with ItemWithAA() as cr:
@@ -787,3 +787,23 @@ def test_root_no_mc_select_envs():
             rt.mc_select_envs(exclude=[dev1])
 
     assert "'McConfigRoot' object has no attribute 'mc_select_envs'" in str(exinfo.value)
+
+
+def test_mc_select_envs_on_frozen_item(capsys):
+    errorline = [None]
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef, load_now=True)
+        def config(rt):
+            with ItemWithAA(1) as it1:
+                it1.mc_select_envs(exclude=[prod])
+
+            with ConfigItem() as it2:
+                errorline[0] = next_line_num()
+                it1.mc_select_envs(exclude=[prod])  # Use 'it1' by mistake
+
+    _sout, serr = capsys.readouterr()
+    ce(errorline[0], serr, "Calling 'mc_select_envs' on a frozen item.")
+
+    assert "There was 1 error when defining item" in str(exinfo.value)
+    assert "ItemWithAA" in str(exinfo.value)

@@ -940,6 +940,9 @@ class AbstractConfigItem(_ConfigBase):  # TODO metaclass=abc.ABCMeta
          - If an item is included by an EnvGroup specification but excluded by a more specific EnvGroup (or Env), then it will be excluded.
         """
 
+        if self._mc_where == Where.FROZEN:
+            self._mc_print_error_caller("Calling 'mc_select_envs' on a frozen item.", mc_error_info_up_level)
+
         try:
             if self._mc_select_envs(include, exclude):
                 raise _McExcludedException()
