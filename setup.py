@@ -45,7 +45,7 @@ if __name__ == "__main__":
         zip_safe=True,
         include_package_data=False,
         python_requires='>=3.6.1',
-        install_requires=['typing-inspect>=0.2.0'],
+        install_requires=['typing-inspect>=0.4.0'],
         setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
         tests_require=['pytest>=3.0.5', 'pytest-cov>=2.4.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
