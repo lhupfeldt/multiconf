@@ -4,7 +4,6 @@ python:
   - 3.7
   - 3.8
   - pypy3.6-7.0.0
-script: tox
 os:
   - linux
 before_install:
@@ -12,13 +11,16 @@ before_install:
   - travis_retry pip install --upgrade requirements-builder
   - requirements-builder --level=min setup.py > .travis-lowest-requirements.txt
   - requirements-builder --level=pypi setup.py > .travis-release-requirements.txt
-install:
-  - pip install --upgrade tox-travis
-  - pip install --upgrade coveralls
-  - travis_retry pip install --upgrade -r .travis-$REQUIREMENTS-requirements.txt
-  - pip install -e .
 env:
   - REQUIREMENTS=lowest
   - REQUIREMENTS=release
+install:
+  - pip install --upgrade nox
+  - pip install --upgrade coveralls
+  - travis_retry pip install --upgrade -r .travis-$REQUIREMENTS-requirements.txt
+  - pip install -e .
+script:
+  - nox
 after_success:
+  # The rcfile path is duplicated in test/utils/mk_coveragerc.py
   - coveralls --rcfile="./test/.coverage_rc_$TRAVIS_PYTHON_VERSION"

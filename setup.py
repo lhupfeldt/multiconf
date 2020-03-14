@@ -19,21 +19,6 @@ with open(os.path.join(_here, PROJECT_NAME, 'py_version_check.py')) as ff:
     exec(ff.read())
 
 
-class Test(TestCommand):
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = []
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import test.run
-        sys.exit(test.run.main(self.test_args))
-
-
 if __name__ == "__main__":
     setup(
         name=PROJECT_NAME.lower(),
@@ -47,9 +32,6 @@ if __name__ == "__main__":
         python_requires='>=3.6.1',
         install_requires=['typing-inspect>=0.4.0'],
         setup_requires='setuptools-version-command~=2.2',
-        test_suite='test',
-        tests_require=['pytest>=3.0.5', 'pytest-cov>=2.4.0', 'demjson~=2.2.3', 'tenjin~=1.1'],
-        cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
         long_description=LONG_DESCRIPTION,

@@ -38,8 +38,10 @@ partial_branches =
     for index, gg in enumerate\(env_groups\):
 
 omit =
+    noxfile.py
     test/*
     setup.py
+    .nox/*
     .tox/*
     .eggs/*
     *.egg/*
