@@ -1059,9 +1059,6 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
 
             return self
 
-    def __init__(self, mc_include=None, mc_exclude=None):
-        super().__init__(mc_include=mc_include, mc_exclude=mc_exclude)
-
 
 class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
     """Base class for config items which may be repeated.
