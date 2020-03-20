@@ -8,7 +8,9 @@ import nox
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
 _TEST_DIR = jp(_HERE, 'test')
-_PY_VERSIONS = os.environ.get("TRAVIS_PYTHON_VERSION") or ['3.6', '3.7', '3.8', 'pypy3']
+_DOC_DIR = jp(_HERE, 'doc')
+_TRAVIS_PYTHON_VERSION = os.environ.get("TRAVIS_PYTHON_VERSION")
+_PY_VERSIONS = ['3.8', '3.7', '3.6', 'pypy3'] if not _TRAVIS_PYTHON_VERSION else [_TRAVIS_PYTHON_VERSION]
 
 
 @nox.session(python=_PY_VERSIONS, reuse_venv=True)
@@ -33,3 +35,9 @@ def demo(session):
         osenv = {'PYTHONPATH': ':'.join(sys.path)}
         with open(demo_out, 'w') as outf:
             subprocess.check_call((sys.executable, jp(_HERE, 'demo/demo.py'), '--env', env_name), env=osenv, stdout=outf)
+
+
+@nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
+def doc(session):
+    session.install('-r', jp(_DOC_DIR, 'requirements.txt'))
+    session.run('make', '-C', 'doc', 'html')
