@@ -399,11 +399,6 @@ class _ConfigBase(object):
                 self._mc_print_error_caller(msg, mc_error_info_up_level)
                 return
 
-        if value == MC_NO_VALUE:
-            if old_value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
-                return
-            value = old_value
-
         if value != MC_NO_VALUE:
             # We have a value for the env which is more specific than any previous value
             env_attr.set(current_env, value, self._mc_where, from_eg)
@@ -419,23 +414,28 @@ class _ConfigBase(object):
                     self._mc_attributes_to_check.pop(attr_name, None)
                 return
 
-        if self._mc_where == Where.IN_INIT or not self:
-            if value == MC_NO_VALUE:
-                env_attr.set(current_env, value, self._mc_where, from_eg)
-
-            # This is not an error now, as we allow partial set in __init__ and setting value to MC_REQUIRED in 'with' block
-            # to postpone check until after 'mc_init', but we must remember to test later if the attribute has been set.
-            mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
-            if self._mc_attributes_to_check is None:
-                self._mc_attributes_to_check = {}
-            self._mc_attributes_to_check[attr_name] = (self._mc_where, mc_caller_file_name, mc_caller_line_num)
+        elif old_value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
             return
+
+        if self._mc_where in (Where.IN_INIT, Where.IN_WITH) or not self:
+            if self._mc_where != Where.IN_WITH or (value == MC_REQUIRED and env_attr.where_from == Where.IN_WITH):
+                if value == MC_NO_VALUE:
+                    env_attr.set(current_env, value, self._mc_where, from_eg)
+
+                # This is not an error now, as we allow partial set in __init__ and setting value to MC_REQUIRED in 'with' block
+                # to postpone check until after 'mc_init', but we must remember to test later whether the attribute has been set.
+                mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
+                if self._mc_attributes_to_check is None:
+                    self._mc_attributes_to_check = {}
+                self._mc_attributes_to_check[attr_name] = (self._mc_where, mc_caller_file_name, mc_caller_line_num)
+                return
 
         # We will report the error now, so pop from check list
         if self._mc_attributes_to_check:
             self._mc_attributes_to_check.pop(attr_name, None)
 
         mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
+        value = value if value != MC_NO_VALUE else old_value
         self._mc_print_value_error_msg(attr_name, value, mc_caller_file_name, mc_caller_line_num)
 
     def _mc_check_no_existing_attr(self, attr_name, mc_overwrite_property, mc_set_unknown, mc_error_info_up_level):

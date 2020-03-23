@@ -53,7 +53,14 @@ def test_attribute_mc_required_env(capsys):
                 cr.setattr('aa', prod=MC_REQUIRED, pp="hello")
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline[0], _attribute_mc_required_expected)
+    assert lines_in(
+        serr,
+        start_file_line(__file__, errorline[0]),
+        config_error_never_received_value_expected.format(env=prod1),
+        start_file_line(__file__, errorline[0]),
+        '^ConfigError: ' + _attribute_mc_required_expected,
+    )
+
     assert replace_ids(str(exinfo.value), False) == _mc_required_one_error_expected_ex % dict(env_name='prod')
 
 
@@ -85,9 +92,51 @@ def test_attribute_mc_required_default(capsys):
                 cr.setattr('aa', default=MC_REQUIRED, pp="hello")
 
     _sout, serr = capsys.readouterr()
-    print(_sout)
-    assert serr == ce(errorline[0], _attribute_mc_required_expected)
+    assert lines_in(
+        serr,
+        start_file_line(__file__, errorline[0]),
+        config_error_never_received_value_expected.format(env=prod1),
+        start_file_line(__file__, errorline[0]),
+        '^ConfigError: ' + _attribute_mc_required_expected,
+    )
+
     assert replace_ids(str(exinfo.value), False) == _mc_required_one_error_expected_ex % dict(env_name='prod')
+
+
+def test_attribute_mc_required_default_resolved_with_default_value_in_mc_init(capsys):
+    class ItemWithAAMcInitResolve(ItemWithAA):
+        def mc_init(self):
+            super().mc_init()
+            self.aa = 'Hi'
+
+    @mc_config(ef1_prod_pp, load_now=True)
+    def config(root):
+        with ItemWithAAMcInitResolve() as cr:
+            cr.setattr('aa', default=MC_REQUIRED, pp="hello")
+
+    cfg = config(pp1)
+    assert cfg.ItemWithAAMcInitResolve.aa == 'hello'
+
+    cfg = config(prod1)
+    assert cfg.ItemWithAAMcInitResolve.aa == 'Hi'
+
+
+def test_attribute_mc_required_default_resolved_with_default_env_specific_value_in_mc_init(capsys):
+    class ItemWithAAMcInitResolve(ItemWithAA):
+        def mc_init(self):
+            super().mc_init()
+            self.setattr('aa', prod='Hi')
+
+    @mc_config(ef1_prod_pp, load_now=True)
+    def config(root):
+        with ItemWithAAMcInitResolve() as cr:
+            cr.setattr('aa', default=MC_REQUIRED, pp="hello")
+
+    cfg = config(pp1)
+    assert cfg.ItemWithAAMcInitResolve.aa == 'hello'
+
+    cfg = config(prod1)
+    assert cfg.ItemWithAAMcInitResolve.aa == 'Hi'
 
 
 def test_attribute_mc_required_init(capsys):
@@ -106,7 +155,7 @@ def test_attribute_mc_required_init(capsys):
     assert replace_ids(str(exinfo.value), False) == _mc_required_one_error_expected_ex % dict(env_name='prod')
 
 
-def test_attribute_mc_required(capsys):
+def test_attribute_mc_required_in_with(capsys):
     errorline = [None]
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp, load_now=True)
@@ -116,11 +165,18 @@ def test_attribute_mc_required(capsys):
                 cr.setattr('aa', prod="hi", pp=MC_REQUIRED)
 
     _sout, serr = capsys.readouterr()
-    assert serr == ce(errorline[0], mc_required_expected.format(attr='aa', env=pp1))
+    assert lines_in(
+        serr,
+        start_file_line(__file__, errorline[0]),
+        config_error_never_received_value_expected.format(env=pp1),
+        start_file_line(__file__, errorline[0]),
+        '^ConfigError: ' + mc_required_expected.format(attr='aa', env=pp1),
+    )
+
     assert replace_ids(str(exinfo.value), False) == _mc_required_one_error_expected_ex % dict(env_name='pp')
 
 
-def test_attribute_mc_required_default_all_overridden():
+def test_attribute_mc_required_in_with_default_all_overridden():
     @mc_config(ef1_prod_pp, load_now=True)
     def config(root):
         with ItemWithAA() as cr:
@@ -451,6 +507,40 @@ def test_multiple_attributes_mc_required_init_not_set(capsys):
         start_file_line(__file__, errorline[0]),
         config_error_mc_required_expected.format(attr='aa', env=pp1),
         config_error_mc_required_expected.format(attr='bb', env=pp1),
+        config_error_mc_required_expected.format(attr='cc', env=pp1),
+    )
+
+
+
+def test_multiple_attributes_mc_required_mc_init_not_set(capsys):
+    errorlines = [None, None]
+    class ItemWithAAABBCC(ConfigItem):
+        def __init__(self):
+            super().__init__()
+            self.aa = MC_REQUIRED
+            self.bb = MC_REQUIRED
+            self.cc = MC_REQUIRED
+
+        def mc_init(self):
+            super().__init__()
+            errorlines[0] = next_line_num()
+            self.setattr('aa', default=MC_REQUIRED)
+            self.setattr('bb', default=MC_REQUIRED, pp='Hello')
+            errorlines[1] = next_line_num()
+            self.cc = MC_REQUIRED
+
+    with raises(ConfigException) as exinfo:
+        @mc_config(ef1_prod_pp, load_now=True)
+        def config(_):
+            with ConfigItem() as cr:
+                ItemWithAAABBCC()
+
+    _sout, serr = capsys.readouterr()
+    assert lines_in(
+        serr,
+        start_file_line(__file__, errorlines[0]),
+        config_error_mc_required_expected.format(attr='aa', env=pp1),
+        start_file_line(__file__, errorlines[1]),
         config_error_mc_required_expected.format(attr='cc', env=pp1),
     )
 
