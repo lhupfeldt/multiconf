@@ -11,6 +11,7 @@ from multiconf.envs import EnvFactory
 from .utils.utils import config_error, next_line_num, replace_ids, lines_in, local_func, start_file_line, file_line
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
 from .utils.messages import already_printed_msg, mc_required_expected, config_error_mc_required_expected, not_repeatable_in_parent_msg
+from .utils.messages import config_error_never_received_value_expected
 
 
 # ef1
@@ -740,7 +741,7 @@ def test_attribute_mc_required_args_partial_set_in_init_unfinished(capsys):
     assert lines_in(
         serr,
         start_file_line(__file__, errorline_exit_check[0]),
-        "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
+        config_error_never_received_value_expected.format(env=pp2),
         '^File "{file}", line {line}'.format(file=__file__, line=errorline_setattr[0]),
         "^ConfigError: Attribute: 'a' did not receive a value for env Env('pp')",
     )

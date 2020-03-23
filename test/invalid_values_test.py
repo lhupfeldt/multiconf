@@ -10,9 +10,8 @@ from multiconf import mc_config, ConfigItem, ConfigException, MC_REQUIRED
 from multiconf.envs import EnvFactory
 
 from .utils.utils import config_error, next_line_num, replace_ids, lines_in, start_file_line
-from .utils.messages import already_printed_msg
-from .utils.messages import config_error_mc_required_expected
-from .utils.messages import mc_required_expected
+from .utils.messages import already_printed_msg, config_error_mc_required_expected, mc_required_expected
+from .utils.messages import config_error_never_received_value_expected
 from .utils.tstclasses import ItemWithAA
 from .utils.invalid_values_classes import  McRequiredInInitL1, McRequiredInInitL3
 
@@ -67,7 +66,6 @@ def test_attribute_mc_required_mc_force_env(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa', default=MC_REQUIRED, mc_force=True)
 
-    # config(prod1)
     _sout, serr = capsys.readouterr()
     assert lines_in(
         serr,
@@ -86,7 +84,6 @@ def test_attribute_mc_required_default(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa', default=MC_REQUIRED, pp="hello")
 
-    # config(prod1)
     _sout, serr = capsys.readouterr()
     print(_sout)
     assert serr == ce(errorline[0], _attribute_mc_required_expected)
@@ -102,7 +99,6 @@ def test_attribute_mc_required_init(capsys):
                 errorline[0] = next_line_num()
                 ci.setattr('aa', pp="hello")
 
-    # config(prod1)
     _sout, serr = capsys.readouterr()
     print(serr)
     print("errorline[0]", errorline[0])
@@ -119,7 +115,6 @@ def test_attribute_mc_required(capsys):
                 errorline[0] = next_line_num()
                 cr.setattr('aa', prod="hi", pp=MC_REQUIRED)
 
-    # config(prod1)
     _sout, serr = capsys.readouterr()
     assert serr == ce(errorline[0], mc_required_expected.format(attr='aa', env=pp1))
     assert replace_ids(str(exinfo.value), False) == _mc_required_one_error_expected_ex % dict(env_name='pp')
@@ -296,7 +291,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
-        "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
+        config_error_never_received_value_expected.format(env=pp1),
         '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
@@ -315,7 +310,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
-        "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
+        config_error_never_received_value_expected.format(env=pp1),
         '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
@@ -332,7 +327,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
-        "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
+        config_error_never_received_value_expected.format(env=pp1),
         '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
@@ -349,7 +344,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
-        "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
+        config_error_never_received_value_expected.format(env=pp1),
         '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
@@ -368,7 +363,7 @@ def test_attribute_mc_required_init_args_missing_previous_item(capsys):
     _sout, serr = capsys.readouterr()
     assert lines_in(
         serr,
-        "^ConfigError: The following attribues defined earlier never received a proper value for Env('pp'):",
+        config_error_never_received_value_expected.format(env=pp1),
         '^File "{}/invalid_values_classes.py", line 8'.format(_utils),
         mc_required_expected.format(attr='aa', env=pp1),
     )
