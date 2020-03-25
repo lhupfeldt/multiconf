@@ -24,17 +24,12 @@ def test(session):
 
 @nox.session(python=_PY_VERSIONS, reuse_venv=True)
 def demo(session):
-    try:
-        del os.environ['PYTHONPATH']
-    except KeyError:
-        pass
-
+    session.install('-e', '.')
     for env_name in 'prod', 'preprod', 'devlocal', 'devs', 'devi':
         demo_out = jp(_TEST_DIR, env_name + '.demo_out')
         print("Validating demo for env {env} - output in {out}".format(env=env_name, out=demo_out))
-        osenv = {'PYTHONPATH': ':'.join(sys.path)}
         with open(demo_out, 'w') as outf:
-            subprocess.check_call((sys.executable, jp(_HERE, 'demo/demo.py'), '--env', env_name), env=osenv, stdout=outf)
+            session.run('python', jp(_HERE, 'demo/demo.py'), '--env', env_name, stdout=outf)
 
 
 @nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
