@@ -230,6 +230,16 @@ class _ConfigBase(object):
         env_mask = thread_local.env.mask
         return self._mc_handled_env_bits & env_mask or env_mask == 0
 
+    def _mc_attributes_to_check_add(self, attr_name, mc_error_info_up_level):
+        mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level + 1)
+        if self._mc_attributes_to_check is None:
+            self._mc_attributes_to_check = {}
+        self._mc_attributes_to_check[attr_name] = (self._mc_where, mc_caller_file_name, mc_caller_line_num)
+
+    def _mc_attributes_to_check_del(self, attr_name):
+        if self._mc_attributes_to_check:
+            self._mc_attributes_to_check.pop(attr_name, None)
+
     def _mc_freeze(self, mc_error_info_up_level):
         if not self:
             self._mc_where = Where.FROZEN
@@ -410,8 +420,7 @@ class _ConfigBase(object):
                         self._mc_print_error_caller(type_msg, mc_error_info_up_level)
                         return
 
-                if self._mc_attributes_to_check:
-                    self._mc_attributes_to_check.pop(attr_name, None)
+                self._mc_attributes_to_check_del(attr_name)
                 return
 
         elif old_value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
@@ -424,15 +433,11 @@ class _ConfigBase(object):
 
                 # This is not an error now, as we allow partial set in __init__ and setting value to MC_REQUIRED in 'with' block
                 # to postpone check until after 'mc_init', but we must remember to test later whether the attribute has been set.
-                mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
-                if self._mc_attributes_to_check is None:
-                    self._mc_attributes_to_check = {}
-                self._mc_attributes_to_check[attr_name] = (self._mc_where, mc_caller_file_name, mc_caller_line_num)
+                self._mc_attributes_to_check_add(attr_name, mc_error_info_up_level)
                 return
 
-        # We will report the error now, so pop from check list
-        if self._mc_attributes_to_check:
-            self._mc_attributes_to_check.pop(attr_name, None)
+        # We will report the error now, so remove from check list
+        self._mc_attributes_to_check_del(attr_name)
 
         mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level)
         value = value if value != MC_NO_VALUE else old_value
@@ -479,7 +484,7 @@ class _ConfigBase(object):
             self._mc_setattr_env_value(current_env, attr_name, env_attr, value, MC_NO_VALUE, from_eg, mc_force, mc_error_info_up_level + 1)
         else:
             if isinstance(cls_attr, _McAttributeAccessor):
-                # print("_mc_setattr found _McAttributeAccessor")
+                # print("_mc_setattr found _McAttributeAccessor:", current_env, attr_name, value, from_eg)
                 env_attr = self._mc_attributes.get(attr_name)
                 if env_attr is None:
                     if self._mc_check_no_existing_attr(attr_name, mc_overwrite_property, mc_set_unknown, mc_error_info_up_level+1):
