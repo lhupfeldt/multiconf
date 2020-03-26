@@ -426,15 +426,19 @@ class _ConfigBase(object):
         elif old_value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
             return
 
-        if self._mc_where in (Where.IN_INIT, Where.IN_WITH) or not self:
-            if self._mc_where != Where.IN_WITH or (value == MC_REQUIRED and env_attr.where_from == Where.IN_WITH):
-                if value == MC_NO_VALUE:
-                    env_attr.set(current_env, value, self._mc_where, from_eg)
+        if self._mc_where == Where.IN_INIT:
+            if value == MC_NO_VALUE:
+                env_attr.set(current_env, value, self._mc_where, from_eg)
 
-                # This is not an error now, as we allow partial set in __init__ and setting value to MC_REQUIRED in 'with' block
-                # to postpone check until after 'mc_init', but we must remember to test later whether the attribute has been set.
-                self._mc_attributes_to_check_add(attr_name, mc_error_info_up_level)
-                return
+            # This is not an error now, as we allow partial set in __init__
+            # Postpone check until after 'mc_init'
+            self._mc_attributes_to_check_add(attr_name, mc_error_info_up_level)
+            return
+
+        if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH and value == MC_REQUIRED:
+            # This is not an error now, as we allow setting value to MC_REQUIRED in 'with' block
+            self._mc_attributes_to_check_add(attr_name, mc_error_info_up_level)
+            return
 
         # We will report the error now, so remove from check list
         self._mc_attributes_to_check_del(attr_name)
