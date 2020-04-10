@@ -745,27 +745,29 @@ class _ConfigBase(object):
         finally:
             thread_local.env = orig_env
 
-    def items(self):
-        """Iterate all nested regular and repeatable items.
+    def items(self, with_types=None, with_excluded=False):
+        """Iterate all nested items of types specified and possibly excluded items.
+
+        Arguments:
+            with_types: Types to include in iteration. The default value is what should be used in configuration code. Other types should only be included for debugging.
+            with_excluded: Include excluded objects. The default is what should be used in configuration code. True should only be used for debugging.
 
         Yields:
-            item (ConfigItem or RepeatableDict): Nested items.
+            item (any type specified in 'with_types'): The nested items.
         """
 
+        with_types = with_types or (ConfigItem, RepeatableDict)
         for key, item in self.__dict__.items():
-            if not key.startswith('_') and isinstance(item, (ConfigItem, RepeatableDict)) and item and not key in self._mc_attributes:
+            if not key.startswith('_') and isinstance(item, with_types) and (item or with_excluded) and not key in self._mc_attributes:
                 yield key, item
 
-    def items_with_builders_and_excluded(self):
+    def items_with_builders_and_excluded(self, with_builders=True, with_excluded=True):
         """Iterate all nested items, incl. builders and excluded.
 
         Yields:
             item (ConfigItem or RepeatableDict): Nested items.
         """
-
-        for key, item in self.__dict__.items():
-            if not key.startswith('_') and isinstance(item, (_ConfigBase, RepeatableDict)) and not key in self._mc_attributes:
-                yield key, item
+        yield from self.items(with_types=(RepeatableDict, _ConfigBase if with_builders else ConfigItem), with_excluded=with_excluded)
 
     @property
     def env(self):

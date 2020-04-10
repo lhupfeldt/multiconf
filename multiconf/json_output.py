@@ -416,10 +416,7 @@ class ConfigItemEncoder(object):
                         dd[key] = attr_dict[key]
 
                 # --- Handle child items ---
-                for key, item in obj.items_with_builders_and_excluded():
-                    if not self.builders and isinstance(item, self.multiconf_builder_type):
-                        continue
-
+                for key, item in obj.items_with_builders_and_excluded(with_builders=self.builders):
                     if self.current_depth is not None:
                         if self.current_depth >= self.depth:
                             dd[key] = _mc_identification_msg_str(item)
