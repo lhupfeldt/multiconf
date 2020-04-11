@@ -39,8 +39,8 @@ def _attr_ref_msg(obj, attr_name):
 
 def ref_id(obj):
     try:
-        return id(object.__getattribute__(obj, '_mc_proxied_item'))
-    except AttributeError:
+        return obj.ref_id_for_json()
+    except (AttributeError, TypeError):
         return id(obj)
 
 
@@ -57,14 +57,14 @@ class ConfigItemEncoder(object):
     recursion_check = threading.local()
     recursion_check.in_default = None
 
-    def __init__(self, filter_callable, fallback_callable, compact, sort_attributes, property_methods, builders, warn_nesting,
-                 multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type, show_all_envs, depth, persistent_ids):
+    def __init__(self, filter_callable, fallback_callable, compact, sort_attributes, property_methods, with_item_types, warn_nesting,
+                 multiconf_base_type, multiconf_property_wrapper_type, show_all_envs, depth, persistent_ids):
         """Encoder for json.
 
         Check the :meth:`~multiconf.ConfigItem.json` and :meth:`~multiconf.ConfigItem.mc_build` methods for public arguments passed on to this.
 
         Arguments:
-            multiconf_base_type, multiconf_builder_type, multiconf_property_wrapper_type (type): Passed as arguments as a workaround for cyclic imports.
+            multiconf_base_type, multiconf_property_wrapper_type (type): Passed as arguments as a workaround for cyclic imports.
         """
 
         self.user_filter_callable = filter_callable
@@ -72,9 +72,8 @@ class ConfigItemEncoder(object):
         self.compact = compact
         self.sort_attributes = sort_attributes
         self.property_methods = property_methods
-        self.builders = builders
+        self.with_item_types = with_item_types
         self.multiconf_base_type = multiconf_base_type
-        self.multiconf_builder_type = multiconf_builder_type
         self.multiconf_property_wrapper_type = multiconf_property_wrapper_type
 
         self.seen = {}
@@ -120,25 +119,27 @@ class ConfigItemEncoder(object):
             return _class_tuple(obj, msg)
         return {**_class_tuple(obj, not_frozen_msg), '__id__': self.ref_repr(obj)}
 
-    def _excl_and_builder_str(self, objval):
+    def _ref_item_str(self, objval):
         excl = ' excluded' if not objval else ''
-        if isinstance(objval, self.multiconf_builder_type):
-            bldr = ' builder'
-            id_msg = (", id: " + str(self.ref_repr(objval))) if self.builders else (" " + _mc_identification_msg_str(objval))
-        else:
-            bldr = ''
-            id_msg = ", id: " + str(self.ref_repr(objval))
 
-        return excl + bldr + id_msg
+        if isinstance(objval, self.with_item_types):
+            return excl + objval.ref_type_info_for_json() + ", id: " + str(self.ref_repr(objval))
+
+        return excl + objval.ref_type_info_for_json() + " " + _mc_identification_msg_str(objval)
 
     def _ref_earlier_str(self, objval):
-        return "#ref" + self._excl_and_builder_str(objval)
+        return "#ref" + self._ref_item_str(objval)
 
     def _ref_later_str(self, objval):
-        return "#ref later" + self._excl_and_builder_str(objval)
+        return "#ref later" + self._ref_item_str(objval)
 
     def _ref_self_str(self, objval):
-        return "#ref self" + self._excl_and_builder_str(objval)
+        return "#ref self" + self._ref_item_str(objval)
+
+    def _ref_outside_str(self, objval):
+        # A reference to an item which is outside of the currently dumped hierarchy.
+        # Showing self.ref_repr(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
+        return "#outside-ref: " + _mc_identification_msg_str(objval)
 
     def _ref_mc_item_str(self, objval):
         if ref_id(objval) in self.seen:
@@ -165,8 +166,7 @@ class ConfigItemEncoder(object):
                 contained_in = contained_in._mc_contained_in
 
             # We found a reference to an item which is outside of the currently dumped hierarchy
-            # Showing self.ref_repr(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
-            return "#outside-ref: " + _mc_identification_msg_str(child_obj)
+            return self._ref_outside_str(child_obj)
 
         return child_obj
 
@@ -416,7 +416,7 @@ class ConfigItemEncoder(object):
                         dd[key] = attr_dict[key]
 
                 # --- Handle child items ---
-                for key, item in obj.items_with_builders_and_excluded(with_builders=self.builders):
+                for key, item in obj.items(with_types=self.with_item_types, with_excluded=True):
                     if self.current_depth is not None:
                         if self.current_depth >= self.depth:
                             dd[key] = _mc_identification_msg_str(item)

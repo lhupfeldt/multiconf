@@ -111,6 +111,9 @@ class _ConfigBase(object):
         """Return the named_as property set by the @named_as decorator"""
         return cls._mc_deco_named_as or cls.__name__
 
+    def ref_id_for_json(self):
+        return id(self)
+
     def json(self, compact=False, sort_attributes=False, property_methods=True, builders=False, skipkeys=True, warn_nesting=None, show_all_envs=False,
              depth=None, persistent_ids=False):
         """Create json representation of configuration.
@@ -138,8 +141,9 @@ class _ConfigBase(object):
         encoder = ConfigItemEncoder(
             filter_callable=filter_callable, fallback_callable=fallback_callable,
             compact=compact, sort_attributes=sort_attributes, property_methods=property_methods,
-            builders=builders, warn_nesting=warn_nesting,
-            multiconf_base_type=_ConfigBase, multiconf_builder_type=ConfigBuilder,
+            with_item_types=(RepeatableDict, _ConfigBase if builders else ConfigItem, RepeatableConfigItem),
+            warn_nesting=warn_nesting,
+            multiconf_base_type=_ConfigBase,
             multiconf_property_wrapper_type=_McPropertyWrapper,
             show_all_envs=show_all_envs,
             depth=depth,
@@ -985,6 +989,10 @@ class _RealConfigItemMixin(object):
         for _, child_item in self.items_with_builders_and_excluded():
             child_item._mc_validate_properties_recursively(env)
 
+    def ref_type_info_for_json(self):
+        return ''
+
+
 
 class _ConfigBuilderMixin(object):
     """Method definitions for ConfigBuilder classes
@@ -1004,6 +1012,9 @@ class _ConfigBuilderMixin(object):
     def _mc_validate_properties_recursively(self, env):
         """Call _mc_validate_properties but don't actually recurse"""
         self._mc_validate_properties(env)
+
+    def ref_type_info_for_json(self):
+        return ' builder'
 
 
 class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
