@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import pytest
+
 from multiconf import mc_config, ConfigItem
 from multiconf.envs import EnvFactory
 
@@ -313,7 +315,7 @@ _json_dump_ref_outside_exluded_item1_expected_json = """{
         "__class__": "Env",
         "name": "prod"
     },
-    "aa": "#outside-ref: Excluded: <class 'test.utils.tstclasses.ItemWithName'>, name: Tootsi"
+    "aa": "#ref outside: Excluded: <class 'test.utils.tstclasses.ItemWithName'>, name: Tootsi"
 }"""
 
 def test_json_dump_ref_outside_exluded_item1():
@@ -339,7 +341,7 @@ _json_dump_ref_outside_exluded_item_partially_set_name_attribute_mc_required_exp
         "__class__": "Env",
         "name": "prod"
     },
-    "aa": "#outside-ref: Excluded: <class 'test.utils.tstclasses.ItemWithName'>"
+    "aa": "#ref outside: Excluded: <class 'test.utils.tstclasses.ItemWithName'>"
 }"""
 
 def test_json_dump_ref_outside_exluded_item_partially_set_name_attribute_mc_required():
@@ -366,7 +368,7 @@ _json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_existing_ex
         "__class__": "Env",
         "name": "prod"
     },
-    "aa": "#outside-ref: Excluded: <class 'multiconf.multiconf.ConfigItem'>"
+    "aa": "#ref outside: Excluded: <class 'multiconf.multiconf.ConfigItem'>"
 }"""
 
 def test_json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_existing():
@@ -384,3 +386,75 @@ def test_json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_exi
     cr = config(prod)
     ref1 = cr.Ref1
     assert compare_json(ref1, _json_dump_ref_outside_exluded_item_partially_set_name_attribute_non_existing_expected_json)
+
+
+_json_dump_pprd_ref_same_env_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "pprd"
+    },
+    "aa": [
+        {
+            "__class__": "Env",
+            "name": "pprd"
+        }
+    ],
+    "ItemWithAA": {
+        "__class__": "ItemWithAA",
+        "__id__": 0000,
+        "aa": [
+            {
+                "__class__": "Env",
+                "name": "pprd"
+            }
+        ]
+    }
+}"""
+
+
+def test_json_dump_ref_same_env():
+    @mc_config(ef, load_now=True)
+    def config(_):
+        with ItemWithAA(aa=[pprd]):
+            ItemWithAA(aa=[pprd])
+
+    cr = config(pprd)
+    ref1 = cr.ItemWithAA
+    assert compare_json(ref1, _json_dump_pprd_ref_same_env_expected_json)
+    pytest.xfail("expected #ref")
+
+
+_json_dump_prod_ref_other_env_expected_json = """{
+    "__class__": "ItemWithAA",
+    "__id__": 0000,
+    "env": {
+        "__class__": "Env",
+        "name": "prod"
+    },
+    "aa": [
+        {
+            "__class__": "Env",
+            "name": "pprd"
+        }
+    ],
+    "ItemWithAA": {
+        "__class__": "ItemWithAA",
+        "__id__": 0000,
+        "aa": [
+            "#ref <class 'multiconf.envs.Env'>, name: 'pprd'"
+        ]
+    }
+}"""
+
+def test_json_dump_ref_other_env():
+    @mc_config(ef, load_now=True)
+    def config(_):
+        with ItemWithAA(aa=[pprd]):
+            ItemWithAA(aa=[pprd])
+
+    cr = config(prod)
+    ref1 = cr.ItemWithAA
+    assert compare_json(ref1, _json_dump_prod_ref_other_env_expected_json)
+    

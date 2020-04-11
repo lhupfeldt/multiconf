@@ -20,6 +20,8 @@ _dynamic_value = ' #dynamic'
 _property_method_value_hidden = '@property method value - call disabled'
 
 _mc_filter_out_keys = ('env', 'env_factory', 'contained_in', 'root_conf', 'attributes', 'mc_config_result', 'num_invalid_property_usage', 'named_as')
+_mc_hidden_if_not_true = ('mc_is_default_value_item',)
+_mc_show_if_names_only = ('mc_is_default_value_item',)
 
 
 def _class_tuple(obj, obj_info=""):
@@ -125,7 +127,12 @@ class ConfigItemEncoder():
         if isinstance(objval, self.with_item_types):
             return excl + objval.ref_type_info_for_json() + ", id: " + str(self.ref_repr(objval))
 
-        return excl + objval.ref_type_info_for_json() + " " + _mc_identification_msg_str(objval)
+        try:
+            ref_type_info = objval.ref_type_info_for_json()
+        except AttributeError:
+            ref_type_info = ''
+
+        return excl + ref_type_info + " " + _mc_identification_msg_str(objval)
 
     def _ref_earlier_str(self, objval):
         return "#ref" + self._ref_item_str(objval)
@@ -139,7 +146,7 @@ class ConfigItemEncoder():
     def _ref_outside_str(self, objval):
         # A reference to an item which is outside of the currently dumped hierarchy.
         # Showing self.ref_repr(obj) does not help here as the object is not dumped, instead try to show some attributes which may identify the object
-        return "#outside-ref: " + _mc_identification_msg_str(objval)
+        return "#ref outside: " + _mc_identification_msg_str(objval)
 
     def _ref_mc_item_str(self, objval):
         if ref_id(objval) in self.seen:
@@ -247,9 +254,12 @@ class ConfigItemEncoder():
                 continue
 
             if isinstance(real_attr, (property, self.multiconf_property_wrapper_type)):
+                if key in _mc_hidden_if_not_true and not getattr(obj, key):
+                    return key, ()
+
                 calc_or_static = _calculated_value
 
-                if names_only:
+                if names_only and key not in _mc_show_if_names_only:
                     val = _property_method_value_hidden
                     break
 
@@ -303,7 +313,7 @@ class ConfigItemEncoder():
             if overridden_property:
                 return key, [(overridden_property + calc_or_static + ' value was', val)] + property_inf
             if self.compact:
-                return key, [('', str(val) + calc_or_static)] + property_inf
+                return key, [('', (str(val).lower() if isinstance(val, bool) else str(val)) + calc_or_static)] + property_inf
             return key, [('', val), (calc_or_static, True)] + property_inf
 
         if isinstance(val, (list, tuple)):

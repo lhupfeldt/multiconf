@@ -7,14 +7,14 @@ from .envs import EnvFactory
 from .config_errors import ConfigException, ConfigDefinitionException, _line_msg, _error_msg, _warning_msg
 from .repeatable import RepeatableDict
 from .multiconf import McConfigRoot
-from . import ConfigBuilder, RepeatableConfigItem
+from . import ConfigBuilder, RepeatableConfigItem, DefaultItems
 from .check_identifiers import check_valid_identifier, check_valid_identifiers
 
 
 def _not_allowed_on_class(cls, decorator_name, not_cls):
     if issubclass(cls, not_cls):
         print(_line_msg(up_level=2), file=sys.stderr)
-        msg = "Decorator '@" + decorator_name + "' is not allowed on instance of " + ConfigBuilder.__name__ + "."
+        msg = "Decorator '@" + decorator_name + "' is not allowed on instance of " + not_cls.__name__ + "."
         print(_error_msg(msg), file=sys.stderr)
         raise ConfigDefinitionException(msg)
 
@@ -46,6 +46,7 @@ def named_as(insert_as_name):
     """Determine the name used to insert item in parent"""
     def deco(cls):
         _not_allowed_on_class(cls, named_as.__name__, ConfigBuilder)
+        _not_allowed_on_class(cls, named_as.__name__, DefaultItems)
         check_valid_identifier(insert_as_name)
         cls._mc_deco_named_as = insert_as_name
         return cls
@@ -57,6 +58,7 @@ def nested_repeatables(*attr_names):
     """Specify which nested (child) items will be repeatable."""
     def deco(cls):
         _not_allowed_on_class(cls, nested_repeatables.__name__, ConfigBuilder)
+        _not_allowed_on_class(cls, nested_repeatables.__name__, DefaultItems)
         cls._mc_deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
 
         # Make descriptor work, an instance of the descriptor class mut be assigened at the class level
@@ -71,6 +73,7 @@ def nested_repeatables(*attr_names):
 def required(*attr_names):
     """Specify nested (child) items that must be defined."""
     def deco(cls):
+        _not_allowed_on_class(cls, required.__name__, DefaultItems)
         cls._mc_deco_required = _add_super_list_deco_values(cls, attr_names, 'required')
         return cls
 

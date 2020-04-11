@@ -1002,7 +1002,7 @@ _uplevel_ref_expected_json_output = """{
             "__id__": 0000,
             "d": 3,
             "id": "n3",
-            "uplevel_ref": "#outside-ref: <class 'test.json_output_test.NestedRepeatable'>, id: 'n1', name: 'Number 1'",
+            "uplevel_ref": "#ref outside: <class 'test.json_output_test.NestedRepeatable'>, id: 'n1', name: 'Number 1'",
             "someitems": {}
         }
     }

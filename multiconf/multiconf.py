@@ -95,7 +95,14 @@ class _ConfigBase():
 
         self._mc_print_error(msg, file_name=mc_caller_file_name, line_num=mc_caller_line_num)
 
-    def _mc_print_no_proper_value_error_msg(self, mc_error_info_up_level):
+    def _mc_validate_attributes(self, mc_error_info_up_level):
+        """Verify that all attributes got a value"""
+        if not self._mc_attributes_to_check:
+            return
+
+        if thread_local.is_under_default_item:
+            return
+
         msg = "The following attribues defined earlier never received a proper value for {env}:".format(env=self.env)
         if mc_error_info_up_level is not None:
             mc_caller_file_name, mc_caller_line_num = find_user_file_line(up_level_start=mc_error_info_up_level + 1)
@@ -107,6 +114,34 @@ class _ConfigBase():
             value = getattr(self, attr_name)
             self._mc_print_value_error_msg(attr_name, value, value_file_name, value_line_num)
 
+    def _mc_validate_required(self, mc_error_info_up_level):
+        """Verify that all @required child items are present"""
+        if not self._mc_deco_required:
+            return
+
+        missing_req = {}
+        for req in self._mc_deco_required:
+            if req not in self.__dict__:
+                missing_req[req] = None
+
+            # Any required item not present on self, but found on a default value item with same name will be assigned to self
+            contained_in = self
+            while contained_in and missing_req:
+                contained_in, shared_req = contained_in._mc_find_closest_default_item(req)
+                if not shared_req:
+                    break
+
+                if isinstance(shared_req, (_ConfigBase, RepeatableDict)):
+                    proxy_insert(self, req, shared_req)
+                    del missing_req[req]
+                    continue
+
+        if missing_req:
+            if mc_error_info_up_level is not None:
+                mc_caller_file_name, mc_caller_line_num = find_user_file_line(up_level_start=mc_error_info_up_level)
+                print(_line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num), file=sys.stderr)
+            print(self._mc_error_msg(f"Missing '@required' items: {list(missing_req)}"), file=sys.stderr)
+
     @classmethod
     def named_as(cls):
         """Return the named_as property set by the @named_as decorator"""
@@ -115,7 +150,7 @@ class _ConfigBase():
     def ref_id_for_json(self):
         return id(self)
 
-    def json(self, compact=False, sort_attributes=False, property_methods=True, builders=False, skipkeys=True, warn_nesting=None, show_all_envs=False,
+    def json(self, compact=False, sort_attributes=False, property_methods=True, builders=False, default_items=False, skipkeys=True, warn_nesting=None, show_all_envs=False,
              depth=None, persistent_ids=False):
         """Create json representation of configuration.
 
@@ -128,6 +163,7 @@ class _ConfigBase():
                 If `property_methods` is None the @property method is not called but the name is still output, with the value replace by a fixed
                 message. False completely disables information about @property methods.
             builders (bool): Include ConfigBuilder items in json.
+            default_items (bool): Include DefaultItems in json.
             skipkeys (bool): Passed to json.dumps.
             show_all_envs (bool): Display attribute values for all envs in a single dump. Without this only the values for the current env is displayed.
             depth (int): The number of levels of child objects to dump. None means all.
@@ -139,10 +175,18 @@ class _ConfigBase():
 
         filter_callable = cr._mc_json_filter
         fallback_callable = cr._mc_json_fallback
+
+        with_item_types = (
+            (_ConfigBase, RepeatableConfigItem, RepeatableDict) if (builders and default_items) else
+            (ConfigBuilder, ConfigItem, RepeatableConfigItem, RepeatableDict) if builders else
+            (DefaultItems, ConfigItem, RepeatableConfigItem, RepeatableDict) if default_items else
+            (ConfigItem, RepeatableConfigItem, RepeatableDict)
+        )
+
         encoder = ConfigItemEncoder(
             filter_callable=filter_callable, fallback_callable=fallback_callable,
             compact=compact, sort_attributes=sort_attributes, property_methods=property_methods,
-            with_item_types=(RepeatableDict, _ConfigBase if builders else ConfigItem, RepeatableConfigItem),
+            with_item_types=with_item_types,
             warn_nesting=warn_nesting,
             multiconf_base_type=_ConfigBase,
             multiconf_property_wrapper_type=_McPropertyWrapper,
@@ -239,11 +283,49 @@ class _ConfigBase():
         mc_caller_file_name, mc_caller_line_num = caller_file_line(up_level=mc_error_info_up_level + 1)
         if self._mc_attributes_to_check is None:
             self._mc_attributes_to_check = {}
+
         self._mc_attributes_to_check[attr_name] = (self._mc_where, mc_caller_file_name, mc_caller_line_num)
 
     def _mc_attributes_to_check_del(self, attr_name):
         if self._mc_attributes_to_check:
             self._mc_attributes_to_check.pop(attr_name, None)
+
+    def _mc_find_closest_default_item(self, item_name):
+        contained_in = self._mc_contained_in
+        while contained_in:
+            default_items = contained_in.__dict__.get(DefaultItems.name)
+            if default_items:
+                default_item = getattr(default_items, item_name, MC_NO_VALUE)
+                if default_item != MC_NO_VALUE:
+                    if isinstance(default_item, RepeatableDict):
+                        # There should be only one, get it
+                        for default_item in default_item._all_items.values():  # pragma: no branch
+                            break
+
+                    return contained_in, default_item
+
+            contained_in = contained_in._mc_contained_in
+
+        return None, None
+
+    def _mc_resolve_shared_attribute(self, default_item, attr_name, mc_error_info_up_level):
+        """Try to resolve attribute values from default_item.
+
+        Return: True if value is found, False otherwise.
+        """
+
+        env_attr = self._mc_attributes[attr_name]
+        shared_value = getattr(default_item, attr_name, MC_NO_VALUE)
+        if shared_value in (MC_NO_VALUE, MC_REQUIRED):
+            return False
+
+        # This will pop attributes from self._mc_attributes_to_check
+        shared_attr = default_item._mc_attributes[attr_name]
+        self._mc_setattr_env_value(
+            thread_local.env, attr_name, env_attr, shared_value, old_value=getattr(self, attr_name), from_eg=shared_attr.from_eg,
+            mc_force=False, mc_error_info_up_level=mc_error_info_up_level + 1)
+
+        return True
 
     def _mc_freeze(self, mc_error_info_up_level):
         if not self:
@@ -262,8 +344,9 @@ class _ConfigBase():
         # Call user 'mc_init' callback
         self.mc_init()
 
-        if self._mc_attributes_to_check and self.mc_validate.__code__ is _ConfigBase.mc_validate.__code__:
-            self._mc_print_no_proper_value_error_msg(mc_error_info_up_level)
+        if self.mc_validate.__code__ is _ConfigBase.mc_validate.__code__:
+            # mc_validate has not been overridden, so we can validate that all attributes have been set now
+            self._mc_validate_attributes(mc_error_info_up_level)
 
         if isinstance(self, ConfigBuilder):
             self._mc_builder_freeze()
@@ -274,15 +357,30 @@ class _ConfigBase():
         if must_pop:
             self.__class__._mc_hierarchy.pop()
 
-        missing_req = []
-        for req in self._mc_deco_required:
-            if req not in self.__dict__:
-                missing_req.append(req)
-        if missing_req:
-            if mc_error_info_up_level is not None:
-                mc_caller_file_name, mc_caller_line_num = find_user_file_line(up_level_start=mc_error_info_up_level)
-                print(_line_msg(file_name=mc_caller_file_name, line_num=mc_caller_line_num), file=sys.stderr)
-            print(self._mc_error_msg("Missing '@required' items: {}".format(missing_req)), file=sys.stderr)
+        if not self._mc_is_default_value_item:
+            # Any child item not present on self, but found on a corresponding default value item matching self will be assigned to self
+            contained_in = self
+            while contained_in:
+                contained_in, default_item = contained_in._mc_find_closest_default_item(self.named_as())
+                if not default_item:
+                    break
+
+                for shared_child_name, shared_child in default_item.items(with_excluded=True):
+                    if isinstance(shared_child, RepeatableDict):
+                        if shared_child_name not in self._mc_deco_nested_repeatables:
+                            # Don't merge repeatables on shared items if they are not declared on self
+                            continue
+
+                        repeatable = object.__getattribute__(self, shared_child_name)
+                        for rep_key, rep in shared_child._all_items.items():
+                            repeatable._all_items.setdefault(rep_key, _mc_item_parent_proxy_factory(self, rep))
+                        continue
+
+                    if shared_child_name not in [named_as for named_as, it in  self.items(with_excluded=True)]:
+                        proxy_insert(self, shared_child_name, shared_child)
+
+        if not thread_local.is_under_default_item:
+            self._mc_validate_required(mc_error_info_up_level + 1 if mc_error_info_up_level is not None else None)
 
         if self._mc_num_errors:
             self._mc_raise_errors()
@@ -303,8 +401,7 @@ class _ConfigBase():
 
         self._mc_where = Where.NOWHERE
         self.mc_validate()
-        if self._mc_attributes_to_check:
-            self._mc_print_no_proper_value_error_msg(None)
+        self._mc_validate_attributes(None)
         if self._mc_num_errors:
             self._mc_raise_errors()
         self._mc_where = Where.FROZEN
@@ -431,6 +528,16 @@ class _ConfigBase():
         elif old_value not in (MC_NO_VALUE, MC_TODO, MC_REQUIRED):
             return
 
+        # Try to resolve value from shared items
+        # Find first occurrence of DefaultItems.name, by searching backwards towards root_conf
+        if not self._mc_is_default_value_item:
+            contained_in = self
+            while contained_in:
+                contained_in, default_item = contained_in._mc_find_closest_default_item(self.named_as())
+                if default_item:
+                    if self._mc_resolve_shared_attribute(default_item, attr_name, mc_error_info_up_level):
+                        return
+
         if self._mc_where == Where.IN_INIT:
             if value == MC_NO_VALUE:
                 env_attr.set(current_env, value, self._mc_where, from_eg)
@@ -443,6 +550,9 @@ class _ConfigBase():
         if self._mc_where == Where.IN_WITH and env_attr.where_from == Where.IN_WITH and value == MC_REQUIRED:
             # This is not an error now, as we allow setting value to MC_REQUIRED in 'with' block
             self._mc_attributes_to_check_add(attr_name, mc_error_info_up_level)
+            return
+
+        if thread_local.is_under_default_item:
             return
 
         # We will report the error now, so remove from check list
@@ -882,6 +992,10 @@ class _ConfigBase():
             repeatable_cls_key=repeatable_class_key, repeatable_cls=repeatable_cls_or_dict, ci_named_as=self.named_as(), ci_cls=type(self))
         raise ConfigException(msg)
 
+    @property
+    def mc_is_default_value_item(self):
+        return self._mc_is_default_value_item
+
 
 class AbstractConfigItem(_ConfigBase):  # TODO metaclass=abc.ABCMeta
     """This may be used as the base of classes which will be basis for both Repeatable and non-repeatable ConfigItem.
@@ -994,7 +1108,6 @@ class _RealConfigItemMixin():
         return ''
 
 
-
 class _ConfigBuilderMixin():
     """Method definitions for ConfigBuilder classes
 
@@ -1016,6 +1129,26 @@ class _ConfigBuilderMixin():
 
     def ref_type_info_for_json(self):
         return ' builder'
+
+
+class _DefaultItemsMixin():
+    """Method definitions for DefaultItems class
+
+    This must have the same methods as the _RealConfigItemMixin class.
+    We never recurse or do any validation of DefaultItems.
+    """
+
+    def _mc_call_mc_validate_recursively(self, env):
+        pass
+
+    def _mc_call_mc_post_validate_recursively(self):
+        pass
+
+    def _mc_validate_properties_recursively(self, env):
+        pass
+
+    def ref_type_info_for_json(self):
+        return ' default'
 
 
 class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
@@ -1068,6 +1201,7 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
             self._mc_handled_env_bits = thread_local.env.mask
+            self._mc_is_default_value_item = contained_in._mc_is_default_value_item
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict()
@@ -1107,6 +1241,10 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
                 contained_in = contained_in._mc_contained_in
 
         repeatable = contained_in._mc_get_repeatable(cls.named_as(), cls)
+
+        if repeatable and isinstance(contained_in, DefaultItems):
+            raise ConfigException(f"'{cls.__name__}' cannot be repeated under '{DefaultItems.__name__}'. The first (and only) occurance of a '{RepeatableConfigItem.__name__}' instance is used to provide the default attribute values.")
+
         mc_key = init_kwargs.get(cls._mc_key_name) or cls._mc_key_value or mc_key
 
         try:
@@ -1140,6 +1278,7 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
             self._mc_handled_env_bits = thread_local.env.mask
+            self._mc_is_default_value_item = contained_in._mc_is_default_value_item
 
             for key in cls._mc_deco_nested_repeatables:
                 od = RepeatableDict()
@@ -1155,7 +1294,19 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
         return cls._mc_deco_named_as or (cls.__name__ + 's')
 
 
-class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMeta):
+class _UndeclaredRepeatableMixin():
+    def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
+        """Create any nested repeatable without previous declaration."""
+        repeatable = getattr(self, repeatable_class_key, None)
+        if repeatable is not None:
+            return repeatable
+
+        repeatable = RepeatableDict()
+        object.__setattr__(self, repeatable_class_key, repeatable)
+        return repeatable
+
+
+class ConfigBuilder(_ConfigBuilderMixin, _UndeclaredRepeatableMixin, AbstractConfigItem, metaclass=abc.ABCMeta):
     """Base class for 'builder' items which can create (a collection of) other items."""
 
     def __new__(cls, mc_key='default-builder', *init_args, **init_kwargs):
@@ -1197,6 +1348,7 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
             self._mc_root = contained_in._mc_root
             self._mc_built_by = built_by
             self._mc_handled_env_bits = thread_local.env.mask
+            self._mc_is_default_value_item = contained_in._mc_is_default_value_item
 
             object.__setattr__(contained_in, private_key, self)
 
@@ -1211,16 +1363,6 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
         """Try to generate a unique name"""
         return 'mc_ConfigBuilder_' + cls.__name__
 
-    def _mc_get_repeatable(self, repeatable_class_key, repeatable_cls_or_dict):
-        """ConfigBuilder allows any nested repeatable without previous declaration."""
-        repeatable = getattr(self, repeatable_class_key, None)
-        if repeatable is not None:
-            return repeatable
-
-        repeatable = RepeatableDict()
-        object.__setattr__(self, repeatable_class_key, repeatable)
-        return repeatable
-
     def _mc_builder_freeze(self):
         self._mc_where = Where.IN_MC_BUILD
         _ConfigBase._mc_last_item = None
@@ -1231,32 +1373,18 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
         except _McExcludedException:
             _ConfigBase._mc_in_build = was_in_build
 
-        def insert(from_build, from_with_key, from_with):
-            """Insert items from with statement (single or repeatable) in a single (non repeatable) item from mc_build."""
-            if from_build._mc_built_by is not self:
-                return
-
-            if isinstance(from_with, RepeatableDict):
-                repeatable = from_build._mc_get_repeatable(from_with_key, from_with)
-                for wi_key, wi in from_with._all_items.items():
-                    pp = _mc_item_parent_proxy_factory(from_build, wi)
-                    repeatable._all_items[wi_key] = pp
-                return
-
-            pp = _mc_item_parent_proxy_factory(from_build, from_with)
-            object.__setattr__(from_build, from_with_key, pp)
-
         # Now set all items created in the 'with' block of the builder on the items created in the 'mc_build' method
-        for item_from_with_key, item_from_with in self.items():
+        for item_from_with_key, item_from_with in self.items(with_types=(ConfigItem, DefaultItems, RepeatableDict)):
             for item_from_build_key, item_from_build in self._mc_contained_in.items():
 
                 if isinstance(item_from_build, RepeatableDict):
                     for bi_key, bi in item_from_build._all_items.items():
-                        insert(bi, item_from_with_key, item_from_with)
-                        continue
+                        if bi._mc_built_by is self:
+                            proxy_insert(bi, item_from_with_key, item_from_with)
                     continue
 
-                insert(item_from_build, item_from_with_key, item_from_with)
+                if item_from_build._mc_built_by is self:
+                    proxy_insert(item_from_build, item_from_with_key, item_from_with)
 
         self._mc_freeze_previous(mc_error_info_up_level=1)
         self._mc_where = Where.NOWHERE
@@ -1265,6 +1393,123 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
     def mc_build(self):
         """Override this in derived classes. This is where child ConfigItems are declared"""
 
+
+class DefaultItems(_UndeclaredRepeatableMixin, _DefaultItemsMixin, AbstractConfigItem):
+    """Class for grouping config items to supply default attribute values across different ConfigItem instances.
+
+    Items can be placed under a 'DefaultItems' item to provide default values (contained items and attributes) for other non-shared items of the same name.
+    It is not required to provide valid values for all attributes, neither is it required to satisfy the `required` decorator requirements for nested objects.
+    Any attribute left as MC_REQUIRED are expected to get a value in each non-shared ConfigItem, and missing `required` child objects must likewise be
+    satisfied in each non-shared ConfigItem.
+    RepeatableConfigItems will be merged in from default items to matching regular items iff they have a corresponding `_mc_deco_nested_repeatables`.
+
+        E.g. attributes will be resolved::
+
+            class myitem(ConfigItem):
+                def __init__(self):
+                    super().__init__()
+                    self.abcd = MC_REQUIRED
+                    self.efgh = MC_REQUIRED
+                    self.ijkl = MC_REQUIRED
+
+            @mc_config(ef, load_now=True)
+            def config(_):
+                with DefaultItems():
+                    with myitem() as ii:
+                        ii.efgh = 7
+
+                with myitem() as ii:
+                    ii.abcd = 6
+                    ii.ijkl = 8
+
+            it = config(prod).myitem
+
+            # it.abcd == 6
+            # t.efgh == 7
+            # t.ijkl == 8
+
+
+        E.g. nested items found under DefaultItems will be made available as if declared under a regular item::
+
+            class child(ConfigItem):
+                def __init__(self, xx):
+                    super().__init__()
+                    self.xx = xx
+
+            class myitem(ConfigItem):
+                pass
+
+            @mc_config(ef, load_now=True)
+            def config(_):
+                with DefaultItems():
+                    with myitem():
+                        child(1)
+
+                myitem()
+
+            sout, serr = capsys.readouterr()
+
+            it = config(pp).myitem
+            # it.child.xx == 1
+            # it.child.contained_in == it
+
+
+    DefaultItems are not supported in 'mc_build' or under a ConfigBuilder.
+    User validate callback methods 'mc_validate' and 'mc_post_validate' will not be called for any default item.
+    The 'mc_init' method will be called.
+    The items under the DefaultItems cannot be accessed, they are used solely for resolving values for regular items.
+    """
+
+    name = 'mc_DefaultItems'
+
+    def __new__(cls):
+        # cls._mc_debug_hierarchy('ConfigItem.__new__')
+        contained_in = cls._mc_hierarchy[-1]
+
+        try:
+            self = contained_in.__dict__[DefaultItems.name]
+            if self._mc_handled_env_bits & thread_local.env.mask:
+                raise ConfigException(f"Repeated: {cls}.")
+            self._mc_handled_env_bits |= thread_local.env.mask
+
+            self._mc_where = Where.IN_INIT
+            self._mc_num_errors = 0
+            return self
+        except KeyError:
+            if contained_in._mc_where == Where.IN_MC_BUILD:
+                raise ConfigException(f"'{cls.__name__}' are not allowed in 'mc_build'.")
+
+            if contained_in._mc_where == Where.IN_MC_INIT:
+                raise ConfigException(f"'{cls.__name__}' are not allowed in 'mc_init'.")
+
+            if contained_in._mc_is_default_value_item:
+                raise ConfigException(f"'{cls.__name__}' cannot be nested.")
+
+            self = super().__new__(cls)
+            self._mc_where = Where.IN_INIT
+            self._mc_num_errors = 0
+
+            self._mc_attributes = {}
+            self._mc_attributes_to_check = None
+            self._mc_contained_in = contained_in
+            self._mc_root = contained_in._mc_root
+            self._mc_built_by = None
+            self._mc_handled_env_bits = thread_local.env.mask
+            self._mc_is_default_value_item = True
+
+            # Insert self in parent
+            object.__setattr__(contained_in, DefaultItems.name, self)
+
+            return self
+
+    def __enter__(self):
+        thread_local.is_under_default_item = True
+        return super().__enter__()
+
+    def __exit__(self, exc_type, value, traceback):
+        res = super().__exit__(exc_type, value, traceback)
+        thread_local.is_under_default_item = False
+        return res
 
 class _ItemParentProxy():
     """The purpose of this is to set the current '_mc_contained_in' when accessing an item created by a builder and assigned under multiple parent items"""
@@ -1320,6 +1565,21 @@ def _mc_item_parent_proxy_factory(ci, item):
     return ItemParentProxy(ci, item)
 
 
+def proxy_insert(parent, item_key, item):
+    """Insert proxied item(s) (single or repeatable) into parent.
+
+    This must be used to insert a proxied item under different parents.
+    """
+
+    if isinstance(item, RepeatableDict):
+        repeatable = parent._mc_get_repeatable(item_key, item)
+        for wi_key, wi in item._all_items.items():
+            repeatable._all_items[wi_key] = _mc_item_parent_proxy_factory(parent, wi)
+        return
+
+    object.__setattr__(parent, item_key, _mc_item_parent_proxy_factory(parent, item))
+
+
 class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
     """Class of root object allocated by the 'mc_config' decorator.
 
@@ -1343,6 +1603,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         self._mc_contained_in = None
         self._mc_root = self
         self._mc_handled_env_bits = 0
+        self._mc_is_default_value_item = False
         self._mc_config_result = {}
         self._mc_config_loaded = False
         self._mc_in_post_validate = False
