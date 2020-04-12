@@ -11,20 +11,20 @@ from . import ConfigBuilder, RepeatableConfigItem
 from .check_identifiers import check_valid_identifier, check_valid_identifiers
 
 
-def _not_config_builder(cls, decorator_name):
-    if issubclass(cls, ConfigBuilder):
+def _not_allowed_on_class(cls, decorator_name, not_cls):
+    if issubclass(cls, not_cls):
         print(_line_msg(up_level=2), file=sys.stderr)
         msg = "Decorator '@" + decorator_name + "' is not allowed on instance of " + ConfigBuilder.__name__ + "."
         print(_error_msg(msg), file=sys.stderr)
         raise ConfigDefinitionException(msg)
 
 
-def _repeatable_config_item(cls, decorator_name):
+def _only_allowed_on_class(cls, decorator_name, only_cls):
     if issubclass(cls, RepeatableConfigItem):
         return
 
     print(_line_msg(up_level=2), file=sys.stderr)
-    msg = "Decorator '@" + decorator_name + "' is only allowed on instance of " + RepeatableConfigItem.__name__ + "."
+    msg = "Decorator '@" + decorator_name + "' is only allowed on instance of " + only_cls.__name__ + "."
     print(_error_msg(msg), file=sys.stderr)
     raise ConfigDefinitionException(msg)
 
@@ -45,7 +45,7 @@ def _add_super_list_deco_values(cls, attr_names, deco_attr_name):
 def named_as(insert_as_name):
     """Determine the name used to insert item in parent"""
     def deco(cls):
-        _not_config_builder(cls, named_as.__name__)
+        _not_allowed_on_class(cls, named_as.__name__, ConfigBuilder)
         check_valid_identifier(insert_as_name)
         cls._mc_deco_named_as = insert_as_name
         return cls
@@ -56,7 +56,7 @@ def named_as(insert_as_name):
 def nested_repeatables(*attr_names):
     """Specify which nested (child) items will be repeatable."""
     def deco(cls):
-        _not_config_builder(cls, nested_repeatables.__name__)
+        _not_allowed_on_class(cls, nested_repeatables.__name__, ConfigBuilder)
         cls._mc_deco_nested_repeatables = _add_super_list_deco_values(cls, attr_names, 'nested_repeatables')
 
         # Make descriptor work, an instance of the descriptor class mut be assigened at the class level
@@ -90,7 +90,6 @@ def repeatable_key(**name_value):
                 @repeatable_key(name=None)
                 class X1(RepeatableConfigItem):
                     def __init__(name, ...)
-            
 
             Only a single item of the following class can be created in the 'xses' repeatable.
             Use 'name' argument as the mc_key for the parent class, use value 'xxx' as the mc_key.::
@@ -112,7 +111,7 @@ def repeatable_key(**name_value):
     """
 
     def deco(cls):
-        _repeatable_config_item(cls, repeatable_key.__name__)
+        _only_allowed_on_class(cls, repeatable_key.__name__, RepeatableConfigItem)
         for key, value in name_value.items():
             cls._mc_key_name = key
             cls._mc_key_value = value
