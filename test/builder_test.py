@@ -444,7 +444,7 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
         with ItemWithYs() as item:
             with YBuilder() as yb1:
                 yb1.b = 27
-                yc10[0] = YChild(mc_key=10)  # TODO: this should not be allowed, but it is impossible in python to prevent this, a workaround woul be to use factories for object creation aand then let the factory return None (if under a builder 'with')
+                yc10[0] = YChild(mc_key=10)  # TODO: this should not be allowed, but it is impossible in python to prevent this, a workaround would be to use factories for object creation and then let the factory return None (if under a builder 'with')
                 yc11[0] = YChild(mc_key=11)  # TODO: this must not be allowed
                 with YBuilder(start=3) as yb2:
                     yb2.b = 28
@@ -522,7 +522,7 @@ def test_configbuilder_multilevel_nested_items_bad_access_to_contained_in():
                         pass
 
 
-def test_configbuilder_repeated():
+def test_configbuilder_repeated_repeatable_config_item_children():
     class XBuilder(ConfigBuilder):
         def __init__(self, mc_key=None, first=1, last=2):
             super().__init__(mc_key=mc_key)
@@ -561,6 +561,53 @@ def test_configbuilder_repeated():
             total_children += 1
     print(cr)
     assert total_children == 5
+
+
+def test_configbuilder_repeated_config_item_children():
+    @named_as('a_item')
+    @nested_repeatables('x_children')
+    class AItem(ConfigItem):
+        xx = 7
+
+    class ABuilder(ConfigBuilder):
+        def __init__(self, mc_key=None):
+            super().__init__(mc_key=mc_key)
+
+        def mc_build(self):
+            AItem()
+
+    @named_as('b_item')
+    @nested_repeatables('x_children')
+    class BItem(ConfigItem):
+        xx = 6
+
+    class BBuilder(ConfigBuilder):
+        def __init__(self, mc_key=None):
+            super().__init__(mc_key=mc_key)
+
+        def mc_build(self):
+            BItem()
+
+    class Root(ConfigItem):
+        aaa = 2
+
+    @mc_config(ef2_pp_prod, load_now=True)
+    def config(_):
+        with Root() as cr:
+            with ABuilder():
+                XChild(mc_key=10)
+            with BBuilder():
+                XChild(mc_key=11)
+
+    cr = config(prod2).Root
+    print(cr)
+    assert cr.a_item.xx == 7
+    assert cr.a_item.x_children[10]
+    assert cr.a_item.x_children[10].a == 10
+
+    assert cr.b_item.xx == 6
+    assert cr.b_item.x_children[11]
+    assert cr.b_item.x_children[11].a == 11
 
 
 def test_configbuilder_repeated_what_built():
