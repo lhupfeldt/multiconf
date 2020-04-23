@@ -9,7 +9,7 @@ class AndTrue():
         return True
 
 
-class RepeatableDict(object):
+class RepeatableDict():
     """Dictionary dedicated for holding RepeatableConfigItem.
 
     A ConfigItem may be excluded from some envs. This class works as a simplified dict, but behaves in an env specific manner

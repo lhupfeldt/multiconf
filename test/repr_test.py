@@ -352,7 +352,7 @@ _repr_iterable_expected_repr = """{
 }"""
 
 def test_repr_iterable():
-    class MyIterable(object):
+    class MyIterable():
         def __iter__(self):
             yield 1
 

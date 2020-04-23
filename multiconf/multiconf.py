@@ -26,7 +26,7 @@ def _mc_debug(*args):
         print(*args)
 
 
-class _ConfigBase(object):
+class _ConfigBase():
     _mc_last_item = None
     _mc_in_build = None
     _mc_built_by = None
@@ -965,7 +965,7 @@ class AbstractConfigItem(_ConfigBase):  # TODO metaclass=abc.ABCMeta
             self._mc_print_error_caller(str(ex), mc_error_info_up_level)
 
 
-class _RealConfigItemMixin(object):
+class _RealConfigItemMixin():
     """Method definitions for non-ConfigBuilder classes"""
 
     def _mc_call_mc_validate_recursively(self, env):
@@ -994,7 +994,7 @@ class _RealConfigItemMixin(object):
 
 
 
-class _ConfigBuilderMixin(object):
+class _ConfigBuilderMixin():
     """Method definitions for ConfigBuilder classes
 
     This must have the same methods as the _RealConfigItemMixin class.
@@ -1265,7 +1265,7 @@ class ConfigBuilder(AbstractConfigItem, _ConfigBuilderMixin, metaclass=abc.ABCMe
         """Override this in derived classes. This is where child ConfigItems are declared"""
 
 
-class _ItemParentProxy(object):
+class _ItemParentProxy():
     """The purpose of this is to set the current '_mc_contained_in' when accessing an item created by a builder and assigned under multiple parent items"""
     __slots__ = ('_mc_contained_in', '_mc_proxied_item')
     _mc_lock = threading.RLock()
@@ -1559,7 +1559,7 @@ class McConfigRoot(_ConfigBase, _RealConfigItemMixin):
         return rp
 
 
-class _RootEnvProxy(object):
+class _RootEnvProxy():
     """The purpose of this is to set the current env when accessing a configuration"""
     __slots__ = ('_mc_root', '_mc_env')
 

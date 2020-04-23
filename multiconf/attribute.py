@@ -19,7 +19,7 @@ class Where(Enum):
     FROZEN = 7
 
 
-class _McAttribute(object):
+class _McAttribute():
     "Give property access to env specific values"
     __slots__ = ('env_values', 'where_from', 'from_eg')
 
@@ -33,7 +33,7 @@ class _McAttribute(object):
         self.from_eg = from_eg
 
 
-class _McAttributeAccessor(object):
+class _McAttributeAccessor():
     __slots__ = ('attr_name', 'attr')
 
     def __init__(self, attr_name):

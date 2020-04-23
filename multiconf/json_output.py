@@ -53,7 +53,7 @@ def _mc_identification_msg_str(objval):
     return cls_msg + additionl_ref_info_msg
 
 
-class ConfigItemEncoder(object):
+class ConfigItemEncoder():
     recursion_check = threading.local()
     recursion_check.in_default = None
 

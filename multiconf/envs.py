@@ -19,7 +19,7 @@ class AmbiguousEnvException(EnvException):
         self.ambiguous = ambiguous
 
 
-class BaseEnv(object):
+class BaseEnv():
     def __init__(self, name, factory, mask):
         """ Private, use EnvFactory.Env() """
         self.name = name
@@ -137,7 +137,7 @@ class EnvGroup(BaseEnv, Container):
                 yield from member.groups
 
 
-class EnvFactory(object):
+class EnvFactory():
     def __init__(self):
         self.envs = {}
         self.groups = {}

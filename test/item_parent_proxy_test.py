@@ -4,7 +4,7 @@
 from multiconf.multiconf import _ItemParentProxy, _mc_item_parent_proxy_factory
 
 
-class MockConfigItem(object):
+class MockConfigItem():
     _mc_contained_in = None
     _mc_excluded = 0
 

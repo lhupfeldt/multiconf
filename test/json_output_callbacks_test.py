@@ -162,11 +162,11 @@ _json_fallback_handler_expected_json = """{
 }"""
 
 def test_json_fallback_handler():
-    class HandledNonItem(object):
+    class HandledNonItem():
         a = 1
         b = 2
 
-    class UnHandledNonItem(object):
+    class UnHandledNonItem():
         a = 3
 
     @named_as('someitem')
@@ -217,7 +217,7 @@ _json_fallback_handler_iterable_expected_json = """{
 }"""
 
 def test_json_fallback_handler_iterable():
-    class HandledNonItem(object):
+    class HandledNonItem():
         b = 7
         def __init__(self, a):
             self.a = a
@@ -257,7 +257,7 @@ _json_equivalent_expected_json = """{
 }"""
 
 def test_json_equivalent():
-    class NonItemWithEquiv(object):
+    class NonItemWithEquiv():
         def json_equivalent(self):
             return OrderedDict((('a', 1), ('b', 'Hi')))
 
@@ -297,7 +297,7 @@ _json_equivalent_bad_expected_json = """{
 def test_json_equivalent_bad(capsys):
     errorline = [None]
 
-    class NonItemWithEquiv(object):
+    class NonItemWithEquiv():
         def json_equivalent(self):
             errorline[0] = next_line_num()
             raise Exception("bad json_equivalent")
@@ -345,7 +345,7 @@ def test_attribute_error_exception_generating_json_bad_json_equivalent():
         def __repr__(self):
             raise Exception("BadException bad __repr__")
 
-    class X(object):
+    class X():
         def json_equivalent(self):
             raise BadException()
 
@@ -390,7 +390,7 @@ _json_equivalent_attribute_error_expected_json = """{
 def test_json_equivalent_attribute_error(capsys):
     errorline = [None]
 
-    class NonItemWithEquiv(object):
+    class NonItemWithEquiv():
         def json_equivalent(self):
             errorline[0] = next_line_num()
             raise AttributeError("attribute error in json_equivalent")

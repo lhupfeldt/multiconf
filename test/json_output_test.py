@@ -940,7 +940,7 @@ _json_dump_iterable_expected_json = """{
 }"""
 
 def test_json_dump_iterable():
-    class MyIterable(object):
+    class MyIterable():
         def __iter__(self):
             yield 1
 
@@ -971,7 +971,7 @@ _json_dump_iterable_static_expected_json = """{
 }"""
 
 def test_json_dump_iterable_static():
-    class MyIterable(object):
+    class MyIterable():
         def __iter__(self):
             yield 1
 
@@ -1312,7 +1312,7 @@ _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 = """{
 
 def test_json_dump_nested_class_non_mc():
     class McWithNestedClass(ConfigItem):
-        class TTT(object):
+        class TTT():
             pass
 
     @mc_config(ef, load_now=True)
@@ -1323,8 +1323,8 @@ def test_json_dump_nested_class_non_mc():
     cr = config(prod).root
     assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(local_func=local_func()))
 
-    class NonMcWithNestedClass(object):
-        class TTT(object):
+    class NonMcWithNestedClass():
+        class TTT():
             pass
 
     @mc_config(ef, load_now=True)
@@ -1339,7 +1339,7 @@ def test_json_dump_nested_class_non_mc():
 
 def test_json_dump_nested_class_with_json_equiv_non_mc():
     class McWithNestedClass(ConfigItem):
-        class TTT(object):
+        class TTT():
             def json_equivalent(self):
                 return ""
 
@@ -1351,8 +1351,8 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
     cr = config(prod).root
     assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(local_func=local_func()))
 
-    class NonMcWithNestedClass(object):
-        class TTT(object):
+    class NonMcWithNestedClass():
+        class TTT():
             def json_equivalent(self):
                 return ""
 

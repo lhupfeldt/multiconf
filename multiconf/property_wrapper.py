@@ -6,7 +6,7 @@ from .envs import thread_local
 from .config_errors import ConfigAttributeError, failed_property_call_msg
 
 
-class _McPropertyWrapper(object):
+class _McPropertyWrapper():
     __slots__ = ('prop_name', 'prop')
 
     def __init__(self, prop_name, prop):
