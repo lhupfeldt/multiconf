@@ -5,7 +5,8 @@ import sys, os, abc, traceback
 import json
 import threading
 
-from .envs import EnvFactory, Env, AmbiguousEnvException, EnvException, MC_NO_ENV, thread_local
+from .thread_state import thread_local
+from .envs import EnvFactory, Env, AmbiguousEnvException, EnvException, MC_NO_ENV
 from .values import MC_NO_VALUE, MC_TODO, MC_REQUIRED, McTodoHandling
 from .attribute import _McAttribute, _McAttributeAccessor, Where
 from .property_wrapper import _McPropertyWrapper

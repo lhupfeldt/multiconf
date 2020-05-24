@@ -6,7 +6,7 @@ import types
 from collections.abc import Mapping
 
 from . import envs
-from .envs import thread_local
+from .thread_state import thread_local
 from .values import McInvalidValue
 from .config_errors import InvalidUsageException, ConfigExcludedAttributeError, ConfigApiException
 from .bases import get_bases

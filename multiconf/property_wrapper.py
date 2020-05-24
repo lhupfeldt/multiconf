@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 
-from .envs import thread_local
+from .thread_state import thread_local
 from .config_errors import ConfigAttributeError, failed_property_call_msg
 
 

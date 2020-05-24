@@ -4,7 +4,6 @@
 from collections.abc import Container
 import itertools
 import json
-import threading
 
 from .bits import int_to_bin_str
 
@@ -313,7 +312,3 @@ class EnvFactory():
 MC_NO_ENV = Env("MC_NO_ENV", type('', (object,), {'_index': 0}), allow_todo=True)
 MC_NO_ENV.mask = 0
 MC_NO_ENV.lookup_order = ()
-
-
-thread_local = threading.local()
-thread_local.env = MC_NO_ENV

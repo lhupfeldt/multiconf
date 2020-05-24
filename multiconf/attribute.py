@@ -4,7 +4,8 @@
 from enum import Enum
 
 from .config_errors import ConfigAttributeError, ConfigExcludedAttributeError, ConfigApiException
-from .envs import MC_NO_ENV, thread_local
+from .thread_state import thread_local
+from .envs import MC_NO_ENV
 from .values import MC_TODO
 
 
