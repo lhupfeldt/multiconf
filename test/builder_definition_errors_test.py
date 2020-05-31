@@ -99,8 +99,8 @@ def test_configbuilder_without_build():
         def config(_):
             ABuilder()
 
-    assert str(exinfo.value) == "Can't instantiate abstract class ABuilder with abstract methods mc_build"
-
+    assert str(exinfo.value) == "Can't instantiate abstract class ABuilder with abstract methods mc_build" or \
+        str(exinfo.value) == "Can't instantiate abstract class ABuilder with abstract method mc_build"  # Python 3.9
 
 def test_unexpected_repeatable_child_builder():
     @named_as('r')
