@@ -51,6 +51,11 @@ class ItemWithStrAA(ItemWithAA):
         super().__init__(aa=aa)
 
 
+class ItemWithFloatAA(ItemWithAA):
+    def __init__(self, aa: float = MC_REQUIRED):
+        super().__init__(aa=aa)
+
+
 def test_attribute_defined_with_correct_types(capsys):
     @mc_config(ef_pp_prod, load_now=True)
     def config(_):
@@ -154,3 +159,16 @@ def test_attribute_defined_with_wrong_type_init_none(capsys):
         "^ConfigError: Expected value with one of following types: (<class 'str'>, <class 'NoneType'>), got <class 'dict'> for ItemWithStrAA.aa",
     )
     assert replace_ids(str(exinfo.value), False) == _single_error_on_item_expected_ex.format('ItemWithStrAA', 'pp', '{}')
+
+
+def test_attribute_defined_with_correct_types_int_float(capsys):
+    @mc_config(ef_pp_prod, load_now=True)
+    def config(_):
+        with ItemWithFloatAA() as cr:
+            cr.setattr('aa', prod=1.01, pp=2)
+
+    assert config(pp).ItemWithFloatAA.aa == 2
+
+    sout, serr = capsys.readouterr()
+    assert not sout
+    assert not serr

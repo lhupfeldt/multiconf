@@ -15,7 +15,7 @@ def type_check(item, attr_name, value):
             return
 
     allowed = typing_inspect.get_args(tt) or tt
-    if not isinstance(value, allowed):
+    if not isinstance(value, allowed) and not (isinstance(value, int) and issubclass(allowed, float)):
         one_of = "with one of following types" if isinstance(allowed, tuple) else "of type"
         return "Expected value {one_of}: {exp}, got {got} for {cls}.{member}".format(
             one_of=one_of, exp=allowed, got=type(value), cls=item.__class__.__name__, member=attr_name)
