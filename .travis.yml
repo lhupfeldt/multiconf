@@ -24,4 +24,4 @@ script:
   - nox
 after_success:
   # The rcfile path is duplicated in test/utils/mk_coveragerc.py
-  - coveralls --rcfile="./test/.coverage_rc_$TRAVIS_PYTHON_VERSION"
+  - coveralls --rcfile="./test/.coverage_rc_python"

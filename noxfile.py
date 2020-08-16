@@ -9,8 +9,8 @@ import nox
 _HERE = os.path.abspath(os.path.dirname(__file__))
 _TEST_DIR = jp(_HERE, 'test')
 _DOC_DIR = jp(_HERE, 'doc')
-_TRAVIS_PYTHON_VERSION = os.environ.get("TRAVIS_PYTHON_VERSION")
-_PY_VERSIONS = ['3.9', '3.8', '3.7', '3.6', 'pypy3'] if not _TRAVIS_PYTHON_VERSION else [_TRAVIS_PYTHON_VERSION]
+# Locally we have nox handle the different versions, but in each travis run there is only a single python which can always be found as just 'python'
+_PY_VERSIONS = ['3.9', '3.8', '3.7', '3.6', 'pypy3'] if not os.environ.get("TRAVIS_PYTHON_VERSION") else ['python']
 
 
 @nox.session(python=_PY_VERSIONS, reuse_venv=True)
