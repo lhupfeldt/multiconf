@@ -1170,6 +1170,7 @@ class ConfigItem(AbstractConfigItem, _RealConfigItemMixin):
         try:
             self = contained_in.__dict__[name]
             if self._mc_handled_env_bits & thread_local.env.mask:
+                # name was found in contained_in.__dict__ because name was declared as repeatable, so 'self' here is not actually self!
                 if name in contained_in.__class__._mc_deco_nested_repeatables:
                     msg = repeatable_in_parent_msg.format(named_as=name, cls=cls, ci_item=contained_in)
                     raise ConfigException(msg, is_fatal=True)
