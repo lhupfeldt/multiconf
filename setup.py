@@ -1,8 +1,6 @@
-import sys, os
+import os
 
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
-
 
 PROJECT_ROOT, _ = os.path.split(__file__)
 PROJECT_NAME = 'multiconf'

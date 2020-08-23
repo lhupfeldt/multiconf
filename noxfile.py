@@ -1,7 +1,5 @@
-import sys
 import os
 from os.path import join as jp
-import subprocess
 
 import nox
 
