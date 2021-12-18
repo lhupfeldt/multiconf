@@ -1,1 +1,3 @@
 sphinx>=2.2
+# NOTE: setuptools_scm is also in pyproject.toml
+setuptools_scm>=6.3.2

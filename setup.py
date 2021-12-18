@@ -20,7 +20,6 @@ with open(os.path.join(_here, PROJECT_NAME, 'py_version_check.py')) as ff:
 if __name__ == "__main__":
     setup(
         name=PROJECT_NAME.lower(),
-        version_command=('git describe', 'pep440-git'),
         author=PROJECT_AUTHORS,
         author_email=PROJECT_EMAILS,
         packages=['multiconf'],
@@ -29,7 +28,8 @@ if __name__ == "__main__":
         include_package_data=False,
         python_requires='>=3.6.1',
         install_requires=['typing-inspect>=0.4.0'],
-        setup_requires='setuptools-version-command~=2.2',
+        use_scm_version=True,
+        setup_requires=['setuptools_scm>=6.3.2'],  # NOTE: setuptools_scm is also in pyproject.toml!
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
         long_description=LONG_DESCRIPTION,

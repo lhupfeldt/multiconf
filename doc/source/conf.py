@@ -18,6 +18,8 @@ import os
 import subprocess
 from os.path import join as jp
 
+from setuptools_scm import get_version
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -66,7 +68,7 @@ author = 'Lars Hupfeldt Nielsen'
 # built documents.
 #
 # The short X.Y version.
-version = str(subprocess.check_output([sys.executable, jp(_top_dir, 'setup.py'), '--version']))
+version = get_version(root='../..', relative_to=__file__)
 # The full version, including alpha/beta/rc tags.
 release = version
 
