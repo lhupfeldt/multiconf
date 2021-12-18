@@ -19,7 +19,7 @@ def local_func():
     return frame.f_code.co_name + '.<locals>.'
 
 
-py37_no_exc_comma = ',' if str(major_version) + '.' + str(minor_version) < '3.7' else ''
+py37_no_exc_comma = ',' if (major_version == 3) and minor_version < 7 else ''
 
 
 def line_num():
