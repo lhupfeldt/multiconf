@@ -131,8 +131,8 @@ Requirements
 Multiconf: Python 3.6.1+ Test Suite: pytest, pytest-cov (for older Python versions use multiconf 8.x)
 demjson (optional) - pip install -U pytest pytest-cov demjson
 
-.. |Build Status| image:: https://api.travis-ci.org/lhupfeldt/multiconf.svg?branch=master
-   :target: https://travis-ci.org/lhupfeldt/multiconf
+.. |Build Status| image:: https://app.travis-ci.com/lhupfeldt/multiconf.svg?branch=master
+   :target: https://app.travis-ci.com/lhupfeldt/multiconf
 .. |Documentation Status| image:: https://readthedocs.org/projects/multiconf/badge/?version=stable
    :target: https://multiconf.readthedocs.org/en/stable/
 .. |PyPi Package| image:: https://badge.fury.io/py/multiconf.svg
