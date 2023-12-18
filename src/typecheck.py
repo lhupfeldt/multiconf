@@ -1,6 +1,6 @@
 import typing
 
-import typing_inspect
+import typing_inspect  # type: ignore
 
 
 def type_check(item, attr_name, value):

@@ -1,8 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from multiconf import mc_config, ConfigItem, RepeatableConfigItem
-from multiconf.decorators import nested_repeatables, named_as, required
+from multiconf import mc_config, ConfigItem
 from multiconf.envs import EnvFactory
 
 from .utils.tstclasses import ItemWithAABB

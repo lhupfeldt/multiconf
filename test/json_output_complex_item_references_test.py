@@ -158,7 +158,7 @@ def test_json_dump_attr_dict_ref_item():
 
     cfg = config(pprd)
     ref1, ref2 = cfg.mc_config_result
-    assert compare_json(cfg.ItemWithAA, _json_dump_pprd_attr_dict_ref_item_expected_json % dict(local_func=local_func()))
+    assert compare_json(cfg.ItemWithAA, _json_dump_pprd_attr_dict_ref_item_expected_json % {"local_func": local_func()})
     assert ref1.mm == ref1
     assert ref1.nn == Ref0
     assert ref2.r1mmnn == 1114
@@ -166,7 +166,7 @@ def test_json_dump_attr_dict_ref_item():
     cfg = config(prod)
     ref1, ref2 = cfg.mc_config_result
     assert compare_json(cfg.ItemWithAA, _json_dump_prod_attr_dict_ref_item_expected_json,
-                        expected_all_envs_json=_json_dump_all_envs_attr_dict_ref_item_expected_json % dict(local_func=local_func()))
+                        expected_all_envs_json=_json_dump_all_envs_attr_dict_ref_item_expected_json % {"local_func": local_func()})
     assert ref1.mm == ref1
     assert ref1.nn == ref1
     assert ref2.r1mmnn == 6
@@ -457,4 +457,3 @@ def test_json_dump_ref_other_env():
     cr = config(prod)
     ref1 = cr.ItemWithAA
     assert compare_json(ref1, _json_dump_prod_ref_other_env_expected_json)
-    

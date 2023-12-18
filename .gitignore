@@ -15,6 +15,7 @@ dist
 .nox
 .tox
 build
+test/out
 test/perf/*.profile
 test/perf/times.txt
 *.demo_out

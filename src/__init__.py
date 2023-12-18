@@ -1,9 +1,10 @@
-# Copyright (c) 2012-2016 Lars Hupfeldt Nielsen, Hupfeldt IT
+# Copyright (c) 2012 - 2023 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
+from importlib.metadata import version  # type: ignore
 
 # pylint: disable=unused-import
 
-from . import py_version_check
 from .multiconf import McConfigRoot, AbstractConfigItem, ConfigItem, RepeatableConfigItem, DefaultItems, ConfigBuilder
 from .decorators import mc_config
 from .config_errors import ConfigException, ConfigDefinitionException, ConfigApiException, InvalidUsageException
@@ -18,3 +19,5 @@ __all__ = [
     'ConfigAttributeError', 'ConfigExcludedAttributeError',
     'MC_REQUIRED', 'MC_TODO', 'McInvalidValue', 'McTodoHandling',
 ]
+
+__version__ = version("multiconf")

@@ -13,7 +13,8 @@ an object that was not directly enclosed in a with statement. Objects that are n
 statement will not be validated until the next ConfigItem is declared or an outer with statement is exited.
 """
 
-not_repeatable_in_parent_msg = "'{repeatable_cls_key}': {repeatable_cls} is defined as repeatable, but this is not defined as a repeatable item in the containing class: '{ci_named_as}': {ci_cls}"
+not_repeatable_in_parent_msg = "'{repeatable_cls_key}': {repeatable_cls} is defined as repeatable, " \
+    "but this is not defined as a repeatable item in the containing class: '{ci_named_as}': {ci_cls}"
 
 config_error_never_received_value_expected = """^ConfigError: The following attribues defined earlier never received a proper value for {env}:"""
 

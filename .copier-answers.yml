@@ -1,0 +1,16 @@
+# Changes here will be overwritten by Copier
+_commit: '5318558'
+_src_path: copier_python_package_template
+author_email: lhn@hupfeldtit.dk
+author_name: Lars Hupfeldt Nielsen
+company_name: Hupfeldt IT
+copyright_holder: Hupfeldt IT
+creation_year: 2012
+description: Python API providing a set of classes as basis for configuration objects
+    with multiple values per attribute.
+git_repo_url: https://github.com/lhupfeldt/multiconf.git
+github_organization: lhupfeldt
+legal_entity: ApS
+local_devel_dependency: ''
+module_name: ttt
+package_name: multiconf

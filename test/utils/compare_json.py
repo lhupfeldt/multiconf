@@ -19,10 +19,11 @@ def _compare_json(
         expect_num_errors, warn_nesting, show_all_envs, depth, replace_ids, replace_address, dump_default_items):
     try:
         compact_json = item.json(
-            compact=True, property_methods=property_methods, builders=dump_builders, default_items=dump_default_items, sort_attributes=sort_attributes, warn_nesting=warn_nesting,
-            show_all_envs=show_all_envs, depth=depth, persistent_ids=not replace_ids)
-        full_json = item.json(property_methods=property_methods, builders=dump_builders, default_items=dump_default_items, sort_attributes=sort_attributes, warn_nesting=warn_nesting,
-                              show_all_envs=show_all_envs, depth=depth, persistent_ids=not replace_ids)
+            compact=True, property_methods=property_methods, builders=dump_builders, default_items=dump_default_items, sort_attributes=sort_attributes,
+            warn_nesting=warn_nesting, show_all_envs=show_all_envs, depth=depth, persistent_ids=not replace_ids)
+        full_json = item.json(
+            property_methods=property_methods, builders=dump_builders, default_items=dump_default_items, sort_attributes=sort_attributes,
+            warn_nesting=warn_nesting, show_all_envs=show_all_envs, depth=depth, persistent_ids=not replace_ids)
 
         if replace_ids or replace_address:
             assert replace_ids, "You must use 'replace_ids' if using 'replace_address'"
@@ -70,11 +71,6 @@ def _compare_json(
             show('compact expected', False, compact_expected_json)
             if replace_ids:
                 show('compact original', False, compact_json)
-
-        import platform
-        if platform.python_implementation() != 'PyPy':
-            return False
-        # TODO PyPy is at Python 3.6 level and does not implement dict as ordered, continue with other checks
 
     if test_decode:
         try:

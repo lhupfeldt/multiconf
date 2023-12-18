@@ -2,6 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import sys, re
+from typing import Optional
 
 from .lines_in import lines_in as generic_lines_in
 
@@ -19,29 +20,44 @@ def local_func():
     return frame.f_code.co_name + '.<locals>.'
 
 
-py37_no_exc_comma = ',' if (major_version == 3) and minor_version < 7 else ''
-
-
 def line_num():
     frame = sys._getframe(1)
     return frame.f_lineno
 
 
-def next_line_num():
+def next_line_num(minor_version_offsets: Optional[dict[int, int]] = None):
+    """Get the line number the call to this function.
+
+    Arguments:
+        minor_version_offsets: An offset to apply for the specified Python minor version.
+            This is necessary because of differences in reported linenumbers for decorators.
+            The offset applies to the specified minor version and any version (max 20) smaller than that.
+    """
+
+    offset = 0
+    if minor_version_offsets:
+        assert major_version == 3
+        for check_minor_version in range(minor_version, minor_version + 20):
+            offset = minor_version_offsets.get(check_minor_version, None)
+            if offset is not None:
+                break
+        else:
+            offset = 0
+
     frame = sys._getframe(1)
-    return frame.f_lineno + 1
+    return frame.f_lineno + 1 + offset
 
 
 def lazy(*args):
     return lambda: args[0](*args[1:])
 
 
-def _config_msg(error_type, file_name, line_num, *lines):
+def _config_msg(error_type, file_name, line_nummber, *lines):
     if not file_name.endswith('.py'):
         # file_name  may end in .pyc!
         file_name = file_name[:-1]
 
-    line_msg = 'File "{file_name}", line {line_num}'.format(file_name=file_name, line_num=line_num) + '\n'
+    line_msg = f'File "{file_name}", line {line_nummber}\n'
     emsg = ""
     for line in lines:
         emsg += line_msg
@@ -49,26 +65,26 @@ def _config_msg(error_type, file_name, line_num, *lines):
     return emsg
 
 
-def config_error(file_name, line_num, *line):
-    return _config_msg('ConfigError', file_name, line_num, *line)
+def config_error(file_name, line_nummber, *line):
+    return _config_msg('ConfigError', file_name, line_nummber, *line)
 
 
-def config_warning(file_name, line_num, *line):
-    return _config_msg('ConfigWarning', file_name, line_num, *line)
+def config_warning(file_name, line_nummber, *line):
+    return _config_msg('ConfigWarning', file_name, line_nummber, *line)
 
 
-def api_error(file_name, line_num, *line):
-    return _config_msg('MultiConfApiError', file_name, line_num, *line)
+def api_error(file_name, line_nummber, *line):
+    return _config_msg('MultiConfApiError', file_name, line_nummber, *line)
 
 
 def total_msg(total_num_errors):
     ww, err = ('were', 'errors') if total_num_errors > 1 else ('was', 'error')
-    return "There {ww} {num_errors} {err} when defining item: ".format(ww=ww, num_errors=total_num_errors, err=err)
+    return f"There {ww} {total_num_errors} {err} when defining item: "
 
 
 def file_line(error_file_name, error_line_num):
     """Return string with file/line info formatted like in error messages."""
-    return 'File "{file_name}", line {line_num}'.format(file_name=error_file_name, line_num=error_line_num)
+    return f'File "{error_file_name}", line {error_line_num}'
 
 
 def start_file_line(error_file_name, error_line_num):

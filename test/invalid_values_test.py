@@ -16,8 +16,6 @@ from .utils.tstclasses import ItemWithAA
 from .utils.invalid_values_classes import  McRequiredInInitL1, McRequiredInInitL3
 
 
-minor_version = sys.version_info[1]
-
 _utils = os.path.join(os.path.dirname(__file__), 'utils')
 
 
@@ -44,20 +42,21 @@ _mc_required_one_error_expected_ex = """There was 1 error when defining item: {
 
 
 def test_attribute_mc_required_env(capsys):
-    errorline = [None]
+    errorlines = {}
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
+            errorlines['following_attributes'] = next_line_num({9: 2})
             with ItemWithAA() as cr:
-                errorline[0] = next_line_num()
+                errorlines['setattr'] = next_line_num()
                 cr.setattr('aa', prod=MC_REQUIRED, pp="hello")
 
     _sout, serr = capsys.readouterr()
     assert lines_in(
         serr,
-        start_file_line(__file__, errorline[0]),
+        start_file_line(__file__, errorlines['following_attributes']),
         config_error_never_received_value_expected.format(env=prod1),
-        start_file_line(__file__, errorline[0]),
+        start_file_line(__file__, errorlines['setattr']),
         '^ConfigError: ' + _attribute_mc_required_expected,
     )
 
@@ -83,20 +82,21 @@ def test_attribute_mc_required_mc_force_env(capsys):
 
 
 def test_attribute_mc_required_default(capsys):
-    errorline = [None]
+    errorlines = {}
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
+            errorlines['following_attributes'] = next_line_num({9: 2})
             with ItemWithAA() as cr:
-                errorline[0] = next_line_num()
+                errorlines['setattr'] = next_line_num()
                 cr.setattr('aa', default=MC_REQUIRED, pp="hello")
 
     _sout, serr = capsys.readouterr()
     assert lines_in(
         serr,
-        start_file_line(__file__, errorline[0]),
+        start_file_line(__file__, errorlines['following_attributes']),
         config_error_never_received_value_expected.format(env=prod1),
-        start_file_line(__file__, errorline[0]),
+        start_file_line(__file__, errorlines['setattr']),
         '^ConfigError: ' + _attribute_mc_required_expected,
     )
 
@@ -156,20 +156,21 @@ def test_attribute_mc_required_init(capsys):
 
 
 def test_attribute_mc_required_in_with(capsys):
-    errorline = [None]
+    errorlines = {}
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
+            errorlines['following_attributes'] = next_line_num({9: 2})
             with ItemWithAA() as cr:
-                errorline[0] = next_line_num()
+                errorlines['setattr'] = next_line_num()
                 cr.setattr('aa', prod="hi", pp=MC_REQUIRED)
 
     _sout, serr = capsys.readouterr()
     assert lines_in(
         serr,
-        start_file_line(__file__, errorline[0]),
+        start_file_line(__file__, errorlines['following_attributes']),
         config_error_never_received_value_expected.format(env=pp1),
-        start_file_line(__file__, errorline[0]),
+        start_file_line(__file__, errorlines['setattr']),
         '^ConfigError: ' + mc_required_expected.format(attr='aa', env=pp1),
     )
 
@@ -338,7 +339,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
 
     # If the error occures on the last object, and that is not under a with statement, then the line will be the @mc_config
     with raises(ConfigException) as exinfo:
-        errorline[0] = next_line_num() + (1 if minor_version > 7 else 0)
+        errorline[0] = next_line_num({10: 1})
         @mc_config(ef1_prod_pp, load_now=True)
         def config(root):
             McRequiredInInitL1()
@@ -358,8 +359,8 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp, load_now=True)
         def config0(root):
+            errorline[0] = next_line_num({9: 1})
             with McRequiredInInitL1():
-                errorline[0] = next_line_num()
                 pass
 
     _sout, serr = capsys.readouterr()
@@ -374,7 +375,7 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
 
     # If the error occures on the last object, and that is not under a with statement, then the line will be the @mc_config
     with raises(ConfigException) as exinfo:
-        errorline[0] = next_line_num() + (1 if minor_version > 7 else 0)
+        errorline[0] = next_line_num({10: 1})
         @mc_config(ef1_prod_pp, load_now=True)
         def config1(root):
             McRequiredInInitL3()
@@ -392,8 +393,8 @@ def test_attribute_mc_required_init_args_missing_with(capsys):
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp, load_now=True)
         def config2(root):
+            errorline[0] = next_line_num({9: 1})
             with McRequiredInInitL3():
-                errorline[0] = next_line_num()
                 pass
 
     _sout, serr = capsys.readouterr()
@@ -482,7 +483,7 @@ def test_attribute_setattr_mc_required_force_in_init(capsys):
         config_error_mc_required_expected.format(attr='bb', env=pp1),
     )
 
-    assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_in_init_expected_ex % dict(num_errors=2)
+    assert replace_ids(str(exinfo.value), False) == _attribute_mc_required_env_in_init_expected_ex % {"num_errors": 2}
 
 
 def test_multiple_attributes_mc_required_init_not_set(capsys):
@@ -497,8 +498,8 @@ def test_multiple_attributes_mc_required_init_not_set(capsys):
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod_pp, load_now=True)
         def config(_):
+            errorline[0] = next_line_num({9: 1})
             with ConfigItem() as cr:
-                errorline[0] = next_line_num()
                 ItemWithAAABBCC()
 
     _sout, serr = capsys.readouterr()
@@ -575,4 +576,4 @@ def test_multiple_attributes_mc_required_env(capsys):
     _sout, serr = capsys.readouterr()
     #assert ce(errorline[0], mc_required_expected.format(attr='aa', env=prod1)) in serr
     assert ce(errorline[0] + 1, mc_required_expected.format(attr='bb', env=pp1)) in serr
-    assert replace_ids(str(exinfo.value), False) == _multiple_attributes_mc_required_env_expected_ex % dict(ww='was', num_errors=1, err='error')
+    assert replace_ids(str(exinfo.value), False) == _multiple_attributes_mc_required_env_expected_ex % {"ww": "was", "num_errors": 1, "err": "error"}

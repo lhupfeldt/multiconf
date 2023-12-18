@@ -139,8 +139,9 @@ def test_required_items_missing_for_configroot(capsys):
 
     @mc_config(ef)
     def config(_):
+        errorline[0] = next_line_num({9: 1})
         with root():
-            errorline[0] = line_num()
+            pass
 
     with raises(ConfigException) as exinfo:
         config.load()
@@ -164,8 +165,8 @@ def test_required_items_missing_for_configitem(capsys):
         @mc_config(ef, load_now=True)
         def config(_):
             with root():
+                errorline[0] = next_line_num({9: 1})
                 with item():
-                    errorline[0] = next_line_num()
                     efgh(7)
 
     _sout, serr = capsys.readouterr()
@@ -217,7 +218,7 @@ def test_required_attributes_inherited_redefined(capsys):
     class root(ConfigItem):
         pass
 
-    errorline = next_line_num() + 1
+    errorline = next_line_num({10: 1})
     @required('anitem', 'someotheritem2')
     class root2(root):
         pass

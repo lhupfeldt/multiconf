@@ -10,7 +10,7 @@ from multiconf.decorators import named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import replace_ids
-from .utils.utils import local_func, py37_no_exc_comma, lines_in, file_line, next_line_num
+from .utils.utils import local_func, lines_in, file_line, next_line_num
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
@@ -83,20 +83,20 @@ _json_dump_user_defined_attribute_filter_exception_expected_json = """{
     },
     "aa": 0,
     "hide_me1": "FAILED",
-    "hide_me1 #json_error calling filter": "Exception('Error in filter'%(comma)s)",
+    "hide_me1 #json_error calling filter": "Exception('Error in filter')",
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
         "b": 2,
         "hide_me1": 7,
-        "hide_me1 #json_error calling filter": "Exception('Error in filter'%(comma)s)",
+        "hide_me1 #json_error calling filter": "Exception('Error in filter')",
         "a": 1,
         "a #calculated": true,
         "hide_me2": "FAIL",
         "hide_me2 #calculated": true,
-        "hide_me2 #json_error calling filter": "Exception('Error in filter'%(comma)s)"
+        "hide_me2 #json_error calling filter": "Exception('Error in filter')"
     }
-}""" % dict(comma=py37_no_exc_comma)
+}"""
 
 def test_json_dump_user_defined_attribute_filter_exception(capsys):
     def json_filter(_obj, key, value):
@@ -193,7 +193,7 @@ def test_json_fallback_handler():
             Nested(b=2)
 
     cr = config(prod).ItemWithAA
-    assert compare_json(cr, _json_fallback_handler_expected_json % dict(local_func=local_func()), expect_num_errors=1)
+    assert compare_json(cr, _json_fallback_handler_expected_json % {"local_func": local_func()}, expect_num_errors=1)
 
 
 _json_fallback_handler_iterable_expected_json = """{
@@ -286,13 +286,13 @@ _json_equivalent_bad_expected_json = """{
         "name": "prod"
     },
     "aa": 0,
-    "handled_non_item": "__json_error__ calling 'json_equivalent': Exception('bad json_equivalent'%(comma)s)",
+    "handled_non_item": "__json_error__ calling 'json_equivalent': Exception('bad json_equivalent')",
     "someitem": {
         "__class__": "Item",
         "__id__": 0000,
         "a": 7
     }
-}""" % dict(comma=py37_no_exc_comma)
+}"""
 
 def test_json_equivalent_bad(capsys):
     errorline = [None]
@@ -336,9 +336,9 @@ _attribute_error_exception_generating_json_bad_json_equivalent_exc_ex = """{
     },
     "xxx #no value for Env('prod')": true,
     "egref": "__json_error__ calling 'json_equivalent': Error gettting repr of obj, type: <class 'test.json_output_callbacks_test.test_attribute_error_exception_generating_json_bad_json_equivalent.<locals>.BadException'>, exception: Exception: BadException bad __repr__",
-    "xxx #json_error trying to handle property method": "Exception(\\"Error in 'xxx' property impl.\\"%(comma)s)"
-}, object of type: <class 'test.json_output_callbacks_test.test_attribute_error_exception_generating_json_bad_json_equivalent.<locals>.Xx'> has no attribute 'xxx'. Attribute 'xxx' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception("Error in 'xxx' property impl."%(comma)s)
-""" % dict(comma=py37_no_exc_comma)
+    "xxx #json_error trying to handle property method": "Exception(\\"Error in 'xxx' property impl.\\")"
+}, object of type: <class 'test.json_output_callbacks_test.test_attribute_error_exception_generating_json_bad_json_equivalent.<locals>.Xx'> has no attribute 'xxx'. Attribute 'xxx' is defined as a multiconf attribute and as a @property method but value is undefined for Env('prod') and @property method call failed with: Exception("Error in 'xxx' property impl.")
+"""
 
 def test_attribute_error_exception_generating_json_bad_json_equivalent():
     class BadException(Exception):
@@ -378,14 +378,14 @@ _json_equivalent_attribute_error_expected_json = """{
         "name": "prod"
     },
     "aa": 0,
-    "handled_non_item": "__json_error__ calling 'json_equivalent': AttributeError('attribute error in json_equivalent'%(comma)s)",
+    "handled_non_item": "__json_error__ calling 'json_equivalent': AttributeError('attribute error in json_equivalent')",
     "someitem": {
         "__class__": "Item",
         "__id__": 0000,
         "a": 7
     }
 }
-""" % dict(comma=py37_no_exc_comma)
+"""
 
 def test_json_equivalent_attribute_error(capsys):
     errorline = [None]

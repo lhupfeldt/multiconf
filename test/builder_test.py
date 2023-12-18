@@ -444,7 +444,8 @@ def test_configbuilder_multilevel_nested_items_access_to_contained_in():
         with ItemWithYs() as item:
             with YBuilder() as yb1:
                 yb1.b = 27
-                yc10[0] = YChild(mc_key=10)  # TODO: this should not be allowed, but it is impossible in python to prevent this, a workaround would be to use factories for object creation and then let the factory return None (if under a builder 'with')
+                yc10[0] = YChild(mc_key=10)  # TODO: this should not be allowed, but it is impossible in python to prevent this.
+                # A workaround would be to use factories for object creation and then let the factory return None (if under a builder 'with')
                 yc11[0] = YChild(mc_key=11)  # TODO: this must not be allowed
                 with YBuilder(start=3) as yb2:
                     yb2.b = 28

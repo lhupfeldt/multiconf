@@ -12,7 +12,7 @@ from multiconf.decorators import nested_repeatables, named_as
 from multiconf.envs import EnvFactory
 
 from .utils.utils import replace_ids, next_line_num, to_compact
-from .utils.utils import local_func, py37_no_exc_comma
+from .utils.utils import local_func
 from .utils.compare_json import compare_json
 from .utils.tstclasses import ItemWithAA
 
@@ -520,9 +520,9 @@ _json_dump_property_method_raises_InvalidUsageException_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m #invalid usage context": "InvalidUsageException('No m now'%(comma)s)"
+        "m #invalid usage context": "InvalidUsageException('No m now')"
     }
-}""" % dict(comma=py37_no_exc_comma)
+}"""
 
 _json_dump_property_method_raises_InvalidUsageException_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
@@ -535,9 +535,9 @@ _json_dump_property_method_raises_InvalidUsageException_all_envs_expected_json =
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m #invalid usage context": "InvalidUsageException('No m now'%(comma)s)"
+        "m #invalid usage context": "InvalidUsageException('No m now')"
     }
-}""" % dict(comma=py37_no_exc_comma)
+}"""
 
 def test_json_dump_property_method_raises_InvalidUsageException():
     @named_as('someitem')
@@ -568,9 +568,9 @@ _json_dump_property_method_raises_exception_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m #json_error trying to handle property method": "Exception('Something is wrong'%(comma)s)"
+        "m #json_error trying to handle property method": "Exception('Something is wrong')"
     }
-}""" % dict(comma=py37_no_exc_comma)
+}"""
 
 _json_dump_property_method_raises_exception_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
@@ -587,9 +587,9 @@ _json_dump_property_method_raises_exception_all_envs_expected_json = """{
     "someitem": {
         "__class__": "Nested",
         "__id__": 0000,
-        "m #json_error trying to handle property method": "Exception('Something is wrong'%(comma)s)"
+        "m #json_error trying to handle property method": "Exception('Something is wrong')"
     }
-}""" % dict(comma=py37_no_exc_comma)
+}"""
 
 def test_json_dump_property_method_raises_exception():
     @named_as('someitem')
@@ -623,9 +623,9 @@ _json_dump_property_method_raises_exception_in_pp_expected_json = """{
         "__class__": "Nested",
         "__id__": 0000,
         "aa": 1,
-        "m #json_error trying to handle property method": "Exception('Something is wrong'%(comma)s)"
+        "m #json_error trying to handle property method": "Exception('Something is wrong')"
     }
-}""" % dict(comma=py37_no_exc_comma)
+}"""
 
 _json_dump_property_method_raises_exception_in_pp_all_envs_expected_json = """{
     "__class__": "ItemWithAA",
@@ -646,11 +646,11 @@ _json_dump_property_method_raises_exception_in_pp_all_envs_expected_json = """{
         "m": {
             "pp": 24,
             "pp #calculated": true,
-            "prod #json_error trying to handle property method": "Exception('Something is wrong'%(comma)s)"
+            "prod #json_error trying to handle property method": "Exception('Something is wrong')"
         },
         "m #multiconf env specific @property": true
     }
-}""" % dict(comma=py37_no_exc_comma)
+}"""
 
 def test_json_dump_property_method_raises_exception_in_pp():
     @named_as('someitem')
@@ -815,7 +815,7 @@ def test_json_dump_property_method_calls_json(capsys):
         assert compare_json(cr, _json_dump_property_method_calls_json_expected_json, warn_nesting=True)
         sout, serr = capsys.readouterr()
         assert not sout
-        exp = _json_dump_property_method_calls_json_expected_stderr % dict(local_func=local_func())
+        exp = _json_dump_property_method_calls_json_expected_stderr % {"local_func": local_func()}
         assert exp in replace_ids(serr)
     finally:
         os.environ['MULTICONF_WARN_JSON_NESTING'] = warn_nesting
@@ -873,7 +873,7 @@ def test_json_dump_non_conf_item_used_as_key(capsys):
     assert not sout
     assert not serr
 
-    assert compare_json(cr, _json_dump_non_conf_item_used_as_key_expected_json % dict(local_func=local_func()), replace_address=True)
+    assert compare_json(cr, _json_dump_non_conf_item_used_as_key_expected_json % {"local_func": local_func()}, replace_address=True)
 
 
 _json_dump_non_conf_item_expected_json = """{
@@ -1321,7 +1321,7 @@ def test_json_dump_nested_class_non_mc():
             McWithNestedClass()
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(local_func=local_func()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % {"local_func": local_func()})
 
     class NonMcWithNestedClass():
         class TTT():
@@ -1334,7 +1334,7 @@ def test_json_dump_nested_class_non_mc():
                 ci.aa = NonMcWithNestedClass
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(local_func=local_func()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % {"local_func": local_func()})
 
 
 def test_json_dump_nested_class_with_json_equiv_non_mc():
@@ -1349,7 +1349,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
             McWithNestedClass()
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % dict(local_func=local_func()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_1 % {"local_func": local_func()})
 
     class NonMcWithNestedClass():
         class TTT():
@@ -1363,7 +1363,7 @@ def test_json_dump_nested_class_with_json_equiv_non_mc():
                 ci.aa = NonMcWithNestedClass
 
     cr = config(prod).root
-    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % dict(local_func=local_func()))
+    assert compare_json(cr, _json_dump_test_json_dump_nested_class_non_mc_expected_json_2 % {"local_func": local_func()})
 
 
 _json_dump_multiple_errors_expected_json = """{

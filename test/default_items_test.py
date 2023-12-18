@@ -1,8 +1,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys
-
 from pytest import raises, xfail
 
 from multiconf import mc_config, DefaultItems, ConfigItem, RepeatableConfigItem, ConfigBuilder, MC_REQUIRED, ConfigException
@@ -13,8 +11,6 @@ from .utils.utils import next_line_num, lines_in, start_file_line, total_msg
 from .utils.messages import config_error_mc_required_expected, config_error_never_received_value_expected
 from .utils.tstclasses import ItemWithAA, RepeatableItemWithAA
 
-
-minor_version = sys.version_info[1]
 
 ef = EnvFactory()
 pp = ef.Env('pp')
@@ -301,7 +297,7 @@ def test_multiple_required_attributes_shared_not_assigned_some_envs_for_configit
             self.ijkl = MC_REQUIRED
 
     with raises(ConfigException) as exinfo:
-        errorline[0] = next_line_num() + (1 if minor_version > 7 else 0)
+        errorline[0] = next_line_num({10: 1})
         @mc_config(ef, load_now=True)
         def config(_):
             with DefaultItems():
@@ -366,7 +362,7 @@ def test_required_nested_items_shared_not_provided_for_configitem(capsys):
             item()
 
     with raises(ConfigException) as exinfo:
-        errorline[0] = next_line_num() + (1 if minor_version > 7 else 0)
+        errorline[0] = next_line_num({10: 1})
         @mc_config(ef, load_now=True)
         def config2(_):
             with DefaultItems():
@@ -378,6 +374,7 @@ def test_required_nested_items_shared_not_provided_for_configitem(capsys):
     assert total_msg(1) in str(exinfo.value)
 
     _sout, serr = capsys.readouterr()
+
     assert lines_in(
         serr,
         start_file_line(__file__, errorline[0]),
@@ -784,12 +781,12 @@ def test_required_will_not_resolve_to_default_repeatable(capsys):
     with raises(ConfigException) as exinfo:
         @mc_config(ef, load_now=True)
         def config(_):
+            errorline[0] = next_line_num({9: 5})
             with root(aa='root'):
                 with DefaultItems():
                     with Item(None, aa='default_item'):
                         child('b1', 1)
 
-                errorline[0] = next_line_num()
                 Item3('33')
 
     print(str(exinfo.value))
@@ -929,7 +926,7 @@ def test_shared_item_is_not_subtype(capsys):
         pass
 
     with raises(ConfigException) as exinfo:
-        errorline[0] = next_line_num() + (1 if minor_version > 7 else 0)
+        errorline[0] = next_line_num({10: 1})
         @mc_config(ef, load_now=True)
         def config(_):
             with DefaultItems():
@@ -962,7 +959,7 @@ def test_inherit_from_default_item_with_attribute_does_not_resolve_required(caps
         pass
 
     with raises(ConfigException) as exinfo:
-        errorline[0] = next_line_num() + (1 if minor_version > 7 else 0)
+        errorline[0] = next_line_num({10: 1})
         @mc_config(ef, load_now=True)
         def config(_):
             DefaultItemsX()

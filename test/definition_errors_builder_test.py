@@ -76,14 +76,14 @@ def test_error_freezing_previous_sibling__build(capsys):
             inner(2)
 
     _sout, serr = capsys.readouterr()
-    exp = exception_previous_object_expected_stderr % dict(module='definition_errors_builder_test', local_func=local_func())
+    exp = exception_previous_object_expected_stderr % {"module": "definition_errors_builder_test", "local_func": local_func()}
     assert serr == exp
     assert str(exinfo.value) == "Error in build"
 
 
 def test_builder_does_not_accept_nested_repeatables_decorator(capsys):
     with raises(ConfigDefinitionException) as exinfo:
-        errorline = next_line_num() + 1
+        errorline = next_line_num({10: 1})
         @nested_repeatables('a')
         class _inner(ConfigBuilder):
             def mc_build(self):

@@ -5,7 +5,7 @@ from multiconf import mc_config, ConfigItem, MC_REQUIRED
 
 from multiconf.envs import EnvFactory
 
-from utils.tstclasses import ItemWithAA, ItemWithAABB
+from .utils.tstclasses import ItemWithAA, ItemWithAABB
 
 ef = EnvFactory()
 

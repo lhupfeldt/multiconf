@@ -99,8 +99,9 @@ def test_configbuilder_without_build():
         def config(_):
             ABuilder()
 
-    assert str(exinfo.value) == "Can't instantiate abstract class ABuilder with abstract methods mc_build" or \
-        str(exinfo.value) == "Can't instantiate abstract class ABuilder with abstract method mc_build"  # Python 3.9
+    assert str(exinfo.value) in (
+        "Can't instantiate abstract class ABuilder without an implementation for abstract method 'mc_build'",  # 3.12
+        "Can't instantiate abstract class ABuilder with abstract method mc_build")
 
 def test_unexpected_repeatable_child_builder():
     @named_as('r')
@@ -118,7 +119,7 @@ def test_unexpected_repeatable_child_builder():
                 UnexpectedRepeatableChildBuilder()
 
     exp = not_repeatable_in_parent_msg.format(
-        repeatable_cls_key='r', repeatable_cls="<class 'test.builder_definition_errors_test.%(local_func)sRepeatableChild'>" % dict(local_func=local_func()),
+        repeatable_cls_key='r', repeatable_cls="<class 'test.builder_definition_errors_test.%(local_func)sRepeatableChild'>" % {"local_func": local_func()},
         ci_named_as='ConfigItem', ci_cls="<class 'multiconf.multiconf.ConfigItem'>")
     assert replace_ids(str(exinfo.value), False) == exp
 
@@ -165,7 +166,7 @@ def test_unexpected_repeatable_child_nested_builders_with():
         repeatable_cls_key='arepeatable',
         repeatable_cls="<class 'test.builder_definition_errors_test.RepItem'>",
         ci_named_as='ItemWithoutARepeatable',
-        ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sItemWithoutARepeatable'>" % dict(local_func=local_func()))
+        ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sItemWithoutARepeatable'>" % {"local_func": local_func()})
     assert replace_ids(str(exinfo.value), False) == exp
 
 
@@ -198,7 +199,7 @@ def test_unexpected_repeatable_child_nested_builders_no_with():
         repeatable_cls_key='arepeatable',
         repeatable_cls="<class 'test.builder_definition_errors_test.RepItem'>",
         ci_named_as='ItemWithoutARepeatable',
-        ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sItemWithoutARepeatable'>" % dict(local_func=local_func()))
+        ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sItemWithoutARepeatable'>" % {"local_func": local_func()})
     assert replace_ids(str(exinfo.value), False) == exp
 
 
@@ -268,7 +269,7 @@ def test_configbuilders_repeated_non_repeatable_in_build():
     class OuterItem(ConfigItem):
         pass
 
-    exp = "Repeated non repeatable conf item: 'MiddleItem': <class 'test.builder_definition_errors_test.%(local_func)sMiddleItem'>" % dict(local_func=local_func())
+    exp = "Repeated non repeatable conf item: 'MiddleItem': <class 'test.builder_definition_errors_test.%(local_func)sMiddleItem'>" % {"local_func": local_func()}
 
     with raises(ConfigException) as exinfo:
         @mc_config(ef1_prod, load_now=True)
@@ -322,8 +323,8 @@ def test_configbuilder_undeclared_repeatable_child(capsys):
                     YChild(mc_key=None, a=10)
 
     exp = not_repeatable_in_parent_msg.format(
-        repeatable_cls_key='y_children', repeatable_cls="<class 'test.builder_definition_errors_test.%(local_func)sYChild'>" % dict(local_func=local_func()),
-        ci_named_as='ys', ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sY'>"% dict(local_func=local_func()))
+        repeatable_cls_key='y_children', repeatable_cls="<class 'test.builder_definition_errors_test.%(local_func)sYChild'>" % {"local_func": local_func()},
+        ci_named_as='ys', ci_cls="<class 'test.builder_definition_errors_test.%(local_func)sY'>"% {"local_func": local_func()})
 
     assert replace_ids(str(exinfo.value), False) == exp
 
@@ -359,7 +360,7 @@ def test_configbuilder_repeated():
                 XBuilder('aa')
 
     print(str(exinfo.value))
-    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_repeated % dict(local_func=local_func())
+    assert replace_ids_builder(str(exinfo.value), False) == _configbuilder_repeated % {"local_func": local_func()}
 
 
 def test_configbuilder_repeated_in_mc_init():

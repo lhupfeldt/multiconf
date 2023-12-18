@@ -1,8 +1,9 @@
 # Copyright (c) 2012-2017 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from typing import Optional
+
 # pylint: disable=E0611
-import pytest
 from pytest import raises
 
 from multiconf import mc_config, ConfigException, MC_REQUIRED
@@ -47,7 +48,7 @@ class ItemWithIntAA(ItemWithAA):
 
 
 class ItemWithStrAA(ItemWithAA):
-    def __init__(self, aa: str = None):
+    def __init__(self, aa: Optional[str] = None):
         super().__init__(aa=aa)
 
 

@@ -399,7 +399,7 @@ def test_non_repeatable_but_container_expects_repeatable():
             with project():
                 RepeatableItems()
 
-    assert replace_ids(str(exinfo.value), named_as=False) == _non_repeatable_but_container_expects_repeatable_expected % dict(local_func=local_func())
+    assert replace_ids(str(exinfo.value), named_as=False) == _non_repeatable_but_container_expects_repeatable_expected % {"local_func": local_func()}
 
 
 def test_attempt_to_call_contained_item():
@@ -733,8 +733,8 @@ def test_attribute_mc_required_args_partial_set_in_init_unfinished(capsys):
     with raises(ConfigException) as exinfo:
         @mc_config(ef2_pp_prod, load_now=True)
         def config(_):
+            errorline_exit_check[0] = next_line_num({9: 1})
             with ConfigItem() as cr:
-                errorline_exit_check[0] = next_line_num()
                 Requires()
 
     _sout, serr = capsys.readouterr()

@@ -45,7 +45,7 @@ class ConfigAttributeError(AttributeError):
             rep = self.mc_object.json(compact=True, property_methods=True, builders=False, depth=1) + ", object"
         except:  # pylint: disable=bare-except
             rep = "Object"
-        return error_message % dict(item_repr_and_type=rep + " of type: " + repr(type(self.mc_object)), attr_name=repr(self.attr_name))
+        return error_message % {"item_repr_and_type": f"{rep} of type: {repr(type(self.mc_object))}", "attr_name": repr(self.attr_name)}
 
     def __str__(self):
         return self.message
@@ -118,7 +118,11 @@ def _warning_msg(message):
     return 'ConfigWarning: ' + message
 
 
-failed_property_call_msg = "Attribute '{attr}' is defined as a multiconf attribute and as a @property method but value is undefined for {env} and @property method call failed with: {ex}"
+failed_property_call_msg = "Attribute '{attr}' is defined as a multiconf attribute and as a @property method " \
+    "but value is undefined for {env} and @property method call failed with: {ex}"
 
-not_repeatable_in_parent_msg = "'{repeatable_cls_key}': {repeatable_cls} is defined as repeatable, but this is not defined as a repeatable item in the containing class: '{ci_named_as}': {ci_cls}"
-repeatable_in_parent_msg = "'{named_as}': {cls} is not defined as repeatable, but this is defined as a repeatable item in the containing class: {ci_item}"
+not_repeatable_in_parent_msg = "'{repeatable_cls_key}': {repeatable_cls} is defined as repeatable, " \
+    "but this is not defined as a repeatable item in the containing class: '{ci_named_as}': {ci_cls}"
+
+repeatable_in_parent_msg = "'{named_as}': {cls} is not defined as repeatable, " \
+    "but this is defined as a repeatable item in the containing class: {ci_item}"

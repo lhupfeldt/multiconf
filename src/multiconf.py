@@ -31,7 +31,7 @@ class _ConfigBase():
     _mc_last_item = None
     _mc_in_build = None
     _mc_built_by = None
-    _mc_hierarchy = []
+    _mc_hierarchy = []  # type: ignore
     _mc_deco_named_as = None
     _mc_deco_required = ()
     _mc_deco_nested_repeatables = ()
@@ -674,7 +674,8 @@ class _ConfigBase():
     def _mc_setattr_disabled(
             self, current_env, attr_name, value, from_eg, mc_overwrite_property, mc_set_unknown, mc_force, mc_error_info_up_level, is_assign=False):
         """Common code for assignment and item.setattr to disable attribute modification after config is loaded"""
-        msg = "Trying to set attribute '{}'. Setting attributes is not allowed after configuration is loaded or while doing json dump (print) (in order to enforce derived value validity)."
+        msg = "Trying to set attribute '{}'. Setting attributes is not allowed after configuration is loaded " \
+            "or while doing json dump (print) (in order to enforce derived value validity)."
         raise ConfigApiException(msg.format(attr_name))
 
     _mc_setattr_real = _mc_setattr  # Keep a reference to the real _mc_setattr
@@ -776,9 +777,10 @@ class _ConfigBase():
                env (e.g. the item is excluded). If an exception was raised for all envs the last exception will propagate.
         """
 
+        exception = True
+        orig_env = thread_local.env
+
         try:
-            exception = True
-            orig_env = thread_local.env
             # print("attr_env_items 1:", attr_name, 'current env:', orig_env, bool(self))
             for env in self._mc_root._mc_env_factory.envs.values():
                 thread_local.env = env
@@ -1244,7 +1246,9 @@ class RepeatableConfigItem(AbstractConfigItem, _RealConfigItemMixin):
         repeatable = contained_in._mc_get_repeatable(cls.named_as(), cls)
 
         if repeatable and isinstance(contained_in, DefaultItems):
-            raise ConfigException(f"'{cls.__name__}' cannot be repeated under '{DefaultItems.__name__}'. The first (and only) occurance of a '{RepeatableConfigItem.__name__}' instance is used to provide the default attribute values.")
+            msg = f"'{cls.__name__}' cannot be repeated under '{DefaultItems.__name__}'. " \
+                f"The first (and only) occurance of a '{RepeatableConfigItem.__name__}' instance is used to provide the default attribute values."
+            raise ConfigException(msg)
 
         mc_key = init_kwargs.get(cls._mc_key_name) or cls._mc_key_value or mc_key
 

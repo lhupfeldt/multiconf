@@ -45,14 +45,13 @@ def test_attribute_none_args_partial_set_in_init_overridden_in_mc_init():
 
 
 def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
-    errorline_setattr = [None]
-    errorline_exit = [None]
+    errorlines = {}
 
     class Requires(ConfigItem):
         def __init__(self, a=None):
             super().__init__()
             # Partial assignment is allowed in init
-            errorline_setattr[0] = next_line_num()
+            errorlines['setattr'] = next_line_num()
             self.setattr('a', prod=a)
             self.setattr('b', default=None, prod=2)
 
@@ -60,7 +59,7 @@ def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
             self.b = 7
 
     with raises(ConfigException):
-        errorline_exit[0] = next_line_num() + (1 if minor_version > 7 else 0)
+        errorlines['following_attributes'] = next_line_num({10: 1})
         @mc_config(ef1_prod_pp, load_now=True)
         def config(_):
             Requires()
@@ -69,8 +68,8 @@ def test_attribute_none_args_partial_set_in_init_not_completed(capsys):
     _sout, serr = capsys.readouterr()
     assert lines_in(
         serr,
-        start_file_line(__file__, errorline_exit[0]),
+        start_file_line(__file__, errorlines['following_attributes']),
         config_error_never_received_value_expected.format(env=pp1),
-        start_file_line(__file__, errorline_setattr[0]),
+        start_file_line(__file__, errorlines['setattr']),
         config_error_no_value_expected.format(attr='a', env=pp1),
     )

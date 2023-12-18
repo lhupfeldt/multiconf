@@ -19,7 +19,7 @@ class RepeatableDict():
     _mc_handled_env_bits = AndTrue()
 
     __slots__ = ('_all_items',)  # Referenced in multiconf.py
-    __class__ = dict
+    __class__ = dict  # type: ignore
 
     def __init__(self):
         self._all_items = {}

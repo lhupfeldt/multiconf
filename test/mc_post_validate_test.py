@@ -96,7 +96,7 @@ def test_mc_post_validate_excluded_item():
             with root() as rt:
                 rt.mc_select_envs(exclude=[pp2])
 
-    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(local_func)sroot'>" % dict(local_func=local_func())
+    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(local_func)sroot'>" % {"local_func": local_func()}
     exp = "Accessing attribute 'aa' for Env('pp') on an excluded config item: " + exp_class
     assert exp in str(exinfo.value)
 
@@ -122,7 +122,7 @@ def test_mc_post_validate_excluded_repeatable_item():
                 with Rep(2) as r2:
                     r2.mc_select_envs(exclude=[pp2])
 
-    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(local_func)sRep'>" % dict(local_func=local_func())
+    exp_class = "Excluded: <class 'test.mc_post_validate_test.%(local_func)sRep'>" % {"local_func": local_func()}
     exp = "Accessing attribute 'aa' for Env('pp') on an excluded config item: " + exp_class
     assert exp in str(exinfo.value)
 

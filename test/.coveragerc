@@ -1,13 +1,13 @@
 [run]
 branch = True
+source = multiconf
+
+[paths]
+source =
+    src
+    **/site-packages/multiconf
 
 [report]
-<?py import platform ?>
-<?py if platform.python_implementation() != 'CPython': ?>
-fail_under = 99
-<?py else: ?>
-fail_under = 100
-<?py #endif ?>
 precision = 3
 exclude_lines =
     # Have to re-enable the standard pragma
@@ -21,16 +21,11 @@ exclude_lines =
     def _mc_debug\(
     def _mc_debug_hierarchy\(
 
-    if sys.version_info < min_sup_version:
     disable=bare-except
 
 partial_branches =
     # Have to re-enable the standard pragma
     pragma: no branch
-
-    <?py if major_version == 3 and minor_version == 8: ?>
-    thread_local.env = orig_env
-    <?py #endif ?>
 
     # We always have base classes, so these loops will alvays be entered
     for cls in get_bases
@@ -38,10 +33,11 @@ partial_branches =
     for index, gg in enumerate\(env_groups\):
 
 omit =
-    noxfile.py
     test/*
-    setup.py
+    experiments
     .nox/*
-    .tox/*
+
+    noxfile.py
+    setup.py
     .eggs/*
     *.egg/*

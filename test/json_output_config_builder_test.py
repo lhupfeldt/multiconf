@@ -676,6 +676,6 @@ def test_json_dump_attr_ref_configbuilder():
 
     cr = config(prod).ItemWithYs
 
-    assert compare_json(cr, _json_dump_attr_ref_configbuilder_expected_json % dict(local_func=local_func()),
+    assert compare_json(cr, _json_dump_attr_ref_configbuilder_expected_json % {"local_func": local_func()},
                         replace_builders=False, dump_builders=False, test_decode=True)
     assert compare_json(cr, _json_dump_attr_ref_configbuilder_expected_json_with_builders, replace_builders=True)
