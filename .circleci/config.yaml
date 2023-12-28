@@ -1,0 +1,16 @@
+version: 2.1
+
+jobs:
+  buildandtest_linux_latest:
+    machine:
+      image: ubuntu-2004:current
+    resource_class: medium
+    steps:
+      - checkout
+      - run: python3 -m pip install nox
+      - run: python3 -m nox
+
+workflows:
+  main:
+    jobs:
+      - buildandtest_linux_latest
