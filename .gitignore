@@ -1,5 +1,5 @@
 *~
-*.pyc
+*.py[cod]
 __pycache__
 .cache
 .coverage
@@ -13,7 +13,9 @@ coverage_rc.tenjin.cache
 .eggs
 dist
 .nox
-.tox
+.mypy_cache
+*_flymake.py
+flycheck_*.py
 build
 test/out
 test/perf/*.profile

@@ -1,6 +1,6 @@
 # Changes here will be overwritten by Copier
-_commit: '5318558'
-_src_path: copier_python_package_template
+_commit: 9f1a16a
+_src_path: git@github.com:lhupfeldt/copier_python_package_template.git
 author_email: lhn@hupfeldtit.dk
 author_name: Lars Hupfeldt Nielsen
 company_name: Hupfeldt IT
