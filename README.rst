@@ -1,3 +1,5 @@
+Moved here: https://codeberg.org/lhupfeldt/multiconf.git
+
 |Build Status| |Coverage| |Documentation Status| |PyPi Package|
 
 What
